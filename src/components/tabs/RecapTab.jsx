@@ -74,8 +74,10 @@ const VIEW_CHUNK_LOADERS = {
 
 /**
  * Sous-onglet Sport — Récap musculaire (navigation latérale + 5 vues).
+ * `isActive` : keep-alive peut laisser l’arbre monté hors écran ; alors on coupe
+ * les pipelines metrics/Garmin cross-coach (flag `enabled` déjà prévu) sans toucher aux calculs.
  */
-const RecapTab = () => {
+const RecapTab = ({ isActive = true }) => {
   const { currentUser, isAuthenticated } = useAuth();
   const {
     data,
@@ -103,15 +105,18 @@ const RecapTab = () => {
 
   /** Carte corporelle : vue face à chaque ouverture de l’onglet Récap. */
   useEffect(() => {
+    if (!isActive) return undefined;
     try {
       localStorage.setItem(RECAP_BODY_MAP_VIEW_LS, 'frontLow');
     } catch {
       /* ignore */
     }
-  }, []);
+    return undefined;
+  }, [isActive]);
 
   const [activeView, setActiveView] = useState(() => readStoredRecapView());
   const isGradesView = activeView === RECAP_VIEW_IDS.GRADES;
+  const liveMetricsEnabled = Boolean(isActive) && !isGradesView;
   const [chunkReady, setChunkReady] = useState(() => {
     const stored = readStoredRecapView();
     return loadedRecapChunks.has(stored) ? { [stored]: true } : {};
@@ -140,7 +145,7 @@ const RecapTab = () => {
   }, [activeView, isGradesView, chunkReady]);
 
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
-  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: !isGradesView });
+  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: liveMetricsEnabled });
 
   const [period, setPeriod] = useState(() => {
     try {
@@ -176,7 +181,7 @@ const RecapTab = () => {
   const garminPartialForRecap = useRecapCrossCoachGarmin({
     startYmd: garminRangeForRecap.startYmd,
     endYmd: garminRangeForRecap.endYmd,
-    enabled: !isGradesView,
+    enabled: liveMetricsEnabled,
     manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
   });
 
@@ -184,7 +189,7 @@ const RecapTab = () => {
   const [garminBundle, setGarminBundle] = useState(null);
 
   useEffect(() => {
-    if (!dbReady || !isAuthenticated) {
+    if (!isActive || !dbReady || !isAuthenticated) {
       return undefined;
     }
     let cancelled = false;
@@ -198,7 +203,7 @@ const RecapTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData, isAuthenticated]);
+  }, [isActive, dbReady, loadAllData, isAuthenticated]);
 
   const {
     contentReady,
@@ -224,12 +229,12 @@ const RecapTab = () => {
     garminDataForMetrics: garminBundle,
     periodWindow,
     programs,
-    enabled: !isGradesView
+    enabled: liveMetricsEnabled
   });
 
   const synthesisCoach = useRecapSynthesisCoach({
     snapshot: snapshotForRecap,
-    assessment: isGradesView ? null : recapAssessment ?? null,
+    assessment: !isActive || isGradesView ? null : recapAssessment ?? null,
     activeProgram: activeProgram ?? null,
     profileQuestionnaireRaw: currentUser?.profileQuestionnaire
   });

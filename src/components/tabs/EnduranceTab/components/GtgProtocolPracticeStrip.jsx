@@ -1,5 +1,4 @@
 import React from 'react';
-import { Activity, Gauge } from 'lucide-react';
 import { GTG_DAY_FEEL_ORDER } from '../../../../services/endurance/gtgProtocolSignals';
 
 const ZONE_STYLE = {
@@ -10,18 +9,25 @@ const ZONE_STYLE = {
   classic: 'border-rose-500/45 bg-rose-950/25 text-rose-100'
 };
 
-const FEEL_STYLE = {
-  easy: 'border-emerald-500/50 bg-emerald-950/35 text-emerald-100',
-  stable: 'border-sky-500/50 bg-sky-950/35 text-sky-100',
-  drift: 'border-amber-500/50 bg-amber-950/30 text-amber-100',
-  hard: 'border-rose-500/50 bg-rose-950/30 text-rose-100'
+const ZONE_COLOR = {
+  minimal: 'var(--bone-3)',
+  conservative: 'var(--t-cl)',
+  solid: 'var(--t-ef)',
+  demanding: 'var(--t-fract)',
+  classic: 'var(--t-vit)'
 };
+
+function zoneColor(zone) {
+  return ZONE_COLOR[zone] || ZONE_COLOR.conservative;
+}
 
 /**
  * Bandeau pratique aligné protocole : dose (RIR/%) éditable + signaux + ressenti.
  * Changer les reps ici = même config que Protocole / Aujourd’hui.
+ * `part` : 'dose' (cartes de dose), 'feel' (ressenti du jour) ou 'all'.
  */
 export default function GtgProtocolPracticeStrip({
+  part = 'all',
   doses = [],
   dayFeel = null,
   onFeelChange,
@@ -29,48 +35,26 @@ export default function GtgProtocolPracticeStrip({
   saving = false,
   t
 }) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-teal-500/30 bg-gradient-to-br from-black via-slate-950 to-teal-950/25">
-      <div className="border-b border-teal-500/20 px-5 py-4">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-teal-500/35 bg-teal-950/40 p-2.5">
-            <Gauge className="h-5 w-5 text-teal-200" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-base font-semibold text-white">{t('endurance.gtg.protocolTrack.title')}</h4>
-            <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
-              {t('endurance.gtg.protocolTrack.hint')}
-            </p>
-            <p className="mt-1 text-[10px] text-teal-200/70">{t('endurance.gtg.protocolTrack.syncHint')}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4 px-5 py-4">
-        {doses.length === 0 ? (
-          <p className="text-sm text-slate-500">{t('endurance.gtg.protocolTrack.noExercises')}</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {doses.map((d) => (
-              <div
-                key={d.exerciseId}
-                className="rounded-xl border border-slate-700/55 bg-black/50 p-3.5"
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <div className="truncate text-sm font-medium text-white">{d.label}</div>
-                  <span
-                    className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                      ZONE_STYLE[d.zone] || ZONE_STYLE.conservative
-                    }`}
-                  >
+  const doseBlock =
+    doses.length === 0 ? (
+      <div className="empty">{t('endurance.gtg.protocolTrack.noExercises')}</div>
+    ) : (
+      <>
+        <div className="dose">
+          {doses.map((d) => {
+            const pct = d.pctOfMax != null ? Math.max(0, Math.min(100, d.pctOfMax)) : 0;
+            return (
+              <article key={d.exerciseId}>
+                <div className="tp">
+                  <h3>{d.label}</h3>
+                  <span className="lvl" style={{ '--c': zoneColor(d.zone) }}>
                     {t(`endurance.gtg.protocolTrack.zone.${d.zone}`)}
                   </span>
                 </div>
-
-                <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+                <div className="lab" style={{ marginTop: 16 }}>
                   {t('endurance.gtg.protocolTrack.repsLabel')}
-                </label>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
+                </div>
+                <div className="dv">
                   <input
                     type="number"
                     min={1}
@@ -78,64 +62,69 @@ export default function GtgProtocolPracticeStrip({
                     disabled={saving || typeof onRepsChange !== 'function'}
                     value={d.repsPerSet || ''}
                     onChange={(e) => onRepsChange?.(d.exerciseId, e.target.value)}
-                    className="w-20 rounded-lg border border-violet-500/40 bg-violet-950/30 px-2 py-1.5 text-sm tabular-nums text-violet-50"
                     aria-label={`${d.label} reps`}
                   />
-                  <span className="text-[11px] text-slate-400">
+                  <span className="m3 num">
                     / {d.maxReps || '—'} max
                     {d.pctOfMax != null ? ` · ${d.pctOfMax}%` : ''}
                     {d.rir != null ? ` · RIR ${d.rir}` : ''}
                   </span>
                 </div>
-                <p className="mb-3 text-[10px] leading-relaxed text-slate-500">
-                  {t('endurance.gtg.protocolTrack.repsFieldHint')}
-                </p>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {(d.signals?.priority || []).slice(0, 4).map((sig) => (
-                    <span
-                      key={sig}
-                      className="rounded-full border border-teal-500/25 bg-teal-950/20 px-2 py-0.5 text-[10px] text-teal-100/90"
-                    >
-                      {t(`endurance.gtg.protocolTrack.signal.${sig}`)}
-                    </span>
-                  ))}
+                <div className="gauge">
+                  <i style={{ width: `${pct}%` }} />
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="rounded-xl border border-slate-700/45 bg-slate-950/40 p-3.5">
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-100">
-            <Activity className="h-4 w-4 text-amber-300" />
-            {t('endurance.gtg.protocolTrack.feelTitle')}
-          </div>
-          <p className="mb-3 text-[11px] text-slate-500">{t('endurance.gtg.protocolTrack.feelHint')}</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {GTG_DAY_FEEL_ORDER.map((feel) => {
-              const active = dayFeel === feel;
-              return (
-                <button
-                  key={feel}
-                  type="button"
-                  disabled={saving || typeof onFeelChange !== 'function'}
-                  onClick={() => onFeelChange?.(feel)}
-                  className={`rounded-lg border px-2.5 py-2 text-center text-[11px] font-medium transition ${
-                    active
-                      ? FEEL_STYLE[feel]
-                      : 'border-slate-700/60 bg-black/40 text-slate-400 hover:border-slate-500 hover:text-slate-200'
-                  }`}
-                >
-                  {t(`endurance.gtg.protocolTrack.feel.${feel}`)}
-                </button>
-              );
-            })}
-          </div>
+                {(d.signals?.priority || []).length > 0 ? (
+                  <div className="sg">
+                    <span className="lab">Signaux</span>
+                    <div className="chips">
+                      {(d.signals?.priority || []).slice(0, 4).map((sig) => (
+                        <span key={sig} className="chip">
+                          {t(`endurance.gtg.protocolTrack.signal.${sig}`)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
+        <p className="tiny" style={{ marginTop: 14 }}>
+          {t('endurance.gtg.protocolTrack.repsFieldHint')}
+        </p>
+      </>
+    );
+
+  const feelBlock = (
+    <div className="box pad">
+      <span className="lab">{t('endurance.gtg.protocolTrack.feelTitle')}</span>
+      <p className="tiny" style={{ margin: '8px 0 0' }}>
+        {t('endurance.gtg.protocolTrack.feelHint')}
+      </p>
+      <div className="fl">
+        {GTG_DAY_FEEL_ORDER.map((feel) => (
+          <button
+            key={feel}
+            type="button"
+            disabled={saving || typeof onFeelChange !== 'function'}
+            onClick={() => onFeelChange?.(feel)}
+            aria-pressed={dayFeel === feel}
+          >
+            {t(`endurance.gtg.protocolTrack.feel.${feel}`)}
+          </button>
+        ))}
       </div>
+    </div>
+  );
+
+  if (part === 'dose') return doseBlock;
+  if (part === 'feel') return feelBlock;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {doseBlock}
+      {feelBlock}
     </div>
   );
 }
 
-export { ZONE_STYLE };
+export { ZONE_STYLE, zoneColor };

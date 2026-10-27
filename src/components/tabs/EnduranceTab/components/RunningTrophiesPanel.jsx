@@ -139,95 +139,88 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
     });
   }, []);
 
-  const tabBtn = (active) =>
-    `rounded-xl border px-4 py-2 text-sm font-medium transition ${
-      active
-        ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
-        : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
-    }`;
-
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-              <Trophy className="h-7 w-7 text-sky-300" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white">Trophées — Course</h3>
-              <p className="mt-1 text-sm text-teal-200/80">
-                Score composite basé sur tes séances (manuel + Garmin). Chaque palier bronze → élite exige un peu plus
-                (distance, durée, nombre de séances ou allure plus rapide selon le type). L’XP sport inclut ces trophées.
-              </p>
-            </div>
+    <div>
+      <section className="thead">
+        <div>
+          <h2>
+            Trophées
+            <br />
+            <span>Course</span>
+          </h2>
+          <p>
+            Score composite basé sur tes séances (manuel + Garmin). Chaque palier bronze → élite exige un peu plus
+            (distance, durée, nombre de séances ou allure plus rapide selon le type). L’XP sport inclut ces trophées.
+          </p>
+          <div className="note">
+            <Sparkles />
+            <span>
+              Les trophées « allure stable » et « sans arrêt » s’appuient sur les tours / métadonnées Garmin quand la
+              sync est complète. Les seuils « allure max » (5k / 10k / 1k) restent exigeants mais plafonnés côté élite
+              pour rester crédibles. Cadence et VO₂ : voir « Records & stats course ».
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-xl border border-emerald-600/50 bg-emerald-950/25 px-4 py-3 text-center">
-              <div className="text-xs uppercase tracking-wide text-emerald-200/80">XP trophées course</div>
-              <div className="text-3xl font-bold text-white tabular-nums">+{trophiesXp}</div>
-              <div className="text-[11px] text-emerald-300/75">comptée dans la barre Sport</div>
-            </div>
-            <div className="rounded-xl border border-[#0F5C45]/60 bg-[#0F5C45]/15 px-4 py-3 text-center">
-              <div className="text-xs uppercase tracking-wide text-teal-200/80">Score</div>
-              <div className="text-3xl font-bold text-white tabular-nums">{evaluation.scoreComposite}%</div>
-              <div className="text-[11px] text-teal-300/70">
+        </div>
+        <div>
+          <span className="lab">XP trophées course</span>
+          <div className="xp num">+{trophiesXp}</div>
+          <div className="tiny">comptée dans la barre Sport</div>
+          <div className="tstat">
+            <div>
+              <span className="lab">Score</span>
+              <b className="num">{evaluation.scoreComposite}%</b>
+              <div className="meter">
+                <i style={{ width: `${Math.max(0, Math.min(100, Number(evaluation.scoreComposite) || 0))}%` }} />
+              </div>
+              <div className="tiny num">
                 {evaluation.scoreRaw} / {evaluation.scoreMax} pts
               </div>
             </div>
-            <div className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-center">
-              <div className="text-xs uppercase tracking-wide text-sky-200/80">Débloqués</div>
-              <div className="text-3xl font-bold text-white tabular-nums">
-                {unlockedCount}/{autoCount}
-              </div>
-              <div className="text-[11px] text-sky-200/70">auto</div>
+            <div>
+              <span className="lab">Débloqués</span>
+              <b className="num">
+                {unlockedCount}
+                <i>/{autoCount}</i>
+              </b>
+              <div className="tiny">auto</div>
             </div>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" className={tabBtn(subTab === 'all')} onClick={() => setSubTab('all')}>
+      </section>
+      <div className="sec-h" style={{ marginTop: 48 }}>
+        <div>
+          <h2>{subTab === 'unlocked' ? t('endurance.running.trophies.tabUnlocked') : t('endurance.running.trophies.tabAll')}</h2>
+        </div>
+        <div className="seg">
+          <button type="button" aria-pressed={subTab === 'all'} onClick={() => setSubTab('all')}>
             {t('endurance.running.trophies.tabAll')}
           </button>
-          <button type="button" className={tabBtn(subTab === 'unlocked')} onClick={() => setSubTab('unlocked')}>
+          <button type="button" aria-pressed={subTab === 'unlocked'} onClick={() => setSubTab('unlocked')}>
             {t('endurance.running.trophies.tabUnlocked')}
           </button>
-        </div>
-        <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-700/50 bg-slate-900/40 p-3 text-xs text-slate-300">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-          <p>
-            Les trophées « allure stable » et « sans arrêt » s’appuient sur les tours / métadonnées Garmin quand la sync
-            est complète. Les seuils « allure max » (5k / 10k / 1k) restent exigeants mais plafonnés côté élite pour
-            rester crédibles. Cadence et VO₂ : voir « Records & stats course ».
-          </p>
         </div>
       </div>
 
       {subTab === 'unlocked' ? (
-        <div className="rounded-2xl border border-[#0F4C5C]/55 bg-black p-5">
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="relative flex-1">
-              <label className="mb-1 block text-xs font-medium text-teal-700">
-                {t('endurance.running.trophies.searchPlaceholder')}
-              </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <section>
+          <div className="nums" style={{ gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', marginBottom: 14 }}>
+            <div className="fld">
+              <label className="lab">{t('endurance.running.trophies.searchPlaceholder')}</label>
+              <div className="cfs">
+                <Search />
                 <input
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t('endurance.running.trophies.searchPlaceholder')}
-                  className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
                 />
               </div>
             </div>
-            <div className="w-full shrink-0 lg:max-w-xs">
-              <label className="mb-1 block text-xs font-medium text-teal-700">
-                {t('endurance.running.trophies.categoryFilter')}
-              </label>
+            <div className="fld">
+              <label className="lab">{t('endurance.running.trophies.categoryFilter')}</label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
               >
                 {unlockedCategories.map((c) => (
                   <option key={c} value={c}>
@@ -237,17 +230,17 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
               </select>
             </div>
           </div>
-          <p className="mb-4 text-[11px] leading-relaxed text-slate-500">{t('endurance.running.trophies.unlockedHint')}</p>
+          <p className="tiny" style={{ margin: '0 0 16px' }}>{t('endurance.running.trophies.unlockedHint')}</p>
           {filteredUnlocked.length === 0 ? (
-            <p className="text-sm text-teal-800">{t('endurance.running.trophies.unlockedEmpty')}</p>
+            <div className="empty">{t('endurance.running.trophies.unlockedEmpty')}</div>
           ) : (
             <>
-              <p className="mb-3 text-xs text-teal-700">
+              <p className="lab" style={{ margin: '0 0 12px' }}>
                 {filteredUnlocked.length === 1
                   ? t('endurance.running.trophies.unlockedCount', { count: filteredUnlocked.length })
                   : t('endurance.running.trophies.unlockedCountPlural', { count: filteredUnlocked.length })}
               </p>
-              <div className="max-h-[min(70vh,36rem)] overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+              <div className="box pad" style={{ maxHeight: 'min(70vh,36rem)', overflowY: 'auto' }}>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {filteredUnlocked.map((row) => (
                     <button
@@ -271,12 +264,16 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
               </div>
             </>
           )}
-        </div>
+        </section>
       ) : (
         grouped.map(([category, items]) => (
-          <section key={category} className="rounded-2xl border border-[#0F4C5C]/55 bg-black p-5">
-            <h4 className="mb-4 text-lg font-semibold text-white">{category}</h4>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section key={category} style={{ marginTop: 40 }}>
+            <div className="sec-h">
+              <div>
+                <h2>{category}</h2>
+              </div>
+            </div>
+            <div className="tgrid">
               {items.map((trophy) => {
                 const progressLine = describeRunningTrophyCurrentProgress(trophy, evaluation.stats);
                 const contrib = trophy.contributingSessions || [];

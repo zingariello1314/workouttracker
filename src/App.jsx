@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
-import { WorkoutProvider } from './context/WorkoutContext';
+import { WorkoutProvider, useWorkout } from './context/WorkoutContext';
+import { NavigationProvider, useAppNavigation } from './context/NavigationContext';
 import { AuthProvider } from './context/AuthContext';
 import { QuietQuestProvider } from './hooks/useQuietQuestEngine';
 import { BooksStorageProvider } from './hooks/useBooksStorage';
@@ -49,7 +50,6 @@ const ExerciseVariations = lazy(() => import('./components/ExerciseVariations/Ex
 const AdvancedStats = lazy(() => import('./components/AdvancedStats'));
 const SessionFeedback = lazy(() => import('./components/SessionFeedback'));
 import SidebarPremium from './components/sidebar/SidebarPremium';
-import { useWorkout } from './context/WorkoutContext';
 import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
 import { AppLockProvider } from './context/AppLockContext';
@@ -106,12 +106,12 @@ const TodayTabHost = memo(function TodayTabHost() {
   );
 });
 
-/** Reste monté après le chargement initial : ouvrir Récap n’a plus à recalculer les métriques. */
-const RecapTabHost = memo(function RecapTabHost() {
+/** Reste monté après la 1ʳᵉ ouverture : quitter Récap ne détruit plus l’arbre (display:none). */
+const RecapTabHost = memo(function RecapTabHost({ isActive = true }) {
   return (
     <ErrorBoundary context={{ activeTab: 'recap' }} title="Erreur dans l'onglet recap">
       <Suspense fallback={<TabSuspenseFallback tabId="recap" />}>
-        <RecapTab />
+        <RecapTab isActive={isActive} />
       </Suspense>
     </ErrorBoundary>
   );
@@ -130,9 +130,11 @@ const WorkoutTrackerApp = () => {
               <QuietQuestProvider>
                 <BooksStorageProvider>
                   <QuickActionsProvider>
-                    <WorkoutProvider>
-                      <WorkoutTrackerContent />
-                    </WorkoutProvider>
+                    <NavigationProvider>
+                      <WorkoutProvider>
+                        <WorkoutTrackerContent />
+                      </WorkoutProvider>
+                    </NavigationProvider>
                   </QuickActionsProvider>
                 </BooksStorageProvider>
               </QuietQuestProvider>
@@ -145,8 +147,8 @@ const WorkoutTrackerApp = () => {
 };
 
 const WorkoutTrackerContent = () => {
+  const { activeTab, setActiveTab } = useAppNavigation();
   const { 
-    activeTab, 
     showExerciseVariations, 
     selectedExercise, 
     setShowExerciseVariations,
@@ -167,6 +169,8 @@ const WorkoutTrackerContent = () => {
   const [showProfileQuiz, setShowProfileQuiz] = useState(false);
   const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
   const [warmToday, setWarmToday] = useState(false);
+  /** Keep-alive Récap après la première visite (comme Today). */
+  const [warmRecap, setWarmRecap] = useState(false);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
@@ -251,6 +255,12 @@ const WorkoutTrackerContent = () => {
     setWarmToday(true);
     return undefined;
   }, [authLoading]);
+
+  React.useEffect(() => {
+    if (activeTab === 'recap') {
+      setWarmRecap(true);
+    }
+  }, [activeTab]);
 
   // ✅ Charger les données Garmin pour les calories
   // - admin connecté : charge les vraies données
@@ -431,13 +441,17 @@ const WorkoutTrackerContent = () => {
   
   // Mettre à jour l'état du fond animé selon l'onglet actif
   // IMPORTANT: Le fond reste TOUJOURS monté pour éviter le rechargement entre onglets
-  // Seule l'opacité change selon l'onglet actif
+  // Seule l'opacité change selon l'onglet actif ; la boucle WebGL est mise en pause si masqué
   useEffect(() => {
     // Ne pas afficher le fond sur home, auth et pricing
     // Pour dashboard, l'opacité est gérée par scrollProgress (0 = masqué, 1 = visible)
     const shouldShow = activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'pricing';
     setShowAnimatedBackground(shouldShow);
   }, [activeTab]);
+
+  const backgroundPaused =
+    !showAnimatedBackground ||
+    (activeTab === 'dashboard' && dashboardScrollProgress < 0.25);
 
   return (
     <div className="min-h-screen">
@@ -447,8 +461,7 @@ const WorkoutTrackerContent = () => {
       {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}
       <GlassFilter />
       
-      {/* Le shader tourne dès le premier rendu (chargement initial), même sur l'accueil.
-          Sur accueil / auth / pricing un voile opaque le masque sans l'arrêter. */}
+      {/* Fond toujours monté (pas de flash) ; pause rAF/worker quand masqué (home/auth/pricing / dashboard non scrollé). */}
       <div
         style={{
           opacity: activeTab === 'dashboard'
@@ -468,7 +481,7 @@ const WorkoutTrackerContent = () => {
           background: appBackground.fallbackBackground
         }}
       >
-        <AppBackground />
+        <AppBackground paused={backgroundPaused} />
       </div>
       {!showAnimatedBackground && (
         <div
@@ -571,7 +584,7 @@ const WorkoutTrackerContent = () => {
                 <CalendarTabHost />
               </div>
             )}
-            {activeTab === 'recap' && (
+            {(warmRecap || activeTab === 'recap') && (
               <div
                 className="container mx-auto px-4"
                 style={{ display: activeTab === 'recap' ? undefined : 'none' }}
@@ -580,7 +593,7 @@ const WorkoutTrackerContent = () => {
                 {activeTab === 'recap' && (
                   <SportXpBarSlot tabId="recap" className="mb-5 mt-5 scroll-mt-40 pt-1" />
                 )}
-                <RecapTabHost />
+                <RecapTabHost isActive={activeTab === 'recap'} />
               </div>
             )}
           </main>

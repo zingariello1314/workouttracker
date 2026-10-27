@@ -42,13 +42,13 @@ const EnduranceDisciplineStatsPanel = ({ kind, sessions = [], circuitPayload = n
     const pts = buildDenseDailyPoints(raw, start, endClamped);
 
     const metaByKind = {
-      running: { label: 'km', color: '#38bdf8', fmt: (v) => (Math.round(v * 100) / 100).toFixed(2) },
-      walking: { label: 'km', color: '#34d399', fmt: (v) => (Math.round(v * 100) / 100).toFixed(2) },
-      pushups: { label: 'reps', color: '#f472b6', fmt: (v) => String(Math.round(v)) },
-      gainage: { label: 'secondes', color: '#a78bfa', fmt: (v) => String(Math.round(v)) },
-      jumprope: { label: 'sauts', color: '#fbbf24', fmt: (v) => String(Math.round(v)) },
-      circuits: { label: 'tours', color: '#22d3ee', fmt: (v) => String(Math.round(v)) },
-      gtg: { label: 'reps GTG', color: '#a78bfa', fmt: (v) => String(Math.round(v)) }
+      running: { label: 'km', color: 'var(--accent)', fmt: (v) => (Math.round(v * 100) / 100).toFixed(2) },
+      walking: { label: 'km', color: 'var(--accent)', fmt: (v) => (Math.round(v * 100) / 100).toFixed(2) },
+      pushups: { label: 'reps', color: 'var(--accent)', fmt: (v) => String(Math.round(v)) },
+      gainage: { label: 'secondes', color: 'var(--accent)', fmt: (v) => String(Math.round(v)) },
+      jumprope: { label: 'sauts', color: 'var(--accent)', fmt: (v) => String(Math.round(v)) },
+      circuits: { label: 'tours', color: 'var(--accent)', fmt: (v) => String(Math.round(v)) },
+      gtg: { label: 'reps GTG', color: 'var(--accent)', fmt: (v) => String(Math.round(v)) }
     };
 
     return {

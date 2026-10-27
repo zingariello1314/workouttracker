@@ -1,0 +1,694 @@
+/**
+ * Esthétique Défis — tableau d’affichage de stade.
+ * Encre bleutée, os chaud, titres condensés, filets nets.
+ * Scoped à .defis-stadium : aucun impact hors onglet Défis.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.defis-stadium {
+  --accent: #a46bff;
+  --accent-ink: #13062b;
+  --t-ef: #46c8ff;
+  --t-seuil: #b58cff;
+  --t-vit: #ff5c93;
+  --t-fract: #ffc233;
+  --t-cl: #4fe0c8;
+  --star: #ffc233;
+  --tier-1: #f0955a;
+  --tier-2: #bcd0ff;
+  --tier-3: #ffc933;
+  --tier-4: #5df0ff;
+  --f-disp: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif;
+  --f-body: 'Schibsted Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  --ink: color-mix(in oklab, var(--accent) 9%, #07070c);
+  --ink-2: color-mix(in oklab, var(--accent) 13%, #0b0b12);
+  --ink-3: color-mix(in oklab, var(--accent) 18%, #0f0f18);
+  --ink-4: color-mix(in oklab, var(--accent) 26%, #14141f);
+  --rule: color-mix(in oklab, var(--accent) 24%, #101018);
+  --rule-2: color-mix(in oklab, var(--accent) 40%, #16161f);
+  --bone: color-mix(in oklab, var(--accent) 24%, #ffffff);
+  --bone-2: color-mix(in oklab, var(--accent) 62%, #ffffff);
+  --bone-3: color-mix(in oklab, var(--accent) 88%, #0b0b12);
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-mid: color-mix(in srgb, var(--accent) 48%, var(--ink-3));
+  position: relative;
+  z-index: 1;
+  color: var(--bone);
+  font: 15px/1.5 var(--f-body);
+  background: none;
+  color-scheme: dark;
+}
+
+.defis-stadium[data-act='running'] { --accent: #ff7a33; --accent-ink: #2a0f02; }
+.defis-stadium[data-act='walking'] { --accent: #2fd3ff; --accent-ink: #021d27; }
+.defis-stadium[data-act='pushups'] { --accent: #46c8ff; --accent-ink: #021d27; }
+.defis-stadium[data-act='jumprope'] { --accent: #ff4fa3; --accent-ink: #2b0618; }
+.defis-stadium[data-act='gainage'] { --accent: #4fe0c8; --accent-ink: #021d27; }
+.defis-stadium[data-act='boxing'] { --accent: #ff5560; --accent-ink: #2b0509; }
+.defis-stadium[data-act='swimming'] { --accent: #46c8ff; --accent-ink: #021d27; }
+.defis-stadium[data-act='circuits'] { --accent: #ffc233; --accent-ink: #2a1a02; }
+.defis-stadium[data-act='gtg'] { --accent: #b58cff; --accent-ink: #13062b; }
+.defis-stadium[data-act='pyramid'] { --accent: #a46bff; --accent-ink: #13062b; }
+.defis-stadium[data-act='trophies'] { --accent: #ffc933; --accent-ink: #2a1a02; }
+.defis-stadium[data-act='performance'] { --accent: #ffc933; --accent-ink: #2a1a02; }
+.defis-stadium[data-act='calendar'] { --accent: #a46bff; --accent-ink: #13062b; }
+
+.defis-stadium[data-accent-lock='1'][data-accent='0'] { --accent: #a46bff; --accent-ink: #13062b; }
+.defis-stadium[data-accent-lock='1'][data-accent='1'] { --accent: #ff4fa3; --accent-ink: #2b0618; }
+.defis-stadium[data-accent-lock='1'][data-accent='2'] { --accent: #ffb22e; --accent-ink: #2a1a02; }
+.defis-stadium[data-accent-lock='1'][data-accent='3'] { --accent: #2fd3ff; --accent-ink: #021d27; }
+.defis-stadium[data-accent-lock='1'][data-accent='4'] { --accent: #ff7a33; --accent-ink: #2a0f02; }
+.defis-stadium[data-accent-lock='1'][data-accent='5'] { --accent: #ff5560; --accent-ink: #2b0509; }
+.defis-stadium[data-accent-lock='1'][data-accent='6'] { --accent: #4d7cff; --accent-ink: #07122e; }
+.defis-stadium[data-accent-lock='1'][data-accent='7'] { --accent: #d6f25c; --accent-ink: #1c2204; }
+.defis-stadium[data-accent-lock='1'][data-accent='8'] { --accent: #3dffa6; --accent-ink: #022016; }
+.defis-stadium[data-accent-lock='1'][data-accent='9'] { --accent: #ff8fb8; --accent-ink: #2b0614; }
+.defis-stadium[data-accent-lock='1'][data-accent='10'] { --accent: #e7d3b0; --accent-ink: #241c12; }
+.defis-stadium[data-accent-lock='1'][data-accent='11'] { --accent: #e08a4f; --accent-ink: #241206; }
+
+.defis-stadium *,
+.defis-stadium *::before,
+.defis-stadium *::after {
+  box-sizing: border-box;
+}
+
+.defis-stadium :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.defis-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr);
+  gap: 44px;
+  padding: 22px 16px 90px;
+}
+
+.defis-side {
+  position: sticky;
+  top: 22px;
+  align-self: start;
+  max-height: calc(100vh - 44px);
+  overflow: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+}
+
+.defis-side h2 {
+  font: 900 min(64px, 20cqi)/0.86 var(--f-disp);
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.005em;
+  color: var(--bone);
+  background: none;
+  -webkit-text-fill-color: unset;
+}
+
+.defis-side .defis-sub {
+  color: var(--bone-3);
+  font-size: 13px;
+  margin: 10px 0 26px;
+  max-width: 22ch;
+}
+
+.defis-nav {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule-2);
+  padding: 0;
+}
+
+.defis-nav button {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-left: 3px solid transparent;
+  color: var(--bone-2);
+  text-align: left;
+  font-weight: 500;
+  border-radius: 0;
+  width: 100%;
+  box-shadow: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.defis-nav button:hover {
+  color: var(--bone);
+  background: var(--ink-2);
+}
+
+.defis-nav button[aria-current='page'] {
+  color: var(--bone);
+  background: linear-gradient(90deg, var(--accent-soft), transparent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.defis-nav button[aria-current='page'] svg {
+  color: var(--accent);
+}
+
+.defis-stadium .ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.defis-nav .defis-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 11px var(--f-mono);
+  min-width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  padding-inline: 5px;
+}
+
+.defis-nav .defis-gap {
+  height: 18px;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.defis-pick {
+  margin-top: 30px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule-2);
+}
+
+.defis-lab {
+  font: 500 10.5px/1.3 var(--f-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-3);
+}
+
+.defis-sw {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.defis-sw button {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--rule-2);
+  background: var(--c);
+  padding: 0;
+}
+
+.defis-sw button[aria-pressed='true'] {
+  outline: 2px solid var(--bone);
+  outline-offset: 2px;
+}
+
+.defis-main {
+  min-width: 0;
+}
+
+.defis-menu {
+  display: none;
+  margin-bottom: 18px;
+}
+
+
+/* Voile d’encre fondu : le fond animé reste perceptible, le texte reste lisible. */
+.defis-shell {
+  isolation: isolate;
+}
+
+.defis-shell::before {
+  content: '';
+  position: absolute;
+  inset: -24px -56px -40px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 640px at 88% -8%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
+    radial-gradient(820px 620px at -8% 46%, color-mix(in srgb, #ff5c93 8%, transparent), transparent 70%),
+    radial-gradient(900px 600px at 70% 112%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 72%),
+    color-mix(in srgb, var(--ink) 82%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent),
+    linear-gradient(180deg, transparent, #000 48px, #000 calc(100% - 96px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent),
+    linear-gradient(180deg, transparent, #000 48px, #000 calc(100% - 96px), transparent);
+  mask-composite: intersect;
+}
+
+.defis-stadium .btn.defis-menu {
+  display: none;
+}
+
+/* Onglets (maquette .tabs) — boutons React existants */
+.defis-stadium .defis-tabs {
+  display: flex;
+  margin: 32px 0 44px;
+  border-bottom: 1px solid var(--rule-2);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.defis-stadium .defis-tabs > button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--bone-3) !important;
+  font: 500 12.5px var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: none !important;
+}
+
+.defis-stadium .defis-tabs > button:hover {
+  color: var(--bone) !important;
+}
+
+.defis-stadium .defis-tabs > button[aria-selected='true'] {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  font-weight: 600;
+}
+
+.defis-stadium .head + .defis-tabs,
+.defis-stadium .board + .defis-tabs {
+  margin-top: 32px;
+}
+
+.defis-stadium .head > div:first-child {
+  min-width: 0;
+}
+
+.defis-stadium button.chip[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.defis-stadium .chips label.chip {
+  position: relative;
+}
+
+/* Champs Tailwind restants */
+.defis-stadium input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.defis-stadium select,
+.defis-stadium textarea {
+  background-color: var(--ink);
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+  color: var(--bone);
+  font-family: var(--f-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.defis-stadium input::placeholder,
+.defis-stadium textarea::placeholder {
+  color: var(--bone-3);
+}
+
+.defis-stadium option {
+  background: var(--ink-2);
+  color: var(--bone);
+}
+
+/* Dalles Tailwind restantes : filet, sans fond plein */
+.defis-stadium [class*='rounded-2xl'][class*='bg-black'],
+.defis-stadium [class*='rounded-xl'][class*='bg-black'] {
+  background: transparent !important;
+  border-color: var(--rule-2) !important;
+  border-radius: 6px !important;
+}
+
+.defis-stadium .gradient-button-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--rule-2) !important;
+  background: transparent !important;
+  border-radius: 4px !important;
+  padding: 10px 15px;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--bone) !important;
+  box-shadow: none !important;
+  text-transform: none;
+}
+
+.defis-stadium .gradient-button-premium:hover {
+  border-color: var(--bone-2) !important;
+  filter: none;
+}
+
+.defis-stadium .gradient-button-premium:not(.gradient-button-premium-variant) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-ink) !important;
+}
+
+.defis-stadium .gradient-button-premium-sm {
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+.defis-stadium .fixed.inset-0 {
+  background: color-mix(in srgb, #07070c 78%, transparent) !important;
+}
+
+.defis-stadium .fixed.inset-0 > div {
+  background: linear-gradient(155deg, var(--ink-3), var(--ink-2)) !important;
+  border: 1px solid var(--rule-2) !important;
+  border-radius: 8px !important;
+  color: var(--bone);
+}
+
+.defis-stadium .strip2 h3 {
+  font: 800 30px/1 var(--f-disp);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: var(--bone);
+}
+
+.defis-stadium .ps .pnote {
+  grid-column: 1 / -1;
+}
+
+.defis-stadium .ib .ic,
+.defis-stadium .plq .ic,
+.defis-stadium .two .ic {
+  width: 16px;
+  height: 16px;
+}
+
+/* Calendrier : niveaux d’intensité (0 → 4) et détail du jour */
+.defis-stadium .cd.l1h {
+  background: color-mix(in oklab, var(--accent) 75%, var(--ink-2));
+}
+
+.defis-stadium .cleg i.lv1 {
+  background: color-mix(in oklab, var(--accent) 45%, var(--ink-2));
+  border-color: var(--accent);
+}
+
+.defis-stadium .cleg i.lv2 {
+  background: color-mix(in oklab, var(--accent) 75%, var(--ink-2));
+  border-color: var(--accent);
+}
+
+.defis-stadium .cleg i.lv3 {
+  background: var(--t-fract);
+  border-color: var(--t-fract);
+}
+
+.defis-stadium .cleg i.lv4 {
+  background: var(--t-vit);
+  border-color: var(--t-vit);
+}
+
+.defis-stadium .csel .dr {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+  font: 500 13px var(--f-body);
+}
+
+.defis-stadium .csel .dr:first-of-type {
+  margin-top: 10px;
+}
+
+.defis-stadium .csel .dr b {
+  font-weight: 700;
+  color: var(--bone);
+}
+
+.defis-stadium .csel .dr span {
+  color: var(--bone-3);
+  font: 500 12px var(--f-mono);
+}
+
+/* Calendrier : jour avec plusieurs disciplines (pastilles) */
+.defis-stadium .cd .dots {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+}
+
+.defis-stadium .cd .dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--c, var(--bone));
+}
+
+.defis-stadium .cdesc {
+  margin: 0;
+  color: var(--bone-2);
+  font-size: 13px;
+}
+
+@media (max-width: 980px) {
+  .defis-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding-inline: 12px;
+  }
+
+  .defis-side {
+    position: static;
+    max-height: none;
+    display: none;
+  }
+
+  .defis-side.defis-open {
+    display: block;
+  }
+
+  .defis-stadium .btn.defis-menu {
+    display: inline-flex;
+  }
+}
+
+/* Titres proportionnels a la colonne (la sidebar de l'app reduit la largeur vs le mock) */
+.defis-stadium .defis-side,
+.defis-stadium .defis-main { container-type: inline-size; }
+.defis-stadium .defis-main .head > div:first-child {
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.defis-stadium .defis-main .head h1 {
+  font-size: clamp(40px, 11cqi, 96px);
+  line-height: 0.94;
+  max-width: 100%;
+}
+.defis-stadium .defis-main .head h1.long {
+  font-size: clamp(30px, 7.2cqi, 68px);
+  line-height: 0.96;
+}
+.defis-stadium .defis-main .thead h2 { font-size: clamp(36px, 8cqi, 72px); line-height: 0.92; }
+.defis-stadium .board > div { display: flex; flex-direction: column; }
+.defis-stadium .board > div > b { margin-top: auto; }
+
+/* Journal : la colonne est plus étroite que le mock (sidebar app + menu Défis). */
+.defis-stadium .text-slate-500,
+.defis-stadium .text-slate-400,
+.defis-stadium .text-slate-300,
+.defis-stadium .text-teal-100,
+.defis-stadium .text-teal-700 {
+  color: var(--bone-2) !important;
+}
+
+/* Plus de vert émeraude / teal dans Défis : l'accent de l'onglet prend la place. */
+.defis-stadium [class*='text-teal'],
+.defis-stadium [class*='text-emerald'],
+.defis-stadium [class*='text-green-4'],
+.defis-stadium [class*='text-green-3'],
+.defis-stadium [class*='text-green-2'] {
+  color: var(--accent) !important;
+}
+
+.defis-stadium [class*='bg-teal-9'],
+.defis-stadium [class*='bg-teal-8'],
+.defis-stadium [class*='bg-emerald-9'],
+.defis-stadium [class*='bg-emerald-8'],
+.defis-stadium [class*='to-teal'],
+.defis-stadium [class*='from-teal'],
+.defis-stadium [class*='via-teal'],
+.defis-stadium [class*='to-emerald'],
+.defis-stadium [class*='from-emerald'],
+.defis-stadium [class*='to-green'],
+.defis-stadium [class*='from-green'] {
+  background-color: color-mix(in srgb, var(--accent) 12%, var(--ink-2)) !important;
+  background-image: none !important;
+}
+
+.defis-stadium [class*='bg-teal-5'],
+.defis-stadium [class*='bg-teal-4'],
+.defis-stadium [class*='bg-teal-6'],
+.defis-stadium [class*='bg-emerald-5'],
+.defis-stadium [class*='bg-emerald-4'],
+.defis-stadium [class*='bg-emerald-6'],
+.defis-stadium [class*='bg-green-5'],
+.defis-stadium [class*='bg-green-4'] {
+  background-color: var(--accent) !important;
+  background-image: none !important;
+}
+
+.defis-stadium [class*='border'][class*='teal'],
+.defis-stadium [class*='border'][class*='emerald'],
+.defis-stadium [class*='border'][class*='green-5'],
+.defis-stadium [class*='border'][class*='green-4'] {
+  border-color: color-mix(in srgb, var(--accent) 48%, transparent) !important;
+}
+
+/* Verts arbitraires (#0F5C45) et cartes Tailwind encore hors charte. */
+.defis-stadium [class*='0F5C45'],
+.defis-stadium [class*='0f5c45'],
+.defis-stadium [class*='10b981'],
+.defis-stadium [class*='059669'] {
+  border-color: color-mix(in srgb, var(--accent) 48%, transparent) !important;
+}
+
+.defis-stadium [class*='bg-[#0F5C45]'],
+.defis-stadium [class*='bg-[#0f5c45]'],
+.defis-stadium [class*='bg-[#10b981]'],
+.defis-stadium [class*='bg-[#059669]'] {
+  background-color: color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  background-image: none !important;
+  color: var(--bone) !important;
+}
+
+.defis-stadium [class*='bg-violet'],
+.defis-stadium [class*='bg-purple'],
+.defis-stadium [class*='bg-sky'],
+.defis-stadium [class*='bg-indigo'],
+.defis-stadium [class*='bg-fuchsia'] {
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+  background-image: none !important;
+}
+
+.defis-stadium [class*='border-violet'],
+.defis-stadium [class*='border-purple'],
+.defis-stadium [class*='border-sky'],
+.defis-stadium [class*='border-amber'],
+.defis-stadium [class*='border-indigo'],
+.defis-stadium [class*='border-fuchsia'],
+.defis-stadium [class*='border-slate'] {
+  border-color: var(--rule-2) !important;
+}
+
+.defis-stadium [class*='text-violet'],
+.defis-stadium [class*='text-purple'],
+.defis-stadium [class*='text-sky'],
+.defis-stadium [class*='text-indigo'],
+.defis-stadium [class*='text-fuchsia'] {
+  color: var(--accent) !important;
+}
+
+.defis-stadium [class*='rounded-xl'][class*='bg-slate'],
+.defis-stadium [class*='rounded-2xl'][class*='bg-slate'],
+.defis-stadium [class*='rounded-lg'][class*='bg-slate'],
+.defis-stadium [class*='rounded-xl'][class*='bg-black'],
+.defis-stadium [class*='rounded-2xl'][class*='bg-black'] {
+  background: transparent !important;
+  border-color: var(--rule-2) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.defis-stadium [class*='rounded-full'][class*='bg-slate'] {
+  background-color: var(--ink-4) !important;
+}
+
+.defis-stadium section > h3 {
+  font: 700 11px var(--f-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+
+.defis-stadium svg text {
+  fill: var(--bone-3);
+  font-family: var(--f-mono);
+}
+
+.defis-stadium svg [stroke='#334155'],
+.defis-stadium svg [stroke='#0F4C5C'],
+.defis-stadium svg [stroke='#475569'] {
+  stroke: var(--rule);
+}
+
+.defis-stadium svg [stroke='#34d399'],
+.defis-stadium svg [stroke='#14b8a6'],
+.defis-stadium svg [stroke='#38bdf8'],
+.defis-stadium svg [stroke='#22d3ee'],
+.defis-stadium svg [stroke='#2dd4bf'],
+.defis-stadium svg [stroke='#5eead4'] {
+  stroke: var(--accent);
+}
+
+.defis-stadium svg [fill='#34d399'],
+.defis-stadium svg [fill='#14b8a6'],
+.defis-stadium svg [fill='#38bdf8'],
+.defis-stadium svg [fill='#22d3ee'],
+.defis-stadium svg [fill='#2dd4bf'] {
+  fill: var(--accent);
+}
+
+.defis-stadium .log > div { min-width: 0; }
+.defis-stadium .log .tl { min-width: 0; }
+.defis-stadium .zone { white-space: normal; max-width: 100%; }
+
+@container (max-width: 1040px) {
+  .defis-stadium .log {
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .defis-stadium .log .mx {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    margin-top: 12px;
+  }
+  .defis-stadium .log .mx div:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .defis-stadium .log .ra {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, ChevronDown, ChevronUp } from 'lucide-react';
+import { summarizeRecapRejectLog } from '../../../utils/sport/recapRejectLog';
 
 function AxisRow({ label, axis }) {
   if (!axis) return null;
@@ -63,6 +64,7 @@ export default function RecapTrainingStateDebugPanel({
   if (!trainingState) return null;
 
   const features = trainingState.features || {};
+  const rejectSummary = summarizeRecapRejectLog();
 
   return (
     <div className="rounded-xl border border-violet-500/30 bg-violet-950/20">
@@ -97,6 +99,14 @@ export default function RecapTrainingStateDebugPanel({
             {insightSignature ? (
               <span className="truncate text-slate-600" title={insightSignature}>
                 sig…{String(insightSignature).slice(-24)}
+              </span>
+            ) : null}
+            {rejectSummary?.total > 0 ? (
+              <span
+                className="rounded-full border border-rose-500/40 px-2 py-0.5 text-rose-200"
+                title={JSON.stringify(rejectSummary.byRule)}
+              >
+                rejets {rejectSummary.total}
               </span>
             ) : null}
           </div>

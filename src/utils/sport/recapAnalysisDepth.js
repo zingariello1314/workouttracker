@@ -38,7 +38,9 @@ function cardFrom(dossier, idea) {
     family: THREADS[dossier.thread].family,
     axes: [...(dossier.axes || [])],
     analysisType: idea.analysisType,
-    factId: idea.factId
+    factId: idea.factId,
+    metrics: idea.metrics || null,
+    voice: dossier.voice || null
   };
 }
 
@@ -80,6 +82,11 @@ function rhythmIdea(dossier) {
   if (dossier.voice === '6m' && dossier.blocks?.a && dossier.blocks?.b && hasNum(dossier.blocks.a.reps) && hasNum(dossier.blocks.b.reps)) {
     const a = dossier.blocks.a;
     const b = dossier.blocks.b;
+    const hi = Math.max(a.reps, b.reps);
+    const lo = Math.min(a.reps, b.reps);
+    const pct = hi > 0 ? ((hi - lo) / hi) * 100 : 0;
+    // B17 — ne pas survenir un écart < 15 %
+    if (pct < 15) return null;
     const up = a.reps >= b.reps ? a : b;
     const down = up === a ? b : a;
     return {
@@ -87,7 +94,8 @@ function rhythmIdea(dossier) {
       analysisType: 'comparison',
       title: 'Les deux moitiés de ces six mois n\'ont pas le même volume',
       body: `Le bloc ${a.label} compte ${fmtInt(a.reps)} répétitions en ${fmtInt(a.sessions)} jours, et le bloc ${b.label} en compte ${fmtInt(b.reps)} en ${fmtInt(b.sessions)} jours. ${up.label} est au-dessus de ${down.label}.`,
-      factId: `blocks|6m|${a.label}|${b.label}`
+      factId: `blocks|6m|${a.label}|${b.label}`,
+      metrics: { blockAReps: a.reps, blockBReps: b.reps }
     };
   }
   if (dossier.voice === '1y' && dossier.coverage) {
@@ -150,14 +158,16 @@ function continuityIdea(dossier) {
 function repertoireIdea(dossier) {
   const exit = dossier.observed?.repertoire?.exited;
   if (!exit || !hasNum(exit.reps)) return null;
+  // B15 — une fenêtre d'un jour ne peut pas « quitter le répertoire »
+  if (dossier.voice === 'today') return null;
   return {
     role: 'evolution',
     analysisType: 'evolution',
     title: `${exit.name} a quitté cette fenêtre`,
-    body: `${exit.name} comptait ${fmtInt(exit.reps)} répétitions sur la période précédente et tombe à zéro ici. Ce n'est pas une baisse de volume : le mouvement disparaît du journal. ${
-      dossier.voice === 'week' || dossier.voice === 'today'
-        ? `Sur une fenêtre courte, la capacité spécifique tient encore. Le risque est que « pas cette fois » devienne le répertoire sans que ce soit décidé. Le reprendre plus bas que ${fmtInt(exit.reps)} montre si le geste revient, au lieu de remettre l'ancien total d'un coup.`
-        : `Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas sur la fenêtre suivante, c'est un changement de répertoire : un autre travail du même rôle prend sa place, ou le trou reste ouvert.`
+    body: `${exit.name} comptait ${fmtInt(exit.reps)} répétitions sur la période précédente et tombe à zéro ici. Le mouvement disparaît du journal sur cette fenêtre. ${
+      dossier.voice === 'week'
+        ? `Sur une fenêtre courte, la capacité spécifique tient encore. Le reprendre plus bas que ${fmtInt(exit.reps)} montre si le geste revient.`
+        : `Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas sur la fenêtre suivante, c'est un changement de répertoire.`
     }`,
     factId: `exit|${String(exit.name).toLowerCase()}|${dossier.voice || ''}`
   };

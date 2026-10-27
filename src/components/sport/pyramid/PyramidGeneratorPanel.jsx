@@ -21,7 +21,6 @@ import {
   collectCustomProgramExercises
 } from '../../../services/trainingPatterns/pyramidUserSignals';
 import { applyPyramidTemplateToProgramExercise, buildMinimalProgramWithPyramidExercise } from '../../../services/trainingPatterns/pyramidProgramUtils';
-import Card, { CardContent, CardHeader, CardTitle } from '../../ui/Card';
 import { useWorkout } from '../../../context/WorkoutContext';
 import { PROGRAM_STATUS } from '../../../context/WorkoutContext/constants';
 
@@ -315,304 +314,303 @@ const PyramidGeneratorPanel = () => {
   const name = getExerciseNameById?.(selectedId) || selectedRow?.name || `Exercice ${selectedId}`;
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
       {toast ? (
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-100">
+        <div className="note" style={{ margin: 0, borderStyle: 'solid', borderColor: 'var(--t-cl)', color: 'var(--t-cl)' }}>
           {toast}
         </div>
       ) : null}
 
-      <Card variant="sport">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Layers className="h-5 w-5 text-amber-200" />
-            Pyramides intelligentes (v3)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-slate-200">
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Suggestions calées sur tes <strong>séries × reps</strong> du programme (volume cible) + max Performances +
-            fréquence. Tu peux appliquer au <strong>calendrier (variation du jour)</strong> ou écrire un{' '}
-            <strong>modèle pyramide</strong> directement sur un exercice d’un programme (onglet Programme ou
-            ci-dessous).
-          </p>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className="space-y-1">
-              <span className="text-xs text-slate-500">Exercice</span>
-              <select
-                value={selectedId}
-                onChange={(e) => setSelectedId(e.target.value)}
-                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-2 text-slate-100"
-              >
-                {exerciseOptions.length === 0 ? (
-                  <option value="">Aucun exercice — crée / active un programme</option>
-                ) : (
-                  exerciseOptions.map((r) => (
-                    <option key={r.id} value={String(r.id)}>
-                      {r.name} (id {r.id})
-                    </option>
-                  ))
-                )}
-              </select>
-            </label>
-            <label className="space-y-1">
-              <span className="flex items-center gap-1 text-xs text-slate-500">
-                <CalendarDays className="h-3.5 w-3.5" /> Date cible (variation du jour)
-              </span>
-              <input
-                type="date"
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-2 text-slate-100"
-              />
-            </label>
+      <section>
+        <div className="sec-h">
+          <div>
+            <h2>Pyramides intelligentes (V3)</h2>
+            <p>
+              Suggestions calées sur tes <b style={{ color: 'var(--bone)' }}>séries × reps</b> du programme (volume cible) + max
+              Performances + fréquence. Tu peux appliquer au{' '}
+              <b style={{ color: 'var(--bone)' }}>calendrier (variation du jour)</b> ou écrire un{' '}
+              <b style={{ color: 'var(--bone)' }}>modèle pyramide</b> directement sur un exercice d’un programme (onglet
+              Programme ou ci-dessous).
+            </p>
           </div>
+        </div>
 
-          <div className="rounded-lg border border-[#0F4C5C]/40 bg-black/80 p-3 text-xs text-slate-300 space-y-1">
-            <div className="font-medium text-slate-100">Signaux pour « {name} »</div>
-            <div>Max enregistré (Performances) : {signals.observedMax != null ? `${signals.observedMax} reps` : '—'}</div>
-            <div>
-              Volume moyen / séance (90 j) :{' '}
-              {signals.recent.meanPerSession != null ? `${signals.recent.meanPerSession} reps` : '—'}
-            </div>
-            <div>
-              Fréquence estimée :{' '}
-              {signals.sessionsPerWeek != null ? `~${signals.sessionsPerWeek} séances / semaine` : '—'}
-            </div>
-            <div>
-              Série programme (texte) :{' '}
-              {signals.straightSets
-                ? `${signals.straightSets.sets}×${signals.straightSets.repsPerSet} (ancre volume « auto »)`
-                : selectedRow?.series
-                  ? `"${selectedRow.series}" (non parsé : l’« auto » utilisera les suggestions par max)`
-                  : '—'}
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 rounded-lg border border-sky-500/25 bg-sky-950/20 p-2 text-[11px] text-sky-100/90">
-            <Info className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>
-              Modèle sur programme : <code className="text-sky-200/90">auto</code> choisit la suggestion la plus proche
-              de ton volume séries×reps ; <code className="text-sky-200/90">light / ascending / full</code> fixe le type.
-              La variation du jour (Défis) reste prioritaire sur Aujourd’hui si elle existe pour cette date.
+        <div className="nums" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <label className="fld">
+            <span className="lab">Exercice</span>
+            <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+              {exerciseOptions.length === 0 ? (
+                <option value="">Aucun exercice — crée / active un programme</option>
+              ) : (
+                exerciseOptions.map((r) => (
+                  <option key={r.id} value={String(r.id)}>
+                    {r.name} (id {r.id})
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+          <label className="fld">
+            <span className="lab" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <CalendarDays className="ic" style={{ width: 13, height: 13 }} /> Date cible (variation du jour)
             </span>
-          </div>
+            <input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} />
+          </label>
+        </div>
 
-          <div className="space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Suggestions</div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              {suggestions.map((s) => (
-                <div
-                  key={s.id}
-                  className="rounded-xl border border-[#0F4C5C]/50 bg-black p-3 flex flex-col gap-2"
-                >
-                  <div className="font-medium text-white">{s.label}</div>
-                  <div className="text-[11px] text-slate-400">{s.intent}</div>
-                  <div className="text-xs text-slate-300">
-                    Pic {s.peak} · {s.totalReps} reps totales
-                  </div>
-                  <div className="font-mono text-[11px] text-amber-100/90 break-all">{formatStepsDash(s.steps)}</div>
-                  <div className="text-[10px] text-slate-500 space-y-0.5">
-                    <div>Repos entre paliers ~{s.restBetweenStepsSec}s</div>
-                    <div>Repos entre tours ~{s.restBetweenRoundsSec}s</div>
-                    {s.restAfterPeakSec != null ? <div>Optionnel après pic ~{s.restAfterPeakSec}s</div> : null}
-                    {s.volumeNote ? <div className="text-sky-200/80">{s.volumeNote}</div> : null}
-                  </div>
-                  <div className="mt-auto flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        persistPattern({
-                          patternType: s.patternType,
-                          steps: s.steps,
-                          rounds: s.rounds,
-                          restBetweenStepsSec: s.restBetweenStepsSec,
-                          restBetweenRoundsSec: s.restBetweenRoundsSec,
-                          restAfterPeakSec: s.restAfterPeakSec,
-                          label: s.label
-                        })
-                      }
-                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/45 bg-emerald-900/30 px-2 py-1 text-xs text-emerald-100"
-                    >
-                      <Check className="h-3.5 w-3.5" /> Jour (variation)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => copySteps(s.steps)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-600 bg-slate-900/40 px-2 py-1 text-xs text-slate-200"
-                    >
-                      <Copy className="h-3.5 w-3.5" /> Copier
-                    </button>
-                  </div>
-                </div>
-              ))}
+        <div className="signals">
+          <span className="lab">Signaux pour « {name} »</span>
+          <dl className="num">
+            <div>
+              <dt>Max enregistré (Performances)</dt>
+              <dd>{signals.observedMax != null ? `${signals.observedMax} reps` : '—'}</dd>
             </div>
-          </div>
-
-          <div className="space-y-2 rounded-xl border border-violet-500/35 bg-violet-950/15 p-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
-              Écrire le modèle sur un programme
+            <div>
+              <dt>Volume moyen / séance (90 j)</dt>
+              <dd>{signals.recent.meanPerSession != null ? `${signals.recent.meanPerSession} reps` : '—'}</dd>
             </div>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-[11px] text-slate-500">Programme</span>
-                <select
-                  value={targetProgramId}
-                  onChange={(e) => setTargetProgramId(e.target.value)}
-                  className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-2 text-slate-100"
-                >
-                  <option value="">— Choisir —</option>
-                  {programs.map((p) => (
-                    <option key={p.id} value={String(p.id)}>
-                      {p.name} {p.status === PROGRAM_STATUS.ACTIVE ? '(actif)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-[11px] text-slate-500">Préréglage modèle</span>
-                <select
-                  value={targetPreset}
-                  onChange={(e) => setTargetPreset(e.target.value)}
-                  className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-2 text-slate-100"
-                >
-                  <option value="auto">Auto (proche du volume séries×reps)</option>
-                  <option value="light">Légère</option>
-                  <option value="ascending">Montante</option>
-                  <option value="full">Complète</option>
-                </select>
-              </label>
+            <div>
+              <dt>Fréquence estimée</dt>
+              <dd>{signals.sessionsPerWeek != null ? `~${signals.sessionsPerWeek} séances / semaine` : '—'}</dd>
             </div>
-            <label className="space-y-1">
-              <span className="text-[11px] text-slate-500">Exercice dans ce programme</span>
-              <select
-                value={targetExerciseRow}
-                onChange={(e) => setTargetExerciseRow(e.target.value)}
-                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-2 text-slate-100"
-              >
-                {targetProgramRows.length === 0 ? (
-                  <option value="">Aucun exercice dans ce programme</option>
+            <div>
+              <dt>Série programme (texte)</dt>
+              <dd>
+                {signals.straightSets ? (
+                  <>
+                    {signals.straightSets.sets}×{signals.straightSets.repsPerSet} <span>(ancre volume « auto »)</span>
+                  </>
+                ) : selectedRow?.series ? (
+                  <>
+                    “{selectedRow.series}” <span>(non parsé : l’« auto » utilisera les suggestions par max)</span>
+                  </>
                 ) : (
-                  targetProgramRows.map((r) => (
-                    <option key={rowKey(r)} value={rowKey(r)}>
-                      {DAY_LABELS[r.dayKey] || r.dayKey} {r.variantKey ? `· ${r.variantKey}` : ''} — {r.exercise.name}{' '}
-                      ({r.exercise.series || '—'})
-                    </option>
-                  ))
+                  '—'
                 )}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="note" style={{ marginTop: 0 }}>
+          <Info className="ic" style={{ width: 14, height: 14, display: 'inline', marginRight: 8, verticalAlign: '-2px', color: 'var(--accent)' }} />
+          Modèle sur programme : <code>auto</code> choisit la suggestion la plus proche de ton volume séries×reps ;{' '}
+          <code>light / ascending / full</code> fixe le type. La variation du jour (Défis) reste prioritaire sur Aujourd’hui si
+          elle existe pour cette date.
+        </div>
+      </section>
+
+      <section>
+        <div className="sec-h">
+          <div>
+            <h2>Suggestions</h2>
+          </div>
+        </div>
+        <div className="sugs">
+          {suggestions.map((s) => (
+            <article key={s.id} className="box sug">
+              <h3>{s.label}</h3>
+              <p className="tiny" style={{ color: 'var(--bone-2)', margin: 0 }}>{s.intent}</p>
+              <div className="pk">
+                <b className="num">Pic {s.peak}</b>
+                <span className="num">{s.totalReps} reps totales</span>
+              </div>
+              <div className="seq">{formatStepsDash(s.steps)}</div>
+              <p className="tiny num" style={{ margin: 0 }}>Repos entre paliers ~{s.restBetweenStepsSec}s</p>
+              <p className="tiny num" style={{ margin: 0 }}>Repos entre tours ~{s.restBetweenRoundsSec}s</p>
+              {s.restAfterPeakSec != null ? (
+                <p className="tiny num" style={{ margin: 0 }}>Optionnel après pic ~{s.restAfterPeakSec}s</p>
+              ) : null}
+              {s.volumeNote ? <p className="pct">{s.volumeNote}</p> : null}
+              <div className="ra">
+                <button
+                  type="button"
+                  className="btn sm"
+                  style={{ color: 'var(--t-fract)', borderColor: 'var(--t-fract)' }}
+                  onClick={() =>
+                    persistPattern({
+                      patternType: s.patternType,
+                      steps: s.steps,
+                      rounds: s.rounds,
+                      restBetweenStepsSec: s.restBetweenStepsSec,
+                      restBetweenRoundsSec: s.restBetweenRoundsSec,
+                      restAfterPeakSec: s.restAfterPeakSec,
+                      label: s.label
+                    })
+                  }
+                >
+                  <Check className="ic" style={{ width: 14, height: 14 }} /> Jour (variation)
+                </button>
+                <button type="button" className="btn sm" onClick={() => copySteps(s.steps)}>
+                  <Copy className="ic" style={{ width: 14, height: 14 }} /> Copier
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="split2">
+        <div className="box pad">
+          <h3 className="bt" style={{ color: 'var(--t-seuil)' }}>
+            <Layers className="ic" /> Écrire le modèle sur un programme
+          </h3>
+          <div className="nums" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 14 }}>
+            <label className="fld">
+              <span className="lab">Programme</span>
+              <select value={targetProgramId} onChange={(e) => setTargetProgramId(e.target.value)}>
+                <option value="">— Choisir —</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={String(p.id)}>
+                    {p.name} {p.status === PROGRAM_STATUS.ACTIVE ? '(actif)' : ''}
+                  </option>
+                ))}
               </select>
             </label>
-            <button
-              type="button"
-              onClick={applyTemplateToSelectedProgram}
-              className="rounded-lg border border-violet-500/50 bg-violet-900/30 px-3 py-1.5 text-xs text-violet-100"
-            >
-              Enregistrer le modèle pyramide sur cet exercice
-            </button>
+            <label className="fld">
+              <span className="lab">Préréglage modèle</span>
+              <select value={targetPreset} onChange={(e) => setTargetPreset(e.target.value)}>
+                <option value="auto">Auto (proche du volume séries×reps)</option>
+                <option value="light">Légère</option>
+                <option value="ascending">Montante</option>
+                <option value="full">Complète</option>
+              </select>
+            </label>
           </div>
+          <label className="fld" style={{ marginTop: 12 }}>
+            <span className="lab">Exercice dans ce programme</span>
+            <select value={targetExerciseRow} onChange={(e) => setTargetExerciseRow(e.target.value)}>
+              {targetProgramRows.length === 0 ? (
+                <option value="">Aucun exercice dans ce programme</option>
+              ) : (
+                targetProgramRows.map((r) => (
+                  <option key={rowKey(r)} value={rowKey(r)}>
+                    {DAY_LABELS[r.dayKey] || r.dayKey} {r.variantKey ? `· ${r.variantKey}` : ''} — {r.exercise.name} (
+                    {r.exercise.series || '—'})
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="btn"
+            style={{ marginTop: 14, color: 'var(--t-seuil)', borderColor: 'var(--t-seuil)' }}
+            onClick={applyTemplateToSelectedProgram}
+          >
+            Enregistrer le modèle pyramide sur cet exercice
+          </button>
+        </div>
 
-          <div className="space-y-2 rounded-xl border border-teal-500/35 bg-teal-950/15 p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-teal-200/90">
-              <FolderPlus className="h-4 w-4" />
-              Nouveau programme autour de l’exercice sélectionné (haut)
-            </div>
+        <div className="box pad">
+          <h3 className="bt" style={{ color: 'var(--t-cl)' }}>
+            <FolderPlus className="ic" /> Nouveau programme autour de l’exercice sélectionné (haut)
+          </h3>
+          <label className="fld" style={{ marginTop: 14 }}>
+            <span className="lab">Nom du programme (optionnel)</span>
             <input
               type="text"
               value={newProgramName}
               onChange={(e) => setNewProgramName(e.target.value)}
               placeholder="Nom du programme (optionnel)"
-              className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-slate-100"
             />
+          </label>
+          <button
+            type="button"
+            className="btn"
+            style={{ marginTop: 14, color: 'var(--t-cl)', borderColor: 'var(--t-cl)' }}
+            onClick={createProgramFromCurrentExercise}
+            disabled={!selectedRow}
+          >
+            Créer un programme (lundi pyramide + préréglage ci-dessus)
+          </button>
+        </div>
+      </section>
+
+      <section className="box pad">
+        <h3 className="bt">Constructeur manuel</h3>
+        <div className="cm2">
+          <label className="fld" style={{ width: 120 }}>
+            <span className="lab">Pic (1–20)</span>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={customPeak}
+              onChange={(e) => setCustomPeak(Number(e.target.value))}
+            />
+          </label>
+          <label className="fld" style={{ width: 220 }}>
+            <span className="lab">Mode</span>
+            <select value={customMode} onChange={(e) => setCustomMode(e.target.value)}>
+              <option value="full">Complète (1..n..1)</option>
+              <option value="ascending">Montante (1..n)</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="btn pri"
+            onClick={() =>
+              persistPattern({
+                patternType: customPreview.patternType,
+                steps: customPreview.steps,
+                rounds: 1,
+                restBetweenStepsSec: customPreview.restBetweenStepsSec,
+                restBetweenRoundsSec: customPreview.restBetweenRoundsSec,
+                restAfterPeakSec: customPreview.restAfterPeakSec,
+                label: `Pyramide manuelle pic ${customPreview.peak}`
+              })
+            }
+          >
+            Appliquer au jour
+          </button>
+        </div>
+        <p className="prev">
+          Aperçu : <span className="seq">{formatStepsDash(customPreview.steps)}</span> ·{' '}
+          <b className="num">{customPreview.totalReps} reps</b>
+        </p>
+        <p className="tiny" style={{ margin: 0 }}>
+          Pic indicatif (max enregistré {signals.observedMax ?? '—'}) :{' '}
+          {signals.observedMax ? clampPeakFromMax(signals.observedMax, { ratio: 0.72, minPeak: 3, maxPeak: 12 }) : '—'}
+        </p>
+      </section>
+
+      <div
+        className="alert"
+        style={
+          appliedForDate
+            ? {
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                borderColor: 'var(--t-cl)',
+                color: 'var(--bone)',
+                background: 'color-mix(in srgb, var(--t-cl) 8%, transparent)'
+              }
+            : undefined
+        }
+      >
+        {appliedForDate ? (
+          <>
+            <span>
+              <b>Variation du jour :</b> {appliedForDate.label || appliedForDate.patternType} —{' '}
+              <span className="seq">{formatStepsDash(appliedForDate.steps)}</span> ({appliedForDate.totalReps} reps)
+            </span>
             <button
               type="button"
-              onClick={createProgramFromCurrentExercise}
-              disabled={!selectedRow}
-              className="rounded-lg border border-teal-500/50 bg-teal-900/30 px-3 py-1.5 text-xs text-teal-100 disabled:opacity-40"
+              className="btn sm"
+              style={{ color: 'var(--t-vit)', borderColor: 'var(--t-vit)' }}
+              onClick={clearPattern}
             >
-              Créer un programme (lundi pyramide + préréglage ci-dessus)
+              <Trash2 className="ic" style={{ width: 14, height: 14 }} /> Retirer variation jour
             </button>
-          </div>
-
-          <div className="space-y-2 rounded-xl border border-[#0F4C5C]/45 bg-black p-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Constructeur manuel</div>
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="space-y-1">
-                <span className="text-xs text-slate-500">Pic (1–20)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={customPeak}
-                  onChange={(e) => setCustomPeak(Number(e.target.value))}
-                  className="w-24 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1.5 text-slate-100"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs text-slate-500">Mode</span>
-                <select
-                  value={customMode}
-                  onChange={(e) => setCustomMode(e.target.value)}
-                  className="rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1.5 text-slate-100"
-                >
-                  <option value="full">Complète (1..n..1)</option>
-                  <option value="ascending">Montante (1..n)</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={() =>
-                  persistPattern({
-                    patternType: customPreview.patternType,
-                    steps: customPreview.steps,
-                    rounds: 1,
-                    restBetweenStepsSec: customPreview.restBetweenStepsSec,
-                    restBetweenRoundsSec: customPreview.restBetweenRoundsSec,
-                    restAfterPeakSec: customPreview.restAfterPeakSec,
-                    label: `Pyramide manuelle pic ${customPreview.peak}`
-                  })
-                }
-                className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/35 px-3 py-1.5 text-xs text-white"
-              >
-                Appliquer au jour
-              </button>
-            </div>
-            <div className="text-[11px] text-slate-400">
-              Aperçu : <span className="font-mono text-amber-100">{formatStepsDash(customPreview.steps)}</span> ·{' '}
-              {customPreview.totalReps} reps
-            </div>
-            <div className="text-[10px] text-slate-500">
-              Pic indicatif (max enregistré {signals.observedMax ?? '—'}) :{' '}
-              {signals.observedMax
-                ? clampPeakFromMax(signals.observedMax, { ratio: 0.72, minPeak: 3, maxPeak: 12 })
-                : '—'}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div className="text-xs text-rose-100/90">
-              {appliedForDate ? (
-                <>
-                  <span className="font-medium text-white">Variation du jour :</span>{' '}
-                  {appliedForDate.label || appliedForDate.patternType} — {formatStepsDash(appliedForDate.steps)} (
-                  {appliedForDate.totalReps} reps)
-                </>
-              ) : (
-                <>Aucune variation pyramide pour cet exercice à cette date.</>
-              )}
-            </div>
-            {appliedForDate ? (
-              <button
-                type="button"
-                onClick={clearPattern}
-                className="inline-flex items-center gap-1 self-start rounded-lg border border-rose-500/45 bg-rose-950/40 px-2 py-1 text-xs text-rose-100"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Retirer variation jour
-              </button>
-            ) : null}
-          </div>
-        </CardContent>
-      </Card>
+          </>
+        ) : (
+          <>Aucune variation pyramide pour cet exercice à cette date.</>
+        )}
+      </div>
     </div>
   );
 };

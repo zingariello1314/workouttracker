@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Edit3 } from 'lucide-react';
+import { Edit3 } from 'lucide-react';
 import { parseDurationToMinutes } from '../../../../utils/calendarUtils';
 import { useTranslation } from '../../../../utils/translations';
 import { useFormatters } from '../../../../utils/translations/formatters-hook';
@@ -12,23 +12,22 @@ import {
   getGtgExerciseLabel,
   normalizeGtgData
 } from '../../../../services/endurance/gtgService';
+import { DefisCalendarGrid, DefisCalendarRecap } from './ui/DefisCalendar.jsx';
 
 const MONTHS_FR = [
   'Janvier',
-  'Fevrier',
+  'Février',
   'Mars',
   'Avril',
   'Mai',
   'Juin',
   'Juillet',
-  'Aout',
+  'Août',
   'Septembre',
   'Octobre',
   'Novembre',
-  'Decembre'
+  'Décembre'
 ];
-const WEEKDAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-
 function toDateKey(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -63,14 +62,6 @@ function eachDateKeyInclusive(start, end) {
     cur.setDate(cur.getDate() + 1);
   }
   return out;
-}
-
-function levelClass(level) {
-  if (level <= 0) return 'bg-black border-[#0F4C5C]/45 text-slate-500';
-  if (level === 1) return 'bg-[#0F4C5C]/35 border-[#0F4C5C]/75 text-teal-100';
-  if (level === 2) return 'bg-[#1E7FA3]/45 border-[#1E7FA3]/80 text-white';
-  if (level === 3) return 'bg-amber-500/45 border-amber-400/80 text-white';
-  return 'bg-red-500/55 border-red-400/85 text-white';
 }
 
 function mapGtgHistoryToRows(gtgData, ctx = {}) {
@@ -288,18 +279,6 @@ export default function DefisDisciplineCalendarPanel({
     return max;
   }, [byDateYear]);
 
-  const months = useMemo(() => {
-    return Array.from({ length: 12 }, (_, monthIdx) => {
-      const first = new Date(selectedYear, monthIdx, 1);
-      const days = new Date(selectedYear, monthIdx + 1, 0).getDate();
-      const firstWeekDay = (first.getDay() + 6) % 7;
-      const cells = [];
-      for (let i = 0; i < firstWeekDay; i += 1) cells.push(null);
-      for (let d = 1; d <= days; d += 1) cells.push(new Date(selectedYear, monthIdx, d));
-      return { monthIdx, label: MONTHS_FR[monthIdx], cells };
-    });
-  }, [selectedYear]);
-
   const selectedRows = selectedDateKey ? byDateYear.get(selectedDateKey) || [] : [];
 
   const recap = useMemo(() => {
@@ -359,293 +338,199 @@ export default function DefisDisciplineCalendarPanel({
       ? 'endurance.gtg.calendar.perfUnit'
       : `endurance.disciplineCalendar.perfUnit.${activityKind}`;
 
-  return (
-    <div className="space-y-5">
-      <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-5">
-        <h3 className="mb-3 text-sm font-semibold text-white">
-          {t('endurance.disciplineCalendar.recapTitle')}
-        </h3>
-        <p className="mb-4 text-xs text-teal-200/80">{t('endurance.disciplineCalendar.recapHint')}</p>
+  const levelOf = (key) => {
+    const count = (byDateYear.get(key) || []).length;
+    if (count === 0) return 0;
+    const normalized = maxScore > 0 ? count / maxScore : 0;
+    return Math.min(4, Math.max(1, Math.ceil(normalized * 4)));
+  };
+  const countOf = (key) => (byDateYear.get(key) || []).length;
+  const sessionsWord = t('endurance.disciplineCalendar.sessionsWord');
 
-        <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
-          {[
-            { key: 'week', label: t('endurance.disciplineCalendar.period.week'), data: recap.week },
-            { key: 'month', label: t('endurance.disciplineCalendar.period.month'), data: recap.month },
-            { key: 'year', label: t('endurance.disciplineCalendar.period.year', { year: selectedYear }), data: recap.year }
-          ].map((col) => (
-            <div key={col.key} className="rounded-xl border border-[#0F4C5C]/45 bg-slate-950/50 p-3">
-              <div className="mb-2 text-xs font-medium text-sky-200/90">{col.label}</div>
-              <div className="space-y-1 text-xs text-slate-300">
-                <div>
-                  {t('endurance.disciplineCalendar.avgSessions')}{' '}
-                  <span className="font-semibold text-white">
-                    {col.data.avgSessionsPerDay.toFixed(2)}
-                  </span>
-                </div>
-                <div>
-                  {t('endurance.disciplineCalendar.avgPerf', { unit: t(perfUnitKey) })}{' '}
-                  <span className="font-semibold text-white">
-                    {formatPerfValue(activityKind, col.data.avgPerfPerDay)}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  {t('endurance.disciplineCalendar.whenActive')}{' '}
-                  {col.data.avgSessionsWhenActive.toFixed(2)} {t('endurance.disciplineCalendar.sessionsWord')} ·{' '}
-                  {formatPerfValue(activityKind, col.data.avgPerfWhenActive)}
-                </div>
-              </div>
-            </div>
-          ))}
+  const periodCards = [
+    { key: 'week', title: t('endurance.disciplineCalendar.period.week'), data: recap.week },
+    { key: 'month', title: t('endurance.disciplineCalendar.period.month'), data: recap.month },
+    { key: 'year', title: t('endurance.disciplineCalendar.period.year', { year: selectedYear }), data: recap.year }
+  ].map((col) => ({
+    key: col.key,
+    title: col.title,
+    rows: [
+      { label: t('endurance.disciplineCalendar.avgSessions'), value: col.data.avgSessionsPerDay.toFixed(2) },
+      {
+        label: t('endurance.disciplineCalendar.avgPerf', { unit: t(perfUnitKey) }),
+        value: formatPerfValue(activityKind, col.data.avgPerfPerDay)
+      }
+    ],
+    si: `${t('endurance.disciplineCalendar.whenActive')} ${col.data.avgSessionsWhenActive.toFixed(2)} ${sessionsWord} · ${formatPerfValue(activityKind, col.data.avgPerfWhenActive)}`
+  }));
+
+  const facts = [
+    {
+      label: t('endurance.disciplineCalendar.mostSessionsDay'),
+      value: recap.maxSessionsDay
+        ? formatDate(parseDateKey(recap.maxSessionsDay.key))
+        : t('endurance.disciplineCalendar.none'),
+      sub: recap.maxSessionsDay ? `(${recap.maxSessionsDay.val})` : null
+    },
+    {
+      label: t('endurance.disciplineCalendar.bestPerfDay'),
+      value: recap.bestPerfDay ? formatDate(parseDateKey(recap.bestPerfDay.key)) : t('endurance.disciplineCalendar.none'),
+      sub: recap.bestPerfDay ? `(${formatPerfValue(activityKind, recap.bestPerfDay.val)})` : null
+    },
+    {
+      label: t('endurance.disciplineCalendar.longestStreak'),
+      value:
+        recap.longestStreak && recap.longestStreak.length > 0
+          ? `${recap.longestStreak.length} ${t('endurance.disciplineCalendar.days')}`
+          : t('endurance.disciplineCalendar.none'),
+      sub:
+        recap.longestStreak && recap.longestStreak.endKey
+          ? `(${formatDate(parseDateKey(recap.longestStreak.endKey))})`
+          : null
+    },
+    {
+      label: t('endurance.disciplineCalendar.currentStreak'),
+      value:
+        recap.currentStreak > 0
+          ? `${recap.currentStreak} ${t('endurance.disciplineCalendar.days')}`
+          : t('endurance.disciplineCalendar.streakZero')
+    }
+  ];
+
+  const detail = (
+    <>
+      {selectedDateKey
+        ? t('endurance.disciplineCalendar.detailTitle', { date: selectedDateKey })
+        : t('endurance.disciplineCalendar.detailPlaceholder')}
+      {selectedDateKey && selectedRows.length === 0 ? (
+        <div className="dr">
+          <span>{t('endurance.disciplineCalendar.noDaySessions')}</span>
         </div>
-
-        <div className="rounded-xl border border-[#0F4C5C]/40 bg-slate-950/40 p-3">
-          <div className="mb-2 text-xs font-medium text-sky-200/90">{t('endurance.disciplineCalendar.recordsTitle')}</div>
-          <ul className="grid grid-cols-1 gap-2 text-xs text-slate-300 md:grid-cols-2">
-            <li>
-              <span className="text-slate-500">{t('endurance.disciplineCalendar.mostSessionsDay')}</span>{' '}
-              <span className="text-white">
-                {recap.maxSessionsDay
-                  ? `${formatDate(parseDateKey(recap.maxSessionsDay.key))} (${recap.maxSessionsDay.val})`
-                  : t('endurance.disciplineCalendar.none')}
+      ) : null}
+      {selectedRows
+        .slice()
+        .sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')))
+        .map((row) => (
+          <div key={`${row.type}-${row.id}-${row.originalIndex}`} className="dr">
+            <div>
+              <b>{row.title}</b>{' '}
+              <span>
+                {row.time ? `${row.time} · ` : ''}
+                {row.details} · {Math.round(Number(row.durationMin || 0))} min
               </span>
-            </li>
-            <li>
-              <span className="text-slate-500">{t('endurance.disciplineCalendar.bestPerfDay')}</span>{' '}
-              <span className="text-white">
-                {recap.bestPerfDay
-                  ? `${formatDate(parseDateKey(recap.bestPerfDay.key))} (${formatPerfValue(activityKind, recap.bestPerfDay.val)})`
-                  : t('endurance.disciplineCalendar.none')}
-              </span>
-            </li>
-            <li>
-              <span className="text-slate-500">{t('endurance.disciplineCalendar.longestStreak')}</span>{' '}
-              <span className="text-white">
-                {recap.longestStreak && recap.longestStreak.length > 0
-                  ? `${recap.longestStreak.length} ${t('endurance.disciplineCalendar.days')} (${
-                      recap.longestStreak.endKey ? formatDate(parseDateKey(recap.longestStreak.endKey)) : ''
-                    })`
-                  : t('endurance.disciplineCalendar.none')}
-              </span>
-            </li>
-            <li>
-              <span className="text-slate-500">{t('endurance.disciplineCalendar.currentStreak')}</span>{' '}
-              <span className="text-white">
-                {recap.currentStreak > 0
-                  ? `${recap.currentStreak} ${t('endurance.disciplineCalendar.days')}`
-                  : t('endurance.disciplineCalendar.streakZero')}
-              </span>
-            </li>
-          </ul>
-
-          {activityKind === 'running' && (
-            <div className="mt-4 space-y-3 border-t border-[#0F4C5C]/35 pt-4">
-              <div className="rounded-lg border border-emerald-800/50 bg-emerald-950/20 p-3">
-                <div className="mb-1 text-xs font-semibold text-emerald-100">
-                  {t('endurance.disciplineCalendar.runningSustainedTitle')}
-                </div>
-                <p className="mb-2 text-[11px] leading-relaxed text-slate-500">
-                  {t('endurance.disciplineCalendar.runningSustainedHint')}
-                </p>
-                {runningSpecial.sustained ? (
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-xs text-slate-200">
-                      {t('endurance.disciplineCalendar.runningSustainedLine', {
-                        date: formatDate(parseDateKey(String(runningSpecial.sustained.date))),
-                        pace: runningSpecial.sustained.paceLabel,
-                        duration: formatDurationMinutes(runningSpecial.sustained.durationMin),
-                        distance: Number(runningSpecial.sustained.distanceKm).toFixed(2)
-                      })}
-                    </p>
-                    {onEditSession && runningSpecial.sustained.sessionId != null && (
-                      <button
-                        type="button"
-                        onClick={() => onEditSession('running', runningSpecial.sustained.sessionId)}
-                        className="shrink-0 text-[11px] font-medium text-emerald-400 underline-offset-2 hover:text-emerald-300 hover:underline"
-                      >
-                        {t('endurance.disciplineCalendar.runningEditHint')}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">{t('endurance.disciplineCalendar.runningSustainedNone')}</p>
-                )}
-              </div>
-
-              <div className="rounded-lg border border-amber-800/50 bg-amber-950/15 p-3">
-                <div className="mb-1 text-xs font-semibold text-amber-100">
-                  {t('endurance.disciplineCalendar.runningIntervalTitle')}
-                </div>
-                <p className="mb-2 text-[11px] leading-relaxed text-slate-500">
-                  {t('endurance.disciplineCalendar.runningIntervalHint')}
-                </p>
-                {runningSpecial.interval ? (
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-xs text-slate-200">
-                      {t('endurance.disciplineCalendar.runningIntervalLine', {
-                        date: formatDate(parseDateKey(String(runningSpecial.interval.date))),
-                        paceEff: runningSpecial.interval.paceEffortLabel,
-                        paceRecPart: runningSpecial.interval.paceRecoveryLabel
-                          ? t('endurance.disciplineCalendar.runningIntervalRecPart', {
-                              paceRec: runningSpecial.interval.paceRecoveryLabel
-                            })
-                          : '',
-                        laps: runningSpecial.interval.effortLapCount
-                      })}
-                    </p>
-                    {onEditSession && runningSpecial.interval.sessionId != null && (
-                      <button
-                        type="button"
-                        onClick={() => onEditSession('running', runningSpecial.interval.sessionId)}
-                        className="shrink-0 text-[11px] font-medium text-amber-400 underline-offset-2 hover:text-amber-300 hover:underline"
-                      >
-                        {t('endurance.disciplineCalendar.runningEditHint')}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">{t('endurance.disciplineCalendar.runningIntervalNone')}</p>
-                )}
-              </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {['mois', 'annee'].map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setViewMode(mode)}
-                className={`rounded-lg border px-3 py-1.5 text-sm ${
-                  viewMode === mode
-                    ? 'border-[#1E7FA3]/85 bg-[#1E7FA3]/25 text-white'
-                    : 'border-[#0F4C5C]/50 bg-black text-teal-100'
-                }`}
-              >
-                {mode === 'mois' ? t('endurance.disciplineCalendar.viewMonth') : t('endurance.disciplineCalendar.viewYear')}
+            {activityKind !== 'gtg' && onEditSession ? (
+              <button type="button" className="btn sm" onClick={() => onEditSession(row.type, row.id)}>
+                <Edit3 className="ic" style={{ width: 14, height: 14 }} />
+                {t('endurance.actions.edit')}
               </button>
-            ))}
+            ) : null}
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedYear((y) => y - 1)}
-              className="rounded-lg border border-[#0F4C5C]/60 bg-black p-2 text-teal-100"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <div className="min-w-[92px] text-center text-lg font-semibold text-white">{selectedYear}</div>
-            <button
-              type="button"
-              onClick={() => setSelectedYear((y) => y + 1)}
-              className="rounded-lg border border-[#0F4C5C]/60 bg-black p-2 text-teal-100"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        ))}
+    </>
+  );
 
-        <p className="mb-3 text-xs text-teal-200/75">
-          {activityKind === 'gtg'
-            ? t('endurance.gtg.calendar.intensityHint')
-            : t('endurance.disciplineCalendar.intensityHint')}
-        </p>
-
-        <div className="mb-4 flex items-center gap-2 text-xs">
-          <span className="text-slate-400">{t('endurance.disciplineCalendar.intensityLabel')}</span>
-          {[0, 1, 2, 3, 4].map((lvl) => (
-            <span key={lvl} className={`h-3 w-6 rounded-sm border ${levelClass(lvl)}`} />
-          ))}
+  const runningBlock = (cfg) => (
+    <article className="box pf">
+      <span className="lab" style={{ color: cfg.color }}>{cfg.title}</span>
+      <p className="tiny" style={{ margin: 0 }}>{cfg.hint}</p>
+      {cfg.line ? (
+        <div className="res" style={{ fontSize: 22 }}>
+          <small style={{ marginTop: 0, fontSize: 13.5, color: 'var(--bone)' }}>{cfg.line}</small>
         </div>
+      ) : (
+        <p className="tiny" style={{ margin: 0 }}>{cfg.none}</p>
+      )}
+      {cfg.line && onEditSession && cfg.sessionId != null ? (
+        <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => onEditSession('running', cfg.sessionId)}>
+          {t('endurance.disciplineCalendar.runningEditHint')}
+        </button>
+      ) : null}
+    </article>
+  );
 
-        <div className={viewMode === 'mois' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'}>
-          {(viewMode === 'mois' ? [months[selectedMonthIndex]] : months).map((month) => (
-            <div key={month.monthIdx} className="rounded-xl border border-[#0F4C5C]/45 bg-black p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="text-sm font-semibold text-white">{month.label}</div>
-                <div className="text-[11px] text-teal-200/70">{t('endurance.disciplineCalendar.sessionsShort')}</div>
-              </div>
-              <div className="mb-1 grid grid-cols-7 gap-1">
-                {WEEKDAYS_FR.map((w, i) => (
-                  <div key={`${month.monthIdx}-wd-${i}`} className="text-center text-[10px] text-slate-500">
-                    {w}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {month.cells.map((d, idx) => {
-                  if (!d) return <div key={`empty-${month.monthIdx}-${idx}`} className="h-8 rounded border border-transparent" />;
-                  const key = toDateKey(d);
-                  const list = byDateYear.get(key) || [];
-                  const count = list.length;
-                  const normalized = maxScore > 0 ? count / maxScore : 0;
-                  const level = count === 0 ? 0 : Math.min(4, Math.max(1, Math.ceil(normalized * 4)));
-                  const isSelected = selectedDateKey === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDateKey(key);
-                        setSelectedMonthIndex(month.monthIdx);
-                        setViewMode('mois');
-                      }}
-                      className={`h-8 rounded border text-[11px] transition ${levelClass(level)} ${isSelected ? 'ring-2 ring-sky-400/70' : ''}`}
-                      title={`${key} · ${count} session(s)`}
-                    >
-                      {d.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-[#0F4C5C]/55 bg-black p-4">
-        <div className="mb-3 text-sm font-semibold text-white">
-          {selectedDateKey
-            ? t('endurance.disciplineCalendar.detailTitle', { date: selectedDateKey })
-            : t('endurance.disciplineCalendar.detailPlaceholder')}
-        </div>
-        {selectedRows.length === 0 ? (
-          <div className="text-sm text-slate-400">{t('endurance.disciplineCalendar.noDaySessions')}</div>
-        ) : (
-          <div className="space-y-2">
-            {selectedRows
-              .slice()
-              .sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')))
-              .map((row) => (
-                <div
-                  key={`${row.type}-${row.id}-${row.originalIndex}`}
-                  className="flex items-center justify-between rounded-lg border border-[#0F4C5C]/40 bg-black p-3"
-                >
-                  <div>
-                    <div className="text-sm font-medium text-white">{row.title}</div>
-                    <div className="text-xs text-teal-200/70">
-                      {row.time ? `${row.time} · ` : ''}
-                      {row.details} · {Math.round(Number(row.durationMin || 0))} min
-                    </div>
-                  </div>
-                  {activityKind !== 'gtg' && onEditSession ? (
-                    <button
-                      type="button"
-                      onClick={() => onEditSession(row.type, row.id)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[#1E7FA3]/70 bg-[#1E7FA3]/20 px-2.5 py-1.5 text-xs font-medium text-white"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                      {t('endurance.actions.edit')}
-                    </button>
-                  ) : null}
-                </div>
-              ))}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
+      <DefisCalendarRecap
+        title={t('endurance.disciplineCalendar.recapTitle')}
+        hint={t('endurance.disciplineCalendar.recapHint')}
+        cards={periodCards}
+        factsTitle={t('endurance.disciplineCalendar.recordsTitle')}
+        facts={facts}
+      >
+        {activityKind === 'running' && (
+          <div className="perf">
+            {runningBlock({
+              color: 'var(--t-cl)',
+              title: t('endurance.disciplineCalendar.runningSustainedTitle'),
+              hint: t('endurance.disciplineCalendar.runningSustainedHint'),
+              none: t('endurance.disciplineCalendar.runningSustainedNone'),
+              sessionId: runningSpecial.sustained?.sessionId,
+              line: runningSpecial.sustained
+                ? t('endurance.disciplineCalendar.runningSustainedLine', {
+                    date: formatDate(parseDateKey(String(runningSpecial.sustained.date))),
+                    pace: runningSpecial.sustained.paceLabel,
+                    duration: formatDurationMinutes(runningSpecial.sustained.durationMin),
+                    distance: Number(runningSpecial.sustained.distanceKm).toFixed(2)
+                  })
+                : null
+            })}
+            {runningBlock({
+              color: 'var(--t-fract)',
+              title: t('endurance.disciplineCalendar.runningIntervalTitle'),
+              hint: t('endurance.disciplineCalendar.runningIntervalHint'),
+              none: t('endurance.disciplineCalendar.runningIntervalNone'),
+              sessionId: runningSpecial.interval?.sessionId,
+              line: runningSpecial.interval
+                ? t('endurance.disciplineCalendar.runningIntervalLine', {
+                    date: formatDate(parseDateKey(String(runningSpecial.interval.date))),
+                    paceEff: runningSpecial.interval.paceEffortLabel,
+                    paceRecPart: runningSpecial.interval.paceRecoveryLabel
+                      ? t('endurance.disciplineCalendar.runningIntervalRecPart', {
+                          paceRec: runningSpecial.interval.paceRecoveryLabel
+                        })
+                      : '',
+                    laps: runningSpecial.interval.effortLapCount
+                  })
+                : null
+            })}
           </div>
         )}
-      </div>
+      </DefisCalendarRecap>
+
+      <DefisCalendarGrid
+        year={selectedYear}
+        viewMode={viewMode}
+        modes={[
+          { id: 'mois', label: t('endurance.disciplineCalendar.viewMonth') },
+          { id: 'annee', label: t('endurance.disciplineCalendar.viewYear') }
+        ]}
+        onViewMode={setViewMode}
+        monthIndex={selectedMonthIndex}
+        monthNames={MONTHS_FR}
+        onPrev={() => setSelectedYear((y) => y - 1)}
+        onNext={() => setSelectedYear((y) => y + 1)}
+        onMonthTitleClick={(monthIdx) => {
+          setSelectedMonthIndex(monthIdx);
+          setViewMode('mois');
+        }}
+        levelOf={levelOf}
+        countOf={countOf}
+        unitLabel={() => t('endurance.disciplineCalendar.sessionsShort')}
+        legend={
+          activityKind === 'gtg'
+            ? t('endurance.gtg.calendar.intensityHint')
+            : t('endurance.disciplineCalendar.intensityHint')
+        }
+        selectedDateKey={selectedDateKey}
+        onDayClick={(key, monthIdx) => {
+          setSelectedDateKey(key);
+          setSelectedMonthIndex(monthIdx);
+          setViewMode('mois');
+        }}
+        dayTitle={(key, count) => `${key} · ${count} session(s)`}
+        detail={detail}
+      />
     </div>
   );
 }

@@ -291,6 +291,33 @@ export const preloadRecapTab = () => loadChunk('recap', CORE_SPORT_TAB_LOADERS.r
 export const preloadTodayTab = () => loadChunk('today', CORE_SPORT_TAB_LOADERS.today);
 export const preloadCalendarTab = () => loadChunk('calendar', CORE_SPORT_TAB_LOADERS.calendar);
 
+/** Chunk Endurance — préchargement au survol uniquement (pas de calcul métier). */
+let enduranceChunkJob = null;
+export function preloadEnduranceTab() {
+  if (!enduranceChunkJob) {
+    enduranceChunkJob = import('../components/tabs/EnduranceTab').catch(() => {});
+  }
+  return enduranceChunkJob;
+}
+
+/** Map id d’onglet Sport → préchargement de chunk (hover). */
+export function prefetchSportTabChunk(tabId) {
+  switch (tabId) {
+    case 'recap':
+      return preloadRecapTab();
+    case 'today':
+      return preloadTodayTab();
+    case 'calendar':
+      return preloadCalendarTab();
+    case 'endurance':
+      return preloadEnduranceTab();
+    case 'exercises':
+      return preloadExercisesTab();
+    default:
+      return Promise.resolve();
+  }
+}
+
 /** Le chunk de la banque est lourd : il part après Récap et Calendrier, pas avec l'accueil. */
 export function preloadExercisesTab() {
   return loadChunk('exercises', EXERCISE_BANK_LOADER);

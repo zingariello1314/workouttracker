@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Trophy, TrendingUp, BarChart3, Target, AlertTriangle } from 'lucide-react';
+import { Trophy, TrendingUp, Plus, Search } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
-import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
+import './EnduranceTab/defis-mock.css';
+import './EnduranceTab/defis-stadium.css';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { inferTrainingDiscipline } from '../../utils/programUtils';
@@ -55,7 +56,7 @@ const MiniLineChart = ({
   xKey,
   yKey,
   height = 180,
-  color = '#14b8a6',
+  color = 'var(--accent)',
   valueLabel = null,
   formatY = null
 }) => {
@@ -75,11 +76,11 @@ const MiniLineChart = ({
   const hitR = points.length > 40 ? 10 : 13;
 
   return (
-    <div className="relative" onMouseLeave={() => setTip(null)}>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto rounded-lg border border-[#0F4C5C]/40 bg-black">
-        <line x1={pad.left} y1={height - pad.bottom} x2={width - pad.right} y2={height - pad.bottom} stroke="#334155" strokeWidth="1" />
-        <line x1={pad.left} y1={pad.top} x2={pad.left} y2={height - pad.bottom} stroke="#334155" strokeWidth="1" />
-        {points.length > 1 && <path d={path} fill="none" stroke={color} strokeWidth="2.5" pointerEvents="none" />}
+    <div style={{ position: 'relative' }} onMouseLeave={() => setTip(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} className="chart">
+        <line className="gr" x1={pad.left} y1={height - pad.bottom} x2={width - pad.right} y2={height - pad.bottom} />
+        <line className="gr" x1={pad.left} y1={pad.top} x2={pad.left} y2={height - pad.bottom} />
+        {points.length > 1 && <path className="ln" d={path} style={{ stroke: color }} pointerEvents="none" />}
         {points.map((p, idx) => {
           const cx = getX(idx);
           const cy = getY(p?.[yKey]);
@@ -110,8 +111,8 @@ const MiniLineChart = ({
               <circle
                 cx={cx}
                 cy={cy}
-                r={tip?.index === idx ? 4 : 2.8}
-                fill={color}
+                r={tip?.index === idx ? 4.5 : 3}
+                style={{ fill: color, stroke: 'var(--ink-2)', strokeWidth: 1.5 }}
                 pointerEvents="none"
               />
               {idx === 0 || idx === points.length - 1 ? (
@@ -129,13 +130,27 @@ const MiniLineChart = ({
       {tip && (
         <div
           role="tooltip"
-          className="fixed z-[500] max-w-[240px] rounded-lg border border-[#0F5C45]/55 bg-[#020617]/95 px-2.5 py-2 text-[11px] text-slate-100 shadow-xl"
-          style={{ left: tip.clientX + 12, top: tip.clientY + 12 }}
+          style={{
+            position: 'fixed',
+            zIndex: 500,
+            maxWidth: 240,
+            left: tip.clientX + 12,
+            top: tip.clientY + 12,
+            background: 'var(--ink-2)',
+            border: '1px solid var(--rule-2)',
+            borderRadius: 6,
+            padding: '8px 10px',
+            fontSize: 11,
+            color: 'var(--bone)',
+            boxShadow: '0 12px 30px rgba(0,0,0,.45)'
+          }}
         >
-          <div className="border-b border-[#0F4C5C]/45 pb-1 text-xs font-semibold capitalize text-teal-100">{tip.dateLong}</div>
-          <div className="mt-1.5 flex items-baseline justify-between gap-2">
-            <span className="text-slate-500">{valueLabel || yKey}</span>
-            <span className="font-bold tabular-nums text-white">{tip.valueText}</span>
+          <div style={{ borderBottom: '1px solid var(--rule)', paddingBottom: 4, fontWeight: 600, textTransform: 'capitalize', color: 'var(--accent)' }}>
+            {tip.dateLong}
+          </div>
+          <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ color: 'var(--bone-3)' }}>{valueLabel || yKey}</span>
+            <b className="num">{tip.valueText}</b>
           </div>
         </div>
       )}
@@ -143,7 +158,7 @@ const MiniLineChart = ({
   );
 };
 
-const PerformanceChallengesTab = () => {
+const PerformanceChallengesTab = ({ embedded = false }) => {
   const { data, updateData, currentDate, getDateStr, getExerciseNameById, getCurrentData } = useWorkout();
   const t = useTranslation();
   const [showModal, setShowModal] = useState(false);
@@ -422,492 +437,463 @@ const PerformanceChallengesTab = () => {
     await updateData(next);
   };
 
-  return (
-    <div className="relative">
-      <div className="relative z-10 mx-auto max-w-6xl space-y-6 px-4 py-6">
-        <div className="flex items-center gap-2 rounded-xl border border-[#0F4C5C]/55 bg-black p-2 w-fit">
-          <button
-            type="button"
-            onClick={() => setSubTab('overview')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-              subTab === 'overview' ? 'bg-[#0F5C45]/35 text-white border border-[#0F5C45]/55' : 'text-slate-300'
-            }`}
-          >
-            Vue générale
-          </button>
-          <button
-            type="button"
-            onClick={() => setSubTab('stats')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-              subTab === 'stats' ? 'bg-[#0F5C45]/35 text-white border border-[#0F5C45]/55' : 'text-slate-300'
-            }`}
-          >
-            Statistiques
-          </button>
-          <button
-            type="button"
-            onClick={() => setSubTab('exercises')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-              subTab === 'exercises' ? 'bg-[#0F5C45]/35 text-white border border-[#0F5C45]/55' : 'text-slate-300'
-            }`}
-          >
-            Exercices
-          </button>
+  const SUB_TABS = [
+    { id: 'overview', label: 'Vue générale' },
+    { id: 'stats', label: 'Statistiques' },
+    { id: 'exercises', label: 'Exercices' }
+  ];
+
+  const deleteBtnStyle = { color: 'var(--t-vit)', borderColor: 'var(--t-vit)' };
+  const rowLine = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '8px 0',
+    borderTop: '1px solid var(--rule)',
+    fontSize: 13,
+    color: 'var(--bone-2)'
+  };
+
+  const content = (
+    <div>
+      <header className="head">
+        <div>
+          <div className="kicker">Défis / Performances</div>
+          <h1>Performances</h1>
         </div>
+      </header>
+      <div className="defis-tabs" role="tablist">
+        {SUB_TABS.map((x) => (
+          <button key={x.id} type="button" role="tab" aria-selected={subTab === x.id} onClick={() => setSubTab(x.id)}>
+            {x.label}
+          </button>
+        ))}
+      </div>
 
-        {subTab === 'overview' && (
-          <>
-        <Card variant="sport">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-300" />
-              Défis - Performance (Records & progression)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-3">
-                <div className="text-xs text-slate-400">Max enregistrés</div>
-                <div className="text-2xl font-bold text-white">{records.length}</div>
+      {subTab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 56 }}>
+          <section>
+            <div className="sec-h">
+              <div>
+                <h2>Défis — Performance (records &amp; progression)</h2>
               </div>
-              <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-3">
-                <div className="text-xs text-slate-400">Tests enregistrés</div>
-                <div className="text-2xl font-bold text-white">{history.length}</div>
-              </div>
-              <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-3">
-                <div className="text-xs text-slate-400">Exos fréquents suivis</div>
-                <div className="text-2xl font-bold text-white">
-                  {frequencyRows.filter((r) => r.hasMax).length}/{frequencyRows.length}
-                </div>
-              </div>
-              <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-3">
-                <div className="text-xs text-slate-400">À retester</div>
-                <div className="text-2xl font-bold text-amber-300">{suggestions.length}</div>
-              </div>
+              <button type="button" className="btn pri" onClick={() => setShowModal(true)}>
+                <Plus />
+                Ajouter un max
+              </button>
             </div>
+            <section className="board" style={{ gridTemplateColumns: 'repeat(4,1fr)', borderTop: 0 }}>
+              <div>
+                <span className="lab">Max enregistrés</span>
+                <b className="num">{records.length}</b>
+              </div>
+              <div>
+                <span className="lab">Tests enregistrés</span>
+                <b className="num">{history.length}</b>
+              </div>
+              <div>
+                <span className="lab">Exos fréquents suivis</span>
+                <b className="num">
+                  {frequencyRows.filter((r) => r.hasMax).length}
+                  <i>/{frequencyRows.length}</i>
+                </b>
+              </div>
+              <div>
+                <span className="lab">À retester</span>
+                <b className="num" style={{ color: 'var(--t-fract)' }}>{suggestions.length}</b>
+              </div>
+            </section>
+            <p className="tiny" style={{ marginTop: 12 }}>
+              Retests planifiés : <b style={{ color: 'var(--bone)' }}>{retestPlans.length}</b>
+            </p>
+          </section>
 
-            <button
-              type="button"
-              onClick={() => setShowModal(true)}
-              className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-4 py-2 text-sm text-white"
-            >
-              Ajouter un max
-            </button>
-            <div className="text-xs text-slate-400">
-              Retests planifiés: <span className="text-white font-medium">{retestPlans.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card variant="sport">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="w-4 h-4 text-emerald-300" />
+          <section className="grid2p">
+            <article className="box pad prf">
+              <span className="lab" style={{ color: 'var(--t-ef)' }}>
+                <TrendingUp />
                 Meilleure progression
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </span>
               {progressionSummary.bestProgression ? (
-                <div className="text-sm text-slate-200">
-                  <div className="font-semibold text-white">{progressionSummary.bestProgression.exerciseName}</div>
-                  <div>+{Math.round(progressionSummary.bestProgression.relative)}% depuis le premier test</div>
-                  <div className="text-slate-400 mt-1">
-                    {formatRecordValue(progressionSummary.bestProgression.first)} → {formatRecordValue(progressionSummary.bestProgression.best)}
+                <>
+                  <h3>{progressionSummary.bestProgression.exerciseName}</h3>
+                  <b className="num" style={{ color: 'var(--t-cl)' }}>
+                    +{Math.round(progressionSummary.bestProgression.relative)}%
+                  </b>
+                  <p>depuis le premier test</p>
+                  <div className="arrow num">
+                    {formatRecordValue(progressionSummary.bestProgression.first)} →{' '}
+                    {formatRecordValue(progressionSummary.bestProgression.best)}
                   </div>
-                </div>
+                </>
               ) : (
-                <div className="text-sm text-slate-500">Aucune progression calculable pour l’instant.</div>
+                <p>Aucune progression calculable pour l’instant.</p>
               )}
-            </CardContent>
-          </Card>
-
-          <Card variant="sport">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="w-4 h-4 text-cyan-300" />
+            </article>
+            <article className="box pad prf">
+              <span className="lab" style={{ color: 'var(--t-fract)' }}>
+                <Trophy />
                 Meilleure performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </span>
               {progressionSummary.bestPerformance ? (
-                <div className="text-sm text-slate-200">
-                  <div className="font-semibold text-white">{progressionSummary.bestPerformance.exerciseName}</div>
-                  <div>{formatRecordValue(progressionSummary.bestPerformance.best)}</div>
-                  <div className="text-slate-400 mt-1">
-                    Dernière maj : {new Date(progressionSummary.bestPerformance.best.recordedAt).toLocaleDateString('fr-FR')}
-                  </div>
-                </div>
+                <>
+                  <h3>{progressionSummary.bestPerformance.exerciseName}</h3>
+                  <b className="num" style={{ color: 'var(--t-fract)' }}>
+                    {formatRecordValue(progressionSummary.bestPerformance.best)}
+                  </b>
+                  <p>
+                    Dernière maj :{' '}
+                    {new Date(progressionSummary.bestPerformance.best.recordedAt).toLocaleDateString('fr-FR')}
+                  </p>
+                </>
               ) : (
-                <div className="text-sm text-slate-500">Aucune performance enregistrée.</div>
+                <p>Aucune performance enregistrée.</p>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </article>
+          </section>
 
-        <Card variant="sport">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="w-4 h-4 text-violet-300" />
-              Récap complet des max
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-              <select
-                value={disciplineFilter}
-                onChange={(e) => setDisciplineFilter(e.target.value)}
-                className="rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-2 text-sm text-slate-200"
-              >
-                <option value="all">Toutes disciplines</option>
-                <option value="street">Street</option>
-                <option value="muscu">Muscu</option>
-                <option value="endurance">Endurance</option>
-                <option value="boxe">Boxe</option>
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-2 text-sm text-slate-200"
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="fresh">Max récents</option>
-                <option value="stale">Max anciens</option>
-              </select>
-              <select
-                value={selectedExerciseId}
-                onChange={(e) => setSelectedExerciseId(e.target.value)}
-                className="rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-2 text-sm text-slate-200"
-              >
-                <option value="">Timeline: sélectionner un exercice</option>
-                {records.map((record) => (
-                  <option key={record.id} value={record.exerciseId}>
-                    {record.exerciseName}
-                  </option>
-                ))}
-              </select>
+          <section>
+            <div className="sec-h">
+              <div>
+                <h2>Récap complet des max</h2>
+              </div>
+            </div>
+            <div className="nums" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+              <div className="fld">
+                <label className="lab" htmlFor="perf-discipline">Discipline</label>
+                <select id="perf-discipline" value={disciplineFilter} onChange={(e) => setDisciplineFilter(e.target.value)}>
+                  <option value="all">Toutes disciplines</option>
+                  <option value="street">Street</option>
+                  <option value="muscu">Muscu</option>
+                  <option value="endurance">Endurance</option>
+                  <option value="boxe">Boxe</option>
+                </select>
+              </div>
+              <div className="fld">
+                <label className="lab" htmlFor="perf-status">Statut</label>
+                <select id="perf-status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  <option value="all">Tous les statuts</option>
+                  <option value="fresh">Max récents</option>
+                  <option value="stale">Max anciens</option>
+                </select>
+              </div>
+              <div className="fld">
+                <label className="lab" htmlFor="perf-timeline">Timeline</label>
+                <select id="perf-timeline" value={selectedExerciseId} onChange={(e) => setSelectedExerciseId(e.target.value)}>
+                  <option value="">Timeline : sélectionner un exercice</option>
+                  {records.map((record) => (
+                    <option key={record.id} value={record.exerciseId}>
+                      {record.exerciseName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {recordsWithStatus.length === 0 ? (
-              <div className="text-sm text-slate-500">Aucun max enregistré.</div>
+              <div className="empty" style={{ marginTop: 18 }}>Aucun max enregistré.</div>
             ) : (
-              <div className="space-y-2">
+              <div className="mxl">
                 {recordsWithStatus.map((record) => (
-                    <div key={record.id} className="rounded-lg border border-[#0F4C5C]/45 bg-black px-3 py-2 text-sm">
-                      <div className="font-medium text-white">{record.exerciseName}</div>
-                      <div className="text-slate-300">{formatRecordValue(record)}</div>
-                      <div className="text-xs text-slate-500 flex items-center justify-between gap-2">
-                        <span>
+                  <div key={record.id} className="mxr">
+                    <div>
+                      <b>{record.exerciseName}</b>
+                      <span className="num">
                         {new Date(record.recordedAt).toLocaleDateString('fr-FR')} · {record.trainingDiscipline}
-                        {record.isStale ? (
-                          <span className="rounded border border-amber-500/50 bg-amber-950/30 px-1.5 py-0.5 text-[10px] text-amber-300">
-                            À retester
-                          </span>
-                        ) : null}
+                      </span>
+                      {record.isStale ? (
+                        <span className="pill" style={{ '--c': 'var(--t-fract)', marginLeft: 10 }}>
+                          À retester
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeletePerformanceEntry(record.id)}
-                          className="rounded border border-rose-500/45 bg-rose-950/20 px-2 py-0.5 text-[10px] text-rose-200"
-                        >
-                          Supprimer
-                        </button>
-                      </div>
+                      ) : null}
                     </div>
-                  ))}
+                    <b className="num rr">{formatRecordValue(record)}</b>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      style={deleteBtnStyle}
+                      onClick={() => handleDeletePerformanceEntry(record.id)}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
             {timelineRows.length > 0 && (
-              <div className="mt-4 rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
-                <div className="text-sm font-medium text-white mb-2">Timeline de progression</div>
-                <div className="space-y-1">
+              <div className="box pad" style={{ marginTop: 18 }}>
+                <h3 className="bt">Timeline de progression</h3>
+                <div style={{ marginTop: 10 }}>
                   {timelineRows.map((row) => (
-                    <div key={row.id} className="flex items-center justify-between text-xs text-slate-300">
-                      <span>{new Date(row.recordedAt).toLocaleDateString('fr-FR')}</span>
-                      <span>{formatRecordValue(row)}</span>
+                    <div key={row.id} style={rowLine}>
+                      <span className="mono">{new Date(row.recordedAt).toLocaleDateString('fr-FR')}</span>
+                      <b className="num" style={{ color: 'var(--bone)' }}>{formatRecordValue(row)}</b>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </section>
 
-        <Card variant="sport">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="w-4 h-4 text-amber-300" />
-              Suggestions de retest
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <section>
+            <div className="sec-h">
+              <div>
+                <h2>Suggestions de retest</h2>
+              </div>
+            </div>
             {suggestions.length === 0 ? (
-              <div className="text-sm text-slate-500">Rien à signaler, continue comme ça.</div>
+              <div className="empty">Rien à signaler, continue comme ça.</div>
             ) : (
-              <div className="space-y-2">
+              <div className="mxl">
                 {suggestions.map((s) => (
-                  <div key={s.exerciseId} className="rounded-lg border border-[#0F4C5C]/45 bg-black px-3 py-2 text-sm">
-                    <div className="font-medium text-white">{s.exerciseName}</div>
-                    <div className="text-slate-300">
-                      Coche fréquente: {s.count} fois · {s.hasMax ? 'max ancien' : 'aucun max'}
+                  <div key={s.exerciseId} className="mxr">
+                    <div>
+                      <b>{s.exerciseName}</b>
+                      <span className="num">
+                        Coche fréquente : {s.count} fois · {s.hasMax ? 'max ancien' : 'aucun max'}
+                        {s.lastRecordAt ? ` · Dernier max : ${new Date(s.lastRecordAt).toLocaleDateString('fr-FR')}` : ''}
+                      </span>
                     </div>
-                    {s.lastRecordAt && (
-                      <div className="text-xs text-slate-500">
-                        Dernier max: {new Date(s.lastRecordAt).toLocaleDateString('fr-FR')}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handlePlanRetest(s)}
-                      className="mt-2 rounded border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-2 py-1 text-xs text-white"
-                    >
+                    <span className="pill" style={{ '--c': s.hasMax ? 'var(--t-fract)' : 'var(--t-vit)' }}>
+                      {s.hasMax ? 'Max ancien' : 'Aucun max'}
+                    </span>
+                    <button type="button" className="btn sm" onClick={() => handlePlanRetest(s)}>
                       Programmer un retest (+7 jours)
                     </button>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-          </>
-        )}
+          </section>
+        </div>
+      )}
 
-        {subTab === 'stats' && (
-          <>
-            <Card variant="sport">
-              <CardHeader>
-                <CardTitle className="text-base">Courbe générale des max enregistrés par jour</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {dailyMaxCurveData.length > 0 ? (
-                  <div className="space-y-2">
-                    <MiniLineChart
-                      data={dailyMaxCurveData}
-                      xKey="date"
-                      yKey="count"
-                      color="#22d3ee"
-                      valueLabel="Max enregistrés"
-                      formatY={(v) => String(Math.round(Number(v)))}
-                    />
-                    <p className="text-xs text-slate-500">
-                      Plus la courbe monte, plus tu as enregistré de max ce jour-là.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-500">Pas encore assez de données pour tracer la courbe.</div>
-                )}
-              </CardContent>
-            </Card>
+      {subTab === 'stats' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 56 }}>
+          <section>
+            <div className="sec-h">
+              <div>
+                <h2>Courbe générale des max enregistrés par jour</h2>
+                <p>Plus la courbe monte, plus tu as enregistré de max ce jour-là.</p>
+              </div>
+            </div>
+            {dailyMaxCurveData.length > 0 ? (
+              <div className="box pad">
+                <MiniLineChart
+                  data={dailyMaxCurveData}
+                  xKey="date"
+                  yKey="count"
+                  color="var(--t-ef)"
+                  valueLabel="Max enregistrés"
+                  formatY={(v) => String(Math.round(Number(v)))}
+                />
+              </div>
+            ) : (
+              <div className="empty">Pas encore assez de données pour tracer la courbe.</div>
+            )}
+          </section>
 
-            <Card variant="sport">
-              <CardHeader>
-                <CardTitle className="text-base">Progression du max par exercice</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-3 space-y-2">
-                  <p className="text-xs text-slate-400">
-                    Tous les exercices avec max enregistré sont affichés automatiquement.
-                  </p>
-                  <input
-                    type="search"
-                    value={exerciseSearch}
-                    onChange={(e) => setExerciseSearch(e.target.value)}
-                    placeholder="Rechercher un exercice (optionnel)"
-                    className="w-full rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-2 text-sm text-slate-200"
-                  />
-                </div>
-                {allExerciseCurves.length > 0 ? (
-                  <div className="space-y-4">
-                    {allExerciseCurves.map((curve) => (
-                      <div key={curve.exerciseId} className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
-                        <div className="mb-2">
-                          <div className="text-sm font-medium text-white">{curve.exerciseName}</div>
-                          <div className="text-[11px] text-slate-500">{curve.trainingDiscipline}</div>
-                        </div>
-                        <MiniLineChart
-                          data={curve.points}
-                          xKey="date"
-                          yKey="score"
-                          color="#34d399"
-                          valueLabel="Score performance"
-                          formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
-                        />
-                        <div className="mt-2 space-y-1">
-                          {curve.points.map((row, idx) => (
-                            <div key={`${curve.exerciseId}-${row.date}-${idx}`} className="text-xs text-slate-400 flex items-center justify-between">
-                              <span>{row.date}</span>
-                              <span>{row.valueLabel}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    <div className="rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
-                      <div className="text-xs text-slate-500 mb-2">Focus exercice (optionnel)</div>
-                      <select
-                        value={selectedExerciseId}
-                        onChange={(e) => setSelectedExerciseId(e.target.value)}
-                        className="w-full rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-2 text-sm text-slate-200"
-                      >
-                        <option value="">Sélectionner un exercice (focus)</option>
-                        {records.map((record) => (
-                          <option key={record.id} value={record.exerciseId}>
-                            {record.exerciseName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-500">
-                    Aucun exercice trouvé avec ce filtre.
-                  </div>
-                )}
-                {exerciseCurveData.length > 0 && (
-                  <div className="mt-4 rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
-                    <div className="text-xs text-slate-400 mb-2">Courbe focus (exercice sélectionné)</div>
+          <section>
+            <div className="sec-h">
+              <div>
+                <h2>Progression du max par exercice</h2>
+                <p>Tous les exercices avec max enregistré sont affichés automatiquement.</p>
+              </div>
+            </div>
+            <div className="cfs" style={{ marginBottom: 18 }}>
+              <Search />
+              <input
+                type="search"
+                value={exerciseSearch}
+                onChange={(e) => setExerciseSearch(e.target.value)}
+                placeholder="Rechercher un exercice (optionnel)"
+              />
+            </div>
+            {allExerciseCurves.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                {allExerciseCurves.map((curve) => (
+                  <article key={curve.exerciseId} className="box pad">
+                    <h3 className="bt">{curve.exerciseName}</h3>
+                    <p className="tiny" style={{ margin: '4px 0 12px' }}>{curve.trainingDiscipline}</p>
                     <MiniLineChart
-                      data={exerciseCurveData}
+                      data={curve.points}
                       xKey="date"
                       yKey="score"
-                      color="#22d3ee"
+                      color="var(--t-cl)"
                       valueLabel="Score performance"
                       formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
                     />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {subTab === 'exercises' && (
-          <Card variant="sport">
-            <CardHeader>
-              <CardTitle className="text-base">Sous-onglet exercices performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <input
-                    type="search"
-                    value={exerciseTabSearch}
-                    onChange={(e) => setExerciseTabSearch(e.target.value)}
-                    placeholder="Rechercher un exercice"
-                    className="w-full rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-2 text-sm text-slate-200"
-                  />
-                  <div className="max-h-[560px] overflow-y-auto space-y-2 rounded-lg border border-[#0F4C5C]/35 p-2">
-                    {exerciseBankRows.map((row) => (
-                      <button
-                        key={row.id}
-                        type="button"
-                        onClick={() => setSelectedExerciseId(row.id)}
-                        className={`w-full rounded-lg border px-3 py-2 text-left ${
-                          selectedExerciseId === row.id
-                            ? 'border-[#0F5C45]/60 bg-[#0F5C45]/20'
-                            : 'border-[#0F4C5C]/40 bg-black hover:border-[#0F5C45]/45'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-white">{row.name}</span>
-                          <span
-                            className={`rounded px-2 py-0.5 text-[10px] ${
-                              row.hasMax
-                                ? 'border border-emerald-500/45 bg-emerald-950/30 text-emerald-200'
-                                : 'border border-slate-600/45 bg-slate-950/40 text-slate-300'
-                            }`}
-                          >
-                            {row.hasMax ? 'Max enregistré' : 'Aucun max'}
-                          </span>
+                    <div style={{ marginTop: 10 }}>
+                      {curve.points.map((row, idx) => (
+                        <div key={`${curve.exerciseId}-${row.date}-${idx}`} style={rowLine}>
+                          <span className="mono">{row.date}</span>
+                          <span className="num">{row.valueLabel}</span>
                         </div>
-                        <div className="text-[11px] text-slate-500">
-                          {row.trainingDiscipline} · {row.historyCount} saisie(s)
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {!selectedExerciseRow ? (
-                    <div className="rounded-lg border border-[#0F4C5C]/35 bg-black p-4 text-sm text-slate-500">
-                      Sélectionne un exercice pour voir ses max, son historique et sa courbe.
+                      ))}
                     </div>
-                  ) : (
-                    <>
-                      <div className="rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
-                        <div className="text-base font-semibold text-white">{selectedExerciseRow.name}</div>
-                        <div className="text-xs text-slate-400">
-                          {selectedExerciseRow.trainingDiscipline} · {selectedExerciseRow.category || 'catégorie non définie'}
-                        </div>
-                        {selectedExerciseRow.record ? (
-                          <div className="mt-2 text-xs text-emerald-300">
-                            Max actuel: {formatRecordValue(selectedExerciseRow.record)} ·{' '}
-                            {new Date(selectedExerciseRow.record.recordedAt).toLocaleDateString('fr-FR')}
-                          </div>
-                        ) : (
-                          <div className="mt-2 text-xs text-slate-500">Aucun max enregistré pour le moment.</div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setShowModal(true)}
-                          className="mt-3 rounded border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-3 py-1.5 text-xs text-white"
-                        >
-                          Enregistrer une nouvelle session / max
-                        </button>
-                      </div>
-
-                      <div className="rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
-                        <div className="mb-2 text-sm font-medium text-white">Évolution du max</div>
-                        {selectedExerciseCurve.length > 0 ? (
-                          <MiniLineChart
-                            data={selectedExerciseCurve}
-                            xKey="date"
-                            yKey="score"
-                            color="#34d399"
-                            valueLabel="Score performance"
-                            formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
-                          />
-                        ) : (
-                          <div className="text-xs text-slate-500">Pas encore de points à tracer.</div>
-                        )}
-                      </div>
-
-                      <div className="rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
-                        <div className="mb-2 text-sm font-medium text-white">Anciennes saisies</div>
-                        {selectedExerciseHistory.length === 0 ? (
-                          <div className="text-xs text-slate-500">Aucune saisie pour cet exercice.</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {selectedExerciseHistory.map((entry) => (
-                              <div key={entry.id} className="rounded border border-[#0F4C5C]/35 px-2 py-1.5">
-                                <div className="flex items-center justify-between gap-2 text-xs">
-                                  <span className="text-slate-300">
-                                    {new Date(entry.recordedAt).toLocaleDateString('fr-FR')} · {formatRecordValue(entry)}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeletePerformanceEntry(entry.id)}
-                                    className="rounded border border-rose-500/45 bg-rose-950/20 px-2 py-0.5 text-[10px] text-rose-200"
-                                  >
-                                    Supprimer
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                  </article>
+                ))}
+                <div className="box pad">
+                  <div className="fld">
+                    <label className="lab" htmlFor="perf-focus">Focus exercice (optionnel)</label>
+                    <select id="perf-focus" value={selectedExerciseId} onChange={(e) => setSelectedExerciseId(e.target.value)}>
+                      <option value="">Sélectionner un exercice (focus)</option>
+                      {records.map((record) => (
+                        <option key={record.id} value={record.exerciseId}>
+                          {record.exerciseName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="empty">Aucun exercice trouvé avec ce filtre.</div>
+            )}
+            {exerciseCurveData.length > 0 && (
+              <div className="box pad" style={{ marginTop: 18 }}>
+                <h3 className="bt">Courbe focus (exercice sélectionné)</h3>
+                <div style={{ marginTop: 12 }}>
+                  <MiniLineChart
+                    data={exerciseCurveData}
+                    xKey="date"
+                    yKey="score"
+                    color="var(--t-ef)"
+                    valueLabel="Score performance"
+                    formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
+                  />
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
 
-      </div>
+      {subTab === 'exercises' && (
+        <section>
+          <div className="sec-h">
+            <div>
+              <h2>Sous-onglet exercices performance</h2>
+            </div>
+          </div>
+          <div className="split2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+              <div className="cfs">
+                <Search />
+                <input
+                  type="search"
+                  value={exerciseTabSearch}
+                  onChange={(e) => setExerciseTabSearch(e.target.value)}
+                  placeholder="Rechercher un exercice"
+                />
+              </div>
+              <div className="box" style={{ maxHeight: 560, overflowY: 'auto', padding: '4px 16px' }}>
+                {exerciseBankRows.map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    onClick={() => setSelectedExerciseId(row.id)}
+                    aria-pressed={selectedExerciseId === row.id}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      background: selectedExerciseId === row.id ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent',
+                      border: 0,
+                      borderBottom: '1px solid var(--rule)',
+                      borderLeft: `2px solid ${selectedExerciseId === row.id ? 'var(--accent)' : 'transparent'}`,
+                      padding: '12px 10px',
+                      color: 'var(--bone)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <b style={{ fontWeight: 600, fontSize: 14 }}>{row.name}</b>
+                      <span className="pill" style={{ '--c': row.hasMax ? 'var(--t-cl)' : 'var(--bone-3)' }}>
+                        {row.hasMax ? 'Max enregistré' : 'Aucun max'}
+                      </span>
+                    </span>
+                    <span className="tiny" style={{ display: 'block', marginTop: 4 }}>
+                      {row.trainingDiscipline} · {row.historyCount} saisie(s)
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>
+              {!selectedExerciseRow ? (
+                <div className="empty">Sélectionne un exercice pour voir ses max, son historique et sa courbe.</div>
+              ) : (
+                <>
+                  <article className="box pad prf">
+                    <span className="lab">
+                      {selectedExerciseRow.trainingDiscipline} · {selectedExerciseRow.category || 'catégorie non définie'}
+                    </span>
+                    <h3>{selectedExerciseRow.name}</h3>
+                    {selectedExerciseRow.record ? (
+                      <p style={{ color: 'var(--t-cl)' }}>
+                        Max actuel : {formatRecordValue(selectedExerciseRow.record)} ·{' '}
+                        {new Date(selectedExerciseRow.record.recordedAt).toLocaleDateString('fr-FR')}
+                      </p>
+                    ) : (
+                      <p>Aucun max enregistré pour le moment.</p>
+                    )}
+                    <button type="button" className="btn pri sm" style={{ marginTop: 14 }} onClick={() => setShowModal(true)}>
+                      <Plus />
+                      Enregistrer une nouvelle session / max
+                    </button>
+                  </article>
+
+                  <div className="box pad">
+                    <h3 className="bt">Évolution du max</h3>
+                    <div style={{ marginTop: 12 }}>
+                      {selectedExerciseCurve.length > 0 ? (
+                        <MiniLineChart
+                          data={selectedExerciseCurve}
+                          xKey="date"
+                          yKey="score"
+                          color="var(--t-cl)"
+                          valueLabel="Score performance"
+                          formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
+                        />
+                      ) : (
+                        <p className="tiny">Pas encore de points à tracer.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="box pad">
+                    <h3 className="bt">Anciennes saisies</h3>
+                    <div style={{ marginTop: 10 }}>
+                      {selectedExerciseHistory.length === 0 ? (
+                        <p className="tiny">Aucune saisie pour cet exercice.</p>
+                      ) : (
+                        selectedExerciseHistory.map((entry) => (
+                          <div key={entry.id} style={{ ...rowLine, alignItems: 'center' }}>
+                            <span className="num">
+                              {new Date(entry.recordedAt).toLocaleDateString('fr-FR')} · {formatRecordValue(entry)}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              style={deleteBtnStyle}
+                              onClick={() => handleDeletePerformanceEntry(entry.id)}
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <RecordPerformanceModal
         isOpen={showModal}
@@ -917,6 +903,13 @@ const PerformanceChallengesTab = () => {
         initialExerciseId={selectedExerciseId}
         lockExerciseSelection={subTab === 'exercises' && Boolean(selectedExerciseId)}
       />
+    </div>
+  );
+
+  if (embedded) return content;
+  return (
+    <div className="defis-stadium" data-act="performance" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>
+      {content}
     </div>
   );
 };

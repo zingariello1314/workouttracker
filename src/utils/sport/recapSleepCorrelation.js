@@ -521,7 +521,14 @@ export function collectRunDays(garminData) {
       ...row,
       km: round1(row.km),
       hours: night.hours,
-      pace: row.minutes >= 8 && row.km >= 1 ? round1(row.minutes / row.km) : null
+      pace: (() => {
+        if (!(row.minutes >= 8 && row.km >= 1)) return null;
+        // Si minutes ressemblent à des secondes (sortie > 3 h « minutes »), convertir
+        const min = row.minutes > 180 && row.km < 40 ? row.minutes / 60 : row.minutes;
+        const pace = min / row.km;
+        if (pace < 2 || pace > 15) return null;
+        return round1(pace);
+      })()
     });
   });
   return out.sort((a, b) => a.date.localeCompare(b.date));
@@ -538,8 +545,15 @@ export function sleepCardioByThreshold(runDays, { longCut = 7.5, shortCut = 7 } 
   if (!publishable(high.length, low.length, highKm - lowKm, lowKm, { minEach: 3, minPct: 10, minAbs: 0.8 })) {
     return null;
   }
-  const highPace = mean(high.map((r) => r.pace).filter((n) => n > 0));
-  const lowPace = mean(low.map((r) => r.pace).filter((n) => n > 0));
+  const toMinPerKm = (p) => {
+    if (p == null || !Number.isFinite(p) || p <= 0) return null;
+    // sec/km mal étiquetés → min/km (Spec #24 B14)
+    if (p > 20 && p < 900) return round1(p / 60);
+    if (p < 2 || p > 15) return null;
+    return round1(p);
+  };
+  const highPace = toMinPerKm(mean(high.map((r) => r.pace).filter((n) => n > 0)));
+  const lowPace = toMinPerKm(mean(low.map((r) => r.pace).filter((n) => n > 0)));
   return {
     type: 'sleep_cardio',
     highN: high.length,
@@ -548,8 +562,8 @@ export function sleepCardioByThreshold(runDays, { longCut = 7.5, shortCut = 7 } 
     lowKm: round1(lowKm),
     delta: round1(highKm - lowKm),
     deltaPct: lowKm > 0 ? round1(((highKm - lowKm) / lowKm) * 100) : null,
-    highPace: highPace != null ? round1(highPace) : null,
-    lowPace: lowPace != null ? round1(lowPace) : null,
+    highPace,
+    lowPace,
     confidence: high.length + low.length >= 8 ? 'high' : 'medium'
   };
 }

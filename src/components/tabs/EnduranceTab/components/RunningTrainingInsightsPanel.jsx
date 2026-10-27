@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart3, CalendarRange, Crown, PieChart, TrendingUp } from 'lucide-react';
+import { CalendarRange, Crown } from 'lucide-react';
 import { useAuth } from '../../../../context/AuthContext';
 import { normalizeProfileQuestionnaire } from '../../../../features/profileQuestionnaire/schema';
 import { useTranslation } from '../../../../utils/translations';
@@ -15,20 +15,21 @@ import {
 } from '../../../../utils/runningSessionDistribution';
 
 const MACRO_META = [
-  { id: 'endurance', color: '#34d399', labelKey: 'endurance.running.historyFilter.kind.endurance' },
-  { id: 'speed', color: '#fb7185', labelKey: 'endurance.running.historyFilter.kind.speed' },
-  { id: 'interval', color: '#fbbf24', labelKey: 'endurance.running.historyFilter.kind.interval' }
+  { id: 'endurance', color: 'var(--t-ef)', labelKey: 'endurance.running.historyFilter.kind.endurance' },
+  { id: 'speed', color: 'var(--t-vit)', labelKey: 'endurance.running.historyFilter.kind.speed' },
+  { id: 'interval', color: 'var(--t-fract)', labelKey: 'endurance.running.historyFilter.kind.interval' }
 ];
 
-function HighlightCard({ icon: Icon, iconClass, label, value, sub }) {
+function HighlightCard({ icon: Icon, label, value, sub, accent }) {
   return (
-    <div className="rounded-xl border border-[#0F4C5C]/50 bg-black/80 p-4">
-      <div className={`mb-2 flex items-center gap-2 ${iconClass}`}>
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
-      </div>
-      <div className="text-2xl font-bold tabular-nums text-white">{value}</div>
-      {sub ? <p className="mt-1 text-[11px] leading-snug text-slate-500">{sub}</p> : null}
+    <div>
+      <span className="lab" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <i className="dot" style={{ '--c': accent || 'var(--accent)' }} />
+        {Icon ? <Icon className="ic" /> : null}
+        {label}
+      </span>
+      <b className="num">{value}</b>
+      {sub ? <div className="tiny">{sub}</div> : null}
     </div>
   );
 }
@@ -46,37 +47,28 @@ function TypeDistributionRow({ label, actualPct, idealPct, km, sessions, color, 
           : t('endurance.running.insights.deltaUnder', { delta: String(delta) });
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-sm">
-        <span className="font-medium text-teal-100">{label}</span>
-        <span className="text-xs text-slate-400">
-          {actualPct}% · {km} km · {sessions} séance(s)
-          {showIdeal && idealPct != null ? (
-            <>
-              <span className="mx-1 text-slate-600">|</span>
-              {t('endurance.running.insights.idealShort', { pct: idealPct })}
-              {deltaLabel ? (
-                <span
-                  className={`ml-1 ${Math.abs(delta) < 2 ? 'text-emerald-400/90' : 'text-amber-300/90'}`}
-                >
-                  ({deltaLabel})
-                </span>
-              ) : null}
-            </>
-          ) : null}
+    <div className="mrow">
+      <div className="nm">
+        <i className="dot" style={{ '--c': color }} />
+        {label}
+      </div>
+      <div className="mb">
+        <div className="bar" style={{ '--c': color }}>
+          <i style={{ width: `${Math.min(100, actualPct)}%` }} />
+        </div>
+      </div>
+      <div className="v num">
+        <b>{actualPct}%</b>
+        <span>
+          {km} km · {sessions} séance(s)
         </span>
       </div>
-      <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-800/90">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${Math.min(100, actualPct)}%`, backgroundColor: color }}
-        />
+      <div className="d num">
         {showIdeal && idealPct != null ? (
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow"
-            style={{ left: `calc(${Math.min(100, idealPct)}% - 1px)` }}
-            title={t('endurance.running.insights.idealMarker', { pct: idealPct })}
-          />
+          <>
+            {t('endurance.running.insights.idealShort', { pct: idealPct })}
+            {deltaLabel ? <em>{deltaLabel}</em> : null}
+          </>
         ) : null}
       </div>
     </div>
@@ -141,30 +133,30 @@ export default function RunningTrainingInsightsPanel({
 
   if (!rows.length) {
     return (
-      <section className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-        <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-white">
-          <TrendingUp className="h-5 w-5 text-sky-400" />
-          {t('endurance.running.insights.title')}
-        </h3>
-        <p className="text-sm text-teal-800">{t('endurance.running.insights.empty')}</p>
+      <section style={{ marginBottom: 64 }}>
+        <div className="sec-h">
+          <div>
+            <h2>{t('endurance.running.insights.title')}</h2>
+            <p>{t('endurance.running.insights.empty')}</p>
+          </div>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-      <div className="mb-5">
-        <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-          <TrendingUp className="h-5 w-5 text-sky-400" />
-          {t('endurance.running.insights.title')}
-        </h3>
-        <p className="mt-1 text-xs text-teal-700">{t('endurance.running.insights.subtitle')}</p>
+    <section style={{ marginBottom: 64 }}>
+      <div className="sec-h">
+        <div>
+          <h2>{t('endurance.running.insights.title')}</h2>
+          <p>{t('endurance.running.insights.subtitle')}</p>
+        </div>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+      <div className="two">
         <HighlightCard
           icon={CalendarRange}
-          iconClass="text-amber-300"
+          accent="var(--t-fract)"
           label={t('endurance.running.insights.bestWeek')}
           value={highlights.bestWeek ? `${highlights.bestWeek.km} km` : '—'}
           sub={
@@ -175,7 +167,7 @@ export default function RunningTrainingInsightsPanel({
         />
         <HighlightCard
           icon={Crown}
-          iconClass="text-rose-300"
+          accent="var(--t-vit)"
           label={t('endurance.running.insights.bestDay')}
           value={highlights.bestDay ? `${highlights.bestDay.km} km` : '—'}
           sub={
@@ -186,24 +178,23 @@ export default function RunningTrainingInsightsPanel({
         />
       </div>
 
-      <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/60 p-5">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-          <div className="flex items-center gap-2 text-white">
-            <PieChart className="h-4 w-4 text-emerald-400" />
-            <span className="text-sm font-semibold">{t('endurance.running.insights.distributionTitle')}</span>
+      <div style={{ marginTop: 40 }}>
+        <div className="sec-h">
+          <div>
+            <h2>{t('endurance.running.insights.distributionTitle')}</h2>
+            <p>
+              {t('endurance.running.insights.distributionHint', {
+                km: distribution.totalKm,
+                sessions: distribution.totalSessions
+              })}
+            </p>
           </div>
-          <p className="max-w-md text-[11px] text-slate-500">
-            {t('endurance.running.insights.distributionHint', {
-              km: distribution.totalKm,
-              sessions: distribution.totalSessions
-            })}
-          </p>
         </div>
 
-        <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        <p className="lab" style={{ marginBottom: 4 }}>
           {t('endurance.running.insights.macroSummaryTitle')}
         </p>
-        <div className="mb-5 space-y-3">
+        <div style={{ marginBottom: 28 }}>
           {MACRO_META.map(({ id, color, labelKey }) => (
             <TypeDistributionRow
               key={`macro-${id}`}
@@ -221,7 +212,7 @@ export default function RunningTrainingInsightsPanel({
           ))}
         </div>
 
-        <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        <p className="lab" style={{ marginBottom: 4 }}>
           {t('endurance.running.insights.typeDetailTitle')}
         </p>
         <div className="space-y-4">
@@ -243,13 +234,10 @@ export default function RunningTrainingInsightsPanel({
           })}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-start gap-2 rounded-lg border border-[#0F4C5C]/35 bg-black/50 px-4 py-3 text-[11px] text-slate-500">
-          <BarChart3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600" />
-          <p>
-            {t('endurance.running.insights.idealFootnote')}{' '}
-            <span className="text-teal-600">{t(profileHintKey)}</span>
-            {t('endurance.running.insights.idealFootnoteEnd')}
-          </p>
+        <div className="note">
+          {t('endurance.running.insights.idealFootnote')}{' '}
+          {t(profileHintKey)}
+          {t('endurance.running.insights.idealFootnoteEnd')}
         </div>
       </div>
     </section>

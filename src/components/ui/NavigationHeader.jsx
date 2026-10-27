@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
-import { useWorkout } from '../../context/WorkoutContext';
+import { useAppNavigation } from '../../context/NavigationContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAppLock } from '../../context/AppLockContext';
 import { useTranslation } from '../../utils/translations';
@@ -10,6 +10,7 @@ import {
   resolveHomeAccentHex,
   subscribeHomeAppearance
 } from '../../utils/homeAppearancePreference';
+import { preloadTodayTab } from '../../utils/preloadTabs';
 import './homeNavAppearance.css';
 
 const TAB_ARIA = {
@@ -31,7 +32,7 @@ const TAB_ARIA = {
  * Avec config : styles / ordre / disposition personnalisés.
  */
 const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {}) => {
-  const { setActiveTab, activeTab } = useWorkout();
+  const { setActiveTab, activeTab } = useAppNavigation();
   const { isAuthenticated } = useAuth();
   const { lockReady, lockNow } = useAppLock();
   const t = useTranslation();
@@ -53,10 +54,18 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
         stored === 'code-journal' || stored === 'code-calendar' || stored === 'code-stats'
           ? stored
           : 'code-calendar';
-      setTimeout(() => setActiveTab(next), 200);
+      setActiveTab(next);
       return;
     }
-    setTimeout(() => setActiveTab(tabId), 200);
+    setActiveTab(tabId);
+  };
+
+  const prefetchTabChunk = (tabId) => {
+    if (previewConfig) return;
+    // Home « Sport » → today ; prépare le chunk avant le clic
+    if (tabId === 'today') {
+      preloadTodayTab();
+    }
   };
 
   const labelFor = (id) => {
@@ -179,6 +188,7 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
                   className="home-nav-btn"
                   data-active={isActive(id) ? 'true' : 'false'}
                   onClick={() => navigateToTab(id)}
+                  onMouseEnter={() => prefetchTabChunk(id)}
                   aria-label={TAB_ARIA[id] || id}
                   aria-current={isActive(id) ? 'page' : undefined}
                 >
@@ -194,6 +204,7 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
                 key={id}
                 type="button"
                 onClick={() => navigateToTab(id)}
+                onMouseEnter={() => prefetchTabChunk(id)}
                 className={stockButtonClass}
                 aria-label={TAB_ARIA[id] || id}
               >

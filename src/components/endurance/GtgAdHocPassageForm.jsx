@@ -9,7 +9,13 @@ function nowClockTime() {
 /**
  * Saisie d'un passage GTG hors planning : une heure, les reps réellement faites.
  */
-export default function GtgAdHocPassageForm({ exerciseIds = [], labelFor, disabled = false, onSubmit }) {
+export default function GtgAdHocPassageForm({
+  exerciseIds = [],
+  labelFor,
+  disabled = false,
+  onSubmit,
+  variant = 'default'
+}) {
   const [time, setTime] = useState(nowClockTime);
   const [repsById, setRepsById] = useState({});
   const [error, setError] = useState('');
@@ -38,6 +44,45 @@ export default function GtgAdHocPassageForm({ exerciseIds = [], labelFor, disabl
     onSubmit?.({ time, items });
     setRepsById({});
   };
+
+  if (variant === 'defis') {
+    return (
+      <form onSubmit={submit} className="empty pas" style={{ borderColor: 'var(--rule-2)' }}>
+        <h3>Ajouter un passage hors planning</h3>
+        <p>
+          Par exemple 23:42, 3 tractions, 6 dips, 10 pompes. Le passage est coché tout de suite et compte
+          comme les mini-séries prévues : journal, XP, calendrier, export et récap.
+        </p>
+        <div className="g">
+          <label className="fld">
+            <span className="lab">Heure</span>
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={disabled} />
+          </label>
+          {ids.map((id) => (
+            <label key={id} className="fld">
+              <span className="lab">{labelFor(id)}</span>
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                placeholder="reps"
+                value={repsById[id] ?? ''}
+                disabled={disabled}
+                onChange={(e) => setRepsById((cur) => ({ ...cur, [id]: e.target.value }))}
+              />
+            </label>
+          ))}
+        </div>
+        <button type="submit" className="btn pri" disabled={disabled}>
+          <Plus className="ic" style={{ width: 16, height: 16 }} />
+          Enregistrer et cocher
+        </button>
+        {error ? (
+          <p style={{ marginTop: 10, color: 'var(--t-vit)', fontSize: 12.5 }}>{error}</p>
+        ) : null}
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={submit} className="mt-4 rounded-xl border border-dashed border-amber-500/40 bg-amber-950/10 p-3">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useWorkout } from '../context/WorkoutContext';
+import { useAppNavigation } from '../context/NavigationContext';
 import {
   getAppBackgroundPreference,
   resolveActiveBackgroundId,
@@ -11,7 +11,7 @@ import {
 import { getBackgroundOption } from './backgroundRegistry';
 
 export function useAppBackground() {
-  const { activeTab } = useWorkout();
+  const { activeTab } = useAppNavigation();
   const [preference, setPreference] = useState(getAppBackgroundPreference);
   const [revision, setRevision] = useState(0);
 

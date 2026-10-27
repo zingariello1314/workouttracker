@@ -150,7 +150,12 @@ function rewrite(card, voiceKey) {
   title = title.replace(/\.$/, '').trim();
   body = body.trim();
   if (thin(body) || !title) return null;
-  if (title.length > 110) title = `${title.slice(0, 107)}…`;
+  // Spec #24 L3 — ne pas tronquer au milieu d'un mot
+  if (title.length > 110) {
+    const cut = title.slice(0, 107);
+    const sp = cut.lastIndexOf(' ');
+    title = `${(sp > 60 ? cut.slice(0, sp) : cut).trim()}…`;
+  }
   return { ...card, title, body, nature };
 }
 

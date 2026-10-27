@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Footprints, Timer, Activity, Clock, Gauge } from 'lucide-react';
 import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import {
   filterRunningSessionsByPeriod,
@@ -53,8 +52,6 @@ export default function WalkingStatsPanel({ sessions = [], garminById = null }) 
   const { formatDate } = useFormatters();
   const [period, setPeriod] = useState('all');
   const [timeBand, setTimeBand] = useState('all');
-  const cardClass = 'rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-5 shadow-lg shadow-black/30';
-
   const filtered = useMemo(() => {
     const byPeriod = filterRunningSessionsByPeriod(sessions, period);
     return filterRunningSessionsByTimeOfDay(byPeriod, timeBand);
@@ -99,81 +96,94 @@ export default function WalkingStatsPanel({ sessions = [], garminById = null }) 
   }, [filtered, garminById]);
 
   return (
-    <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-white">
-          <Footprints className="h-6 w-6 text-sky-400" />
-          <h3 className="text-lg font-bold">Records & stats marche</h3>
+    <section style={{ marginBottom: 48 }}>
+      <div className="sec-h">
+        <div>
+          <h2>Records & stats marche</h2>
+          <p>Filtrez par période et par moment de la journée.</p>
         </div>
-        <p className="text-xs text-teal-700">Filtrez par période et par moment de la journée.</p>
-      </div>
-
-      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end">
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-teal-700">Période</label>
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-3 py-2.5 text-sm text-white lg:max-w-xs"
-          >
-            {PERIOD_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-teal-700">Moment (heure de départ)</label>
-          <select
-            value={timeBand}
-            onChange={(e) => setTimeBand(e.target.value)}
-            className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-3 py-2.5 text-sm text-white lg:max-w-xs"
-          >
-            {TIME_BAND_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="fld" style={{ width: 180 }}>
+            <label className="lab" htmlFor="defis-walk-period">Période</label>
+            <select
+              id="defis-walk-period"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+            >
+              {PERIOD_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="fld" style={{ width: 210 }}>
+            <label className="lab" htmlFor="defis-walk-tod">Moment (heure de départ)</label>
+            <select
+              id="defis-walk-tod"
+              value={timeBand}
+              onChange={(e) => setTimeBand(e.target.value)}
+            >
+              {TIME_BAND_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-teal-800">Aucune marche dans cette sélection.</p>
+        <p className="tiny">Aucune marche dans cette sélection.</p>
       ) : (
-        <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-teal-200"><Timer className="h-5 w-5" /><span className="text-sm font-semibold">Meilleure allure</span></div>
-              <div className="text-2xl font-bold text-white">{stats.bestPace ? formatPaceMinPerKm(stats.bestPace.pace) : '—'}</div>
-              {stats.bestPace && <div className="mt-2 text-xs text-teal-800">{formatDate(stats.bestPace.s.date)} · {stats.bestPace.s.time || '—'}</div>}
-            </div>
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-sky-200"><Activity className="h-5 w-5" /><span className="text-sm font-semibold">Plus longue distance</span></div>
-              <div className="text-2xl font-bold text-white">{stats.longestDistance ? `${stats.longestDistance.dist.toFixed(2)} km` : '—'}</div>
-              {stats.longestDistance && <div className="mt-2 text-xs text-teal-800">{formatDate(stats.longestDistance.s.date)} · {stats.longestDistance.s.time || '—'}</div>}
-            </div>
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-cyan-200"><Clock className="h-5 w-5" /><span className="text-sm font-semibold">Plus longue durée</span></div>
-              <div className="text-2xl font-bold text-white">{stats.longestDuration ? formatDurationMin(stats.longestDuration.dur) : '—'}</div>
-              {stats.longestDuration && <div className="mt-2 text-xs text-teal-800">{stats.longestDuration.dist.toFixed(2)} km</div>}
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-emerald-200"><Footprints className="h-5 w-5" /><span className="text-sm font-semibold">Distance cumulée</span></div>
-              <div className="text-2xl font-bold text-white">{stats.totalKm.toFixed(1)} km</div>
-            </div>
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-violet-200"><Clock className="h-5 w-5" /><span className="text-sm font-semibold">Temps cumulé</span></div>
-              <div className="text-2xl font-bold text-white">{formatDurationMin(stats.totalMin)}</div>
-            </div>
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-rose-200"><Gauge className="h-5 w-5" /><span className="text-sm font-semibold">Meilleure cadence</span></div>
-              <div className="text-2xl font-bold text-white">{stats.bestCadence ? `${stats.bestCadence.spm} pas/min` : '—'}</div>
+        <>
+          <div className="grp">
+            <h3>Records de séance <span>filtrés par période et moment de la journée</span></h3>
+            <div className="plq">
+              <div>
+                <div className="l">Meilleure allure</div>
+                <b className="num">{stats.bestPace ? formatPaceMinPerKm(stats.bestPace.pace) : '—'}</b>
+                {stats.bestPace ? (
+                  <p>{formatDate(stats.bestPace.s.date)} · {stats.bestPace.s.time || '—'}</p>
+                ) : null}
+              </div>
+              <div>
+                <div className="l">Plus longue distance</div>
+                <b className="num">
+                  {stats.longestDistance ? stats.longestDistance.dist.toFixed(2) : '—'}
+                  {stats.longestDistance ? <i>km</i> : null}
+                </b>
+                {stats.longestDistance ? (
+                  <p>{formatDate(stats.longestDistance.s.date)} · {stats.longestDistance.s.time || '—'}</p>
+                ) : null}
+              </div>
+              <div>
+                <div className="l">Plus longue durée</div>
+                <b className="num">{stats.longestDuration ? formatDurationMin(stats.longestDuration.dur) : '—'}</b>
+                {stats.longestDuration ? <p>{stats.longestDuration.dist.toFixed(2)} km</p> : null}
+              </div>
             </div>
           </div>
-          <p className="text-[11px] leading-relaxed text-teal-800/90">Statistiques calculées à partir des séances classées « marche » dans Défis.</p>
-        </div>
+          <div className="grp">
+            <h3>Cumul <span>période filtrée</span></h3>
+            <div className="plq">
+              <div>
+                <div className="l">Distance cumulée</div>
+                <b className="num">{stats.totalKm.toFixed(1)}<i>km</i></b>
+              </div>
+              <div>
+                <div className="l">Temps cumulé</div>
+                <b className="num">{formatDurationMin(stats.totalMin)}</b>
+              </div>
+              <div>
+                <div className="l">Meilleure cadence</div>
+                <b className="num">{stats.bestCadence ? stats.bestCadence.spm : '—'}{stats.bestCadence ? <i>pas/min</i> : null}</b>
+              </div>
+            </div>
+          </div>
+          <p className="tiny" style={{ marginTop: 14 }}>
+            Statistiques calculées à partir des séances classées « marche » dans Défis.
+          </p>
+        </>
       )}
-    </div>
+    </section>
   );
 }
 

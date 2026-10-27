@@ -18,8 +18,9 @@ function getLazyBackground(id) {
  * Calque global : un seul fond monté à la fois.
  * Le chunk du fond non choisi reste froid jusqu’au sélecteur.
  * La clé React force le démontage (worker, listeners, rAF) quand l’id change.
+ * `paused` coupe la boucle rAF / worker via SceneHost.setPlayback (apparence inchangée).
  */
-export default function AppBackground() {
+export default function AppBackground({ paused = false }) {
   const { option } = useAppBackground();
   const [studioOpen, setStudioOpen] = useState(isBackgroundStudioOpen);
 
@@ -37,7 +38,7 @@ export default function AppBackground() {
   return (
     <div style={{ position: 'absolute', inset: 0, background: option.fallbackBackground }}>
       <Suspense fallback={null}>
-        <Active key={option.id} params={option.params} />
+        <Active key={option.id} params={option.params} paused={paused} />
       </Suspense>
     </div>
   );

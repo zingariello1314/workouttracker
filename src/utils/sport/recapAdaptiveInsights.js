@@ -36,6 +36,7 @@ import {
 } from './recapInsightHelpers';
 import { buildComposedInterpretationPipeline } from './recapInterpretationPipeline';
 import { keepDistinctProofCards } from './recapCardKinship';
+import { filterValidInsights } from './recapInsightValidate';
 import { semanticGroupFromCandidateId } from './insightSemanticThemes';
 import {
   applyNoveltyWeights,
@@ -1450,11 +1451,17 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     window,
     metricDates: Object.keys(mergedGarmin?.dailyMetrics || {})
   });
-  const caps = columnCapsForCandidates(weightedCandidates, {
+  // Spec #24 Lot A — filtre dur avant sélection (rejeté = masqué)
+  const validCandidates = filterValidInsights(distinctCandidates, {
+    voiceKey,
+    period,
+    windowSpanDays: spanDays
+  });
+  const caps = columnCapsForCandidates(validCandidates, {
     voiceKey,
     detectedKinds: (composed.periodDiscoveries?.all || []).map((d) => d.kind)
   });
-  const pickedColumns = selectNarrativeColumns(distinctCandidates, caps, signature);
+  const pickedColumns = selectNarrativeColumns(validCandidates, caps, signature);
   const pickedShort = pickedColumns.short;
   const pickedMedium = pickedColumns.medium;
   const pickedLong = pickedColumns.long;

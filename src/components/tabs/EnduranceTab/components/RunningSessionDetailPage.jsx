@@ -107,13 +107,15 @@ function formatDeviceShort(deviceInfo) {
 
 function StatCard({ icon: Icon, label, value, hint }) {
   return (
-    <div className="rounded-2xl border border-teal-500/40 bg-black p-5 shadow-lg shadow-black/30">
-      <div className="mb-2 flex items-center gap-2 text-teal-200/75">
-        <Icon className="h-4 w-4 shrink-0 text-teal-300" aria-hidden />
-        <span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span>
-      </div>
-      <div className="text-2xl font-bold tracking-tight text-white tabular-nums">{value}</div>
-      {hint && <p className="mt-1.5 text-xs text-teal-300/55">{hint}</p>}
+    <div>
+      <dt>
+        {Icon ? <Icon className="ic" aria-hidden style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} /> : null}
+        {label}
+      </dt>
+      <dd>
+        {value}
+        {hint ? <small style={{ display: 'block', font: '600 12px var(--f-mono)', color: 'var(--bone-2)', marginTop: 4 }}>{hint}</small> : null}
+      </dd>
     </div>
   );
 }
@@ -252,54 +254,39 @@ export default function RunningSessionDetailPage({ session, onBack }) {
   if (!session) return null;
 
   return (
-    <div className="min-h-full bg-black">
-      {/* Barre retour */}
-      <div className="sticky top-0 z-20 border-b border-teal-800/40 bg-black/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-xl border border-teal-500/45 bg-black px-3 py-2 text-sm font-medium text-teal-100 transition hover:bg-teal-950/50 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour à l&apos;historique
-          </button>
-        </div>
-      </div>
+    <div>
+      <button type="button" className="back" onClick={onBack}>
+        <ArrowLeft className="ic" />
+        Retour à l&apos;historique
+      </button>
 
-      <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
-        {/* En-tête hero */}
-        <header className="relative overflow-hidden rounded-3xl border border-teal-500/45 bg-black p-8 shadow-2xl shadow-teal-950/30">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-500/12 blur-3xl" />
-          <div className="relative">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              {showIntervalBadge && (
-                <span className="rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-200">
-                  {t('endurance.running.badges.interval')}
-                </span>
-              )}
-              {session.source === 'garmin' && (
-                <span className="rounded-full border border-teal-500/50 bg-teal-500/15 px-3 py-1 text-xs font-medium text-teal-100">
-                  Garmin
-                </span>
-              )}
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
-            <p className="mt-2 text-teal-200/70">{subtitleDate}</p>
-            <p className="mt-3 inline-flex rounded-lg border border-teal-800/50 bg-black px-3 py-1 text-sm text-teal-100/90">
-              {t('endurance.running.details.typeSession')}{' '}
-              <span className="ml-1 text-white">{runningSessionTypeLabel(effectiveSessionType, t)}</span>
-            </p>
+      <div>
+        <section className="dh" style={{ '--c': 'var(--accent)' }}>
+          <div className="bd">
+            {showIntervalBadge && (
+              <span className="pill" style={{ '--c': 'var(--t-fract)' }}>
+                {t('endurance.running.badges.interval')}
+              </span>
+            )}
+            {session.source === 'garmin' && (
+              <span className="pill" style={{ '--c': 'var(--t-cl)' }}>
+                Garmin
+              </span>
+            )}
+            <span className="pill">
+              {t('endurance.running.details.typeSession')} {runningSessionTypeLabel(effectiveSessionType, t)}
+            </span>
           </div>
-        </header>
+          <h2>{title}</h2>
+          <div className="dd">{subtitleDate}</div>
+        </section>
 
-        {/* Stats principales */}
         <section className="mt-8">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-teal-200/80">
-            <Activity className="h-4 w-4 text-teal-400" />
+          <h2 className="defis-lab" style={{ marginBottom: 14 }}>
+            <Activity className="ic" style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
             Synthèse
           </h2>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <dl className="dk num">
             <StatCard icon={Navigation2} label="Distance" value={`${session.distance} km`} />
             <StatCard icon={Clock} label="Durée" value={session.duration || '—'} />
             <StatCard icon={Gauge} label="Allure" value={`${session.pace} min/km`} />
@@ -338,13 +325,14 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                 }
               />
             )}
-          </div>
+          </dl>
         </section>
 
         {kmSplits && <RunningKmSplitsTable splits={kmSplits} />}
 
         {session.notes && (
-          <p className="mt-6 rounded-2xl border border-teal-700/35 bg-black px-5 py-4 text-sm leading-relaxed text-teal-100/90">
+          <p className="dnote">
+            <em>Notes</em>
             {session.notes}
           </p>
         )}

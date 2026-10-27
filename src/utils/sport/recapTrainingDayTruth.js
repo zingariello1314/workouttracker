@@ -152,6 +152,8 @@ export function dayCountsAsCalendarTrainingDay(snapshot, dateStr, garminData = n
 
 /**
  * Nombre de jours d'entraînement sur [startYmd, endYmd] inclusive.
+ * = activité mixte (muscu + endurance + circuit + Garmin hors marche).
+ * Pour les cartes force / reps, préférer `countStrengthTrainingDaysInRange`.
  */
 export function countTrainingDaysInRange(snapshot, startYmd, endYmd, garminData = null) {
   if (!startYmd || !endYmd || startYmd > endYmd) return 0;
@@ -171,6 +173,19 @@ export function countTrainingDaysInRange(snapshot, startYmd, endYmd, garminData 
       continue;
     }
     if (garminDates.has(d)) count += 1;
+  }
+  return count;
+}
+
+/**
+ * Jours avec renforcement saisi (reps ou cases cochées) — Spec #24 B8.
+ * Ne compte pas Garmin / endurance seuls.
+ */
+export function countStrengthTrainingDaysInRange(snapshot, startYmd, endYmd) {
+  if (!startYmd || !endYmd || startYmd > endYmd) return 0;
+  let count = 0;
+  for (const d of DateHelper.getDateRange(startYmd, endYmd)) {
+    if (dayHasCheckedWorkout(snapshot, d) || dayHasRecordedReps(snapshot, d)) count += 1;
   }
   return count;
 }

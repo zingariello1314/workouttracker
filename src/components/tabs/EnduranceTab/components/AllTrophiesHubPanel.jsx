@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Layers, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { evaluateRunningTrophies } from '../../../../services/endurance/runningTrophiesService';
 import { evaluateWalkingTrophies } from '../../../../services/endurance/walkingTrophiesService';
 import { evaluatePushupTrophies } from '../../../../services/endurance/pushupTrophiesService';
@@ -24,8 +24,8 @@ function summarize(results = []) {
 
 function ProgressBar({ value }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-      <div className="h-full bg-[#0F4C5C]" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+    <div className="meter">
+      <i style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
     </div>
   );
 }
@@ -132,57 +132,55 @@ export default function AllTrophiesHubPanel({
     : 0;
   const globalProgress = totals.all.total ? (totals.all.unlocked / totals.all.total) * 100 : 0;
 
-  const subButton = (active) =>
-    `rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-      active ? 'border-[#0F5C45]/75 bg-[#0F5C45]/25 text-white' : 'border-[#0F4C5C]/50 bg-black text-teal-100 hover:border-[#0F5C45]/60'
-    }`;
-
   return (
-    <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6 space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-            <Layers className="h-7 w-7 text-sky-300" />
+    <div>
+      <section className="thead">
+        <div>
+          <div className="kicker">Défis / Trophées</div>
+          <h2>
+            Tous mes
+            <br />
+            <span>trophées</span>
+          </h2>
+          <p>Suivi global et par discipline de tous les trophées Défis.</p>
+        </div>
+        <div>
+          <span className="lab">Progression globale</span>
+          <div className="xp num">
+            {totals.all.unlocked}
+            <span style={{ fontSize: '0.4em', color: 'var(--bone-3)' }}>/{totals.all.total}</span>
           </div>
-          <div>
-            <h3 className="text-2xl font-bold text-white">Tous mes trophées</h3>
-            <p className="mt-1 text-sm text-teal-200/80">
-              Suivi global et par discipline de tous les trophées Défis.
-            </p>
+          <div className="tstat">
+            <div>
+              <span className="lab">Débloqués</span>
+              <b className="num">{globalProgress.toFixed(0)}%</b>
+              <ProgressBar value={globalProgress} />
+            </div>
+            <div>
+              <span className="lab">Paliers</span>
+              <b className="num">
+                {totals.all.unlockedLevels}
+                <i>/{totals.all.totalLevels}</i>
+              </b>
+              <div className="tiny">paliers débloqués</div>
+            </div>
           </div>
         </div>
-        <div className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-center">
-          <div className="text-xs uppercase tracking-wide text-sky-200/80">Progression globale</div>
-          <div className="text-3xl font-bold text-white tabular-nums">
-            {totals.all.unlocked}/{totals.all.total}
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <div className="space-y-2 rounded-xl border border-[#0F4C5C]/45 bg-black p-4">
-        <div className="flex items-center justify-between text-xs text-teal-200/80">
-          <span>Débloqués</span>
-          <span>{globalProgress.toFixed(0)}%</span>
-        </div>
-        <ProgressBar value={globalProgress} />
-        <div className="text-[11px] text-teal-300/65">
-          {totals.all.unlockedLevels}/{totals.all.totalLevels} paliers débloqués
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => setSubTab('overview')} className={subButton(subTab === 'overview')}>
+      <div className="defis-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={subTab === 'overview'} onClick={() => setSubTab('overview')}>
           Vue globale
         </button>
         {totals.merged.map((c) => (
-          <button key={c.id} type="button" onClick={() => setSubTab(c.id)} className={subButton(subTab === c.id)}>
+          <button key={c.id} type="button" role="tab" aria-selected={subTab === c.id} onClick={() => setSubTab(c.id)}>
             {c.label}
           </button>
         ))}
       </div>
 
       {subTab === 'overview' ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="tgrid">
           {totals.merged.map((c) => {
             const pct = c.stats.total ? (c.stats.unlocked / c.stats.total) * 100 : 0;
             return (
@@ -190,40 +188,41 @@ export default function AllTrophiesHubPanel({
                 type="button"
                 key={c.id}
                 onClick={() => onOpenCategoryTrophies?.(c.id)}
-                className="rounded-xl border border-[#0F4C5C]/45 bg-black p-4 text-left transition hover:border-[#1E7FA3]/70 hover:bg-[#0F4C5C]/10"
+                className="box tro"
+                style={{ textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
               >
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm font-semibold text-white">{c.label}</div>
-                  <Trophy className="h-4 w-4 text-sky-300" />
+                <div className="top">
+                  <h3>{c.label}</h3>
+                  <Trophy style={{ width: 18, height: 18, color: 'var(--accent)' }} />
                 </div>
-                <div className="text-xl font-bold text-white tabular-nums">
-                  {c.stats.unlocked}/{c.stats.total}
-                </div>
-                <div className="mt-2">
+                <div>
+                  <b className="num" style={{ font: '800 44px/1 var(--f-disp)', display: 'block' }}>
+                    {c.stats.unlocked}
+                    <span style={{ fontSize: 15, color: 'var(--bone-3)', marginLeft: 5 }}>/{c.stats.total}</span>
+                  </b>
                   <ProgressBar value={pct} />
-                </div>
-                <div className="mt-1 text-[11px] text-teal-300/65">
-                  {c.stats.unlockedLevels}/{c.stats.totalLevels} paliers
+                  <div className="tiny num">{c.stats.unlockedLevels}/{c.stats.totalLevels} paliers</div>
                 </div>
               </button>
             );
           })}
         </div>
       ) : currentCategory ? (
-        <div className="rounded-xl border border-[#0F4C5C]/45 bg-black p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-lg font-semibold text-white">{currentCategory.label}</div>
-            <div className="text-sm text-teal-200/80">
+        <article className="box tro">
+          <div className="top">
+            <h3>{currentCategory.label}</h3>
+            <span className="pill">
               {currentCategory.stats.unlocked}/{currentCategory.stats.total} trophées
+            </span>
+          </div>
+          <div>
+            <ProgressBar value={categoryProgress} />
+            <div className="tiny num">
+              {currentCategory.stats.unlockedLevels}/{currentCategory.stats.totalLevels} paliers débloqués
             </div>
           </div>
-          <ProgressBar value={categoryProgress} />
-          <div className="mt-2 text-xs text-teal-300/70">
-            {currentCategory.stats.unlockedLevels}/{currentCategory.stats.totalLevels} paliers débloqués
-          </div>
-        </div>
+        </article>
       ) : null}
     </div>
   );
 }
-

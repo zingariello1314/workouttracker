@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../../../context/WorkoutContext';
+import {
+  DefisCalendarGrid,
+  DefisCalendarRecap
+} from '../../tabs/EnduranceTab/components/ui/DefisCalendar.jsx';
 
-const MONTHS_FR = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'];
-const WEEKDAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 function toDateKey(d) {
   const y = d.getFullYear();
@@ -36,14 +38,6 @@ function collectPyramidActivityByDate(data) {
   return map;
 }
 
-function levelClass(level) {
-  if (level <= 0) return 'bg-black border-[#0F4C5C]/45 text-slate-500';
-  if (level === 1) return 'bg-[#0F4C5C]/35 border-[#0F4C5C]/75 text-teal-100';
-  if (level === 2) return 'bg-[#1E7FA3]/45 border-[#1E7FA3]/80 text-white';
-  if (level === 3) return 'bg-amber-500/45 border-amber-400/80 text-white';
-  return 'bg-red-500/55 border-red-400/85 text-white';
-}
-
 const PyramidCalendarPanel = () => {
   const { getCurrentData, data } = useWorkout();
   const live = typeof getCurrentData === 'function' ? getCurrentData() : data;
@@ -63,128 +57,119 @@ const PyramidCalendarPanel = () => {
     return max;
   }, [byDate]);
 
-  const months = useMemo(() => {
-    return Array.from({ length: 12 }, (_, monthIdx) => {
-      const first = new Date(selectedYear, monthIdx, 1);
-      const days = new Date(selectedYear, monthIdx + 1, 0).getDate();
-      const firstWeekDay = (first.getDay() + 6) % 7;
-      const cells = [];
-      for (let i = 0; i < firstWeekDay; i += 1) cells.push(null);
-      for (let d = 1; d <= days; d += 1) cells.push(new Date(selectedYear, monthIdx, d));
-      return { monthIdx, label: MONTHS_FR[monthIdx], cells };
-    });
-  }, [selectedYear]);
+  const recapCards = useMemo(() => {
+    const now = new Date();
+    const agg = (start, end) => {
+      let sessions = 0;
+      let planned = 0;
+      let active = 0;
+      let numDays = 0;
+      const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      while (cur <= end) {
+        const v = byDate.get(toDateKey(cur));
+        if (v && (v.sessions || v.planned)) {
+          sessions += v.sessions || 0;
+          planned += v.planned || 0;
+          active += 1;
+        }
+        numDays += 1;
+        cur.setDate(cur.getDate() + 1);
+      }
+      return { sessions, planned, active, numDays };
+    };
+    const ws = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+    return [
+      { key: 'week', title: 'Semaine en cours', ...agg(ws, new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + 6)) },
+      {
+        key: 'month',
+        title: 'Mois en cours',
+        ...agg(new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getFullYear(), now.getMonth() + 1, 0))
+      },
+      { key: 'year', title: `Année ${selectedYear}`, ...agg(new Date(selectedYear, 0, 1), new Date(selectedYear, 11, 31)) }
+    ].map((p) => ({
+      key: p.key,
+      title: p.title,
+      rows: [
+        { label: 'Séances / jour', value: (p.numDays ? p.sessions / p.numDays : 0).toFixed(2) },
+        { label: 'Plans du jour / jour', value: (p.numDays ? p.planned / p.numDays : 0).toFixed(2) }
+      ],
+      si: `Si actif : ${(p.active ? p.sessions / p.active : 0).toFixed(2)} séances/jour actif`
+    }));
+  }, [byDate, selectedYear]);
+
+  const scoreOf = (key) => {
+    const v = byDate.get(key) || { sessions: 0, planned: 0 };
+    return (v.sessions || 0) * 2 + (v.planned || 0);
+  };
 
   const selectedDetail = selectedDateKey ? byDate.get(selectedDateKey) : null;
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {['mois', 'annee'].map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setViewMode(mode)}
-                className={`rounded-lg border px-3 py-1.5 text-sm ${
-                  viewMode === mode
-                    ? 'border-[#1E7FA3]/85 bg-[#1E7FA3]/25 text-white'
-                    : 'border-[#0F4C5C]/50 bg-black text-teal-100'
-                }`}
-              >
-                {mode === 'mois' ? 'Mois' : 'Annee'}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedYear((y) => y - 1)}
-              className="rounded-lg border border-[#0F4C5C]/60 bg-black p-2 text-teal-100"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <div className="min-w-[92px] text-center text-lg font-semibold text-white">{selectedYear}</div>
-            <button
-              type="button"
-              onClick={() => setSelectedYear((y) => y + 1)}
-              className="rounded-lg border border-[#0F4C5C]/60 bg-black p-2 text-teal-100"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-4 text-xs text-teal-200/75">
-          Intensité = séances pyramide enregistrées (×2) + plans du jour (variation) sur la date.
-        </div>
-
-        <div className="mb-4 flex items-center gap-2 text-xs">
-          <span className="text-slate-400">Intensite:</span>
-          {[0, 1, 2, 3, 4].map((lvl) => (
-            <span key={lvl} className={`h-3 w-6 rounded-sm border ${levelClass(lvl)}`} />
-          ))}
-        </div>
-
-        <div className={viewMode === 'mois' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'}>
-          {(viewMode === 'mois' ? [months[selectedMonthIndex]] : months).map((month) => (
-            <div key={month.monthIdx} className="rounded-xl border border-[#0F4C5C]/45 bg-black p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="text-sm font-semibold text-white">{month.label}</div>
-                <div className="text-[11px] text-teal-200/70">pyramides</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
+      <DefisCalendarRecap
+        hint="Moyennes = total sur la période ÷ nombre de jours calendaires (semaine = lun–dim, mois = mois civil, année = année affichée sous le calendrier). La ligne « si actif » divise par les jours où tu as au moins une séance ou un plan pyramide."
+        cards={recapCards}
+      />
+      <DefisCalendarGrid
+        year={selectedYear}
+        viewMode={viewMode}
+        modes={[
+          { id: 'mois', label: 'Mois' },
+          { id: 'annee', label: 'Année' }
+        ]}
+        onViewMode={setViewMode}
+        monthIndex={selectedMonthIndex}
+        monthNames={MONTHS_FR}
+        onPrev={() => setSelectedYear((y) => y - 1)}
+        onNext={() => setSelectedYear((y) => y + 1)}
+        onMonthTitleClick={(monthIdx) => {
+          setSelectedMonthIndex(monthIdx);
+          setViewMode('mois');
+        }}
+        levelOf={(key) => {
+          const score = scoreOf(key);
+          if (score === 0) return 0;
+          const normalized = maxScore > 0 ? score / maxScore : 0;
+          return Math.min(4, Math.max(1, Math.ceil(normalized * 4)));
+        }}
+        countOf={(key) => {
+          const v = byDate.get(key);
+          return v ? (v.sessions || 0) + (v.planned || 0) : 0;
+        }}
+        unitLabel={(n) => (n > 1 ? 'pyramides' : 'pyramide')}
+        legend="Intensité = séances pyramide enregistrées (×2) + plans du jour (variation) sur la date."
+        selectedDateKey={selectedDateKey}
+        onDayClick={(key, monthIdx) => {
+          setSelectedDateKey(key);
+          setSelectedMonthIndex(monthIdx);
+          setViewMode('mois');
+        }}
+        dayTitle={(key) => {
+          const v = byDate.get(key) || { sessions: 0, planned: 0 };
+          return `${key} · ${v.sessions} séance(s) · ${v.planned} plan(s) jour`;
+        }}
+        detail={
+          <>
+            {selectedDateKey ? `Détail du ${selectedDateKey}` : 'Clique sur une case'}
+            {!selectedDateKey ? (
+              <div className="dr">
+                <span>Choisis une date dans la grille.</span>
               </div>
-              <div className="mb-1 grid grid-cols-7 gap-1">
-                {WEEKDAYS_FR.map((w, i) => (
-                  <div key={`${month.monthIdx}-wd-${i}`} className="text-center text-[10px] text-slate-500">
-                    {w}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {month.cells.map((d, idx) => {
-                  if (!d) return <div key={`empty-${month.monthIdx}-${idx}`} className="h-8 rounded border border-transparent" />;
-                  const key = toDateKey(d);
-                  const v = byDate.get(key) || { sessions: 0, planned: 0 };
-                  const score = (v.sessions || 0) * 2 + (v.planned || 0);
-                  const normalized = maxScore > 0 ? score / maxScore : 0;
-                  const level = score === 0 ? 0 : Math.min(4, Math.max(1, Math.ceil(normalized * 4)));
-                  const isSelected = selectedDateKey === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDateKey(key);
-                        setSelectedMonthIndex(month.monthIdx);
-                        setViewMode('mois');
-                      }}
-                      className={`h-8 rounded border text-[11px] transition ${levelClass(level)} ${isSelected ? 'ring-2 ring-sky-400/70' : ''}`}
-                      title={`${key} · ${v.sessions} séance(s) · ${v.planned} plan(s) jour`}
-                    >
-                      {d.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-[#0F4C5C]/55 bg-black p-4">
-        <div className="mb-3 text-sm font-semibold text-white">
-          {selectedDateKey ? `Détail du ${selectedDateKey}` : 'Clique sur une case'}
-        </div>
-        {!selectedDateKey ? (
-          <div className="text-sm text-slate-400">Choisis une date dans la grille.</div>
-        ) : (
-          <div className="text-sm text-slate-200 space-y-1">
-            <div>Séances pyramide enregistrées : {selectedDetail?.sessions ?? 0}</div>
-            <div>Plans pyramide (variation du jour) : {selectedDetail?.planned ?? 0}</div>
-          </div>
-        )}
-      </div>
+            ) : (
+              <>
+                <div className="dr">
+                  <span>Séances pyramide enregistrées</span>
+                  <b className="num">{selectedDetail?.sessions ?? 0}</b>
+                </div>
+                <div className="dr">
+                  <span>Plans pyramide (variation du jour)</span>
+                  <b className="num">{selectedDetail?.planned ?? 0}</b>
+                </div>
+              </>
+            )}
+          </>
+        }
+      />
     </div>
   );
 };

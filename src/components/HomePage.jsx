@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useWorkout } from '../context/WorkoutContext';
+import { useAppNavigation } from '../context/NavigationContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppLock } from '../context/AppLockContext';
 import { useLockWallpaperPlayback } from '../hooks/useLockWallpaperUrls';
@@ -60,7 +60,7 @@ function getQuoteFontCapRem(lineCount, sandwichBold = false) {
 }
 
 const HomePage = () => {
-  const { setActiveTab, activeTab } = useWorkout();
+  const { setActiveTab, activeTab } = useAppNavigation();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { lockNow, lockReady } = useAppLock();
   const lockPlayback = useLockWallpaperPlayback();

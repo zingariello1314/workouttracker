@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, ClipboardList, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import {
   defaultGtgProtocolGoal,
   estimateGtgMaxFromWorkingReps,
@@ -189,172 +189,129 @@ export default function GtgProtocolDataBanner({
   }
 
   return (
-    <div
-      className={`overflow-hidden rounded-2xl border bg-gradient-to-br from-black via-slate-950 to-amber-950/20 ${
-        gaps.incomplete ? 'border-amber-500/45' : 'border-amber-500/25'
-      }`}
+    <details
+      className="proto"
+      open={!collapsed}
+      style={{ marginBottom: 8, borderColor: gaps.incomplete ? 'var(--t-fract)' : undefined }}
     >
-      <button
-        type="button"
-        onClick={toggleCollapse}
-        className="flex w-full items-start justify-between gap-3 border-b border-amber-500/20 px-5 py-4 text-left hover:bg-amber-950/10"
+      <summary
+        onClick={(e) => {
+          e.preventDefault();
+          toggleCollapse();
+        }}
       >
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-2.5">
-            <ClipboardList className="h-5 w-5 text-amber-200" />
-          </div>
-          <div>
-            <h4 className="text-base font-semibold text-white">
-              {t('endurance.gtg.protocolData.title')}
-            </h4>
-            <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
-              {collapsed
-                ? summaryBits.join(' · ')
-                : t('endurance.gtg.protocolData.hint')}
-            </p>
-          </div>
-        </div>
-        <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-slate-500">
-          {collapsed
-            ? t('endurance.gtg.protocolData.expand')
-            : t('endurance.gtg.protocolData.collapse')}
-          {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+        <span className="k">{t('endurance.gtg.protocolData.title')}</span>
+        <span className="v num">{summaryBits.join(' · ')}</span>
+        <span className="o">
+          {collapsed ? t('endurance.gtg.protocolData.expand') : t('endurance.gtg.protocolData.collapse')}
         </span>
-      </button>
+      </summary>
 
       {!collapsed && (
-        <div className="space-y-4 px-5 py-4">
-          <div className="rounded-xl border border-slate-700/50 bg-black/40 p-3.5">
-            <div className="mb-1 flex flex-wrap items-center gap-2 text-sm font-medium text-amber-100">
-              <span>{t('endurance.gtg.protocolData.weightLabel')}</span>
+        <div style={{ padding: '0 0 22px' }}>
+          <p className="tiny" style={{ margin: '0 0 16px' }}>{t('endurance.gtg.protocolData.hint')}</p>
+
+          <div className="cf" style={{ padding: '16px 0' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 14px' }}>
+              <span className="lab" style={{ color: 'var(--bone-2)' }}>{t('endurance.gtg.protocolData.weightLabel')}</span>
               {bodyW.known ? (
-                <span className="rounded-md border border-emerald-500/35 bg-emerald-950/30 px-2 py-0.5 text-[11px] font-normal text-emerald-200">
+                <span className="mono num" style={{ fontSize: 12, color: 'var(--t-cl)' }}>
                   {bodyW.kg} kg
                   {sourceLabel ? ` · ${sourceLabel}` : ''}
                   {bodyW.dateYmd ? ` · ${bodyW.dateYmd}` : ''}
                 </span>
               ) : null}
             </div>
-            <p className="mb-2 text-[11px] text-slate-500">
+            <p className="tiny" style={{ margin: '6px 0 0' }}>
               {bodyW.known && (bodyW.source === 'impedance' || bodyW.source === 'metrics')
                 ? t('endurance.gtg.protocolData.weightIndexedHint')
                 : t('endurance.gtg.protocolData.weightHint')}
             </p>
             {(!bodyW.known || bodyW.source === 'gtg' || bodyW.source === 'quiz') && (
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="number"
-                  min={30}
-                  max={250}
-                  step={0.1}
-                  inputMode="decimal"
-                  placeholder={bodyW.kg ? String(bodyW.kg) : 'ex. 72'}
-                  value={weightDraft}
-                  onChange={(e) => setWeightDraft(e.target.value)}
-                  className="w-28 rounded-lg border border-slate-600 bg-black px-3 py-2 text-sm text-white"
-                />
-                <span className="text-xs text-slate-500">kg</span>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={onSaveWeight}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/45 bg-amber-950/40 px-3 py-2 text-xs font-medium text-amber-100 hover:bg-amber-950/60"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
+              <div className="cm2">
+                <label className="fld" style={{ width: 140 }}>
+                  <span className="lab">kg</span>
+                  <input
+                    type="number"
+                    min={30}
+                    max={250}
+                    step={0.1}
+                    inputMode="decimal"
+                    placeholder={bodyW.kg ? String(bodyW.kg) : 'ex. 72'}
+                    value={weightDraft}
+                    onChange={(e) => setWeightDraft(e.target.value)}
+                  />
+                </label>
+                <button type="button" className="btn sm pri" disabled={saving} onClick={onSaveWeight}>
+                  <Sparkles className="ic" style={{ width: 14, height: 14 }} />
                   {t('endurance.gtg.protocolData.save')}
                 </button>
               </div>
             )}
           </div>
 
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className={`rounded-xl border p-3.5 ${
-                !row.hasDeclaredMax || !row.hasReps
-                  ? 'border-amber-500/35 bg-amber-950/15'
-                  : 'border-slate-700/50 bg-black/40'
-              }`}
-            >
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <div className="text-sm font-medium text-white">{row.label}</div>
-                {row.hasDeclaredMax && row.hasReps ? (
-                  <span className="text-[10px] text-emerald-300/80">
-                    {t('endurance.gtg.protocolData.rowReady')}
+          {rows.map((row) => {
+            const ready = row.hasDeclaredMax && row.hasReps;
+            return (
+              <div key={row.id} className="cf" style={{ padding: '16px 0' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
+                  <b style={{ font: '800 22px/1.1 var(--f-disp)', textTransform: 'uppercase', letterSpacing: '.02em' }}>
+                    {row.label}
+                  </b>
+                  <span className="lab" style={{ color: ready ? 'var(--t-cl)' : 'var(--t-fract)' }}>
+                    {ready ? t('endurance.gtg.protocolData.rowReady') : t('endurance.gtg.protocolData.rowNeeds')}
                   </span>
-                ) : (
-                  <span className="text-[10px] text-amber-200/80">
-                    {t('endurance.gtg.protocolData.rowNeeds')}
-                  </span>
-                )}
+                </div>
+                <p className="tiny" style={{ margin: '6px 0 0' }}>{t('endurance.gtg.protocolData.rowHint')}</p>
+                <div className="nums" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 12 }}>
+                  <label className="fld">
+                    <span className="lab">{t('endurance.gtg.protocolData.maxUnit')}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      inputMode="numeric"
+                      placeholder={row.max ? String(row.max) : '—'}
+                      value={getDraft(row.id, 'max', row.hasDeclaredMax ? row.max : '')}
+                      onChange={(e) => setDraft(row.id, 'max', e.target.value)}
+                    />
+                  </label>
+                  <label className="fld">
+                    <span className="lab">{t('endurance.gtg.protocolData.goalLabel')}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      inputMode="numeric"
+                      placeholder={row.goal ? String(row.goal) : '—'}
+                      value={getDraft(row.id, 'goal', row.hasDeclaredGoal ? row.goal : '')}
+                      onChange={(e) => setDraft(row.id, 'goal', e.target.value)}
+                    />
+                  </label>
+                  <label className="fld">
+                    <span className="lab">{t('endurance.gtg.protocolData.repsLabel')}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={200}
+                      inputMode="numeric"
+                      placeholder={row.reps ? String(row.reps) : '—'}
+                      value={getDraft(row.id, 'reps', row.reps)}
+                      onChange={(e) => setDraft(row.id, 'reps', e.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="cm2">
+                  <button type="button" className="btn sm" disabled={saving} onClick={() => onSaveRow(row)}>
+                    {t('endurance.gtg.protocolData.save')}
+                  </button>
+                  <span className="tiny">{t('endurance.gtg.protocolData.syncNote')}</span>
+                </div>
               </div>
-              <p className="mb-3 text-[11px] text-slate-500">
-                {t('endurance.gtg.protocolData.rowHint')}
-              </p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <label className="block">
-                  <span className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
-                    {t('endurance.gtg.protocolData.maxUnit')}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={999}
-                    inputMode="numeric"
-                    placeholder={row.max ? String(row.max) : '—'}
-                    value={getDraft(row.id, 'max', row.hasDeclaredMax ? row.max : '')}
-                    onChange={(e) => setDraft(row.id, 'max', e.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-black px-3 py-2 text-sm text-white"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
-                    {t('endurance.gtg.protocolData.goalLabel')}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={999}
-                    inputMode="numeric"
-                    placeholder={row.goal ? String(row.goal) : '—'}
-                    value={getDraft(row.id, 'goal', row.hasDeclaredGoal ? row.goal : '')}
-                    onChange={(e) => setDraft(row.id, 'goal', e.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-black px-3 py-2 text-sm text-white"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
-                    {t('endurance.gtg.protocolData.repsLabel')}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={200}
-                    inputMode="numeric"
-                    placeholder={row.reps ? String(row.reps) : '—'}
-                    value={getDraft(row.id, 'reps', row.reps)}
-                    onChange={(e) => setDraft(row.id, 'reps', e.target.value)}
-                    className="w-full rounded-lg border border-violet-500/40 bg-violet-950/20 px-3 py-2 text-sm text-violet-50"
-                  />
-                </label>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => onSaveRow(row)}
-                  className="rounded-lg border border-violet-500/45 bg-violet-950/40 px-3 py-2 text-xs font-medium text-violet-100 hover:bg-violet-950/60"
-                >
-                  {t('endurance.gtg.protocolData.save')}
-                </button>
-                <span className="text-[10px] text-slate-500">
-                  {t('endurance.gtg.protocolData.syncNote')}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-    </div>
+    </details>
   );
 }

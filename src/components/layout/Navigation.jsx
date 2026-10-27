@@ -1,11 +1,15 @@
 import React, { useMemo } from 'react';
-import { useWorkout } from '../../context/WorkoutContext';
+import { useAppNavigation } from '../../context/NavigationContext';
 import { useTranslation } from '../../utils/translations';
 import { useAuth } from '../../context/AuthContext';
 import { canAccessTab } from '../../utils/accessMatrix';
+import {
+  prefetchSportTabChunk,
+  preloadTodayTab
+} from '../../utils/preloadTabs';
 
 const Navigation = () => {
-  const { activeTab, setActiveTab } = useWorkout();
+  const { activeTab, setActiveTab } = useAppNavigation();
   const t = useTranslation();
   const { isAuthenticated } = useAuth();
 
@@ -143,6 +147,13 @@ const Navigation = () => {
             <button
               key={tab.id}
               onClick={() => handleClick(tab.id)}
+              onMouseEnter={() => {
+                if (tab.id === 'sport') {
+                  prefetchSportTabChunk(getLastSportSubTab());
+                  // Aujourd’hui est le fallback / keep-alive fréquent
+                  preloadTodayTab();
+                }
+              }}
               role="tab"
               aria-selected={isTabActive(tab.id)}
               aria-current={isTabActive(tab.id) ? 'page' : undefined}
@@ -174,6 +185,9 @@ const Navigation = () => {
                   }
                   localStorage.setItem('sport.lastSubTab', tab.id);
                   setActiveTab(tab.id);
+                }}
+                onMouseEnter={() => {
+                  prefetchSportTabChunk(tab.id);
                 }}
                 role="tab"
                 aria-selected={activeTab === tab.id}

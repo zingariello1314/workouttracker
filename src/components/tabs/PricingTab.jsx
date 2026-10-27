@@ -7,7 +7,7 @@ import { cn } from "../../utils/cn";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { useWorkout } from "../../context/WorkoutContext";
+import { useAppNavigation } from "../../context/NavigationContext";
 import { ArrowLeft } from "lucide-react";
 
 const plans = [
@@ -111,7 +111,7 @@ const PricingSwitch = ({ onSwitch }) => {
 export default function PricingTab() {
   const [isYearly, setIsYearly] = useState(false);
   const pricingRef = useRef(null);
-  const { setActiveTab, previousTab } = useWorkout();
+  const { setActiveTab, previousTab } = useAppNavigation();
 
   const revealVariants = {
     visible: (i) => ({

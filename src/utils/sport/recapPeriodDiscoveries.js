@@ -32,6 +32,10 @@ import { comparableWeeklyRates, SIGNAL_FAMILY_CAPS, signalFamilyOfKind } from '.
 import { buildSleepRhythmDiscoveries } from './sleepRhythmAnalysis';
 import { buildThreadDiscoveries, rewriteSleepDiscoveries } from './recapAnalysisProofs';
 import { applyEditorialGate } from './recapEditorialGate';
+import {
+  assertWindowMeasureConsistency,
+  filterValidInsights
+} from './recapInsightValidate';
 import { createSetShiftReader } from './recapSetShift';
 import { describeCalendarShape } from './recapCalendarShape';
 import { describeStepReadings } from './recapStepReading';
@@ -682,6 +686,17 @@ export function buildPeriodComparisons({
     periodId: '30d',
     refDate: refFromYmd(previousWindow(end, 30).end)
   });
+  // Spec #24 C1 — baseline de même durée que la fenêtre courante
+  const sameLen = Math.max(1, Number(periodM.spanDays) || 30);
+  const prevSameWin = previousWindow(end, sameLen);
+  const prevSameLength = measureRecapWindow({
+    snapshot,
+    window: prevSameWin,
+    getExerciseNameById,
+    garminData,
+    periodId: period,
+    refDate: refFromYmd(prevSameWin.end)
+  });
   const quarter = windowFromEnd(end, 92);
   const first30end = addCalendarDays(quarter.start, 29);
   const first30 = measureRecapWindow({
@@ -692,12 +707,15 @@ export function buildPeriodComparisons({
     periodId: '30d',
     refDate: refFromYmd(first30end)
   });
+  assertWindowMeasureConsistency(periodM, { label: `period:${period}` });
+  assertWindowMeasureConsistency(prevSameLength, { label: `prevSame:${period}` });
   return {
     period: periodM,
     d7,
     d30,
     d90,
     prev30,
+    prevSameLength,
     first30,
     identity: athleteIdentity || null,
     periodId: period,
@@ -725,7 +743,12 @@ function sessionRhythmClause(p, opts = {}) {
 
 function detectDiscoveries(cmp, extras = {}) {
   const out = [];
-  const { period: p, d7, d30, d90, prev30, first30, identity, voice: v } = cmp;
+  const { period: p, d7, d30, d90, prev30, prevSameLength, first30, identity, voice: v } = cmp;
+  const volumeBaseline =
+    isLongVoice(v) && prevSameLength ? prevSameLength : prev30;
+  const volumeBaselineLabel = isLongVoice(v)
+    ? 'la période précédente de même durée'
+    : 'les 30 jours d\'avant';
   if (!p) return out;
 
   const isToday = v.key === 'today';
@@ -992,15 +1015,18 @@ function detectDiscoveries(cmp, extras = {}) {
   }
 
   if (isMonth && p.totalReps >= 200) {
-    const volPct = prev30?.totalReps >= 200 ? pctChange(p.totalReps, prev30.totalReps) : null;
-    const freqPct = prev30?.trainingDays >= 1 ? pctChange(p.trainingDays, prev30.trainingDays) : null;
+    const base = volumeBaseline;
+    const strengthDays = p.strengthDays ?? p.trainingDays;
+    const baseStrengthDays = base?.strengthDays ?? base?.trainingDays;
+    const volPct = base?.totalReps >= 200 ? pctChange(p.totalReps, base.totalReps) : null;
+    const freqPct = baseStrengthDays >= 1 ? pctChange(strengthDays, baseStrengthDays) : null;
     const vsPrev =
-      prev30?.totalReps >= 200
-        ? `, contre ${fmtInt(prev30.totalReps)} reps en ${prev30.trainingDays} jours sur les 30 jours d'avant (${fmtSignedPct(volPct)}${
+      base?.totalReps >= 200
+        ? `, contre ${fmtInt(base.totalReps)} reps en ${baseStrengthDays} jours de renforcement sur ${volumeBaselineLabel} (${fmtSignedPct(volPct)}${
             freqPct != null ? `, fréquence ${fmtSignedPct(freqPct)}` : ''
           }${
-            prev30.repsPerSession != null && p.repsPerSession != null
-              ? `, ${fmtInt(p.repsPerSession)} vs ${fmtInt(prev30.repsPerSession)} reps/séance`
+            base.repsPerSession != null && p.repsPerSession != null
+              ? `, ${fmtInt(p.repsPerSession)} vs ${fmtInt(base.repsPerSession)} reps/séance`
               : ''
           })`
         : '';
@@ -1011,9 +1037,9 @@ function detectDiscoveries(cmp, extras = {}) {
             : freqPct != null && volPct < -4 && Math.abs(freqPct) < 6
             ? ' La fréquence tient, mais chaque séance produit moins de répétitions.'
             : freqPct != null && volPct < -8 && freqPct < -8
-              ? ` Une partie du recul vient du nombre de jours entraînés (${prev30.trainingDays} → ${p.trainingDays}), pas seulement de séances plus petites. Le total du mois et la dynamique des derniers jours ne racontent donc pas la même chose.`
-              : ' La comparaison utile est donc mois contre mois précédent, pas un jugement isolé du total.'
-        : ' Sans mois précédent assez fourni, on lit le mois par son rythme interne (séances, densité, muscles), pas par un écart inventé.';
+              ? ` Une partie du recul vient du nombre de jours de renforcement (${baseStrengthDays} → ${strengthDays}), pas seulement de séances plus petites.`
+              : ' La comparaison utile est donc période contre période de même durée.'
+        : ' Sans période précédente assez fournie, on lit le mois par son rythme interne.';
     out.push(
       discovery({
         kind: 'disc_volume_shape',
@@ -1023,22 +1049,28 @@ function detectDiscoveries(cmp, extras = {}) {
           volPct == null
             ? 'Le mois a un volume, un rythme et une composition'
             : Math.abs(volPct) < 8
-              ? 'Le volume du mois reste proche du mois précédent'
+              ? 'Le volume du mois reste proche de la période précédente'
               : volPct > 0
-                ? 'Le volume du mois dépasse celui du mois précédent'
-                : 'Le volume du mois recule par rapport au mois précédent',
-        body: `Ces 30 jours totalisent ${fmtInt(p.totalReps)} répétitions en ${p.trainingDays} jours entraînés${sessionRhythmClause(p)}${vsPrev}.${vsRead}${
+                ? 'Le volume du mois dépasse la période précédente'
+                : 'Le volume du mois recule par rapport à la période précédente',
+        body: `Ces 30 jours totalisent ${fmtInt(p.totalReps)} répétitions en ${strengthDays} jours de renforcement${sessionRhythmClause(p)}${vsPrev}.${vsRead}${
           Number.isFinite(features.volumeDelta28Pct) && Number.isFinite(features.volumeDelta7Pct)
             ? ` Les répétitions suivies sur 28 jours sont ${fmtSignedPct(features.volumeDelta28Pct)} que le mois comparable, tandis que les 7 derniers jours ${
                 features.volumeDelta7Pct > 4 ? 'repartent' : 'restent'
               } (${fmtSignedPct(features.volumeDelta7Pct)}).`
             : ''
         }`,
-        evidence: prev30?.totalReps >= 200
-          ? `${fmtInt(p.totalReps)} vs ${fmtInt(prev30.totalReps)} · ${fmtSignedPct(volPct)}`
-          : `${fmtInt(p.totalReps)} reps · ${p.trainingDays} j.`,
+        evidence: base?.totalReps >= 200
+          ? `${fmtInt(p.totalReps)} vs ${fmtInt(base.totalReps)} · ${fmtSignedPct(volPct)}`
+          : `${fmtInt(p.totalReps)} reps · ${strengthDays} j.`,
         weights: { importance: 0.95, reliability: 0.92, novelty: 0.86, fit: 1 },
-        metrics: { volPct, freqPct }
+        metrics: {
+          volPct,
+          freqPct,
+          windowSpanDays: p.spanDays,
+          baselineSpanDays: base?.spanDays ?? 30,
+          baselineSameLength: true
+        }
       })
     );
   }
@@ -2135,18 +2167,32 @@ function detectDiscoveries(cmp, extras = {}) {
   }
 
   if (weekFreq) {
-    out.push(
-      discovery({
-        kind: 'disc_sleep_freq',
-        nature: 'journey',
-        family: 'sleep_freq',
-        title: 'Les semaines bien dormies comptent plus de jours actifs',
-        body: `Tes semaines contenant au moins 4 nuits au-dessus de 7 h 30 présentent une moyenne de ${fmt1(weekFreq.highDays)} jours actifs, contre ${fmt1(weekFreq.lowDays)} lorsque ce seuil n'est atteint que deux fois ou moins (${weekFreq.highWeeks} et ${weekFreq.lowWeeks} semaines). La différence porte donc à la fois sur le nombre de jours où tu t'entraînes et la quantité de travail réalisée lors de ces journées.`,
-        evidence: `${fmt1(weekFreq.highDays)} j. · ${fmt1(weekFreq.lowDays)} j.`,
-        weights: { importance: 0.86, reliability: 0.82, novelty: 0.92, fit: 0.9 },
-        metrics: weekFreq
-      })
-    );
+    const sleepDelta =
+      weekFreq.delta != null
+        ? Number(weekFreq.delta)
+        : Number(weekFreq.highDays) - Number(weekFreq.lowDays);
+    // B6 — titre dérivé du signe ; silence si écart négligeable
+    if (Number.isFinite(sleepDelta) && Math.abs(sleepDelta) >= 0.4) {
+      const moreActive = sleepDelta > 0;
+      out.push(
+        discovery({
+          kind: 'disc_sleep_freq',
+          nature: 'journey',
+          family: 'sleep_freq',
+          title: moreActive
+            ? 'Les semaines bien dormies comptent plus de jours actifs'
+            : 'Les semaines bien dormies ne comptent pas plus de jours actifs',
+          body: `Tes semaines contenant au moins 4 nuits au-dessus de 7 h 30 présentent une moyenne de ${fmt1(weekFreq.highDays)} jours actifs, contre ${fmt1(weekFreq.lowDays)} lorsque ce seuil n'est atteint que deux fois ou moins (${weekFreq.highWeeks} et ${weekFreq.lowWeeks} semaines). ${
+            moreActive
+              ? 'La différence porte sur le nombre de jours où tu t\'entraînes.'
+              : 'Sur cet historique, mieux dormir ne va pas avec plus de jours entraînés — autre chose limite la fréquence.'
+          }`,
+          evidence: `${fmt1(weekFreq.highDays)} j. · ${fmt1(weekFreq.lowDays)} j.`,
+          weights: { importance: 0.86, reliability: 0.82, novelty: 0.92, fit: 0.9 },
+          metrics: { ...weekFreq, delta: sleepDelta }
+        })
+      );
+    }
   }
 
   if (highShare) {
@@ -2437,17 +2483,18 @@ function detectDiscoveries(cmp, extras = {}) {
 
   const runKm = Number(p.runningKm) || 0;
   const runMin = Number(p.runningMinutes) || 0;
-  const prevKm = Number(prev30?.runningKm) || 0;
+  const runBase = volumeBaseline || prev30;
+  const prevKm = Number(runBase?.runningKm) || 0;
   if ((runKm >= 1.5 || runMin >= 15) && p.totalReps >= 80) {
     const kmPct = prevKm >= 1.5 ? pctChange(runKm, prevKm) : null;
-    const repsPct = prev30?.totalReps >= 80 ? pctChange(p.totalReps, prev30.totalReps) : null;
-    let read = 'Course et renforcement coexistent sur la période : ce n’est pas un bloc cardio isolé du reste de l’entraînement.';
+    const repsPct = runBase?.totalReps >= 80 ? pctChange(p.totalReps, runBase.totalReps) : null;
+    let read = 'Course et renforcement coexistent sur la période.';
     if (kmPct != null && repsPct != null && kmPct < -12 && repsPct > 8) {
       read = `Le volume de course recule (${fmtSignedPct(kmPct)}) tandis que les reps de renforcement augmentent (${fmtSignedPct(repsPct)}).`;
     } else if (kmPct != null && repsPct != null && kmPct > 12 && repsPct < -8) {
       read = `La course augmente (${fmtSignedPct(kmPct)}) alors que les reps de renforcement reculent (${fmtSignedPct(repsPct)}).`;
     } else if (kmPct == null && prevKm < 1) {
-      read = 'La course réapparaît à côté du renforcement, au lieu de rester un compartiment vide.';
+      read = 'La course réapparaît à côté du renforcement.';
     }
     const runClock = runMin >= 10 ? ` en ${formatDurationFr(runMin)}` : '';
     out.push(
@@ -2455,15 +2502,23 @@ function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_cardio_strength',
         nature: 'trajectory',
         family: 'cardio_strength',
-        title: 'Course et renforcement se lisent ensemble, pas comme deux analyses séparées',
+        title: 'Course et renforcement se lisent ensemble',
         body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} combine ${fmt1(runKm)} km de course${runClock} et ${fmtInt(p.totalReps)} reps de renforcement.${
-          prevKm >= 1 || prev30?.totalReps >= 80
-            ? ` Sur les 30 jours d'avant : ${fmt1(prevKm)} km et ${fmtInt(prev30.totalReps)} reps.`
+          prevKm >= 1 || runBase?.totalReps >= 80
+            ? ` Sur ${volumeBaselineLabel} : ${fmt1(prevKm)} km et ${fmtInt(runBase.totalReps)} reps.`
             : ''
         } ${read}`,
         evidence: `${fmt1(runKm)} km · ${fmtInt(p.totalReps)} reps`,
         weights: { importance: 0.86, reliability: 0.88, novelty: 0.9, fit: 0.92 },
-        metrics: { runKm, runMin, kmPct, repsPct }
+        metrics: {
+          runKm,
+          runMin,
+          kmPct,
+          repsPct,
+          windowSpanDays: p.spanDays,
+          baselineSpanDays: runBase?.spanDays ?? null,
+          baselineSameLength: !isLongVoice(v) || (runBase?.spanDays != null && Math.abs((runBase.spanDays || 0) - (p.spanDays || 0)) < 3)
+        }
       })
     );
   }
@@ -3042,11 +3097,13 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     comparisons.voice?.key || 'week'
   );
   const voiceKey = comparisons.voice?.key || 'week';
-  const selected = refillAfterGate(
-    applyEditorialGate(traced.selected, { voiceKey }),
-    traced.dropped,
-    voiceKey
-  );
+  const gated = applyEditorialGate(traced.selected, { voiceKey });
+  const validated = filterValidInsights(gated, {
+    voiceKey,
+    period: comparisons.periodId,
+    windowSpanDays: comparisons.period?.spanDays
+  });
+  const selected = refillAfterGate(validated, traced.dropped, voiceKey);
   const dropped = traced.dropped;
   const preferPeriodNow = selected.some((d) => d.nature === 'now');
   const sleepDetected = all.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);

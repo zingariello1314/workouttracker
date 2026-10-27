@@ -1,10 +1,10 @@
-import { useWorkout } from '../../context/WorkoutContext';
+import { useAppNavigation } from '../../context/NavigationContext';
 import CodeCalendarSubTab from '../code/CodeCalendarSubTab';
 import CodeJournalDirectivesSubTab from '../code/CodeJournalDirectivesSubTab';
 import CodeStatisticsSubTab from '../code/CodeStatisticsSubTab';
 
 const CodeTab = () => {
-  const { activeTab } = useWorkout();
+  const { activeTab } = useAppNavigation();
   if (activeTab === 'code-journal') {
     return <CodeJournalDirectivesSubTab />;
   }

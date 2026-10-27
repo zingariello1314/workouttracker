@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   countTrainingDaysInRange,
+  countStrengthTrainingDaysInRange,
   dayHasTrainingActivity,
   isGarminTrainingActivity,
   collectGarminTrainingDates
@@ -27,6 +28,7 @@ describe('recapTrainingDayTruth', () => {
     };
 
     expect(countTrainingDaysInRange(snapshot, '2026-06-01', '2026-06-05', garminData)).toBe(4);
+    expect(countStrengthTrainingDaysInRange(snapshot, '2026-06-01', '2026-06-05')).toBe(1);
     expect(collectGarminTrainingDates(garminData).has('2026-06-05')).toBe(false);
     expect(dayHasTrainingActivity(snapshot, '2026-06-04', garminData)).toBe(true);
   });

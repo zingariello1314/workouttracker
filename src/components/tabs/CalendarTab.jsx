@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, startTransition } from 'react';
 import { Calendar, Activity, Target, Flame, Zap, Clock, Dumbbell, Repeat, Crown } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useAppNavigation } from '../../context/NavigationContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 import { useGarminData } from '../../hooks/useGarminData';
@@ -55,11 +56,13 @@ const CalendarTab = () => {
     data,
     getCurrentData,
     deleteMockEnduranceSessions,
-    getExerciseNameById,
+    getExerciseNameById
+  } = useWorkout();
+  const {
     requestOpenEnduranceSubTab,
     pendingCalendarDeepLink,
     clearPendingCalendarDeepLink
-  } = useWorkout();
+  } = useAppNavigation();
   const { currentUser } = useAuth();
   const t = useTranslation();
   const [jumpToCalendarDate, setJumpToCalendarDate] = useState(null);

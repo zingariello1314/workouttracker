@@ -224,6 +224,20 @@ function coverageFrom(measure) {
     const ym = date.slice(0, 7);
     byMonth.set(ym, (byMonth.get(ym) || 0) + (num(byDate[date]) || 0));
   });
+  // B7 — inclure les mois calendaires de la fenêtre même à 0 reps
+  const winStart = measure.window?.start;
+  const winEnd = measure.window?.end;
+  if (winStart && winEnd) {
+    let ym = String(winStart).slice(0, 7);
+    const endYm = String(winEnd).slice(0, 7);
+    while (ym && ym <= endYm) {
+      if (!byMonth.has(ym)) byMonth.set(ym, 0);
+      const [y, m] = ym.split('-').map(Number);
+      const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+      if (next === ym) break;
+      ym = next;
+    }
+  }
   const months = [...byMonth.entries()];
   if (months.length < 2) return null;
   const high = months.reduce((a, b) => (b[1] > a[1] ? b : a));

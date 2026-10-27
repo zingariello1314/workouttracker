@@ -5,7 +5,7 @@
 Train. Track. Progress.
 
 Ce dossier est une copie autonome de l’application Momentum.
-Tu continues à développer dans ton dépôt git habituel ; ce ZIP n’est qu’une
+je continues à développer dans mon dépôt git habituel ; ce ZIP n’est qu’une
 publication pour lancer l’app en local.
 
 --------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ Se connecter seul ne restaure PAS automatiquement tout l’historique local.
 --------------------------------------------------------------------------------
 
   • node_modules / .venv          → recréés au premier lancement
-  • tes fichiers .env secrets
+  • mes fichiers .env secrets
   • bases SQLite / stores perso du backend
   • dossiers de développement (git, tests, caches…)
 
@@ -101,11 +101,7 @@ Sans elles, l’essentiel de l’app fonctionne en local.
       Regarde la fenêtre noire du terminal : les messages d’erreur y apparaissent.
 
 --------------------------------------------------------------------------------
-7. SÉCURITÉ
---------------------------------------------------------------------------------
 
-Ne partage pas ton fichier .env ni une copie de backend/*.db.
-Ce ZIP public ne doit contenir aucun secret.
 
 ================================================================================
 Momentum — https://momentum-os.download  (quand le site est en ligne)

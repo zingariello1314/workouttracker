@@ -2,21 +2,24 @@ import React from 'react';
 
 const EnduranceSectionHeader = ({ title, subtitle, actions = [] }) => {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+    <header className="head">
       <div>
-        <h2 className="text-4xl font-bold text-white mb-2">{title}</h2>
-        {subtitle && <p className="text-teal-700">{subtitle}</p>}
+        <div className="kicker">Défis / {title}</div>
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
       </div>
       {actions.length > 0 && (
-        <div className="flex flex-wrap gap-3">
+        <div className="hbtn">
           {actions.map((action) => {
-            const { key, label, icon: Icon, onClick, className } = action;
+            const { key, label, icon: Icon, onClick } = action;
+            const isPrimary =
+              String(key || '').includes('challenge') || String(key || '').includes('create');
             return (
               <button
                 key={key || label}
                 type="button"
                 onClick={onClick}
-                className={`flex items-center gap-2 ${className || ''}`}
+                className={isPrimary ? 'btn pri' : 'btn'}
               >
                 {Icon && <Icon className="w-5 h-5" />}
                 <span>{label}</span>
@@ -25,7 +28,7 @@ const EnduranceSectionHeader = ({ title, subtitle, actions = [] }) => {
           })}
         </div>
       )}
-    </div>
+    </header>
   );
 };
 

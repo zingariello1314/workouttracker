@@ -118,98 +118,115 @@ export default function RunningSessionsHistory({
   ]);
 
   const kindLabel = (k) => t(`endurance.running.historyFilter.kind.${k}`);
+  const kindColor = (k) =>
+    ({
+      endurance: 'var(--t-ef)',
+      speed: 'var(--t-vit)',
+      interval: 'var(--t-fract)',
+      walking: 'var(--t-cl)',
+      other: 'var(--bone-3)'
+    }[k] || 'var(--accent)');
+  const maxDist = Math.max(
+    0.001,
+    ...filtered.map((s) => parseFloat(String(s.distance ?? '').replace(',', '.')) || 0)
+  );
 
   return (
     <div>
-      <h3 className="mb-4 text-2xl font-bold text-white">{title || t('endurance.history.title')}</h3>
+      <div className="sec-h" style={{ marginBottom: 18 }}>
+        <h2>{title || t('endurance.history.title')}</h2>
+        <span className="mono dim num tiny">
+          {filtered.length} séance(s) affichée(s) sur {sessions.length}
+        </span>
+      </div>
 
-      <div className="mb-4 rounded-xl border border-[#0F4C5C]/50 bg-black/60 p-4">
-        <p className="mb-3 text-xs font-medium text-teal-600">
+      <div className="toolbar">
+        <div className="defis-lab">
           {isWalkingMode ? 'Filtrer l’historique marche' : t('endurance.running.historyFilter.title')}
-        </p>
+        </div>
         {!isWalkingMode && (
-          <div className="mb-3 flex flex-wrap gap-3">
+          <div className="chips">
             {kindKeys.map((k) => (
-              <label key={k} className="flex cursor-pointer items-center gap-2 text-sm text-teal-100">
+              <label key={k} className="chip">
                 <input
                   type="checkbox"
                   checked={selectedKinds.has(k)}
                   onChange={() => toggleKind(k)}
-                  className="rounded border-[#0F4C5C]/60 bg-black text-sky-500 focus:ring-sky-500/40"
                 />
+                <i className="dot" style={{ '--c': kindColor(k) }} />
                 {kindLabel(k)}
               </label>
             ))}
           </div>
         )}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+        <div className="nums">
+          <div className="fld">
+            <label className="defis-lab" htmlFor="defis-f-slow">
               {t('endurance.running.historyFilter.minPace')}
             </label>
             <input
+              id="defis-f-slow"
               type="text"
               inputMode="decimal"
               value={minPaceMinPerKm}
               onChange={(e) => setMinPaceMinPerKm(e.target.value)}
               placeholder="ex. 5.5"
-              className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-sm text-white"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+          <div className="fld">
+            <label className="defis-lab" htmlFor="defis-f-fast">
               {t('endurance.running.historyFilter.maxPace')}
             </label>
             <input
+              id="defis-f-fast"
               type="text"
               inputMode="decimal"
               value={maxPaceMinPerKm}
               onChange={(e) => setMaxPaceMinPerKm(e.target.value)}
               placeholder="ex. 7.2"
-              className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-sm text-white"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+          <div className="fld">
+            <label className="defis-lab" htmlFor="defis-f-dur">
               {t('endurance.running.historyFilter.minDuration')}
             </label>
             <input
+              id="defis-f-dur"
               type="text"
               inputMode="decimal"
               value={minDurMin}
               onChange={(e) => setMinDurMin(e.target.value)}
               placeholder="min"
-              className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-sm text-white"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+          <div className="fld">
+            <label className="defis-lab" htmlFor="defis-f-dist">
               {t('endurance.running.historyFilter.minDistance')}
             </label>
             <input
+              id="defis-f-dist"
               type="text"
               inputMode="decimal"
               value={minDistKm}
               onChange={(e) => setMinDistKm(e.target.value)}
               placeholder="km"
-              className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-sm text-white"
             />
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-slate-500">{t('endurance.running.historyFilter.paceHint')}</p>
+        <p className="tiny">{t('endurance.running.historyFilter.paceHint')}</p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[#0F4C5C]/50 bg-black">
+      <div>
         {filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <Play className="mx-auto mb-4 h-16 w-16 text-slate-600" />
-            <p className="text-lg text-slate-400">{t('endurance.history.noSessions')}</p>
-            <p className="mt-2 text-sm text-slate-500">
+          <div className="empty" style={{ marginTop: 22 }}>
+            <Play className="ic" />
+            <h3>{t('endurance.history.noSessions')}</h3>
+            <p>
               {isWalkingMode ? 'Aucune marche ne correspond aux filtres.' : t('endurance.running.historyFilter.emptyFiltered')}
             </p>
           </div>
         ) : (
-          <div className="space-y-4 p-6">
+          <div>
             {filtered.map((session, idx) => {
               const originalIndex = sessions.findIndex((s) => s === session);
               const gid = session.garminId ?? session.id;
@@ -235,9 +252,12 @@ export default function RunningSessionsHistory({
               const dist = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
               const durMin = parseRunningSessionDurationMinutes(session.duration);
               const speedKmh = durMin > 0 ? dist / (durMin / 60) : null;
+              const iso = String(session.date || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+              const dayNum = iso ? String(Number(iso[3])) : formatEnduranceSessionDateOnly(session.date);
+              const kindC = kindColor(displayRunType === 'walking' ? 'walking' : displayRunType === 'interval' ? 'interval' : displayRunType === 'speed' ? 'speed' : 'endurance');
 
               return (
-                <div
+                <article
                   key={`running-${session.id}-${idx}`}
                   role="button"
                   tabIndex={0}
@@ -248,102 +268,84 @@ export default function RunningSessionsHistory({
                       onOpenDetail?.(session);
                     }
                   }}
-                  className="cursor-pointer rounded-xl border border-[#0F4C5C]/45 bg-black p-6 transition-all hover:border-[#0F5C45]/45 focus:outline-none focus:ring-2 focus:ring-[#0F4C5C]/50"
+                  className="log"
                 >
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <span
-                          className={`text-lg font-bold tracking-tight ${
-                            displayRunType === 'interval'
-                              ? 'text-amber-200'
-                              : displayRunType === 'speed'
-                                ? 'text-rose-300'
-                              : displayRunType === 'walking'
-                                ? 'text-sky-300'
-                                : 'text-emerald-200'
-                          }`}
-                        >
-                          {presentation.primaryLabel}
-                        </span>
-                        {presentation.hrSubtitle ? (
-                          <span className="rounded-md border border-rose-500/25 bg-rose-950/30 px-2 py-0.5 text-xs font-medium text-rose-200/90">
-                            {presentation.hrSubtitle}
-                          </span>
-                        ) : null}
-                        <span className="hidden text-slate-500 sm:inline" aria-hidden>
-                          ·
-                        </span>
-                        <span className="text-lg font-bold text-white">
-                          {formatEnduranceSessionDateOnly(session.date)}
-                        </span>
-                        {session.time ? (
-                          <span className="text-base font-medium text-slate-400">
-                            {formatEnduranceTime(session.time)}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-                        <div>
-                          <span className="text-slate-400">{t('endurance.running.details.distance')}</span>
-                          <span className="ml-2 font-bold text-white">{session.distance} km</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">{t('endurance.running.details.duration')}</span>
-                          <span className="ml-2 font-bold text-white">{session.duration}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">{t('endurance.running.details.pace')}</span>
-                          <span className="ml-2 font-bold text-white">{paceStr}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">{t('endurance.running.details.speed')}</span>
-                          <span className="ml-2 font-bold text-white">
-                            {speedKmh != null && Number.isFinite(speedKmh)
-                              ? `${speedKmh.toFixed(2)} km/h`
-                              : session.speed
-                                ? `${session.speed} km/h`
-                                : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+                  <div className="dt">
+                    <b className="num">{dayNum}</b>
+                    <span>{formatEnduranceSessionDateOnly(session.date)}</span>
+                    {session.time ? <span>{formatEnduranceTime(session.time)}</span> : null}
+                  </div>
+                  <div>
+                    <div className="tl">
+                      <i className="dot" style={{ '--c': kindC }} />
+                      <span style={{ color: kindC }}>{presentation.primaryLabel}</span>
+                      {presentation.hrSubtitle ? <span className="zone">{presentation.hrSubtitle}</span> : null}
                       {session.validatedChallenges?.length > 0 && (
-                        <span className="rounded-lg border border-green-500/30 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-3 py-1 text-xs font-medium text-green-400">
-                          ✓ Défi validé
-                        </span>
+                        <span className="zone">✓ Défi validé</span>
                       )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit?.(session.id);
-                        }}
-                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                        title="Modifier la session"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete?.(session.id, originalIndex);
-                        }}
-                        className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                        title="Supprimer la session"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                    </div>
+                    {session.notes ? (
+                      <div className="nt">
+                        <em>{t('endurance.swimming.details.notes')}</em>
+                        {session.notes}
+                      </div>
+                    ) : null}
+                    <span className="go">Voir le détail →</span>
+                    <div className="dbar" style={{ '--c': kindC }}>
+                      <i style={{ width: `${Math.min(100, (dist / maxDist) * 100)}%` }} />
                     </div>
                   </div>
-                  {session.notes && (
-                    <div className="mt-4 text-sm text-slate-400">
-                      <span className="font-medium">{t('endurance.swimming.details.notes')}</span> {session.notes}
+                  <dl className="mx num">
+                    <div>
+                      <dt>{t('endurance.running.details.distance')}</dt>
+                      <dd>{session.distance} km</dd>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <dt>{t('endurance.running.details.duration')}</dt>
+                      <dd>{session.duration}</dd>
+                    </div>
+                    <div>
+                      <dt>{t('endurance.running.details.pace')}</dt>
+                      <dd>{paceStr}</dd>
+                    </div>
+                    <div>
+                      <dt>{t('endurance.running.details.speed')}</dt>
+                      <dd>
+                        {speedKmh != null && Number.isFinite(speedKmh)
+                          ? `${speedKmh.toFixed(2)} km/h`
+                          : session.speed
+                            ? `${session.speed} km/h`
+                            : '—'}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="ra">
+                    <button
+                      type="button"
+                      className="ib"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit?.(session.id);
+                      }}
+                      aria-label="Modifier la session"
+                      title="Modifier la session"
+                    >
+                      <Edit className="ic" />
+                    </button>
+                    <button
+                      type="button"
+                      className="ib del"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete?.(session.id, originalIndex);
+                      }}
+                      aria-label="Supprimer la session"
+                      title="Supprimer la session"
+                    >
+                      <Trash2 className="ic" />
+                    </button>
+                  </div>
+                </article>
               );
             })}
           </div>

@@ -67,6 +67,11 @@ import {
   incrementRound as incrementCircuitRoundUtil,
   decrementRound as decrementCircuitRoundUtil
 } from '../utils/circuits/circuitDefinitionUtils';
+import {
+  setActiveTab,
+  requestOpenEnduranceSubTab,
+  requestOpenCalendarDay
+} from './NavigationContext';
 
 const WorkoutContext = createContext();
 
@@ -82,13 +87,6 @@ const useWorkout = () => {
 const WorkoutProvider = ({ children }) => {
   // État principal
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTabState] = useState('home');
-  /** Sous-onglet cible (Course, Pompes, etc.) à appliquer au prochain affichage de l’onglet Défis */
-  const [pendingEnduranceSubTab, setPendingEnduranceSubTab] = useState(null);
-  const [pendingEnduranceFocus, setPendingEnduranceFocus] = useState(null);
-  /** Navigation calendrier depuis Récap / benchmarks : { dateYmd, scrollAnchor? } */
-  const [pendingCalendarDeepLink, setPendingCalendarDeepLink] = useState(null);
-  const [previousTab, setPreviousTab] = useState(null);
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
   const [isGymMode, setIsGymMode] = useState(false);
@@ -104,78 +102,7 @@ const WorkoutProvider = ({ children }) => {
       setWorkoutDayOverride(null);
     }
   }, [currentDate]);
-  
-  // Wrapper pour setActiveTab qui stocke la page précédente
-  const setActiveTab = useCallback((newTab) => {
-    if (activeTab !== newTab) {
-      setPreviousTab(activeTab);
-      setActiveTabState(newTab);
-    }
-  }, [activeTab]);
 
-  const clearPendingEnduranceSubTab = useCallback(() => {
-    setPendingEnduranceSubTab(null);
-  }, []);
-
-  const clearPendingEnduranceFocus = useCallback(() => {
-    setPendingEnduranceFocus(null);
-  }, []);
-
-  const requestOpenEnduranceSubTab = useCallback(
-    (tabId, focus = null) => {
-      const valid = [
-        'running',
-        'walking',
-        'pushups',
-        'gainage',
-        'swimming',
-        'jumprope',
-        'boxing',
-        'circuits',
-        'gtg',
-        'pyramid',
-        'performance',
-      ];
-      if (!valid.includes(tabId)) return;
-      setPendingEnduranceSubTab(tabId);
-      setPendingEnduranceFocus(
-        focus && typeof focus === 'object'
-          ? {
-              tabId,
-              anchorId: focus.anchorId || null,
-              openChallengeModal: Boolean(focus.openChallengeModal)
-            }
-          : null
-      );
-      if (activeTab !== 'endurance') {
-        setPreviousTab(activeTab);
-        setActiveTabState('endurance');
-      }
-    },
-    [activeTab]
-  );
-
-  const clearPendingCalendarDeepLink = useCallback(() => {
-    setPendingCalendarDeepLink(null);
-  }, []);
-
-  const requestOpenCalendarDay = useCallback(
-    (dateYmd, scrollAnchor = 'calendar-day-exercise-detail') => {
-      if (!dateYmd || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateYmd))) return;
-      setPendingCalendarDeepLink({ dateYmd: String(dateYmd), scrollAnchor });
-      try {
-        localStorage.setItem('sport.lastSubTab', 'calendar');
-      } catch {
-        /* ignore */
-      }
-      if (activeTab !== 'calendar') {
-        setPreviousTab(activeTab);
-        setActiveTabState('calendar');
-      }
-    },
-    [activeTab]
-  );
-  
   // États des modales
   const [showSettings, setShowSettings] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -1672,17 +1599,9 @@ const WorkoutProvider = ({ children }) => {
     currentDate,
     setCurrentDate,
     changeSessionCalendarDate,
-    activeTab,
     setActiveTab,
-    pendingEnduranceSubTab,
-    pendingEnduranceFocus,
     requestOpenEnduranceSubTab,
-    clearPendingEnduranceSubTab,
-    clearPendingEnduranceFocus,
-    pendingCalendarDeepLink,
     requestOpenCalendarDay,
-    clearPendingCalendarDeepLink,
-    previousTab,
     weekVariant,
     setWeekVariant,
     statsPeriod,
@@ -2198,9 +2117,9 @@ const WorkoutProvider = ({ children }) => {
     const fallbackValue = {
       data: {},
       updateData: async () => {},
-      activeTab: 'home',
-      setActiveTab: () => {},
-      previousTab: null,
+      setActiveTab,
+      requestOpenEnduranceSubTab,
+      requestOpenCalendarDay,
       // ... autres valeurs minimales si nécessaire
     };
     return (

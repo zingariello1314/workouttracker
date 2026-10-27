@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useWorkout } from '../context/WorkoutContext';
+import { useAppNavigation } from '../context/NavigationContext';
 import HomePage from './HomePage';
 import DashboardTab from './tabs/DashboardTab';
 import Header from './layout/Header';
@@ -15,7 +15,7 @@ import SidebarPremium from './sidebar/SidebarPremium';
  * - Scroll manuel depuis home → détection et transition fluide
  */
 const HomePageScrollTransition = () => {
-  const { activeTab, setActiveTab } = useWorkout();
+  const { activeTab, setActiveTab } = useAppNavigation();
   const containerRef = useRef(null);
   const homePageRef = useRef(null);
   const dashboardRef = useRef(null);

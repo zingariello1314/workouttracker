@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints, Trophy, Repeat, Layers, Clock } from 'lucide-react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints, Trophy, Repeat, Layers, Clock, Menu } from 'lucide-react';
+import './EnduranceTab/defis-mock.css';
+import './EnduranceTab/defis-stadium.css';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useAppNavigation } from '../../context/NavigationContext';
 import StarRating from '../ui/StarRating';
 import { useTranslation } from '../../utils/translations';
 import { useFormatters } from '../../utils/translations/formatters-hook';
@@ -36,32 +39,37 @@ import {
 import EnduranceSessionForm from './EnduranceTab/components/EnduranceSessionForm.jsx';
 import DurationMinSecInput from '../ui/DurationMinSecInput.jsx';
 import { resolveEnduranceDurationSeconds } from '../../utils/sport/durationInputUtils';
-import SwimmingSessionExtras from './EnduranceTab/components/SwimmingSessionExtras.jsx';
 import RunningSessionExtras from './EnduranceTab/components/RunningSessionExtras.jsx';
 import { handleSubmitSession } from '../../services/endurance/enduranceSubmitUtils';
 import EnduranceChallengeReminder from './EnduranceTab/components/ui/EnduranceChallengeReminder.jsx';
 import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectionHeader.jsx';
+import DefisChallengeTicket from './EnduranceTab/components/ui/DefisChallengeTicket.jsx';
 import RunningGarminSyncBlock from './EnduranceTab/components/RunningGarminSyncBlock.jsx';
-import RunningPersonalRecordsPanel from './EnduranceTab/components/RunningPersonalRecordsPanel.jsx';
-import RunningSessionDetailPage from './EnduranceTab/components/RunningSessionDetailPage.jsx';
-import RunningTrophiesPanel from './EnduranceTab/components/RunningTrophiesPanel.jsx';
-import SimpleEnduranceTrophiesPanel from './EnduranceTab/components/SimpleEnduranceTrophiesPanel.jsx';
-import PushupTrophiesPanel from './EnduranceTab/components/PushupTrophiesPanel.jsx';
+import RunningCourseKpiBoard from './EnduranceTab/components/RunningCourseKpiBoard.jsx';
 import RunningSessionsHistory from './EnduranceTab/components/RunningSessionsHistory.jsx';
-import PushupSessionsHistory from './EnduranceTab/components/PushupSessionsHistory.jsx';
-import WalkingStatsPanel from './EnduranceTab/components/WalkingStatsPanel.jsx';
-import WalkingTrophiesPanel from './EnduranceTab/components/WalkingTrophiesPanel.jsx';
-import ManualDailyWalkPanel from './EnduranceTab/components/ManualDailyWalkPanel.jsx';
-import AllTrophiesHubPanel from './EnduranceTab/components/AllTrophiesHubPanel.jsx';
-import EnduranceCalendarModernPanel from './EnduranceTab/components/EnduranceCalendarModernPanel.jsx';
-import DefisDisciplineCalendarPanel from './EnduranceTab/components/DefisDisciplineCalendarPanel.jsx';
-import PerformanceChallengesTab from './PerformanceChallengesTab.jsx';
-import CircuitsHubPanel from './EnduranceTab/components/CircuitsHubPanel.jsx';
-import GtgPanel from './EnduranceTab/components/GtgPanel.jsx';
-import PyramidTrainingPanel from '../sport/pyramid/PyramidTrainingPanel.jsx';
-import EnduranceDisciplineStatsPanel from '../sport/charts/EnduranceDisciplineStatsPanel.jsx';
-import RunningStatsPanel from './EnduranceTab/components/RunningStatsPanel.jsx';
-import RunningTrainingInsightsPanel from './EnduranceTab/components/RunningTrainingInsightsPanel.jsx';
+import {
+  EnduranceLazyPane,
+  prefetchEnduranceSubTab,
+  scheduleEnduranceWorkAfterPaint,
+  SwimmingSessionExtras,
+  RunningSessionDetailPage,
+  RunningTrophiesPanel,
+  SimpleEnduranceTrophiesPanel,
+  PushupTrophiesPanel,
+  PushupSessionsHistory,
+  WalkingStatsPanel,
+  WalkingTrophiesPanel,
+  ManualDailyWalkPanel,
+  AllTrophiesHubPanel,
+  EnduranceCalendarModernPanel,
+  DefisDisciplineCalendarPanel,
+  PerformanceChallengesTab,
+  CircuitsHubPanel,
+  GtgPanel,
+  PyramidTrainingPanel,
+  EnduranceDisciplineStatsPanel,
+  RunningStatsPanel
+} from './EnduranceTab/enduranceLazyPanes.jsx';
 import {
   isGarminRunningLikeActivity,
   isGarminWalkingLikeActivity,
@@ -80,13 +88,15 @@ const EnduranceTab = () => {
   const {
     data,
     updateData,
-    getWorkoutHistory,
+    getWorkoutHistory
+  } =
+    useWorkout();
+  const {
     pendingEnduranceSubTab,
     pendingEnduranceFocus,
     clearPendingEnduranceSubTab,
     clearPendingEnduranceFocus
-  } =
-    useWorkout();
+  } = useAppNavigation();
   const t = useTranslation();
   const {
     formatDate,
@@ -278,39 +288,42 @@ const EnduranceTab = () => {
   }, [loadEnduranceState]);
 
   /**
-   * Garmin (IndexedDB) : garde les cartes id → activité pour course/marche sur tout l’onglet Défis.
-   * Avant : ne chargeait que sur l’onglet « course » et ignorait les séances sans tours → données « vides » jusqu’au backfill.
+   * Garmin (IndexedDB) : cartes id → activité pour course/marche.
+   * Après le premier paint pour ne pas bloquer le shell Course.
    */
   useEffect(() => {
-    if (!dbReady) return;
+    if (!dbReady) return undefined;
     let cancelled = false;
-    (async () => {
-      try {
-        const loaded = await loadAllData();
-        if (cancelled || !loaded?.activities?.cardio) return;
-        const m = new Map();
-        const full = new Map();
-        for (const act of loaded.activities.cardio) {
-          const id = act.garminId ?? act.id;
-          if (id == null) continue;
-          if (isGarminRunningLikeActivity(act)) {
-            m.set(String(id), inferRunningSessionKindFromGarminActivity(act, runningClassificationCtx));
+    const stopPaint = scheduleEnduranceWorkAfterPaint(() => {
+      (async () => {
+        try {
+          const loaded = await loadAllData();
+          if (cancelled || !loaded?.activities?.cardio) return;
+          const m = new Map();
+          const full = new Map();
+          for (const act of loaded.activities.cardio) {
+            const id = act.garminId ?? act.id;
+            if (id == null) continue;
+            if (isGarminRunningLikeActivity(act)) {
+              m.set(String(id), inferRunningSessionKindFromGarminActivity(act, runningClassificationCtx));
+            }
+            if (isGarminRunningLikeActivity(act) || isGarminWalkingLikeActivity(act)) {
+              full.set(String(id), act);
+            }
           }
-          if (isGarminRunningLikeActivity(act) || isGarminWalkingLikeActivity(act)) {
-            full.set(String(id), act);
+          setGarminRunningKindByGarminId(m);
+          setGarminRunningById(full);
+        } catch {
+          if (!cancelled) {
+            setGarminRunningKindByGarminId(new Map());
+            setGarminRunningById(new Map());
           }
         }
-        setGarminRunningKindByGarminId(m);
-        setGarminRunningById(full);
-      } catch {
-        if (!cancelled) {
-          setGarminRunningKindByGarminId(new Map());
-          setGarminRunningById(new Map());
-        }
-      }
-    })();
+      })();
+    });
     return () => {
       cancelled = true;
+      stopPaint();
     };
   }, [dbReady, loadAllData, sessions.running, runningClassificationCtx]);
 
@@ -319,7 +332,7 @@ const EnduranceTab = () => {
   importToEnduranceRef.current = importToEndurance;
 
   useEffect(() => {
-    if (!dbReady || (activeTab !== 'running' && activeTab !== 'walking')) return;
+    if (!dbReady || (activeTab !== 'running' && activeTab !== 'walking')) return undefined;
     let cancelled = false;
     const runImport = async () => {
       try {
@@ -330,11 +343,16 @@ const EnduranceTab = () => {
         console.warn('[EnduranceTab] Import Garmin → endurance:', e);
       }
     };
-    runImport();
-    const onGarminUpdate = () => runImport();
+    const stopPaint = scheduleEnduranceWorkAfterPaint(() => {
+      void runImport();
+    });
+    const onGarminUpdate = () => {
+      void runImport();
+    };
     window.addEventListener('garmin:data:updated', onGarminUpdate);
     return () => {
       cancelled = true;
+      stopPaint();
       window.removeEventListener('garmin:data:updated', onGarminUpdate);
     };
   }, [dbReady, activeTab, loadAllData]);
@@ -1447,38 +1465,43 @@ const EnduranceTab = () => {
     [t]
   );
 
-  // Composant pour afficher les exercices d'endurance depuis l'historique (optimisé)
-  const EnduranceHistorySection = useMemo(() => {
-    const enduranceExercises = getEnduranceExercisesFromHistory();
-    
-    if (enduranceExercises.length === 0) {
-      return (
-        <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl p-8 mb-8">
-          <h3 className="text-xl font-bold text-white mb-4">{t('endurance.history.fromWorkouts.title')}</h3>
-          <p className="text-slate-400">{t('endurance.history.fromWorkouts.none')}</p>
-        </div>
-      );
+  const defisAccents = useMemo(
+    () => [
+      { name: 'Violet', c: '#a46bff' },
+      { name: 'Magenta', c: '#ff4fa3' },
+      { name: 'Ambre', c: '#ffb22e' },
+      { name: 'Cyan', c: '#2fd3ff' },
+      { name: 'Orange', c: '#ff7a33' },
+      { name: 'Rouge', c: '#ff5560' },
+      { name: 'Bleu', c: '#4d7cff' },
+      { name: 'Citron', c: '#d6f25c' },
+      { name: 'Menthe', c: '#3dffa6' },
+      { name: 'Rose', c: '#ff8fb8' },
+      { name: 'Sable', c: '#e7d3b0' },
+      { name: 'Cuivre', c: '#e08a4f' }
+    ],
+    []
+  );
+  const [defisAccentLock, setDefisAccentLock] = useState(() => {
+    try {
+      const raw = localStorage.getItem('defis-accent');
+      if (raw == null || raw === '') return null;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n >= 0 && n <= 11 ? n : null;
+    } catch {
+      return null;
     }
+  });
+  const [defisNavOpen, setDefisNavOpen] = useState(false);
+  const setDefisAccent = useCallback((index) => {
+    setDefisAccentLock(index);
+    try {
+      localStorage.setItem('defis-accent', String(index));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
-    return (
-      <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl p-8 mb-8">
-        <h3 className="text-xl font-bold text-white mb-4">Exercices d'Endurance depuis vos Séances</h3>
-        <div className="space-y-3">
-          {enduranceExercises.slice(0, 10).map((exercise, index) => (
-            <div key={exercise.id || index} className="bg-black border border-[#0F4C5C]/50 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-white font-medium">{exercise.name}</span>
-                  <span className="text-slate-400 ml-2">{t('endurance.history.fromWorkouts.reps', { count: exercise.reps })}</span>
-                </div>
-                <div className="text-slate-400 text-sm">{formatEnduranceSessionDateOnly(exercise.date)}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }, [getEnduranceExercisesFromHistory]);
 
   const runningGarminCardioExcluded = useMemo(
     () => runningSessionsMerged.filter((s) => shouldExcludeStoredGarminRunningSession(s)),
@@ -1503,66 +1526,109 @@ const EnduranceTab = () => {
     [runningSessionsMerged, garminRunningById]
   );
 
+  const challengesHere = useMemo(
+    () => activeChallenges.filter((c) => c?.activityType === activeTab),
+    [activeChallenges, activeTab]
+  );
+  const urgentHere = useMemo(
+    () => (Array.isArray(urgentChallenges) ? urgentChallenges.filter((c) => c?.activityType === activeTab) : []),
+    [urgentChallenges, activeTab]
+  );
+  const sessionSubView =
+    activeTab === 'pushups'
+      ? pushupsSubView
+      : activeTab === 'jumprope'
+        ? jumpropeSubView
+        : activeTab === 'gainage'
+          ? gainageSubView
+          : activeTab === 'running'
+            ? runningSubView
+            : activeTab === 'walking'
+              ? walkingSubView
+              : null;
+  const showChallengeReminder =
+    challengesHere.length > 0 &&
+    !runningDetailSession &&
+    (sessionSubView == null ? activeTab === 'boxing' || activeTab === 'swimming' : sessionSubView === 'sessions');
+
   return (
-    <div className="relative">
-      {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 flex min-h-0 flex-col md:flex-row md:items-start">
-        {/* Menu latéral — une seule zone de scroll (page) */}
-        <div className="mb-6 w-full shrink-0 rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-1 shadow-lg shadow-black/40 md:mb-0 md:mr-6 md:w-72 md:self-stretch">
-        <div className="px-4 pb-3 pt-4">
-          <h1 className="bg-gradient-to-r from-teal-200 via-sky-300 to-cyan-400 bg-clip-text text-3xl font-bold text-transparent">
-            {t('endurance.title')}
-          </h1>
-          <p className="mt-1.5 text-sm text-teal-700">{t('endurance.subtitle')}</p>
-        </div>
-        
-        <nav className="px-4">
+    <div
+      className="defis-stadium"
+      data-act={activeTab}
+      data-accent-lock={defisAccentLock == null ? '0' : '1'}
+      data-accent={defisAccentLock == null ? undefined : String(defisAccentLock)}
+    >
+      <div className="defis-shell">
+        <aside className={`defis-side${defisNavOpen ? ' defis-open' : ''}`} aria-label={t('endurance.title')}>
+        <h2>{t('endurance.title')}</h2>
+        <p className="defis-sub">{t('endurance.subtitle')}</p>
+        <nav className="defis-nav">
           {menuItems.map(item => {
             const Icon = item.icon;
             const count = activeChallenges.filter(c => c.activityType === item.id).length;
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`group mb-2 flex w-full items-center justify-between rounded-xl border px-5 py-4 transition-all duration-300 ${
-                  activeTab === item.id
-                    ? 'border-[#0F5C45]/70 bg-[#0F5C45]/25 text-white shadow-md shadow-black/30'
-                    : 'border-transparent text-teal-200/90 hover:border-[#0F4C5C]/40 hover:bg-[#0F4C5C]/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center">
-                  <Icon className={`w-5 h-5 mr-3 ${activeTab === item.id ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                  <span className="font-medium">{item.label}</span>
-                </div>
-                {count > 0 && (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0F5C45] text-xs font-bold text-white shadow-md shadow-black/30">
-                    {count}
-                  </span>
-                )}
-              </button>
+              <React.Fragment key={item.id}>
+                {item.id === 'trophies' ? <div className="defis-gap" /> : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setDefisNavOpen(false);
+                  }}
+                  onMouseEnter={() => prefetchEnduranceSubTab(item.id)}
+                  aria-current={activeTab === item.id ? 'page' : undefined}
+                >
+                  <Icon className="ic" />
+                  <span>{item.label}</span>
+                  {count > 0 && <span className="defis-badge">{count}</span>}
+                </button>
+              </React.Fragment>
             );
           })}
         </nav>
+        <div className="defis-pick">
+          <span className="defis-lab">Couleur</span>
+          <div className="defis-sw">
+            {defisAccents.map((swatch, index) => (
+              <button
+                key={swatch.name}
+                type="button"
+                style={{ '--c': swatch.c }}
+                title={swatch.name}
+                aria-label={swatch.name}
+                aria-pressed={defisAccentLock === index}
+                onClick={() => setDefisAccent(index)}
+              />
+            ))}
+          </div>
         </div>
+        </aside>
 
-      {/* Contenu principal — pas de scroll interne : le scroll est celui de la page */}
-      <div className="min-w-0 flex-1">
+      <div className="defis-main">
+        <button
+          type="button"
+          className="btn defis-menu"
+          onClick={() => setDefisNavOpen((open) => !open)}
+        >
+          <Menu className="ic" />
+          Menu des défis
+        </button>
         {runningDetailSession ? (
-          <RunningSessionDetailPage
-            session={runningDetailSession}
-            onBack={() => setRunningDetailSession(null)}
-          />
+          <EnduranceLazyPane>
+            <RunningSessionDetailPage
+              session={runningDetailSession}
+              onBack={() => setRunningDetailSession(null)}
+            />
+          </EnduranceLazyPane>
         ) : (
-        <div className="max-w-7xl mx-auto p-8">
-          {/* Rappel des défis actifs */}
-          <EnduranceChallengeReminder
-            activeChallenges={activeChallenges}
-            urgentChallenges={urgentChallenges}
-            onSelectActivity={setActiveTab}
-          />
-          
-          {/* Section exercices d'endurance depuis l'historique */}
-          {EnduranceHistorySection}
+        <div>
+          {showChallengeReminder ? (
+            <EnduranceChallengeReminder
+              activeChallenges={challengesHere}
+              urgentChallenges={urgentHere}
+              hideLinks
+            />
+          ) : null}
 
           {/* SECTION BOXE */}
           {activeTab === 'boxing' && (
@@ -1592,7 +1658,7 @@ const EnduranceTab = () => {
 
               {/* Formulaire de session boxe */}
               {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                <div className="box pad" style={{ marginBottom: 32 }}>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-bold text-white">
                       {ui.editingSession ? t('endurance.sections.boxing.editSession') : t('endurance.sections.boxing.newSession')}
@@ -1619,13 +1685,12 @@ const EnduranceTab = () => {
 
               {/* Historique boxe */}
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
+                <div className="sec-h"><div><h2>{t('endurance.history.title')}</h2></div></div>
+                <div className="box">
                   {sessions.boxing.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <Box className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
-                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
+                    <div className="empty">
+                      <h3>{t('endurance.history.noSessions')}</h3>
+                      <p>{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -1715,10 +1780,10 @@ const EnduranceTab = () => {
                 ]}
               />
 
-              <div className="mb-6 flex flex-wrap gap-2">
+              <div className="defis-tabs" role="tablist">
                 <button
                   type="button"
-                  onClick={() => setPushupsSubView('sessions')}
+                  onClick={() => setPushupsSubView('sessions')} aria-selected={pushupsSubView === 'sessions'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     pushupsSubView === 'sessions'
                       ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
@@ -1729,7 +1794,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPushupsSubView('trophies')}
+                  onClick={() => setPushupsSubView('trophies')} aria-selected={pushupsSubView === 'trophies'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     pushupsSubView === 'trophies'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -1740,7 +1805,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPushupsSubView('calendar')}
+                  onClick={() => setPushupsSubView('calendar')} aria-selected={pushupsSubView === 'calendar'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     pushupsSubView === 'calendar'
                       ? 'border-amber-500/70 bg-amber-500/10 text-amber-100'
@@ -1751,7 +1816,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPushupsSubView('stats')}
+                  onClick={() => setPushupsSubView('stats')} aria-selected={pushupsSubView === 'stats'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     pushupsSubView === 'stats'
                       ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
@@ -1763,15 +1828,21 @@ const EnduranceTab = () => {
               </div>
 
               {pushupsSubView === 'trophies' ? (
-                <PushupTrophiesPanel sessions={sessions.pushups} />
+                <EnduranceLazyPane>
+                  <PushupTrophiesPanel sessions={sessions.pushups} />
+                </EnduranceLazyPane>
               ) : pushupsSubView === 'calendar' ? (
-                <DefisDisciplineCalendarPanel
-                  activityKind="pushups"
-                  sessions={sessions.pushups}
-                  onEditSession={(type, id) => editSession(type, id)}
-                />
+                <EnduranceLazyPane>
+                  <DefisDisciplineCalendarPanel
+                    activityKind="pushups"
+                    sessions={sessions.pushups}
+                    onEditSession={(type, id) => editSession(type, id)}
+                  />
+                </EnduranceLazyPane>
               ) : pushupsSubView === 'stats' ? (
-                <EnduranceDisciplineStatsPanel kind="pushups" sessions={sessions.pushups} />
+                <EnduranceLazyPane>
+                  <EnduranceDisciplineStatsPanel kind="pushups" sessions={sessions.pushups} />
+                </EnduranceLazyPane>
               ) : (
                 <>
               <div className="mb-6 rounded-xl border border-[#0F4C5C]/40 bg-slate-950/40 p-4">
@@ -1792,33 +1863,9 @@ const EnduranceTab = () => {
                 </div>
               </div>
 
-              {/* Rappel défis actifs */}
-              {activeChallenges.length > 0 && (
-                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-                      <Award className="h-6 w-6 text-sky-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length === 1
-                          ? t('endurance.challenges.active', { count: activeChallenges.length })
-                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })}
-                      </h3>
-                      <p className="text-sm text-teal-100/90 leading-relaxed">
-                        {t(
-                          'endurance.challenges.reminderBody',
-                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Formulaire de session */}
               {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                <div className="box pad" style={{ marginBottom: 32 }}>
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="pushups"
@@ -1847,92 +1894,72 @@ const EnduranceTab = () => {
               {/* Liste des défis */}
               {uniqueChallenges.filter(c => c.activityType === 'pushups').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                  <div className="sec-h"><div><h2>{t('endurance.challenges.title')}</h2></div></div>
                   <div className="grid gap-4">
                     {uniqueChallenges.filter(c => c.activityType === 'pushups').map((challenge, idx) => (
-                      <div key={`pushups-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-sky-400" />
-                              <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
-                            </div>
-                            <div className="space-y-1 text-slate-400 text-sm">
-                              <p>
-                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
-                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
-                                  ? t('endurance.challenges.details.recurrentDaily')
-                                  : t('endurance.challenges.details.recurrentWeekly')
-                                )}
-                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
-                                {challenge.type === 'pushups_cumul' &&
-                                  t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
-                              </p>
-                              {challenge.type === 'pushups_cumul' && (
-                                <p className="text-teal-200/95 text-sm">
-                                  {t('endurance.challenges.details.cumulProgress', {
-                                    current: sumPushupRepsInChallengeWindow(challenge, sessions.pushups || [], data),
-                                    goal: challenge.goalTotalCount ?? 0
-                                  })}
-                                </p>
-                              )}
-                              <p className="text-sky-300">
-                                {challenge.type === 'pushups_cumul'
-                                  ? t('endurance.challenges.details.goalPushups', { count: challenge.goalTotalCount ?? 0 })
-                                  : challenge.goalCount && challenge.goalDuration
-                                    ? t('endurance.challenges.details.goalPushupsWithDuration', {
-                                        count: challenge.goalCount,
-                                        duration: challenge.goalDuration
-                                      })
-                                    : challenge.goalCount
-                                      ? t('endurance.challenges.details.goalPushups', { count: challenge.goalCount })
-                                      : challenge.goalDuration
-                                        ? `${challenge.goalDuration} min`
-                                        : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                              challenge.status === 'active' 
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                            }`}>
-                              {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => editChallenge(challenge.id)}
-                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                              title={t('endurance.session.editChallenge')}
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
-                                const realIndex = challenges.findIndex(c => c === challenge);
-                                deleteChallenge(challenge.id, realIndex);
-                              }}
-                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                              title={t('endurance.session.deleteChallenge')}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
+                      <DefisChallengeTicket
+                        key={`pushups-challenge-${challenge.id}-${idx}`}
+                        title={challenge.name}
+                        statusLabel={
+                          challenge.status === 'active'
+                            ? t('endurance.challenges.status.active')
+                            : t('endurance.challenges.status.completed')
+                        }
+                        onEdit={() => editChallenge(challenge.id)}
+                        onDelete={() => {
+                          const realIndex = challenges.findIndex(c => c === challenge);
+                          deleteChallenge(challenge.id, realIndex);
+                        }}
+                        editTitle={t('endurance.session.editChallenge')}
+                        deleteTitle={t('endurance.session.deleteChallenge')}
+                      >
+                        <div className="row">
+                          <span>
+                            {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                            {challenge.type === 'recurrent' && (challenge.frequency === 'daily'
+                              ? t('endurance.challenges.details.recurrentDaily')
+                              : t('endurance.challenges.details.recurrentWeekly')
+                            )}
+                            {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
+                            {challenge.type === 'pushups_cumul' &&
+                              t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
+                          </span>
                         </div>
-                      </div>
+                        {challenge.type === 'pushups_cumul' && (
+                          <div className="row">
+                            {t('endurance.challenges.details.cumulProgress', {
+                              current: sumPushupRepsInChallengeWindow(challenge, sessions.pushups || [], data),
+                              goal: challenge.goalTotalCount ?? 0
+                            })}
+                          </div>
+                        )}
+                        <div className="row">
+                          {challenge.type === 'pushups_cumul'
+                            ? t('endurance.challenges.details.goalPushups', { count: challenge.goalTotalCount ?? 0 })
+                            : challenge.goalCount && challenge.goalDuration
+                              ? t('endurance.challenges.details.goalPushupsWithDuration', {
+                                  count: challenge.goalCount,
+                                  duration: challenge.goalDuration
+                                })
+                              : challenge.goalCount
+                                ? t('endurance.challenges.details.goalPushups', { count: challenge.goalCount })
+                                : challenge.goalDuration
+                                  ? `${challenge.goalDuration} min`
+                                  : ''}
+                        </div>
+                      </DefisChallengeTicket>
                     ))}
                   </div>
                 </div>
               )}
 
-              <PushupSessionsHistory
-                sessions={sessions.pushups}
-                onEdit={(id) => editSession('pushups', id)}
-                onDelete={(id, index) => deletePushupSession(id, index)}
-              />
+              <EnduranceLazyPane>
+                <PushupSessionsHistory
+                  sessions={sessions.pushups}
+                  onEdit={(id) => editSession('pushups', id)}
+                  onDelete={(id, index) => deletePushupSession(id, index)}
+                />
+              </EnduranceLazyPane>
                 </>
               )}
             </>
@@ -1964,32 +1991,8 @@ const EnduranceTab = () => {
                 ]}
               />
 
-              {activeChallenges.length > 0 && (
-                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-                      <Award className="h-6 w-6 text-sky-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length === 1 
-                          ? t('endurance.challenges.active', { count: activeChallenges.length })
-                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })
-                        }
-                      </h3>
-                      <p className="text-sm text-teal-100/90 leading-relaxed">
-                        {t(
-                          'endurance.challenges.reminderBody',
-                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                <div className="box pad" style={{ marginBottom: 32 }}>
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.sections.swimming.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="swimming"
@@ -1997,18 +2000,20 @@ const EnduranceTab = () => {
                     setFormState={setSwimmingForm}
                   />
 
-                  <SwimmingSessionExtras
-                    laps={swimmingForm.laps}
-                    onAddLap={addLap}
-                    onRemoveLap={removeLap}
-                    onUpdateLap={updateLap}
-                    heartRate={swimmingForm.heartRate}
-                    calories={swimmingForm.calories}
-                    pace100m={swimmingForm.pace100m}
-                    onChangeHeartRate={(value) => setSwimmingForm(prev => ({ ...prev, heartRate: value }))}
-                    onChangeCalories={(value) => setSwimmingForm(prev => ({ ...prev, calories: value }))}
-                    onChangePace100m={(value) => setSwimmingForm(prev => ({ ...prev, pace100m: value }))}
-                  />
+                  <EnduranceLazyPane>
+                    <SwimmingSessionExtras
+                      laps={swimmingForm.laps}
+                      onAddLap={addLap}
+                      onRemoveLap={removeLap}
+                      onUpdateLap={updateLap}
+                      heartRate={swimmingForm.heartRate}
+                      calories={swimmingForm.calories}
+                      pace100m={swimmingForm.pace100m}
+                      onChangeHeartRate={(value) => setSwimmingForm(prev => ({ ...prev, heartRate: value }))}
+                      onChangeCalories={(value) => setSwimmingForm(prev => ({ ...prev, calories: value }))}
+                      onChangePace100m={(value) => setSwimmingForm(prev => ({ ...prev, pace100m: value }))}
+                    />
+                  </EnduranceLazyPane>
 
                   <div className="mt-6 flex justify-end gap-3">
                     <button
@@ -2032,81 +2037,55 @@ const EnduranceTab = () => {
 
               {challenges.filter(c => c.activityType === 'swimming').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                  <div className="sec-h"><div><h2>{t('endurance.challenges.title')}</h2></div></div>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'swimming').map((challenge, idx) => (
-                      <div key={`swimming-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-sky-400" />
-                              <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
-                            </div>
-                            <div className="space-y-1 text-slate-400 text-sm">
-                              <p>
-                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
-                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
-                                  ? t('endurance.challenges.details.recurrentDaily')
-                                  : t('endurance.challenges.details.recurrentWeekly')
-                                )}
-                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
-                              </p>
-                              <p className="text-sky-300">
-                                {challenge.goalDistance && challenge.goalTime
-                                  ? t('endurance.challenges.details.goalSwimmingWithTime', { distance: challenge.goalDistance, time: challenge.goalTime })
-                                  : challenge.goalDistance
-                                  ? t('endurance.challenges.details.goalSwimming', { distance: challenge.goalDistance })
-                                  : challenge.goalTime
-                                  ? `${challenge.goalTime} min`
-                                  : ''
-                                }
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                              challenge.status === 'active' 
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                            }`}>
-                              {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => editChallenge(challenge.id)}
-                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                              title={t('endurance.session.editChallenge')}
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
-                                const realIndex = challenges.findIndex(c => c === challenge);
-                                deleteChallenge(challenge.id, realIndex);
-                              }}
-                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                              title={t('endurance.session.deleteChallenge')}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
+                      <DefisChallengeTicket
+                        key={`swimming-challenge-${challenge.id}-${idx}`}
+                        title={challenge.name}
+                        statusLabel={
+                          challenge.status === 'active'
+                            ? t('endurance.challenges.status.active')
+                            : t('endurance.challenges.status.completed')
+                        }
+                        onEdit={() => editChallenge(challenge.id)}
+                        onDelete={() => {
+                          const realIndex = challenges.findIndex(c => c === challenge);
+                          deleteChallenge(challenge.id, realIndex);
+                        }}
+                        editTitle={t('endurance.session.editChallenge')}
+                        deleteTitle={t('endurance.session.deleteChallenge')}
+                      >
+                        <div className="row">
+                          {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                          {challenge.type === 'recurrent' && (challenge.frequency === 'daily'
+                            ? t('endurance.challenges.details.recurrentDaily')
+                            : t('endurance.challenges.details.recurrentWeekly')
+                          )}
+                          {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                         </div>
-                      </div>
+                        <div className="row">
+                          {challenge.goalDistance && challenge.goalTime
+                            ? t('endurance.challenges.details.goalSwimmingWithTime', { distance: challenge.goalDistance, time: challenge.goalTime })
+                            : challenge.goalDistance
+                              ? t('endurance.challenges.details.goalSwimming', { distance: challenge.goalDistance })
+                              : challenge.goalTime
+                                ? `${challenge.goalTime} min`
+                                : ''}
+                        </div>
+                      </DefisChallengeTicket>
                     ))}
                   </div>
                 </div>
               )}
 
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
+                <div className="sec-h"><div><h2>{t('endurance.history.title')}</h2></div></div>
+                <div className="box">
                   {sessions.swimming.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <Waves className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
-                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
+                    <div className="empty">
+                      <h3>{t('endurance.history.noSessions')}</h3>
+                      <p>{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
@@ -2266,10 +2245,10 @@ const EnduranceTab = () => {
                 </div>
               </div>
 
-              <div className="mb-6 flex flex-wrap gap-2">
+              <div className="defis-tabs" role="tablist">
                 <button
                   type="button"
-                  onClick={() => setJumpropeSubView('sessions')}
+                  onClick={() => setJumpropeSubView('sessions')} aria-selected={jumpropeSubView === 'sessions'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     jumpropeSubView === 'sessions'
                       ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
@@ -2280,7 +2259,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setJumpropeSubView('trophies')}
+                  onClick={() => setJumpropeSubView('trophies')} aria-selected={jumpropeSubView === 'trophies'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     jumpropeSubView === 'trophies'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -2291,7 +2270,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setJumpropeSubView('calendar')}
+                  onClick={() => setJumpropeSubView('calendar')} aria-selected={jumpropeSubView === 'calendar'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     jumpropeSubView === 'calendar'
                       ? 'border-amber-500/70 bg-amber-500/10 text-amber-100'
@@ -2302,7 +2281,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setJumpropeSubView('stats')}
+                  onClick={() => setJumpropeSubView('stats')} aria-selected={jumpropeSubView === 'stats'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     jumpropeSubView === 'stats'
                       ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
@@ -2314,48 +2293,29 @@ const EnduranceTab = () => {
               </div>
 
               {jumpropeSubView === 'trophies' ? (
-                <SimpleEnduranceTrophiesPanel
-                  activityType="jumprope"
-                  sessions={sessions.jumprope}
-                  title="Trophées — Corde à sauter"
-                />
+                <EnduranceLazyPane>
+                  <SimpleEnduranceTrophiesPanel
+                    activityType="jumprope"
+                    sessions={sessions.jumprope}
+                    title="Trophées — Corde à sauter"
+                  />
+                </EnduranceLazyPane>
               ) : jumpropeSubView === 'calendar' ? (
-                <DefisDisciplineCalendarPanel
-                  activityKind="jumprope"
-                  sessions={sessions.jumprope}
-                  onEditSession={(type, id) => editSession(type, id)}
-                />
+                <EnduranceLazyPane>
+                  <DefisDisciplineCalendarPanel
+                    activityKind="jumprope"
+                    sessions={sessions.jumprope}
+                    onEditSession={(type, id) => editSession(type, id)}
+                  />
+                </EnduranceLazyPane>
               ) : jumpropeSubView === 'stats' ? (
-                <EnduranceDisciplineStatsPanel kind="jumprope" sessions={sessions.jumprope} />
+                <EnduranceLazyPane>
+                  <EnduranceDisciplineStatsPanel kind="jumprope" sessions={sessions.jumprope} />
+                </EnduranceLazyPane>
               ) : (
                 <>
-              {/* Rappel défis actifs */}
-              {activeChallenges.length > 0 && (
-                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-                      <Award className="h-6 w-6 text-sky-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length === 1
-                          ? t('endurance.challenges.toComplete', { count: activeChallenges.length })
-                          : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
-                        }
-                      </h3>
-                      <p className="text-sm text-teal-100/90 leading-relaxed">
-                        {t(
-                          'endurance.challenges.reminderBody',
-                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                <div className="box pad" style={{ marginBottom: 32 }}>
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.sections.jumprope.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="jumprope"
@@ -2392,72 +2352,48 @@ const EnduranceTab = () => {
               {/* Liste des défis */}
               {challenges.filter(c => c.activityType === 'jumprope').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                  <div className="sec-h"><div><h2>{t('endurance.challenges.title')}</h2></div></div>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'jumprope').map((challenge, idx) => (
-                      <div key={`jumprope-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-sky-400" />
-                              <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
-                              <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                challenge.status === 'active' 
-                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              }`}>
-                                {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
-                              </span>
-                            </div>
-                            <div className="space-y-1 text-slate-400 text-sm">
-                              <p>
-                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
-                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
-                                  ? t('endurance.challenges.details.recurrentDaily')
-                                  : t('endurance.challenges.details.recurrentWeekly')
-                                )}
-                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
-                              </p>
-                              <p className="text-sky-300">
-                                {(() => {
-                                  const jumps = challenge.goalJumps ?? challenge.goalCount;
-                                  if (challenge.goalDuration && jumps)
-                                    return t('endurance.challenges.details.goalJumpropeOrJumps', {
-                                      duration: challenge.goalDuration,
-                                      jumps
-                                    });
-                                  if (challenge.goalDuration)
-                                    return t('endurance.challenges.details.goalJumprope', { duration: challenge.goalDuration });
-                                  if (jumps) return `${jumps} sauts`;
-                                  return '';
-                                })()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => editChallenge(challenge.id)}
-                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                              title={t('endurance.session.editChallenge')}
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
-                                const realIndex = challenges.findIndex(c => c === challenge);
-                                deleteChallenge(challenge.id, realIndex);
-                              }}
-                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                              title={t('endurance.session.deleteChallenge')}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
+                      <DefisChallengeTicket
+                        key={`jumprope-challenge-${challenge.id}-${idx}`}
+                        title={challenge.name}
+                        statusLabel={
+                          challenge.status === 'active'
+                            ? t('endurance.challenges.status.active')
+                            : t('endurance.challenges.status.completed')
+                        }
+                        onEdit={() => editChallenge(challenge.id)}
+                        onDelete={() => {
+                          const realIndex = challenges.findIndex(c => c === challenge);
+                          deleteChallenge(challenge.id, realIndex);
+                        }}
+                        editTitle={t('endurance.session.editChallenge')}
+                        deleteTitle={t('endurance.session.deleteChallenge')}
+                      >
+                        <div className="row">
+                          {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                          {challenge.type === 'recurrent' && (challenge.frequency === 'daily'
+                            ? t('endurance.challenges.details.recurrentDaily')
+                            : t('endurance.challenges.details.recurrentWeekly')
+                          )}
+                          {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                         </div>
-                      </div>
+                        <div className="row">
+                          {(() => {
+                            const jumps = challenge.goalJumps ?? challenge.goalCount;
+                            if (challenge.goalDuration && jumps)
+                              return t('endurance.challenges.details.goalJumpropeOrJumps', {
+                                duration: challenge.goalDuration,
+                                jumps
+                              });
+                            if (challenge.goalDuration)
+                              return t('endurance.challenges.details.goalJumprope', { duration: challenge.goalDuration });
+                            if (jumps) return `${jumps} sauts`;
+                            return '';
+                          })()}
+                        </div>
+                      </DefisChallengeTicket>
                     ))}
                   </div>
                 </div>
@@ -2465,13 +2401,12 @@ const EnduranceTab = () => {
 
               {/* Historique */}
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
+                <div className="sec-h"><div><h2>{t('endurance.history.title')}</h2></div></div>
+                <div className="box">
                   {sessions.jumprope.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
-                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
+                    <div className="empty">
+                      <h3>{t('endurance.history.noSessions')}</h3>
+                      <p>{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -2598,10 +2533,10 @@ const EnduranceTab = () => {
                 </div>
               </div>
 
-              <div className="mb-6 flex flex-wrap gap-2">
+              <div className="defis-tabs" role="tablist">
                 <button
                   type="button"
-                  onClick={() => setGainageSubView('sessions')}
+                  onClick={() => setGainageSubView('sessions')} aria-selected={gainageSubView === 'sessions'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     gainageSubView === 'sessions'
                       ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
@@ -2612,7 +2547,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGainageSubView('trophies')}
+                  onClick={() => setGainageSubView('trophies')} aria-selected={gainageSubView === 'trophies'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     gainageSubView === 'trophies'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -2623,7 +2558,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGainageSubView('calendar')}
+                  onClick={() => setGainageSubView('calendar')} aria-selected={gainageSubView === 'calendar'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     gainageSubView === 'calendar'
                       ? 'border-amber-500/70 bg-amber-500/10 text-amber-100'
@@ -2634,7 +2569,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGainageSubView('stats')}
+                  onClick={() => setGainageSubView('stats')} aria-selected={gainageSubView === 'stats'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     gainageSubView === 'stats'
                       ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
@@ -2646,47 +2581,29 @@ const EnduranceTab = () => {
               </div>
 
               {gainageSubView === 'trophies' ? (
-                <SimpleEnduranceTrophiesPanel
-                  activityType="gainage"
-                  sessions={sessions.gainage}
-                  title="Trophées — Gainage"
-                />
+                <EnduranceLazyPane>
+                  <SimpleEnduranceTrophiesPanel
+                    activityType="gainage"
+                    sessions={sessions.gainage}
+                    title="Trophées — Gainage"
+                  />
+                </EnduranceLazyPane>
               ) : gainageSubView === 'calendar' ? (
-                <DefisDisciplineCalendarPanel
-                  activityKind="gainage"
-                  sessions={sessions.gainage}
-                  onEditSession={(type, id) => editSession(type, id)}
-                />
+                <EnduranceLazyPane>
+                  <DefisDisciplineCalendarPanel
+                    activityKind="gainage"
+                    sessions={sessions.gainage}
+                    onEditSession={(type, id) => editSession(type, id)}
+                  />
+                </EnduranceLazyPane>
               ) : gainageSubView === 'stats' ? (
-                <EnduranceDisciplineStatsPanel kind="gainage" sessions={sessions.gainage} />
+                <EnduranceLazyPane>
+                  <EnduranceDisciplineStatsPanel kind="gainage" sessions={sessions.gainage} />
+                </EnduranceLazyPane>
               ) : (
                 <>
-              {activeChallenges.length > 0 && (
-                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-                      <Award className="h-6 w-6 text-sky-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length === 1
-                          ? t('endurance.challenges.active', { count: activeChallenges.length })
-                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })
-                        }
-                      </h3>
-                      <p className="text-sm text-teal-100/90 leading-relaxed">
-                        {t(
-                          'endurance.challenges.reminderBody',
-                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                <div className="box pad" style={{ marginBottom: 32 }}>
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="gainage"
@@ -2714,96 +2631,65 @@ const EnduranceTab = () => {
 
               {uniqueChallenges.filter((c) => c.activityType === 'gainage').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                  <div className="sec-h"><div><h2>{t('endurance.challenges.title')}</h2></div></div>
                   <div className="grid gap-4">
                     {uniqueChallenges.filter((c) => c.activityType === 'gainage').map((challenge, idx) => (
-                      <div
+                      <DefisChallengeTicket
                         key={`gainage-challenge-${challenge.id}-${idx}`}
-                        className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all"
+                        title={challenge.name}
+                        statusLabel={
+                          challenge.status === 'active'
+                            ? t('endurance.challenges.status.active')
+                            : t('endurance.challenges.status.completed')
+                        }
+                        onEdit={() => editChallenge(challenge.id)}
+                        onDelete={() => {
+                          const realIndex = challenges.findIndex((c) => c === challenge);
+                          deleteChallenge(challenge.id, realIndex);
+                        }}
+                        editTitle={t('endurance.session.editChallenge')}
+                        deleteTitle={t('endurance.session.deleteChallenge')}
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-sky-400" />
-                              <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
-                            </div>
-                            <div className="space-y-1 text-slate-400 text-sm">
-                              <p>
-                                {challenge.type === 'ponctuel' &&
-                                  t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
-                                {challenge.type === 'recurrent' &&
-                                  (challenge.frequency === 'daily'
-                                    ? t('endurance.challenges.details.recurrentDaily')
-                                    : t('endurance.challenges.details.recurrentWeekly'))}
-                                {challenge.type === 'periode' &&
-                                  t('endurance.challenges.details.period', {
-                                    startDate: challenge.startDate,
-                                    endDate: challenge.endDate
-                                  })}
-                              </p>
-                              <p className="text-sky-300">
-                                {challenge.goalCount && challenge.goalDuration
-                                  ? t('endurance.challenges.details.goalGainageWithDuration', {
-                                      seconds: challenge.goalCount,
-                                      duration: challenge.goalDuration
-                                    })
-                                  : challenge.goalCount
-                                    ? t('endurance.challenges.details.goalGainageSeconds', {
-                                        seconds: challenge.goalCount
-                                      })
-                                    : challenge.goalDuration
-                                      ? `${challenge.goalDuration} min max`
-                                      : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                                challenge.status === 'active'
-                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              }`}
-                            >
-                              {challenge.status === 'active'
-                                ? t('endurance.challenges.status.active')
-                                : t('endurance.challenges.status.completed')}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => editChallenge(challenge.id)}
-                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                              title={t('endurance.session.editChallenge')}
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const realIndex = challenges.findIndex((c) => c === challenge);
-                                deleteChallenge(challenge.id, realIndex);
-                              }}
-                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                              title={t('endurance.session.deleteChallenge')}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
+                        <div className="row">
+                          {challenge.type === 'ponctuel' &&
+                            t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                          {challenge.type === 'recurrent' &&
+                            (challenge.frequency === 'daily'
+                              ? t('endurance.challenges.details.recurrentDaily')
+                              : t('endurance.challenges.details.recurrentWeekly'))}
+                          {challenge.type === 'periode' &&
+                            t('endurance.challenges.details.period', {
+                              startDate: challenge.startDate,
+                              endDate: challenge.endDate
+                            })}
                         </div>
-                      </div>
+                        <div className="row">
+                          {challenge.goalCount && challenge.goalDuration
+                            ? t('endurance.challenges.details.goalGainageWithDuration', {
+                                seconds: challenge.goalCount,
+                                duration: challenge.goalDuration
+                              })
+                            : challenge.goalCount
+                              ? t('endurance.challenges.details.goalGainageSeconds', {
+                                  seconds: challenge.goalCount
+                                })
+                              : challenge.goalDuration
+                                ? `${challenge.goalDuration} min max`
+                                : ''}
+                        </div>
+                      </DefisChallengeTicket>
                     ))}
                   </div>
                 </div>
               )}
 
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
+                <div className="sec-h"><div><h2>{t('endurance.history.title')}</h2></div></div>
+                <div className="box">
                   {sessions.gainage.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <Anchor className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
-                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
+                    <div className="empty">
+                      <h3>{t('endurance.history.noSessions')}</h3>
+                      <p>{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -2902,10 +2788,17 @@ const EnduranceTab = () => {
                 ]}
               />
 
-              <div className="mb-6 flex flex-wrap gap-2">
+              <RunningCourseKpiBoard
+                sessions={runningSessionsNoWalk}
+                garminById={garminRunningById}
+                garminRunningKindByGarminId={garminRunningKindByGarminId}
+                classificationCtx={runningClassificationCtx}
+              />
+
+              <div className="defis-tabs" role="tablist">
                 <button
                   type="button"
-                  onClick={() => setRunningSubView('sessions')}
+                  onClick={() => setRunningSubView('sessions')} aria-selected={runningSubView === 'sessions'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     runningSubView === 'sessions'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -2916,7 +2809,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRunningSubView('trophies')}
+                  onClick={() => setRunningSubView('trophies')} aria-selected={runningSubView === 'trophies'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     runningSubView === 'trophies'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -2927,7 +2820,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRunningSubView('calendar')}
+                  onClick={() => setRunningSubView('calendar')} aria-selected={runningSubView === 'calendar'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     runningSubView === 'calendar'
                       ? 'border-amber-500/70 bg-amber-500/10 text-amber-100'
@@ -2938,7 +2831,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRunningSubView('stats')}
+                  onClick={() => setRunningSubView('stats')} aria-selected={runningSubView === 'stats'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     runningSubView === 'stats'
                       ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
@@ -2950,61 +2843,32 @@ const EnduranceTab = () => {
               </div>
 
               {runningSubView === 'trophies' ? (
-                <RunningTrophiesPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
+                <EnduranceLazyPane>
+                  <RunningTrophiesPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
+                </EnduranceLazyPane>
               ) : runningSubView === 'calendar' ? (
-                <DefisDisciplineCalendarPanel
-                  activityKind="running"
-                  sessions={runningSessionsNoWalk}
-                  garminById={garminRunningById}
-                  onEditSession={(type, id) => editSession(type, id)}
-                />
+                <EnduranceLazyPane>
+                  <DefisDisciplineCalendarPanel
+                    activityKind="running"
+                    sessions={runningSessionsNoWalk}
+                    garminById={garminRunningById}
+                    onEditSession={(type, id) => editSession(type, id)}
+                  />
+                </EnduranceLazyPane>
               ) : runningSubView === 'stats' ? (
-                <RunningStatsPanel
-                  sessions={runningSessionsNoWalk}
-                  garminById={garminRunningById}
-                  garminRunningKindByGarminId={garminRunningKindByGarminId}
-                  classificationCtx={runningClassificationCtx}
-                />
+                <EnduranceLazyPane>
+                  <RunningStatsPanel
+                    sessions={runningSessionsNoWalk}
+                    garminById={garminRunningById}
+                    garminRunningKindByGarminId={garminRunningKindByGarminId}
+                    classificationCtx={runningClassificationCtx}
+                  />
+                </EnduranceLazyPane>
               ) : (
-                <>
-              <RunningGarminSyncBlock />
-
-              <RunningTrainingInsightsPanel
-                sessions={runningSessionsNoWalk}
-                garminById={garminRunningById}
-                garminRunningKindByGarminId={garminRunningKindByGarminId}
-              />
-
-              <RunningPersonalRecordsPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
-
-              {/* Rappel défis actifs */}
-                  {activeChallenges.length > 0 && (
-                    <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
-                          <Award className="h-6 w-6 text-sky-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold text-lg mb-2">
-                            {activeChallenges.length === 1
-                              ? t('endurance.challenges.toComplete', { count: activeChallenges.length })
-                              : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
-                            }
-                          </h3>
-                          <p className="text-sm text-teal-100/90 leading-relaxed">
-                            {t(
-                              'endurance.challenges.reminderBody',
-                              'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-              {/* Formulaire de session */}
+                <div className="split">
+                  <div>
               {ui.showSessionForm && (
-                    <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                    <div className="box pad" style={{ marginBottom: 32 }}>
                       <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                       <EnduranceSessionForm
                         activityType="running"
@@ -3042,68 +2906,43 @@ const EnduranceTab = () => {
                   {/* Liste des défis */}
                   {challenges.filter(c => c.activityType === 'running').length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                      <div className="sec-h"><div><h2>{t('endurance.challenges.title')}</h2></div></div>
                       <div className="grid gap-4">
                         {challenges.filter(c => c.activityType === 'running').map((challenge, idx) => (
-                          <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Award className="w-5 h-5 text-sky-400" />
-                                  <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
-                                  <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                    challenge.status === 'active' 
-                                      ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                  }`}>
-                                    {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
-                                  </span>
-                                </div>
-                                <div className="space-y-1 text-slate-400 text-sm">
-                                  <p>
-                                    {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
-                                    {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
-                                      ? t('endurance.challenges.details.recurrentDaily')
-                                      : t('endurance.challenges.details.recurrentWeekly')
-                                    )}
-                                    {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
-                                  </p>
-                                  <p className="text-sky-300">
-                                    {challenge.goalDistance && challenge.goalDuration
-                                      ? t('endurance.challenges.details.goalRunningWithDuration', { distance: challenge.goalDistance, duration: challenge.goalDuration })
-                                      : challenge.goalDistance
-                                      ? t('endurance.challenges.details.goalRunning', { distance: challenge.goalDistance })
-                                      : challenge.goalDuration
-                                      ? `${challenge.goalDuration} min`
-                                      : ''
-                                    }
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() => editChallenge(challenge.id)}
-                                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                                  title={t('endurance.session.editChallenge')}
-                                >
-                                  <Edit className="w-5 h-5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
-                                    const realIndex = challenges.findIndex(c => c === challenge);
-                                    deleteChallenge(challenge.id, realIndex);
-                                  }}
-                                  className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                                  title={t('endurance.session.deleteChallenge')}
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
-                              </div>
+                          <DefisChallengeTicket
+                            key={`running-challenge-${challenge.id}-${idx}`}
+                            title={challenge.name}
+                            statusLabel={
+                              challenge.status === 'active'
+                                ? t('endurance.challenges.status.active')
+                                : t('endurance.challenges.status.completed')
+                            }
+                            onEdit={() => editChallenge(challenge.id)}
+                            onDelete={() => {
+                              const realIndex = challenges.findIndex(c => c === challenge);
+                              deleteChallenge(challenge.id, realIndex);
+                            }}
+                            editTitle={t('endurance.session.editChallenge')}
+                            deleteTitle={t('endurance.session.deleteChallenge')}
+                          >
+                            <div className="row">
+                              {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                              {challenge.type === 'recurrent' && (challenge.frequency === 'daily'
+                                ? t('endurance.challenges.details.recurrentDaily')
+                                : t('endurance.challenges.details.recurrentWeekly')
+                              )}
+                              {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                             </div>
-                          </div>
+                            <div className="row">
+                              {challenge.goalDistance && challenge.goalDuration
+                                ? t('endurance.challenges.details.goalRunningWithDuration', { distance: challenge.goalDistance, duration: challenge.goalDuration })
+                                : challenge.goalDistance
+                                  ? t('endurance.challenges.details.goalRunning', { distance: challenge.goalDistance })
+                                  : challenge.goalDuration
+                                    ? `${challenge.goalDuration} min`
+                                    : ''}
+                            </div>
+                          </DefisChallengeTicket>
                         ))}
                       </div>
                     </div>
@@ -3154,10 +2993,9 @@ const EnduranceTab = () => {
                   )}
 
                   {runningSessionsNoWalk.length === 0 ? (
-                    <div className="mb-8 rounded-2xl border border-[#0F4C5C]/50 bg-black p-12 text-center">
-                      <Play className="mx-auto mb-4 h-16 w-16 text-slate-600" />
-                      <p className="text-lg text-slate-400">{t('endurance.history.noSessions')}</p>
-                      <p className="mt-2 text-sm text-slate-500">{t('endurance.history.noSessionsHint')}</p>
+                    <div className="empty" style={{ marginBottom: 32 }}>
+                      <h3>{t('endurance.history.noSessions')}</h3>
+                      <p>{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <RunningSessionsHistory
@@ -3171,7 +3009,11 @@ const EnduranceTab = () => {
                       onDelete={(id, originalIndex) => deleteRunningSession(id, originalIndex)}
                     />
                   )}
-                </>
+                  </div>
+                  <aside className="rail">
+                    <RunningGarminSyncBlock />
+                  </aside>
+                </div>
               )}
 
             </>
@@ -3198,10 +3040,10 @@ const EnduranceTab = () => {
                 ]}
               />
 
-              <div className="mb-6 flex flex-wrap gap-2">
+              <div className="defis-tabs" role="tablist">
                 <button
                   type="button"
-                  onClick={() => setWalkingSubView('sessions')}
+                  onClick={() => setWalkingSubView('sessions')} aria-selected={walkingSubView === 'sessions'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     walkingSubView === 'sessions'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -3212,7 +3054,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setWalkingSubView('trophies')}
+                  onClick={() => setWalkingSubView('trophies')} aria-selected={walkingSubView === 'trophies'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     walkingSubView === 'trophies'
                       ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
@@ -3223,7 +3065,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setWalkingSubView('calendar')}
+                  onClick={() => setWalkingSubView('calendar')} aria-selected={walkingSubView === 'calendar'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     walkingSubView === 'calendar'
                       ? 'border-amber-500/70 bg-amber-500/10 text-amber-100'
@@ -3234,7 +3076,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setWalkingSubView('dailyWalkManual')}
+                  onClick={() => setWalkingSubView('dailyWalkManual')} aria-selected={walkingSubView === 'dailyWalkManual'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     walkingSubView === 'dailyWalkManual'
                       ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
@@ -3245,7 +3087,7 @@ const EnduranceTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setWalkingSubView('stats')}
+                  onClick={() => setWalkingSubView('stats')} aria-selected={walkingSubView === 'stats'}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                     walkingSubView === 'stats'
                       ? 'border-violet-500/70 bg-violet-500/10 text-violet-100'
@@ -3257,24 +3099,34 @@ const EnduranceTab = () => {
               </div>
 
               {walkingSubView === 'trophies' ? (
-                <WalkingTrophiesPanel sessions={walkingSessions} />
+                <EnduranceLazyPane>
+                  <WalkingTrophiesPanel sessions={walkingSessions} />
+                </EnduranceLazyPane>
               ) : walkingSubView === 'dailyWalkManual' ? (
-                <ManualDailyWalkPanel currentData={data} updateData={updateData} />
+                <EnduranceLazyPane>
+                  <ManualDailyWalkPanel currentData={data} updateData={updateData} />
+                </EnduranceLazyPane>
               ) : walkingSubView === 'calendar' ? (
-                <DefisDisciplineCalendarPanel
-                  activityKind="walking"
-                  sessions={walkingSessions}
-                  onEditSession={(type, id) => editSession(type, id)}
-                />
+                <EnduranceLazyPane>
+                  <DefisDisciplineCalendarPanel
+                    activityKind="walking"
+                    sessions={walkingSessions}
+                    onEditSession={(type, id) => editSession(type, id)}
+                  />
+                </EnduranceLazyPane>
               ) : walkingSubView === 'stats' ? (
-                <EnduranceDisciplineStatsPanel kind="walking" sessions={walkingSessions} />
+                <EnduranceLazyPane>
+                  <EnduranceDisciplineStatsPanel kind="walking" sessions={walkingSessions} />
+                </EnduranceLazyPane>
               ) : (
                 <>
               <RunningGarminSyncBlock />
-              <WalkingStatsPanel sessions={walkingSessions} garminById={garminRunningById} />
+              <EnduranceLazyPane>
+                <WalkingStatsPanel sessions={walkingSessions} garminById={garminRunningById} />
+              </EnduranceLazyPane>
 
               {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                <div className="box pad" style={{ marginBottom: 32 }}>
                   <h3 className="text-2xl font-bold text-white mb-6">Nouvelle session de marche</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label className="text-sm text-teal-100">
@@ -3346,10 +3198,9 @@ const EnduranceTab = () => {
               )}
 
               {walkingSessions.length === 0 ? (
-                <div className="mb-8 rounded-2xl border border-[#0F4C5C]/50 bg-black p-12 text-center">
-                  <Play className="mx-auto mb-4 h-16 w-16 text-slate-600" />
-                  <p className="text-lg text-slate-400">Aucune marche enregistrée</p>
-                  <p className="mt-2 text-sm text-slate-500">Synchronise Garmin ou ajoute une séance manuelle.</p>
+                <div className="empty" style={{ marginBottom: 32 }}>
+                  <h3>Aucune marche enregistrée</h3>
+                  <p>Synchronise Garmin ou ajoute une séance manuelle.</p>
                 </div>
               ) : (
                 <RunningSessionsHistory
@@ -3370,53 +3221,71 @@ const EnduranceTab = () => {
 
           {/* SECTION TOUS LES TROPHEES */}
           {activeTab === 'trophies' && (
-            <AllTrophiesHubPanel
-              sessions={sessions}
-              garminRunningById={garminRunningById}
-              onOpenCategoryTrophies={(categoryId) => {
-                if (categoryId === 'running') {
-                  setRunningSubView('trophies');
-                  setActiveTab('running');
-                  return;
-                }
-                if (categoryId === 'walking') {
-                  setWalkingSubView('trophies');
-                  setActiveTab('walking');
-                  return;
-                }
-                if (categoryId === 'pushups') {
-                  setPushupsSubView('trophies');
-                  setActiveTab('pushups');
-                  return;
-                }
-                if (categoryId === 'jumprope') {
-                  setJumpropeSubView('trophies');
-                  setActiveTab('jumprope');
-                  return;
-                }
-                if (categoryId === 'gainage') {
-                  setGainageSubView('trophies');
-                  setActiveTab('gainage');
-                }
-              }}
-            />
+            <EnduranceLazyPane>
+              <AllTrophiesHubPanel
+                sessions={sessions}
+                garminRunningById={garminRunningById}
+                onOpenCategoryTrophies={(categoryId) => {
+                  if (categoryId === 'running') {
+                    setRunningSubView('trophies');
+                    setActiveTab('running');
+                    return;
+                  }
+                  if (categoryId === 'walking') {
+                    setWalkingSubView('trophies');
+                    setActiveTab('walking');
+                    return;
+                  }
+                  if (categoryId === 'pushups') {
+                    setPushupsSubView('trophies');
+                    setActiveTab('pushups');
+                    return;
+                  }
+                  if (categoryId === 'jumprope') {
+                    setJumpropeSubView('trophies');
+                    setActiveTab('jumprope');
+                    return;
+                  }
+                  if (categoryId === 'gainage') {
+                    setGainageSubView('trophies');
+                    setActiveTab('gainage');
+                  }
+                }}
+              />
+            </EnduranceLazyPane>
           )}
 
           {/* SECTION CIRCUITS */}
-          {activeTab === 'circuits' && <CircuitsHubPanel />}
+          {activeTab === 'circuits' && (
+            <EnduranceLazyPane>
+              <CircuitsHubPanel />
+            </EnduranceLazyPane>
+          )}
 
           {/* SECTION GREASE THE GROOVE */}
-          {activeTab === 'gtg' && <GtgPanel />}
+          {activeTab === 'gtg' && (
+            <EnduranceLazyPane>
+              <GtgPanel />
+            </EnduranceLazyPane>
+          )}
 
           {/* SECTION PYRAMIDE */}
-          {activeTab === 'pyramid' && <PyramidTrainingPanel />}
+          {activeTab === 'pyramid' && (
+            <EnduranceLazyPane>
+              <PyramidTrainingPanel />
+            </EnduranceLazyPane>
+          )}
 
           {/* SECTION PERFORMANCES */}
-          {activeTab === 'performance' && <PerformanceChallengesTab />}
+          {activeTab === 'performance' && (
+            <EnduranceLazyPane>
+              <PerformanceChallengesTab embedded />
+            </EnduranceLazyPane>
+          )}
 
           {/* SECTION CALENDRIER HEATMAP */}
           {activeTab === 'calendar' && (
-            <>
+            <EnduranceLazyPane>
               <EnduranceCalendarModernPanel
                 sessions={sessions}
                 selectedYear={ui.selectedYear}
@@ -3428,7 +3297,7 @@ const EnduranceTab = () => {
                   setActiveTab(activityType);
                 }}
               />
-            </>
+            </EnduranceLazyPane>
           )}
         </div>
         )}

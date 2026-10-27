@@ -37,7 +37,9 @@ function InsightColumn({ title, items, horizonKey, accent }) {
         </span>
       </div>
       {cards.length === 0 ? (
-        <p className="text-[12px] leading-relaxed text-slate-500">Aucun signal assez robuste.</p>
+        <p className="text-[12px] leading-relaxed text-slate-500">
+          Pas assez de signal fiable sur cette fenêtre.
+        </p>
       ) : (
         <div className="space-y-4">
           {cards.map((item, i) => {
