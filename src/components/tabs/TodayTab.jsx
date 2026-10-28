@@ -865,10 +865,13 @@ const TodayTab = () => {
       exerciseShowsWeightField(exercise, false) && isLastExerciseWeightIndexReady()
         ? peekLastExerciseWeightValue(lastWeightIdsForExercise(exercise, exerciseId))
         : '';
+    // Si une mémoire du même jour de semaine existe : ne pas récupérer un lest
+    // d’un autre jour (ex. tractions BW lundi vs lestées vendredi).
     const weightToStore =
       todayWeight ||
-      (weekdayMemory?.weight ? weekdayMemory.weight : '') ||
-      peekedWeight;
+      (weekdayMemory
+        ? String(weekdayMemory.weight || '').trim()
+        : peekedWeight);
     const repsVal =
       (weekdayMemory?.reps ? weekdayMemory.reps : '') || plannedRepsForExercise(exercise);
     const memorySourceKey = weekdayMemory?.key || null;

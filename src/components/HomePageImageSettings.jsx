@@ -12,7 +12,8 @@ import {
   getHomepageImageFullSrc,
   getHomepageImageThumbSrc,
   isHomepageVideo,
-  normalizeHomepageImage
+  normalizeHomepageImage,
+  purgeRemovedWelcomeVideos,
 } from '../utils/homepageImagePreferences';
 import {
   LOCK_WALLPAPER_ROTATION_OPTIONS,
@@ -80,6 +81,19 @@ const HomePageImageSettings = ({ onClose }) => {
   const [bankPreviewId, setBankPreviewId] = useState(null);
   const [bankAddingTheme, setBankAddingTheme] = useState(false);
   const [bankVideos, setBankVideos] = useState([]);
+
+  // Purge hous n fire / streetlife (et autres retirés) de la collection utilisateur
+  useEffect(() => {
+    if (!backgroundImages?.length) return;
+    const cleaned = purgeRemovedWelcomeVideos(
+      backgroundImages.map((img, i) => normalizeHomepageImage(img, i))
+    );
+    if (cleaned.length === backgroundImages.length) return;
+    persistCollection(cleaned).catch((error) => {
+      log.error('Erreur purge vidéos retirées', error);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- une fois quand la collection contient un fichier mort
+  }, [backgroundImages.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -917,12 +931,10 @@ const HomePageImageSettings = ({ onClose }) => {
           <div>
             <h3 className="mb-2 text-lg font-semibold text-red-100">Bibliothèque d&apos;images &amp; vidéos</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              Votre collection commence vide. Choisissez pour chaque image si elle s&apos;affiche sur l&apos;
-              <strong className="text-red-200/90">accueil</strong>, le{' '}
-              <strong className="text-red-200/90">verrouillage</strong>, ou les deux.
-              Le badge <strong className="text-red-200/90">Fond app</strong> l&apos;ajoute aux fonds
-              statiques (Apparence → filtre Statiques). Les flèches changent l&apos;ordre utilisé en
-              mode « dans l&apos;ordre ». Cœur = favori. Œil barré = hors rotation.
+              Photos et vidéos : même outils. Cœur = favori · Œil = masquer · ✕ = retirer.
+              Pour chaque <strong className="text-red-200/90">vidéo</strong>, « Son » autorise le volume
+              (indépendamment, vidéo par vidéo) et affiche le bouton haut-parleur sur l&apos;accueil.
+              Emplacement Accueil / Verrou comme pour les images.
               {effectiveLockCount > 0 ? (
                 <span className="mt-1 block text-emerald-300/90">
                   {effectiveLockCount} image{effectiveLockCount > 1 ? 's' : ''} active{effectiveLockCount > 1 ? 's' : ''} sur le verrouillage.
@@ -1137,40 +1149,6 @@ const HomePageImageSettings = ({ onClose }) => {
                           <ZoomIn className="h-8 w-8 text-white/90 drop-shadow" />
                         </span>
                       </button>
-                      {isVideo ? (
-                        <div className="absolute right-2 top-10 flex flex-col gap-1">
-                          <button
-                            type="button"
-                            onClick={() => patchImage(index, { loop: !norm.loop })}
-                            className={`rounded border px-1.5 py-0.5 text-[10px] backdrop-blur-sm ${
-                              norm.loop
-                                ? 'border-emerald-400/60 bg-emerald-950/90 text-emerald-200'
-                                : 'border-red-900/50 bg-black/70 text-red-100/70'
-                            }`}
-                            title="Lire en boucle jusqu’au clic"
-                          >
-                            Boucle
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              patchImage(index, {
-                                allowSound: !norm.allowSound,
-                                muted: norm.allowSound ? true : false,
-                              })
-                            }
-                            className={`rounded border px-1.5 py-0.5 text-[10px] backdrop-blur-sm ${
-                              norm.allowSound
-                                ? 'border-amber-400/60 bg-amber-950/90 text-amber-200'
-                                : 'border-red-900/50 bg-black/70 text-red-100/70'
-                            }`}
-                            title="Autoriser le son (bouton sur l’accueil)"
-                          >
-                            Son
-                          </button>
-                        </div>
-                      ) : null}
-
                       <div className="absolute left-2 top-2 flex gap-1">
                         <button
                           type="button"
@@ -1201,11 +1179,54 @@ const HomePageImageSettings = ({ onClose }) => {
                       <button
                         type="button"
                         onClick={() => removeBackgroundImage(index)}
-                        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-red-800/60 bg-red-950/90 text-red-50 opacity-0 transition-opacity group-hover:opacity-100"
-                        title="Supprimer"
+                        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-red-800/60 bg-red-950/90 text-red-50 opacity-100 transition-opacity"
+                        title="Retirer de la collection"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
+
+                      {isVideo ? (
+                        <div className="absolute right-2 top-11 flex flex-col gap-1">
+                          <button
+                            type="button"
+                            onClick={() => patchImage(index, (n) => ({ loop: !n.loop }))}
+                            className={`rounded border px-1.5 py-0.5 text-[10px] backdrop-blur-sm ${
+                              norm.loop
+                                ? 'border-emerald-400/60 bg-emerald-950/90 text-emerald-200'
+                                : 'border-red-900/50 bg-black/70 text-red-100/70'
+                            }`}
+                            title="Lire en boucle"
+                          >
+                            Boucle
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              patchImage(index, (n) => ({
+                                allowSound: !n.allowSound,
+                                muted: n.allowSound,
+                              }))
+                            }
+                            className={`flex items-center justify-center gap-1 rounded border px-1.5 py-0.5 text-[10px] backdrop-blur-sm ${
+                              norm.allowSound
+                                ? 'border-amber-400/60 bg-amber-950/90 text-amber-200'
+                                : 'border-red-900/50 bg-black/70 text-red-100/70'
+                            }`}
+                            title={
+                              norm.allowSound
+                                ? 'Son autorisé — bouton volume sur l’accueil'
+                                : 'Activer le son pour cette vidéo'
+                            }
+                          >
+                            {norm.allowSound ? (
+                              <Volume2 className="h-3 w-3" />
+                            ) : (
+                              <VolumeX className="h-3 w-3" />
+                            )}
+                            Son
+                          </button>
+                        </div>
+                      ) : null}
 
                       <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-1">
                         <label className="sr-only" htmlFor={`placement-${index}`}>

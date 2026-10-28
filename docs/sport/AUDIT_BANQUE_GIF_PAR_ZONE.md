@@ -4,9 +4,9 @@ Généré le 2026-10-28.
 
 ## Synthèse
 
-- Exercices banque : **542**
-- Entrées manifest médias : **527**
-- Avec carte GIF : **500**
+- Exercices banque : **1374**
+- Entrées manifest médias : **1359**
+- Avec carte GIF : **1332**
 - Sans carte : **42**
 - Sans GIF (carte ni stand-in) : **36**
 
@@ -14,18 +14,18 @@ Généré le 2026-10-28.
 
 | Zone | Total | Carte | GIF | Vidéo | Sans carte | Sans GIF |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Abdominaux | 76 | 68 | 68 | 3 | 8 | 8 |
-| Activités Complémentaires | 28 | 26 | 28 | 0 | 2 | 0 |
-| Avant-bras | 15 | 11 | 11 | 0 | 4 | 4 |
-| Biceps | 44 | 41 | 41 | 7 | 3 | 3 |
-| Dorsaux | 77 | 75 | 75 | 19 | 2 | 2 |
-| Épaules | 76 | 70 | 72 | 9 | 6 | 4 |
-| Fessiers | 27 | 23 | 24 | 1 | 4 | 3 |
-| Ischio-jambiers | 20 | 20 | 20 | 2 | 0 | 0 |
-| Mollets | 18 | 14 | 14 | 5 | 4 | 4 |
-| Pectoraux | 63 | 62 | 62 | 22 | 1 | 1 |
-| Quadriceps | 61 | 55 | 56 | 11 | 6 | 5 |
-| Triceps | 37 | 35 | 35 | 8 | 2 | 2 |
+| Abdominaux | 177 | 169 | 169 | 3 | 8 | 8 |
+| Activités Complémentaires | 48 | 46 | 48 | 0 | 2 | 0 |
+| Avant-bras | 41 | 37 | 37 | 0 | 4 | 4 |
+| Biceps | 153 | 150 | 150 | 7 | 3 | 3 |
+| Dorsaux | 207 | 205 | 205 | 19 | 2 | 2 |
+| Épaules | 180 | 174 | 176 | 9 | 6 | 4 |
+| Fessiers | 97 | 93 | 94 | 1 | 4 | 3 |
+| Ischio-jambiers | 31 | 31 | 31 | 2 | 0 | 0 |
+| Mollets | 57 | 53 | 53 | 5 | 4 | 4 |
+| Pectoraux | 158 | 157 | 157 | 22 | 1 | 1 |
+| Quadriceps | 85 | 79 | 80 | 11 | 6 | 5 |
+| Triceps | 140 | 138 | 138 | 8 | 2 | 2 |
 
 ## Détail — cartes manquantes (par zone)
 

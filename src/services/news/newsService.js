@@ -175,7 +175,8 @@ async function fetchNewsAPI(options = {}) {
   }
   
   if (!data.articles || data.articles.length === 0) {
-    log.warn('NewsAPI returned no articles');
+    // Source vide = fallback normal, pas une alerte utilisateur
+    log.debug('NewsAPI returned no articles');
     return [];
   }
   
@@ -278,7 +279,9 @@ async function fetchGuardian(options = {}) {
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`Guardian API error: ${response.status}`);
+    // CORS / réseau / clé : ne pas remonter en WARN bruyant — fallback autres sources
+    log.debug(`Guardian HTTP ${response.status} — skip source`);
+    return [];
   }
   
   const data = await response.json();
@@ -401,10 +404,12 @@ async function fetchNewsData(options = {}) {
   }
   
   const apiKey = getApiKey('NEWSDATA');
+  // Free tier NewsData : size max souvent 10 — 20 provoque 422
+  const safeSize = Math.min(Math.max(Number(pageSize) || 10, 1), 10);
   const params = new URLSearchParams({
     apikey: apiKey,
     language: 'fr',
-    size: pageSize.toString()
+    size: String(safeSize),
   });
   
   if (category === 'france' || country === 'fr') {
@@ -432,23 +437,11 @@ async function fetchNewsData(options = {}) {
   const response = await fetch(url);
   
   if (!response.ok) {
-    // ✅ CORRECTION : Gestion spécifique des erreurs 422 (requête invalide)
+    // 422 = params refusés (souvent size/language/combo) → skip silencieux + fallback
     if (response.status === 422) {
-      const errorText = await response.text().catch(() => '');
-      try {
-        const errorData = JSON.parse(errorText);
-        // Vérifier si c'est un problème de paramètres
-        if (errorData.message?.includes('category') || errorData.message?.includes('country')) {
-          log.warn(`NewsData.io invalid parameters for category=${category}, country=${country}`);
-          // Retourner tableau vide plutôt que throw (fallback vers autre source)
-          return [];
-        }
-      } catch (e) {
-        // Ignorer erreur parsing
-      }
-      throw new Error(`NewsData.io API error: Invalid request parameters (422)`);
+      log.debug(`NewsData.io 422 for category=${category}, country=${country} — skip`);
+      return [];
     }
-    // ✅ CORRECTION : Gestion autres erreurs HTTP
     if (response.status === 429) {
       throw new Error('NewsData.io API rate limit exceeded');
     }
@@ -948,11 +941,14 @@ class NewsService {
           }
         }
         
-        // ✅ CORRECTION : Ne logger que les erreurs critiques (pas les 422 si on a d'autres sources)
-        if (error.message.includes('422') && sources.length > 1) {
-          log.debug(`Error fetching from ${source}: ${error.message} (skipping, trying other sources)`);
+        const msg = String(error?.message || error || '');
+        const soft =
+          /422|Failed to fetch|NetworkError|CORS|unauthorized|not configured/i.test(msg) &&
+          sources.length > 1;
+        if (soft) {
+          log.debug(`Error fetching from ${source}: ${msg} (skip)`);
         } else {
-          log.warn(`Error fetching from ${source}:`, error.message);
+          log.warn(`Error fetching from ${source}:`, msg);
         }
         // Continuer avec la source suivante
       }
@@ -986,10 +982,13 @@ class NewsService {
       memoryCache.set(cacheKey, result, CACHE_TTL.HEADLINES);
     }
     
-    // Logger le résultat final
-    log.info(`News fetch completed: ${result.length} articles (from ${allNews.length} total, ${errors.length} errors)`);
-    if (errors.length > 0) {
-      log.warn('Errors during fetch:', errors);
+    log.debug(
+      `News fetch completed: ${result.length} articles (from ${allNews.length} total, ${errors.length} source errors)`
+    );
+    if (errors.length > 0 && result.length === 0) {
+      log.warn('News: toutes les sources ont échoué', errors);
+    } else if (errors.length > 0) {
+      log.debug('News: erreurs sources non bloquantes', errors);
     }
     
     return {

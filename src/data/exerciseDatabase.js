@@ -2,6 +2,9 @@
 // Chaque exercice contient : nom, catégorie, muscles primaires/secondaires, équipement, description et variations
 
 import { EXERCISE_DATABASE_ENRICHMENT } from './exerciseDatabaseEnrichment.js';
+import { EXERCISE_DATABASE_PECTORAUX_GIF_BATCH } from './exerciseDatabasePectorauxGifBatch.js';
+import { EXERCISE_DATABASE_EPAULES_DOS_BRAS_GIF_BATCH } from './exerciseDatabaseEpaulesDosBrasGifBatch.js';
+import { EXERCISE_DATABASE_ABS_JAMBES_FESSIERS_CARDIO_GIF_BATCH } from './exerciseDatabaseAbsJambesFessiersCardioGifBatch.js';
 
 /** Inclinaison > prise : commun à toutes les tractions australiennes. */
 const AUSTRALIAN_ROW_DIFFICULTY =
@@ -6968,6 +6971,9 @@ export const exerciseDatabase = {
 };
 
 Object.assign(exerciseDatabase, EXERCISE_DATABASE_ENRICHMENT);
+Object.assign(exerciseDatabase, EXERCISE_DATABASE_PECTORAUX_GIF_BATCH);
+Object.assign(exerciseDatabase, EXERCISE_DATABASE_EPAULES_DOS_BRAS_GIF_BATCH);
+Object.assign(exerciseDatabase, EXERCISE_DATABASE_ABS_JAMBES_FESSIERS_CARDIO_GIF_BATCH);
 
 function labelsForExerciseKey(key, exercise) {
   const labels = [String(key || '').toLowerCase().trim()];

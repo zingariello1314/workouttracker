@@ -1,0 +1,571 @@
+{
+  "generatedAt": "2026-10-28T05:45:18.226Z",
+  "note": "quatrieme dossier gif = ids opaques (souvent doublons binaires de troisieme). Prioriser troisieme pour les noms exploitables.",
+  "bank": {
+    "exercises": 1374,
+    "stretches": 302,
+    "manifestExercises": 1359,
+    "manifestStretches": 62,
+    "exercisesMissingCard": 42
+  },
+  "collections": {
+    "troisieme dossier gif": {
+      "total": 1323,
+      "unused": 13,
+      "used": 1310
+    },
+    "quatrieme dossier gif": {
+      "total": 1324,
+      "unused": 1324,
+      "used": 0
+    },
+    "gifs": {
+      "total": 0,
+      "unused": 0,
+      "used": 0
+    },
+    "lesderniersgifs": {
+      "total": 37,
+      "unused": 0,
+      "used": 37
+    }
+  },
+  "unusedTotals": {
+    "all": 1337,
+    "byDisposition": {
+      "link_existing_exercise": 11,
+      "link_existing_stretch": 1,
+      "new_exercise_card": 1325
+    }
+  },
+  "linkExistingSample": [
+    {
+      "sourcePath": "troisieme dossier gif/abs/half-sit-up-male.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Abdominaux",
+      "matchKey": "prisoner half sit up",
+      "confidence": "high",
+      "score": 1
+    },
+    {
+      "sourcePath": "troisieme dossier gif/abs/janda-sit-up.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Abdominaux",
+      "matchKey": "sit-up",
+      "confidence": "exact_name"
+    },
+    {
+      "sourcePath": "troisieme dossier gif/abs/weighted-decline-sit-up.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Abdominaux",
+      "matchKey": "sit-up décliné",
+      "confidence": "exact_name"
+    },
+    {
+      "sourcePath": "troisieme dossier gif/abs/weighted-russian-twist.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Abdominaux",
+      "matchKey": "russian twist",
+      "confidence": "exact_name"
+    },
+    {
+      "sourcePath": "troisieme dossier gif/biceps/dumbbell-incline-curl.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Biceps",
+      "matchKey": "curl marteau incliné",
+      "confidence": "high",
+      "score": 1
+    },
+    {
+      "sourcePath": "troisieme dossier gif/calves/smith-toe-raise.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Mollets",
+      "matchKey": "mollets inversés smith",
+      "confidence": "exact_name"
+    },
+    {
+      "sourcePath": "troisieme dossier gif/delts/dumbbell-raise.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Épaules",
+      "matchKey": "bent-arm lateral dumbbell raise",
+      "confidence": "high",
+      "score": 1
+    },
+    {
+      "sourcePath": "troisieme dossier gif/lats/chin-up.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Dorsaux",
+      "matchKey": "tractions australiennes prise large supination",
+      "confidence": "high",
+      "score": 1
+    },
+    {
+      "sourcePath": "troisieme dossier gif/pectorals/plyo-push-up.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Pectoraux",
+      "matchKey": "kettlebell plyo pompes",
+      "confidence": "high",
+      "score": 1
+    },
+    {
+      "sourcePath": "troisieme dossier gif/pectorals/push-up-wall.gif",
+      "disposition": "link_existing_stretch",
+      "zoneHint": "Pectoraux",
+      "matchKey": "pliometrie_push_up_pliometrique_murs",
+      "confidence": "probable"
+    },
+    {
+      "sourcePath": "troisieme dossier gif/quads/barbell-bench-front-squat.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Quadriceps",
+      "matchKey": "landmine squat",
+      "confidence": "probable",
+      "score": 0.75
+    },
+    {
+      "sourcePath": "troisieme dossier gif/triceps/side-push-up.gif",
+      "disposition": "link_existing_exercise",
+      "zoneHint": "Abdominaux",
+      "matchKey": "pompes vers gainage latéral",
+      "confidence": "high",
+      "score": 1
+    }
+  ],
+  "linkExistingCount": 12,
+  "newCardsByZone": {
+    "Triceps": {
+      "count": 1,
+      "sample": [
+        {
+          "sourcePath": "troisieme dossier gif/triceps/diamond-push-up.gif",
+          "proposedName": "Diamond Push Up"
+        }
+      ]
+    },
+    "videos": {
+      "count": 1324,
+      "sample": [
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0001-2gPfomN.gif",
+          "proposedName": "0001 2gpfomn"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0002-Hy9D21L.gif",
+          "proposedName": "0002 Hy9d21l"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0003-1ZFqTDN.gif",
+          "proposedName": "0003 1zfqtdn"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0006-qaZVsGk.gif",
+          "proposedName": "0006 Qazvsgk"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0007-4IKbhHV.gif",
+          "proposedName": "0007 4ikbhhv"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0009-PAgTVaK.gif",
+          "proposedName": "0009 Pagtvak"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0010-8K0w2yA.gif",
+          "proposedName": "0010 8k0w2ya"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0011-03lzqwk.gif",
+          "proposedName": "0011 03lzqwk"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0012-UGhRD1A.gif",
+          "proposedName": "0012 Ughrd1a"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0013-VX5YKR5.gif",
+          "proposedName": "0013 Vx5ykr5"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0014-r7cT9YD.gif",
+          "proposedName": "0014 R7ct9yd"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0015-vrhHa6D.gif",
+          "proposedName": "0015 Vrhha6d"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0016-VedGSby.gif",
+          "proposedName": "0016 Vedgsby"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0017-kiJ4Z2K.gif",
+          "proposedName": "0017 Kij4z2k"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0018-7HcfMBP.gif",
+          "proposedName": "0018 7hcfmbp"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0019-J60bN17.gif",
+          "proposedName": "0019 J60bn17"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0020-xAySMB0.gif",
+          "proposedName": "0020 Xaysmb0"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0022-znLogoF.gif",
+          "proposedName": "0022 Znlogof"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0023-Yza7XrQ.gif",
+          "proposedName": "0023 Yza7xrq"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0024-Y7YcmIJ.gif",
+          "proposedName": "0024 Y7ycmij"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0025-EIeI8Vf.gif",
+          "proposedName": "0025 Eiei8vf"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0026-W9pFVv1.gif",
+          "proposedName": "0026 W9pfvv1"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0027-eZyBC3j.gif",
+          "proposedName": "0027 Ezybc3j"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0028-SGY8Zui.gif",
+          "proposedName": "0028 Sgy8zui"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0029-qi996YS.gif",
+          "proposedName": "0029 Qi996ys"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0030-J6Dx1Mu.gif",
+          "proposedName": "0030 J6dx1mu"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0031-25GPyDY.gif",
+          "proposedName": "0031 25gpydy"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0032-ila4NZS.gif",
+          "proposedName": "0032 Ila4nzs"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0033-GrO65fd.gif",
+          "proposedName": "0033 Gro65fd"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0034-hMEptv0.gif",
+          "proposedName": "0034 Hmeptv0"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0035-LMGXZn8.gif",
+          "proposedName": "0035 Lmgxzn8"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0036-hl8DUh8.gif",
+          "proposedName": "0036 Hl8duh8"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0037-Hj4FOCd.gif",
+          "proposedName": "0037 Hj4focd"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0038-IENzBdA.gif",
+          "proposedName": "0038 Ienzbda"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0039-IeTIEqg.gif",
+          "proposedName": "0039 Ietieqg"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0040-33AzZeV.gif",
+          "proposedName": "0040 33azzev"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0041-b2Uoz54.gif",
+          "proposedName": "0041 B2uoz54"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0042-zG0zs85.gif",
+          "proposedName": "0042 Zg0zs85"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0043-qXTaZnJ.gif",
+          "proposedName": "0043 Qxtaznj"
+        },
+        {
+          "sourcePath": "quatrieme dossier gif/videos/0044-XlZ4lAC.gif",
+          "proposedName": "0044 Xlz4lac"
+        }
+      ]
+    }
+  },
+  "missingCardByZone": {
+    "Dorsaux": [
+      {
+        "dbKey": "front lever tuck rows",
+        "name": "Front lever tuck rows",
+        "zone": "Dorsaux"
+      },
+      {
+        "dbKey": "ice cream makers",
+        "name": "Ice cream makers",
+        "zone": "Dorsaux"
+      }
+    ],
+    "Quadriceps": [
+      {
+        "dbKey": "step-down contrôlé",
+        "name": "Step-down contrôlé",
+        "zone": "Quadriceps"
+      },
+      {
+        "dbKey": "squat décliné rééducation",
+        "name": "Squat décliné (rééducation genou)",
+        "zone": "Quadriceps"
+      },
+      {
+        "dbKey": "adduction hanche élastique",
+        "name": "Adduction hanche élastique",
+        "zone": "Quadriceps"
+      },
+      {
+        "dbKey": "presse adducteurs abducteurs",
+        "name": "Presse adducteurs et abducteurs",
+        "zone": "Quadriceps"
+      },
+      {
+        "dbKey": "fentes barre",
+        "name": "Fentes barre",
+        "zone": "Quadriceps"
+      },
+      {
+        "dbKey": "pistol squat haltère",
+        "name": "Pistol squat haltère",
+        "zone": "Quadriceps"
+      }
+    ],
+    "Abdominaux": [
+      {
+        "dbKey": "vacuum allongé",
+        "name": "Vacuum allongé",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "l-sit parallèles",
+        "name": "L-sit aux parallèles",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "human flag tuck",
+        "name": "Human flag tuck",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "drapeau humain straddle",
+        "name": "Drapeau humain straddle",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "relevé genoux élastique",
+        "name": "Relevé de genoux élastique",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "crunch au mur",
+        "name": "Crunch au mur",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "crunch au mur haltère",
+        "name": "Crunch au mur haltère",
+        "zone": "Abdominaux"
+      },
+      {
+        "dbKey": "crunch au mur pieds décollés",
+        "name": "Crunch au mur pieds décollés",
+        "zone": "Abdominaux"
+      }
+    ],
+    "Triceps": [
+      {
+        "dbKey": "extension triceps couché latéral à un haltère",
+        "name": "Side-Lying Single-Arm Dumbbell Triceps Extension",
+        "zone": "Triceps"
+      },
+      {
+        "dbKey": "single-arm dumbbell lying triceps extension",
+        "name": "Single-Arm Dumbbell Lying Triceps Extension",
+        "zone": "Triceps"
+      }
+    ],
+    "Épaules": [
+      {
+        "dbKey": "planche sur coudes",
+        "name": "Planche sur coudes (elbow lever)",
+        "zone": "Épaules"
+      },
+      {
+        "dbKey": "cable lateral raise unilatéral cheville",
+        "name": "Élévation latérale unilatérale poulie cheville",
+        "zone": "Épaules"
+      },
+      {
+        "dbKey": "rotation externe élastique",
+        "name": "Rotation externe élastique",
+        "zone": "Épaules"
+      },
+      {
+        "dbKey": "élévation frontale au disque",
+        "name": "Élévation frontale au disque",
+        "zone": "Épaules"
+      },
+      {
+        "dbKey": "élévation au disque jusqu'au-dessus de la tête",
+        "name": "Élévation au disque jusqu'au-dessus de la tête",
+        "zone": "Épaules"
+      },
+      {
+        "dbKey": "bent-arm lateral dumbbell raise",
+        "name": "Bent-Arm Lateral Dumbbell Raise",
+        "zone": "Épaules"
+      }
+    ],
+    "Mollets": [
+      {
+        "dbKey": "éversion cheville élastique",
+        "name": "Éversion cheville élastique",
+        "zone": "Mollets"
+      },
+      {
+        "dbKey": "inversion cheville élastique",
+        "name": "Inversion cheville élastique",
+        "zone": "Mollets"
+      },
+      {
+        "dbKey": "équilibre unipodal",
+        "name": "Équilibre unipodal",
+        "zone": "Mollets"
+      },
+      {
+        "dbKey": "mollets smith sur step",
+        "name": "Mollets Smith sur step",
+        "zone": "Mollets"
+      }
+    ],
+    "Avant-bras": [
+      {
+        "dbKey": "curl poignet excentrique",
+        "name": "Curl poignet excentrique",
+        "zone": "Avant-bras"
+      },
+      {
+        "dbKey": "flexion poignet excentrique",
+        "name": "Flexion poignet excentrique",
+        "zone": "Avant-bras"
+      },
+      {
+        "dbKey": "extension doigts élastique",
+        "name": "Extension doigts élastique",
+        "zone": "Avant-bras"
+      },
+      {
+        "dbKey": "ouverture main élastique",
+        "name": "Ouverture main élastique",
+        "zone": "Avant-bras"
+      }
+    ],
+    "Fessiers": [
+      {
+        "dbKey": "abduction hanche debout élastique",
+        "name": "Abduction hanche debout élastique",
+        "zone": "Fessiers"
+      },
+      {
+        "dbKey": "kickback fessier à la poulie",
+        "name": "Kickback fessier à la poulie",
+        "zone": "Fessiers"
+      },
+      {
+        "dbKey": "hip thrust pieds au mur",
+        "name": "Hip thrust pieds au mur",
+        "zone": "Fessiers"
+      },
+      {
+        "dbKey": "hip thrust smith",
+        "name": "Hip thrust Smith",
+        "zone": "Fessiers"
+      }
+    ],
+    "Pectoraux": [
+      {
+        "dbKey": "pompes et extension triceps",
+        "name": "Pompes et extension triceps",
+        "zone": "Pectoraux"
+      }
+    ],
+    "Activités Complémentaires": [
+      {
+        "dbKey": "marche sur tapis",
+        "name": "Marche sur tapis",
+        "zone": "Activités Complémentaires"
+      },
+      {
+        "dbKey": "course sur tapis",
+        "name": "Course sur tapis",
+        "zone": "Activités Complémentaires"
+      }
+    ],
+    "Biceps": [
+      {
+        "dbKey": "curl marteau incliné",
+        "name": "Curl marteau incliné",
+        "zone": "Biceps"
+      },
+      {
+        "dbKey": "curl pupitre unilatéral",
+        "name": "Curl pupitre unilatéral",
+        "zone": "Biceps"
+      },
+      {
+        "dbKey": "curl assis dos calé",
+        "name": "Curl assis dos calé",
+        "zone": "Biceps"
+      }
+    ]
+  },
+  "pectorauxPlan": {
+    "missingCards": [
+      {
+        "dbKey": "pompes et extension triceps",
+        "name": "Pompes et extension triceps",
+        "zone": "Pectoraux"
+      }
+    ],
+    "unusedTroisiemePectorals": [
+      {
+        "sourcePath": "troisieme dossier gif/pectorals/plyo-push-up.gif",
+        "disposition": "link_existing_exercise",
+        "zoneHint": "Pectoraux",
+        "matchKey": "kettlebell plyo pompes",
+        "confidence": "high",
+        "score": 1
+      },
+      {
+        "sourcePath": "troisieme dossier gif/pectorals/push-up-wall.gif",
+        "disposition": "link_existing_stretch",
+        "zoneHint": "Pectoraux",
+        "matchKey": "pliometrie_push_up_pliometrique_murs",
+        "confidence": "probable"
+      }
+    ]
+  }
+}

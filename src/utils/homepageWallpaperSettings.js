@@ -62,11 +62,13 @@ export function writeHomeWallpaperPlayback(storageKey, playback) {
   if (!storageKey) return;
   try {
     const existing = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    const normalized = normalizeHomeWallpaperPlayback(playback);
     existing.playback = {
-      ...normalizeHomeWallpaperPlayback(playback),
-      advanceOnClickUserSet: true
+      ...normalized,
+      advanceOnClickUserSet: true,
     };
     existing.playbackUpdated = new Date().toISOString();
+    // mediaKinds / order / rotation : clé par utilisateur (storageKey), survit au redémarrage
     localStorage.setItem(storageKey, JSON.stringify(existing));
   } catch {
     /* quota / mode privé */

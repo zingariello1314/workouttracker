@@ -1,5 +1,8 @@
 import { stretchDrillsCatalog } from './stretchDrillsCatalog.js';
 import { mobilityStretchCatalog } from './mobilityStretchCatalog.js';
+import { STRETCH_DATABASE_PECTORAUX_GIF_BATCH } from './stretchDatabasePectorauxGifBatch.js';
+import { STRETCH_DATABASE_EPAULES_DOS_BRAS_GIF_BATCH } from './stretchDatabaseEpaulesDosBrasGifBatch.js';
+import { STRETCH_DATABASE_ABS_JAMBES_FESSIERS_CARDIO_GIF_BATCH } from './stretchDatabaseAbsJambesFessiersCardioGifBatch.js';
 
 /**
  * 🧘 BANQUE D'ÉTIREMENTS — Momentum
@@ -2363,7 +2366,10 @@ export const stretchDatabase = {
   },
 
   ...mobilityStretchCatalog,
-  ...stretchDrillsCatalog
+  ...stretchDrillsCatalog,
+  ...STRETCH_DATABASE_PECTORAUX_GIF_BATCH,
+  ...STRETCH_DATABASE_EPAULES_DOS_BRAS_GIF_BATCH,
+  ...STRETCH_DATABASE_ABS_JAMBES_FESSIERS_CARDIO_GIF_BATCH,
 };
 
 // ═══════════════════════════════════════════════════════════════════════
