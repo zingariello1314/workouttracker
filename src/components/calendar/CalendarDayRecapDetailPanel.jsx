@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import SleepPhasesChart from '../Charts/SleepPhasesChart';
 import CalendarDayMetricSparkline from './CalendarDayMetricSparkline';
 import CalendarManualWalkEditor from './CalendarManualWalkEditor';
+import CalendarManualSleepEditor from './CalendarManualSleepEditor';
 import CalendarSessionDateReassign from './CalendarSessionDateReassign';
 import {
   buildBodyBatteryDetailContext,
@@ -19,6 +20,7 @@ import {
   formatStepsProvenance,
   normalizeManualDailyWalkByDate
 } from '../../utils/sport/manualDailyWalkUtils';
+import { normalizeManualSleepByDate } from '../../utils/sport/manualSleepUtils';
 
 function StatTile({ label, value, hint }) {
   return (
@@ -58,19 +60,34 @@ export default function CalendarDayRecapDetailPanel({
 }) {
   const locale = language === 'en' ? 'en-US' : 'fr-FR';
   const manualWalk = normalizeManualDailyWalkByDate(workoutData?.enduranceData?.manualDailyWalkByDate);
+  const manualSleep = normalizeManualSleepByDate(workoutData?.manualSleepByDate);
   const [showWalkEditor, setShowWalkEditor] = useState(false);
+  const [showSleepEditor, setShowSleepEditor] = useState(false);
 
   const content = useMemo(() => {
     if (!row?.kind || !dateStr) return null;
 
     switch (row.kind) {
       case 'sleep': {
-        const ctx = buildSleepDetailContext(garminData, dateStr);
-        if (!ctx) return { empty: t('calendar.heatmap.recapDetail.noSleep', 'Aucune donnée sommeil pour cette nuit.') };
+        const ctx = buildSleepDetailContext(garminData, dateStr, manualSleep);
+        if (!ctx && !manualSleep[dateStr]) {
+          return { empty: t('calendar.heatmap.recapDetail.noSleep', 'Aucune donnée sommeil pour cette nuit.') };
+        }
+        if (!ctx) {
+          return { empty: t('calendar.heatmap.recapDetail.noSleep', 'Aucune donnée sommeil pour cette nuit.') };
+        }
         return {
           title: t('calendar.heatmap.garminRecap.sleep', 'Sommeil'),
           body: (
             <>
+              {ctx.manualOverride ? (
+                <p className="text-xs text-violet-300/90">
+                  {t(
+                    'calendar.heatmap.recapDetail.sleepManualBadge',
+                    'Horaires corrigés manuellement — phases physiologiques neutralisées.'
+                  )}
+                </p>
+              ) : null}
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <StatTile label={t('calendar.heatmap.recapDetail.total', 'Durée totale')} value={ctx.totalLabel || '—'} />
                 {ctx.quality != null && (
@@ -83,11 +100,20 @@ export default function CalendarDayRecapDetailPanel({
                   <StatTile label={t('calendar.heatmap.recapDetail.wakeTime', 'Lever')} value={ctx.wakeTime} />
                 )}
               </div>
-              {ctx.sleepChartData.length > 0 && (
+              {ctx.phasesUnavailable ? (
+                <p className="text-xs text-slate-500">
+                  {t(
+                    'calendar.heatmap.recapDetail.phasesUnavailable',
+                    'Phases (profond / léger / REM) indisponibles après correction manuelle.'
+                  )}
+                </p>
+              ) : null}
+              {!ctx.phasesUnavailable && ctx.sleepChartData.length > 0 && (
                 <Section title={t('calendar.heatmap.recapDetail.phases', 'Phases de sommeil')}>
                   <SleepPhasesChart data={ctx.sleepChartData} height={200} showObjectives={false} hideTitle />
                 </Section>
               )}
+              {!ctx.phasesUnavailable && (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {ctx.deepMin > 0 && (
                   <StatTile
@@ -114,6 +140,7 @@ export default function CalendarDayRecapDetailPanel({
                   />
                 )}
               </div>
+              )}
               {ctx.heartRate &&
               (ctx.heartRate.sleepAvg != null ||
                 ctx.heartRate.resting != null ||
@@ -211,6 +238,30 @@ export default function CalendarDayRecapDetailPanel({
                   ))}
                 </div>
               </Section>
+              {typeof updateData === 'function' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowSleepEditor((v) => !v)}
+                    className="text-xs text-violet-400 underline hover:text-violet-200"
+                  >
+                    {t('calendar.heatmap.recapDetail.editSleep', 'Corriger les horaires de sommeil')}
+                  </button>
+                  {showSleepEditor && (
+                    <CalendarManualSleepEditor
+                      dateStr={dateStr}
+                      initialBedTime={ctx.bedTime || ''}
+                      initialWakeTime={ctx.wakeTime || ''}
+                      initialSleepStart={ctx.sleepStart || ''}
+                      initialSleepEnd={ctx.sleepEnd || ''}
+                      currentData={workoutData}
+                      updateData={updateData}
+                      onClose={() => setShowSleepEditor(false)}
+                      t={t}
+                    />
+                  )}
+                </>
+              )}
             </>
           )
         };
@@ -558,7 +609,7 @@ export default function CalendarDayRecapDetailPanel({
       default:
         return { empty: t('calendar.heatmap.recapDetail.unsupported', 'Détail non disponible.') };
     }
-  }, [row, dateStr, garminData, workoutData, intensity, programs, manualWalk, locale, t, updateData, showWalkEditor]);
+  }, [row, dateStr, garminData, workoutData, intensity, programs, manualWalk, manualSleep, locale, t, updateData, showWalkEditor, showSleepEditor]);
 
   if (!content) return null;
 

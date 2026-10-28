@@ -1,33 +1,37 @@
 import React from 'react';
 
-const ACCENTS = {
-  emerald: 'border-emerald-500/35 bg-emerald-950/20 text-emerald-300',
-  amber: 'border-amber-500/35 bg-amber-950/20 text-amber-300',
-  sky: 'border-sky-500/35 bg-sky-950/20 text-sky-300',
-  teal: 'border-teal-500/35 bg-teal-950/20 text-teal-300',
-  violet: 'border-violet-500/35 bg-violet-950/20 text-violet-300',
-  rose: 'border-rose-500/35 bg-rose-950/20 text-rose-300',
-  slate: 'border-slate-500/35 bg-slate-950/20 text-slate-300'
+const ACCENT_VAR = {
+  emerald: 'var(--d)',
+  amber: 'var(--d)',
+  sky: 'var(--a5)',
+  teal: 'var(--d)',
+  violet: 'var(--a1)',
+  rose: 'var(--a4)',
+  slate: 'var(--mu)'
 };
 
 export default function RecapKpiCard({ label, value, note, accent = 'teal', className = '' }) {
   return (
-    <div className={`rounded-xl border px-3 py-3 ${ACCENTS[accent] || ACCENTS.teal} ${className}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-[22px] font-bold tabular-nums leading-none text-white">{value}</div>
-      {note ? <div className="mt-1.5 text-[10px] leading-snug text-slate-400">{note}</div> : null}
-    </div>
+    <article className={`kt ${className}`} style={{ '--a': ACCENT_VAR[accent] || ACCENT_VAR.teal }}>
+      <div className="l">{label}</div>
+      <div className="n">{value}</div>
+      {note ? <div className="s">{note}</div> : null}
+    </article>
   );
 }
 
-export function RecapSection({ title, subtitle, children, className = '' }) {
+export function RecapSection({ id, title, subtitle, children, className = '' }) {
   return (
-    <section className={`rounded-xl border border-[#0F4C5C]/55 bg-black/60 px-4 py-3 ${className}`}>
+    <section id={id} className={`rb-sec ${className}`}>
       {title ? (
-        <h2 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-teal-200/80">{title}</h2>
+        <div className="sh">
+          <h2>{title}</h2>
+          {subtitle ? <span>{subtitle}</span> : null}
+        </div>
+      ) : subtitle ? (
+        <p className="sub">{subtitle}</p>
       ) : null}
-      {subtitle ? <p className="mb-2 text-[10px] text-slate-500 leading-snug">{subtitle}</p> : null}
-      {children}
+      <div className="pnl">{children}</div>
     </section>
   );
 }
@@ -41,24 +45,17 @@ export function RecapHorizontalBars({ rows, maxValue, emptyLabel }) {
   }
   const max = maxValue ?? Math.max(...rows.map((r) => r.value || 0), 1);
   return (
-    <ul className="space-y-2">
+    <ul className="rb-bars">
       {rows.map((row) => {
         const pct = max > 0 ? Math.round(((row.value || 0) / max) * 100) : 0;
         return (
           <li key={row.key || row.label}>
-            <div className="mb-0.5 flex items-center justify-between gap-2 text-[11px]">
-              <span className="truncate text-slate-400">{row.label}</span>
-              <span className="shrink-0 tabular-nums font-medium text-slate-200">{row.display ?? row.value}</span>
+            <div className="rb-bar-top">
+              <span>{row.label}</span>
+              <b>{row.display ?? row.value}</b>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/80 ring-1 ring-[#0F4C5C]/35">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${pct}%`,
-                  backgroundColor: row.color || '#2dd4bf',
-                  boxShadow: `0 0 8px ${row.color || '#2dd4bf'}66`
-                }}
-              />
+            <div className="gz">
+              <i style={{ '--w': `${pct}%`, '--c': row.color || 'var(--d)' }} />
             </div>
           </li>
         );
@@ -68,12 +65,13 @@ export function RecapHorizontalBars({ rows, maxValue, emptyLabel }) {
 }
 
 /** Donut CSS pour répartition musculaire ou push/pull. */
-export function RecapDonutChart({ segments, size = 88, centerLabel, centerSub }) {
+export function RecapDonutChart({ segments, size = 148, centerLabel, centerSub }) {
   const total = segments.reduce((a, s) => a + (s.value || 0), 0);
   if (total <= 0) {
     return <p className="text-xs text-slate-500">—</p>;
   }
   let acc = 0;
+  const max = Math.max(...segments.map((s) => s.value || 0), 1);
   const stops = segments.map((s) => {
     const pct = (s.value / total) * 100;
     const start = acc;
@@ -82,36 +80,30 @@ export function RecapDonutChart({ segments, size = 88, centerLabel, centerSub })
   });
   const gradient = `conic-gradient(${stops.join(', ')})`;
   return (
-    <div className="flex items-center gap-4">
+    <div className="dnb">
       <div
-        className="relative shrink-0 rounded-full"
+        className="ring"
         style={{
           width: size,
           height: size,
-          background: gradient,
-          boxShadow: 'inset 0 0 12px rgba(0,0,0,0.45)'
+          background: gradient
         }}
       >
-        <div
-          className="absolute inset-[22%] flex flex-col items-center justify-center rounded-full bg-black/90 text-center"
-        >
-          {centerLabel ? (
-            <span className="text-sm font-bold tabular-nums text-white leading-none">{centerLabel}</span>
-          ) : null}
-          {centerSub ? <span className="mt-0.5 text-[9px] text-slate-500">{centerSub}</span> : null}
+        <div className="ctr">
+          {centerLabel ? <b>{centerLabel}</b> : null}
+          {centerSub ? <span>{centerSub}</span> : null}
         </div>
       </div>
-      <ul className="min-w-0 flex-1 space-y-1">
+      <div className="dl">
         {segments.map((s) => (
-          <li key={s.key || s.label} className="flex items-center justify-between gap-2 text-[11px]">
-            <span className="flex items-center gap-1.5 truncate text-slate-400">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
-              {s.label}
-            </span>
-            <span className="shrink-0 tabular-nums text-slate-200">{s.display ?? s.value}</span>
-          </li>
+          <div key={s.key || s.label} className="rw" style={{ '--c': s.color, '--w': `${Math.round(((s.value || 0) / max) * 100)}%` }}>
+            <span className="sw" style={{ background: s.color }} />
+            <span className="nm">{s.label}</span>
+            <b>{s.display ?? s.value}</b>
+            <div className="bb"><i /></div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   resolveGtgWorkoutStorageKey,
   sumGtgRepsForExerciseOnDay
 } from '../services/endurance/gtgWorkoutSync';
+import { getDayName } from './dateUtils';
 
 /** Orange dédié GTG, distinct du orange des autres activités physiques (#ff5c00). */
 /** Barre calendrier GTG — vert foncé (distinct des autres activités). */
@@ -50,6 +51,60 @@ export function gtgDayHasCompletedMiniSet(workoutData, dateStr) {
   const ledger = workoutData?.enduranceData?.gtg?.workoutSync?.[dateStr];
   if (!ledger || typeof ledger !== 'object') return false;
   return Object.values(ledger).some((n) => (Number(n) || 0) > 0);
+}
+
+/**
+ * Tous les créneaux GTG planifiés du jour sont terminés
+ * (les passages hors planning ne comptent pas pour « complet »).
+ */
+export function gtgDayIsFullyComplete(workoutData, dateStr) {
+  if (!workoutData || !dateStr) return false;
+  const gtg = normalizeGtgData(workoutData?.enduranceData?.gtg);
+  if (!(gtg.config?.selectedIds || []).length) return false;
+  const plan = buildGtgDayPlan(gtg, dateStr, { workoutData });
+  const planned = Number(plan?.plannedMiniSets) || 0;
+  if (planned <= 0) return false;
+  const donePlanned = Number(plan?.donePlannedMiniSets) || 0;
+  return donePlanned >= planned;
+}
+
+/** Exercices classiques prévus au programme pour cette date (hors GTG). */
+export function dayHasClassicExercisesPlanned(workoutData, dateStr) {
+  if (!workoutData || !dateStr) return false;
+  const date = new Date(`${dateStr}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return false;
+  const dayName = getDayName(date);
+  const programs = Array.isArray(workoutData.programs) ? workoutData.programs : [];
+  const activeId = workoutData.activeProgramId;
+  const active =
+    (activeId != null && programs.find((p) => p && p.id === activeId)) ||
+    workoutData.activeProgram ||
+    programs.find((p) => p?.schedule) ||
+    null;
+  const day = active?.schedule?.[dayName];
+  if (!day) return false;
+  const list = day.exercises || day.exercices || [];
+  if (Array.isArray(list) && list.length > 0) return true;
+  const salle = day.salleVariants;
+  if (salle) {
+    const a = salle.semaineA?.exercises?.length || 0;
+    const b = salle.semaineB?.exercises?.length || 0;
+    if (a + b > 0) return true;
+  }
+  return false;
+}
+
+/**
+ * True si le GTG seul peut valider le jour d’entraînement :
+ * - tous les créneaux planifiés cochés
+ * - aucun exercice classique prévu au programme
+ * - aucune séance classique réalisée
+ */
+export function gtgAloneCountsAsTrainingDay(workoutData, dateStr) {
+  if (!gtgDayIsFullyComplete(workoutData, dateStr)) return false;
+  if (dayHasClassicExercisesPlanned(workoutData, dateStr)) return false;
+  if (hasNonGtgMomentumWorkoutForDate(workoutData, dateStr)) return false;
+  return true;
 }
 
 /**

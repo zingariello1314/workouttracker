@@ -117,10 +117,12 @@ function ZoneRow({
   const cardioActivationPctRounded = Math.round(cardioActivationPct * 10) / 10;
   const [open, setOpen] = useState(!accordionDefaultClosed);
 
+  const quiet = !hasReps && !hasLoad;
   return (
-    <div
+    <article
       id={`recap-zone-${groupId}`}
-      className={`rounded-lg border border-[#0F4C5C]/55 bg-black scroll-mt-24 ${accordionDefaultClosed ? 'overflow-hidden' : 'px-3 py-2.5'}`}
+      className={`zk scroll-mt-24${quiet ? ' z' : ''}${groupId === MuscleGroups.FULL_BODY ? ' wide' : ''}${accordionDefaultClosed ? ' acc' : ''}`}
+      style={{ '--lv': color }}
     >
       {accordionDefaultClosed ? (
         <button
@@ -162,48 +164,41 @@ function ZoneRow({
       {(!accordionDefaultClosed || open) && (
         <div className={accordionDefaultClosed ? 'border-t border-[#0F4C5C]/35 px-3 py-2.5' : ''}>
           {!accordionDefaultClosed ? (
-            <div className="flex items-start justify-between gap-2">
+            <header>
               <div>
-                <p className="text-sm font-medium text-slate-100">{label}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{t(detailKey)}</p>
+                <h4>{label}</h4>
+                <div className="ds">{t(detailKey)}</div>
               </div>
-              <span
-                className="shrink-0 mt-0.5 h-3.5 w-3.5 rounded-full border border-white/25 shadow-sm"
-                style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}99` }}
-                title={t(`recap.zones.recovery.${band}`)}
-              />
-            </div>
+              <span className="dt" title={t(`recap.zones.recovery.${band}`)} />
+            </header>
           ) : null}
           {!accordionDefaultClosed ? (
             <div
-              className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-sky-500/35 bg-black px-3 py-2 ring-1 ring-[#0F4C5C]/30"
+              className="vol"
               title={
                 groupId === MuscleGroups.FULL_BODY
                   ? t('recap.zones.fullBodyVolumeTitle')
                   : t('recap.zones.repsPartsHint')
               }
             >
-              <span className="text-xs font-semibold uppercase tracking-wide text-sky-200/95">
+              <i>
                 {showCardioMinutesAsPrimary
                   ? t('recap.zones.cardioMinutesTitle', 'Sollicitation cardio')
                   : t('recap.zones.volumeCheckedTitle')}
-              </span>
-              <span className="text-xl font-bold tabular-nums text-sky-300 drop-shadow-[0_0_14px_rgba(56,189,248,0.35)] sm:text-2xl">
+              </i>
+              <b>
                 {showCardioMinutesAsPrimary
                   ? t('recap.zones.cardioMinutesValue', '{{m}} min ({{pct}}%)', {
                       m: cardioMinutesRounded,
                       pct: cardioActivationPctRounded
                     })
                   : vol}
-              </span>
+              </b>
             </div>
           ) : null}
           {!accordionDefaultClosed ? (
-            <div className="mt-2 h-2.5 w-full rounded-full bg-black overflow-hidden ring-1 ring-[#0F4C5C]/45">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${pct}%`, backgroundColor: color, boxShadow: `0 0 14px ${color}77` }}
-              />
+            <div className="gz">
+              <i style={{ '--w': `${pct}%`, '--c': color }} />
             </div>
           ) : null}
           {!hideTechnicalMetrics ? (
@@ -268,22 +263,16 @@ function ZoneRow({
                   })
                 : `${n} ${unit}`;
               return (
-                <li
-                  key={`${groupId}-${ex.id || ex.name}-${i}`}
-                  className="text-[11px] text-slate-300 flex justify-between gap-2"
-                >
+                <li key={`${groupId}-${ex.id || ex.name}-${i}`}>
                   <span
                     className="truncate min-w-0"
                     title={exerciseNameIsProgramFallback(ex.name) ? ex.name : undefined}
                   >
                     {exLabel}
                   </span>
-                  <span
-                    className="shrink-0 max-w-[min(100%,14rem)] text-right font-semibold tabular-nums text-emerald-200/95 leading-snug"
-                    title={showEnduranceSplit ? t('recap.zones.endurancePushupsSplitTitle') : undefined}
-                  >
+                  <b title={showEnduranceSplit ? t('recap.zones.endurancePushupsSplitTitle') : undefined}>
                     {rightCol}
-                  </span>
+                  </b>
                 </li>
               );
             })}
@@ -297,7 +286,7 @@ function ZoneRow({
           ) : null}
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -330,16 +319,16 @@ const RecapMuscleZonesPanel = ({
   }, [byGroup]);
 
   return (
-    <section className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
-      <h2 className="text-sm font-semibold text-teal-100 mb-1">{t('recap.zones.title')}</h2>
-      <p className="text-xs text-teal-700 mb-4 leading-relaxed">{t('recap.zones.intro')}</p>
-      <div className="space-y-6">
+    <section>
+      <div className="sh">
+        <h2>{t('recap.zones.title')}</h2>
+      </div>
+      <p className="sub">{t('recap.zones.intro')}</p>
+      <div>
         {ZONE_SECTIONS.map((section) => (
           <div key={section.titleKey}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90 mb-2">
-              {t(section.titleKey)}
-            </h3>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <h3 className="zgh">{t(section.titleKey)}</h3>
+            <div className="zgrid">
               {section.rows.map((row) => (
                 <ZoneRow
                   key={row.groupId}

@@ -17,6 +17,7 @@ import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnai
 import { computeCardioBiasMultiplier } from '../../features/profileQuestionnaire/quizInfluence';
 import { summarizeGtgWindow } from '../../services/endurance/gtgService';
 import { resolveDailySteps } from './manualDailyWalkUtils';
+import { resolveDaySleep } from './manualSleepUtils';
 
 /** @typedef {'loading'|'ready'|'skipped'} NutritionBundleStatus */
 
@@ -186,11 +187,21 @@ export function computeWeightDelta7FromSnapshot(snapshot, endYmd) {
  * @param {Record<string, object>|null} [manualWalkByDate] — fusion pas manuels (optionnel)
  * @returns {object} champs utilisés par computeRecapCrossCoachInsights.
  */
-export function computeGarminDailyStats(dailyMetrics, startYmd, endYmd, manualWalkByDate = null) {
+export function computeGarminDailyStats(
+  dailyMetrics,
+  startYmd,
+  endYmd,
+  manualWalkByDate = null,
+  manualSleepByDate = null
+) {
   const dm = dailyMetrics && typeof dailyMetrics === 'object' ? dailyMetrics : {};
   const manual =
     manualWalkByDate && typeof manualWalkByDate === 'object' && !Array.isArray(manualWalkByDate)
       ? manualWalkByDate
+      : null;
+  const manualSleep =
+    manualSleepByDate && typeof manualSleepByDate === 'object' && !Array.isArray(manualSleepByDate)
+      ? manualSleepByDate
       : null;
   const range = DateHelper.getDateRange(startYmd, endYmd);
 
@@ -215,10 +226,13 @@ export function computeGarminDailyStats(dailyMetrics, startYmd, endYmd, manualWa
       totalSteps28 += stp;
       daysWithStepsData += 1;
     }
-    if (!day || typeof day !== 'object') continue;
-    const s = coachStressFromDay(day.stress ?? day.stressLevel ?? day.avgStress);
-    if (s != null && Number.isFinite(s)) stressVals.push(s);
-    const sh = coachSleepHours(day.sleep);
+    if ((!day || typeof day !== 'object') && !manualSleep?.[d]) continue;
+    if (day && typeof day === 'object') {
+      const s = coachStressFromDay(day.stress ?? day.stressLevel ?? day.avgStress);
+      if (s != null && Number.isFinite(s)) stressVals.push(s);
+    }
+    const sleepSrc = resolveDaySleep({ dailyMetrics: dm }, d, manualSleep) || day?.sleep;
+    const sh = coachSleepHours(sleepSrc);
     if (sh != null && sh > 0 && sh <= 24) sleepH.push(sh);
   }
 

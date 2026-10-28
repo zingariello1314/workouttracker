@@ -56,7 +56,8 @@ const BodyMap = ({
   /** Molette / pinch sur l’explorateur accueil Anatomie. */
   controlsEnableZoom = true,
   /** Vue par défaut si rien en localStorage (Récap : dos). */
-  defaultViewPreset = 'frontLow'
+  defaultViewPreset = 'frontLow',
+  sceneActive = true
 }) => {
   const t = useTranslation();
   const viewLocked = Boolean(forcedViewPreset && PRESET_KEYS.includes(forcedViewPreset));
@@ -182,6 +183,7 @@ const BodyMap = ({
 
         <Canvas
           shadows={false}
+          frameloop={sceneActive ? 'always' : 'never'}
           dpr={[1, 2]}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           camera={{ position: [0, -0.3, 2.51], fov: 35, near: 0.05, far: 500 }}
@@ -194,7 +196,7 @@ const BodyMap = ({
             onMuscleHover={pickMode || onMuscleHover ? handleHover : undefined}
             pickMode={pickMode}
             viewPreset={activePreset}
-            autoRotate={!pickMode}
+            autoRotate={!pickMode && sceneActive}
             autoRotateSpeed={0.5}
             sceneBackground="#0c0d10"
             controlsEnableZoom={controlsEnableZoom}

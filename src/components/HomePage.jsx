@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppNavigation } from '../context/NavigationContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppLock } from '../context/AppLockContext';
@@ -8,6 +8,7 @@ import { useWelcomeGateSignals } from '../hooks/useWelcomeGateSignals';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import {
   getVisibleHomepageImageIndices,
+  isHomepageVideo,
   normalizeHomepageImage,
   pickInitialHomepageImageIndex,
   pickNextHomepageImageIndex
@@ -30,6 +31,8 @@ import {
   subscribeHomeAppearance
 } from '../utils/homeAppearancePreference';
 import { renderHomeWidget } from './home/renderHomeWidget';
+import HomeWelcomeMediaLayer from './home/HomeWelcomeMediaLayer';
+import { Volume2, VolumeX } from 'lucide-react';
 
 const log = logger.component('HomePage');
 
@@ -92,8 +95,14 @@ const HomePage = () => {
   const currentImageIndexRef = useRef(0);
   const activeLayerRef = useRef(0);
   const homeOrderRef = useRef(homePlayback.order);
+  const homeMediaKindsRef = useRef(homePlayback.mediaKinds || 'all');
   currentImageIndexRef.current = currentImageIndex;
   homeOrderRef.current = homePlayback.order;
+  homeMediaKindsRef.current = homePlayback.mediaKinds || 'all';
+  const homePickOpts = useMemo(
+    () => ({ order: homePlayback.order, mediaKinds: homePlayback.mediaKinds || 'all' }),
+    [homePlayback.order, homePlayback.mediaKinds]
+  );
   const [userLocation, setUserLocation] = useState('');
   /** null = modèle stock (accueil actuel) — aucune personnalisation appliquée. */
   const [homeLayout, setHomeLayout] = useState(() => getAppliedHomeLayout());
@@ -152,14 +161,22 @@ const HomePage = () => {
     setUserLocation(t('home.location.loading'));
   }, [t]);
   
-  // ✅ Phase 7: Double buffering pour transitions ultra-fluides
+  // ✅ Phase 7: Double buffering pour transitions ultra-fluides (image + vidéo)
   const [activeLayer, setActiveLayer] = useState(0); // 0 ou 1
   const [layer0Src, setLayer0Src] = useState(null);
   const [layer1Src, setLayer1Src] = useState(null);
+  const [layer0Kind, setLayer0Kind] = useState('image');
+  const [layer1Kind, setLayer1Kind] = useState('image');
+  const [layer0Loop, setLayer0Loop] = useState(false);
+  const [layer1Loop, setLayer1Loop] = useState(false);
+  const [layer0AllowSound, setLayer0AllowSound] = useState(false);
+  const [layer1AllowSound, setLayer1AllowSound] = useState(false);
   const [layer0Opacity, setLayer0Opacity] = useState(1);
   const [layer1Opacity, setLayer1Opacity] = useState(0);
   const [layer0Loaded, setLayer0Loaded] = useState(false);
   const [layer1Loaded, setLayer1Loaded] = useState(false);
+  /** Son global session : vidéos démarrent muettes (autoplay navigateur), bouton pour réactiver. */
+  const [sessionMuted, setSessionMuted] = useState(true);
   
   // ✅ Chargement initial : État pour savoir si l'image initiale est chargée
   const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
@@ -229,12 +246,14 @@ const HomePage = () => {
     };
   }, []);
 
-  // ✅ Phase 7: Charger une image dans un layer spécifique
+  // ✅ Phase 7: Charger une image / vidéo dans un layer spécifique
   // ✅ Chargement initial : Support pour marquer l'image initiale comme chargée
   const loadImageIntoLayer = async (imageData, layerIndex, useThumbnailFirst = true, isInitialLoad = false) => {
     if (!imageData) return null;
     
     try {
+      const norm = normalizeHomepageImage(imageData, layerIndex);
+      const isVideo = isHomepageVideo(norm);
       // Déterminer les données full
       const fullData = typeof imageData === 'object' && imageData.full
         ? imageData.full
@@ -244,20 +263,38 @@ const HomePage = () => {
       const thumbnail = typeof imageData === 'object' && imageData.thumbnail
         ? imageData.thumbnail
         : null;
+
+      const applyMediaMeta = (src, loaded) => {
+        if (layerIndex === 0) {
+          setLayer0Src(src);
+          setLayer0Kind(isVideo ? 'video' : 'image');
+          setLayer0Loop(Boolean(norm.loop));
+          setLayer0AllowSound(Boolean(norm.allowSound));
+          setLayer0Loaded(loaded);
+        } else {
+          setLayer1Src(src);
+          setLayer1Kind(isVideo ? 'video' : 'image');
+          setLayer1Loop(Boolean(norm.loop));
+          setLayer1AllowSound(Boolean(norm.allowSound));
+          setLayer1Loaded(loaded);
+        }
+      };
+
+      if (isVideo) {
+        applyMediaMeta(fullData, true);
+        if (isInitialLoad && !initialImageLoadedRef.current) {
+          initialImageLoadedRef.current = true;
+          setIsInitialImageLoaded(true);
+        }
+        return fullData;
+      }
       
       // Si thumbnail disponible et demandé, l'utiliser immédiatement
       if (useThumbnailFirst && thumbnail) {
-        if (layerIndex === 0) {
-          setLayer0Src(thumbnail);
-          setLayer0Loaded(false);
-          // ✅ Chargement initial : Si c'est le chargement initial, marquer comme chargé dès que thumbnail est visible
-          if (isInitialLoad && !initialImageLoadedRef.current) {
-            initialImageLoadedRef.current = true;
-            setIsInitialImageLoaded(true);
-          }
-        } else {
-          setLayer1Src(thumbnail);
-          setLayer1Loaded(false);
+        applyMediaMeta(thumbnail, false);
+        if (isInitialLoad && layerIndex === 0 && !initialImageLoadedRef.current) {
+          initialImageLoadedRef.current = true;
+          setIsInitialImageLoaded(true);
         }
       } else if (!useThumbnailFirst || !thumbnail) {
         // Si pas de thumbnail, attendre le chargement complet
@@ -300,33 +337,19 @@ const HomePage = () => {
           if (!ok) {
             log.warn(`⚠️ Erreur chargement image full, utilisation thumbnail si disponible`);
             if (thumbnail) {
-              if (layerIndex === 0) {
-                setLayer0Src(thumbnail);
-                setLayer0Loaded(true);
-                if (isInitialLoad && !initialImageLoadedRef.current) {
-                  initialImageLoadedRef.current = true;
-                  setIsInitialImageLoaded(true);
-                }
-              } else {
-                setLayer1Src(thumbnail);
-                setLayer1Loaded(true);
+              applyMediaMeta(thumbnail, true);
+              if (isInitialLoad && !initialImageLoadedRef.current) {
+                initialImageLoadedRef.current = true;
+                setIsInitialImageLoaded(true);
               }
             }
             resolve(thumbnail || fullData);
             return;
           }
-          // Mettre à jour le layer avec l'image full
-          if (layerIndex === 0) {
-            setLayer0Src(fullData);
-            setLayer0Loaded(true);
-            // ✅ Chargement initial : Si c'est le chargement initial et pas encore marqué, le marquer maintenant
-            if (isInitialLoad && !initialImageLoadedRef.current) {
-              initialImageLoadedRef.current = true;
-              setIsInitialImageLoaded(true);
-            }
-          } else {
-            setLayer1Src(fullData);
-            setLayer1Loaded(true);
+          applyMediaMeta(fullData, true);
+          if (isInitialLoad && !initialImageLoadedRef.current) {
+            initialImageLoadedRef.current = true;
+            setIsInitialImageLoaded(true);
           }
           log.debug(`✅ Image full chargée dans layer ${layerIndex}`);
           resolve(fullData);
@@ -346,13 +369,17 @@ const HomePage = () => {
   // ✅ Phase 7: Fonction pour changer l'image avec double buffering
   // ✅ RANDOMISATION : Rotation aléatoire avec évitement répétition
   const changeBackgroundImage = async () => {
-    const visible = getVisibleHomepageImageIndices(backgroundImages);
+    const pickOpts = {
+      order: homeOrderRef.current,
+      mediaKinds: homeMediaKindsRef.current,
+    };
+    const visible = getVisibleHomepageImageIndices(backgroundImages, pickOpts);
     if (visible.length <= 1) return;
 
     const nextIndex = pickNextHomepageImageIndex(
       backgroundImages,
       currentImageIndexRef.current,
-      { order: homeOrderRef.current }
+      pickOpts
     );
     if (nextIndex < 0) return;
 
@@ -392,14 +419,30 @@ const HomePage = () => {
   // ✅ RANDOMISATION : Index initial aléatoire
   const isFirstLoadRef = useRef(true);
   const initialIndexSetRef = useRef(false); // ✅ RANDOMISATION : Éviter de réinitialiser index plusieurs fois
+  const lastMediaKindsRef = useRef(homePlayback.mediaKinds || 'all');
   
   useEffect(() => {
+    const pickOpts = {
+      order: homeOrderRef.current,
+      mediaKinds: homeMediaKindsRef.current,
+    };
+    const kinds = homeMediaKindsRef.current;
+
+    // Changement photos/vidéos/les deux → retirer et recharger le calque
+    if (lastMediaKindsRef.current !== kinds) {
+      lastMediaKindsRef.current = kinds;
+      initialIndexSetRef.current = false;
+      setLayer0Src(null);
+      setLayer1Src(null);
+      setLayer0Loaded(false);
+      setLayer1Loaded(false);
+    }
+
     if (!backgroundImages || backgroundImages.length === 0) {
       setLayer0Src(null);
       setLayer1Src(null);
       setLayer0Loaded(false);
       setLayer1Loaded(false);
-      // ✅ Chargement initial : Si pas d'images, masquer l'écran de chargement
       if (isFirstLoadRef.current) {
         initialImageLoadedRef.current = true;
         setIsInitialImageLoaded(true);
@@ -408,36 +451,49 @@ const HomePage = () => {
       return;
     }
 
-    // Tirage une fois, sur la sélection déjà enregistrée. On affiche cet index tout de suite,
-    // pas l’image 0 le temps que le state se mette à jour.
+    const visible = getVisibleHomepageImageIndices(backgroundImages, pickOpts);
+    if (visible.length === 0) {
+      // Filtre actif sans média correspondant (ex. vidéos only sans vidéo en Accueil)
+      setLayer0Src(null);
+      setLayer1Src(null);
+      setLayer0Loaded(false);
+      setLayer1Loaded(false);
+      if (isFirstLoadRef.current) {
+        initialImageLoadedRef.current = true;
+        setIsInitialImageLoaded(true);
+        isFirstLoadRef.current = false;
+      }
+      return;
+    }
+
     let displayIndex = currentImageIndex;
-    if (!initialIndexSetRef.current && backgroundImages.length > 0) {
-      const picked = pickInitialHomepageImageIndex(backgroundImages, {
-        order: homeOrderRef.current
-      });
-      displayIndex = picked >= 0 ? picked : 0;
+    if (!initialIndexSetRef.current) {
+      const picked = pickInitialHomepageImageIndex(backgroundImages, pickOpts);
+      displayIndex = picked >= 0 ? picked : visible[0];
       initialIndexSetRef.current = true;
       currentImageIndexRef.current = displayIndex;
       if (displayIndex !== currentImageIndex) {
         setCurrentImageIndex(displayIndex);
+        return;
       }
     }
 
     const currentNorm = normalizeHomepageImage(backgroundImages[displayIndex], displayIndex);
-    if (currentNorm?.hidden) {
-      const nextVisible = pickNextHomepageImageIndex(backgroundImages, displayIndex, {
-        order: homeOrderRef.current
-      });
-      if (nextVisible >= 0 && nextVisible !== displayIndex) {
-        setCurrentImageIndex(nextVisible);
-        currentImageIndexRef.current = nextVisible;
+    const excludedByKinds =
+      (kinds === 'videos' && !isHomepageVideo(currentNorm)) ||
+      (kinds === 'images' && isHomepageVideo(currentNorm));
+    if (currentNorm?.hidden || excludedByKinds || !visible.includes(displayIndex)) {
+      const nextVisible = pickNextHomepageImageIndex(backgroundImages, displayIndex, pickOpts);
+      const fallback = nextVisible >= 0 ? nextVisible : visible[0];
+      if (fallback != null && fallback !== displayIndex) {
+        setCurrentImageIndex(fallback);
+        currentImageIndexRef.current = fallback;
       }
       return;
     }
 
     const currentImage = backgroundImages[displayIndex];
     if (!currentImage) {
-      // ✅ Chargement initial : Si pas d'image actuelle, masquer l'écran de chargement
       if (isFirstLoadRef.current) {
         initialImageLoadedRef.current = true;
         setIsInitialImageLoaded(true);
@@ -446,22 +502,28 @@ const HomePage = () => {
       return;
     }
 
-    // Charger image actuelle dans layer 0 (layer actif) au montage initial
-    // Note: Les changements d'image sont gérés par changeBackgroundImage()
-    if (!layer0Src) {
+    const wantSrc =
+      typeof currentImage === 'object' && currentImage.full
+        ? currentImage.full
+        : currentImage;
+    const wantKind = isHomepageVideo(currentNorm) ? 'video' : 'image';
+    // Toujours (re)charger si le calque actif ne correspond pas au média éligible
+    if (!layer0Src || layer0Src !== wantSrc || layer0Kind !== wantKind) {
       const isInitialLoad = isFirstLoadRef.current;
       loadImageIntoLayer(currentImage, 0, true, isInitialLoad);
       if (isInitialLoad) {
         isFirstLoadRef.current = false;
       }
     }
-  }, [backgroundImages, currentImageIndex]); // ✅ RANDOMISATION : Ajouter currentImageIndex aux dépendances
+  }, [backgroundImages, currentImageIndex, homePickOpts, layer0Src, layer0Kind]);
 
   // ✅ Phase 7: Préchargement proactif des images (adapté pour rotation aléatoire)
   // ✅ RANDOMISATION : Précharger images aléatoires au lieu de séquentielles
   useEffect(() => {
     if (!introPlaybackDone) return undefined;
-    const visible = getVisibleHomepageImageIndices(backgroundImages);
+    const visible = getVisibleHomepageImageIndices(backgroundImages, {
+      mediaKinds: homeMediaKindsRef.current,
+    });
     if (!backgroundImages || visible.length <= 1) return undefined;
 
     const currentImage = backgroundImages[currentImageIndex];
@@ -524,17 +586,26 @@ const HomePage = () => {
   }, [currentImageIndex, backgroundImages, introPlaybackDone]);
 
   // Rotation automatique (vitesse réglable ; le clic n’arrête pas le minuteur)
+  // Exception : une vidéo en boucle reste jusqu’au clic (pas de rotation auto).
   useEffect(() => {
-    if (getVisibleHomepageImageIndices(backgroundImages).length <= 1) return undefined;
+    if (getVisibleHomepageImageIndices(backgroundImages, homePickOpts).length <= 1) {
+      return undefined;
+    }
     const interval = Number(homePlayback.rotationMs);
     if (!Number.isFinite(interval) || interval < 1000) return undefined;
+
+    const current = normalizeHomepageImage(
+      backgroundImages[currentImageIndex],
+      currentImageIndex
+    );
+    if (isHomepageVideo(current) && current.loop) return undefined;
 
     const rotationInterval = setInterval(() => {
       changeBackgroundImage();
     }, interval);
 
     return () => clearInterval(rotationInterval);
-  }, [backgroundImages, homePlayback.rotationMs]);
+  }, [backgroundImages, homePlayback.rotationMs, currentImageIndex, homePickOpts]);
 
   // Échelle pilotée par le nombre de lignes réelles (display) : une même phrase peut
   // faire 2 lignes en base (autosplit ~28 chars) tout en étant « longue » → l’ancien
@@ -837,53 +908,71 @@ const HomePage = () => {
         />
       )}
 
-      {/* ✅ Phase 7: Double buffering — masqué pendant l’intro pour ne pas concurrencer le Player (GPU / peinture). */}
+      {/* ✅ Phase 7: Double buffering image/vidéo — masqué pendant l’intro. */}
       {!shouldShowLoading && backgroundImages.length > 0 && layer0Src && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${layer0Src})`,
-            opacity: layer0Opacity,
-            filter: 'contrast(1.1) brightness(0.9)',
-            transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-            zIndex: activeLayer === 0 ? 1 : 0,
-            willChange: 'opacity', // Optimisation GPU
+        <HomeWelcomeMediaLayer
+          media={{
+            kind: layer0Kind,
+            src: layer0Src,
+            loop: layer0Loop,
+            allowSound: layer0AllowSound,
           }}
-        >
-          {/* Overlay avec effet de grain */}
-          <div 
-            className="absolute inset-0 opacity-30"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
-              mixBlendMode: 'overlay'
-            }}
-          />
-        </div>
+          opacity={layer0Opacity}
+          zIndex={activeLayer === 0 ? 1 : 0}
+          active={activeLayer === 0 && introPlaybackDone}
+          sessionMuted={sessionMuted}
+          onVideoEnded={() => {
+            if (activeLayer === 0) changeBackgroundImage();
+          }}
+        />
       )}
 
-      {/* ✅ Phase 7: Double buffering - Layer 1 */}
+      {!shouldShowLoading &&
+        !layer0Src &&
+        (homePlayback.mediaKinds === 'videos' || homePlayback.mediaKinds === 'images') && (
+          <div className="pointer-events-none absolute inset-0 z-[2] flex items-end justify-center pb-28 md:pb-36">
+            <p className="rounded-full border border-white/10 bg-black/50 px-4 py-2 text-center text-xs text-white/70 backdrop-blur-md">
+              {homePlayback.mediaKinds === 'videos'
+                ? 'Aucune vidéo sur l’accueil — ajoute-en dans Apparence → Vidéos d’accueil.'
+                : 'Aucune photo sur l’accueil — ajoute-en dans Apparence.'}
+            </p>
+          </div>
+        )}
+
       {!shouldShowLoading && backgroundImages.length > 0 && layer1Src && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${layer1Src})`,
-            opacity: layer1Opacity,
-            filter: 'contrast(1.1) brightness(0.9)',
-            transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-            zIndex: activeLayer === 1 ? 1 : 0,
-            willChange: 'opacity', // Optimisation GPU
+        <HomeWelcomeMediaLayer
+          media={{
+            kind: layer1Kind,
+            src: layer1Src,
+            loop: layer1Loop,
+            allowSound: layer1AllowSound,
           }}
-        >
-          {/* Overlay avec effet de grain */}
-          <div 
-            className="absolute inset-0 opacity-30"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
-              mixBlendMode: 'overlay'
-            }}
-          />
-        </div>
+          opacity={layer1Opacity}
+          zIndex={activeLayer === 1 ? 1 : 0}
+          active={activeLayer === 1 && introPlaybackDone}
+          sessionMuted={sessionMuted}
+          onVideoEnded={() => {
+            if (activeLayer === 1) changeBackgroundImage();
+          }}
+        />
       )}
+
+      {!shouldShowLoading &&
+        ((activeLayer === 0 && layer0Kind === 'video' && layer0AllowSound) ||
+          (activeLayer === 1 && layer1Kind === 'video' && layer1AllowSound)) && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setSessionMuted((value) => !value);
+            }}
+            className="absolute bottom-6 right-6 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white/90 backdrop-blur-md transition hover:bg-black/70"
+            aria-label={sessionMuted ? 'Activer le son' : 'Couper le son'}
+            title={sessionMuted ? 'Activer le son' : 'Couper le son'}
+          >
+            {sessionMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+        )}
 
       {activeTab === 'home' && isLargeScreen && showRobot && (
         <div

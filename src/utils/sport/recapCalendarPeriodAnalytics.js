@@ -7,7 +7,10 @@ import { aggregateCheckedRepsByDateAndExerciseId } from '../trainingLoadUtils';
 import {
   computeEnduranceDayMetricsForCalendar
 } from '../calendarUtils';
-import { computeCalendarMonthSportStats } from '../calendarMonthSportStats';
+import {
+  computeCalendarMonthSportStats,
+  getCalendarSportStatsCache
+} from '../calendarMonthSportStats';
 import {
   computeYearSportRecordHolders,
   formatCalendarSportDuration
@@ -16,15 +19,9 @@ import { calculateLongestTrainingStreakInRange } from '../trainingStreakUtils';
 import { enumerateDatesInclusive } from './dailyDenseTimeSeries';
 import { buildRecapStrengthCompareModel } from './recapStrengthPeriodStats';
 import {
-  buildRunningSessionRows,
   computeRunningKindDistribution,
   computeRunningVolumeHighlights
 } from './runningCardioStatsAnalytics';
-import {
-  buildGarminCardioById,
-  filterRunningSessionsBase,
-  mergeRunningSessionsWithGarmin
-} from './runningVolumeTruth';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 
 export const RECAP_CALENDAR_SPORT_METRIC_KEYS = [
@@ -39,32 +36,81 @@ export const RECAP_CALENDAR_SPORT_METRIC_KEYS = [
   'trainingDays'
 ];
 
-function sumCheckedRepsForDate(workoutData, dateStr) {
+function createDayRepsLookup(workoutData) {
   const grouped = aggregateCheckedRepsByDateAndExerciseId(
     workoutData?.reps,
     workoutData?.checkedExercises
   );
-  let total = 0;
-  grouped.forEach(({ reps: r }, gkey) => {
-    if (!gkey.startsWith(`${dateStr}::`)) return;
-    total += Math.max(0, Math.floor(Number(r) || 0));
+  const checkedByDate = new Map();
+  const partsByDate = new Map();
+  grouped.forEach(({ reps }, gkey) => {
+    const sep = gkey.indexOf('::');
+    if (sep < 0) return;
+    const ymd = gkey.slice(0, sep);
+    const repsN = Math.max(0, Math.floor(Number(reps) || 0));
+    if (repsN <= 0) return;
+    checkedByDate.set(ymd, (checkedByDate.get(ymd) || 0) + repsN);
+    const list = partsByDate.get(ymd);
+    const part = { id: gkey.slice(sep + 2), reps: repsN };
+    if (list) list.push(part);
+    else partsByDate.set(ymd, [part]);
   });
-  return total;
+  const enduranceByDate = new Map();
+  const repsFor = (ymd) => {
+    let endurance = enduranceByDate.get(ymd);
+    if (endurance == null) {
+      endurance = Math.floor(
+        Number(computeEnduranceDayMetricsForCalendar(workoutData, ymd)?.reps) || 0
+      );
+      enduranceByDate.set(ymd, endurance);
+    }
+    return (checkedByDate.get(ymd) || 0) + endurance;
+  };
+  return { partsByDate, repsFor };
 }
 
-function dayIntensityReps(workoutData, dateStr) {
-  const checked = sumCheckedRepsForDate(workoutData, dateStr);
-  const endurance = Math.floor(
-    Number(computeEnduranceDayMetricsForCalendar(workoutData, dateStr)?.reps) || 0
-  );
-  return checked + endurance;
+const WEEKDAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+function buildRecapWeekStrip(startYmd, endYmd, getExerciseNameById, lookup) {
+  const all = enumerateDatesInclusive(startYmd, endYmd);
+  if (!all.length) return [];
+  const today = getDateStr(new Date());
+  return all.map((ymd) => {
+    const parts = (lookup.partsByDate.get(ymd) || []).map((part) => {
+      const rawName = typeof getExerciseNameById === 'function' ? getExerciseNameById(part.id) : '';
+      const name = String(rawName || '')
+        .replace(/^exercice\s+/i, '')
+        .replace(/complementary_/gi, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return { id: part.id, name, reps: part.reps };
+    });
+    parts.sort((a, b) => b.reps - a.reps);
+    const reps = lookup.repsFor(ymd);
+    const detail = parts
+      .slice(0, 2)
+      .map((part) => (part.name ? `${part.reps} ${part.name}` : `${part.reps} reps`))
+      .join(', ');
+    const date = new Date(`${ymd}T12:00:00`);
+    return {
+      ymd,
+      label: WEEKDAY_LABELS[date.getDay()] || '',
+      day: date.getDate(),
+      reps,
+      note: reps > 0 ? (detail ? `${reps} reps · ${detail}` : `${reps} reps`) : '—',
+      items: parts,
+      on: reps > 0,
+      now: ymd === today
+    };
+  });
 }
 
-function buildSportDaysForRange(startYmd, endYmd, workoutData) {
+function buildSportDaysForRange(startYmd, endYmd, repsFor) {
   return enumerateDatesInclusive(startYmd, endYmd).map((ymd) => ({
     isCurrentMonth: true,
     date: new Date(`${ymd}T12:00:00`),
-    intensity: { reps: dayIntensityReps(workoutData, ymd) }
+    intensity: { reps: repsFor(ymd) }
   }));
 }
 
@@ -92,7 +138,7 @@ function listCalendarMonthsOverlapping(startYmd, endYmd) {
   return out;
 }
 
-function buildMonthDaysClipped(year, monthIndex, startYmd, endYmd, workoutData) {
+function buildMonthDaysClipped(year, monthIndex, startYmd, endYmd, repsFor) {
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
   const days = [];
   for (let d = 1; d <= daysInMonth; d += 1) {
@@ -101,7 +147,7 @@ function buildMonthDaysClipped(year, monthIndex, startYmd, endYmd, workoutData) 
     days.push({
       isCurrentMonth: true,
       date: new Date(year, monthIndex, d),
-      intensity: { reps: dayIntensityReps(workoutData, ymd) }
+      intensity: { reps: repsFor(ymd) }
     });
   }
   return days;
@@ -121,6 +167,8 @@ function topMusclesFromRecapState(recapState, limit = 5) {
     .slice(0, limit);
 }
 
+let periodAnalyticsMemo = null;
+
 function filterRunningRowsToWindow(rows, startYmd, endYmd) {
   return (rows || []).filter((r) => r?.date && r.date >= startYmd && r.date <= endYmd);
 }
@@ -134,13 +182,18 @@ function filterRunningRowsToWindow(rows, startYmd, endYmd) {
  * @param {(id: string|number) => string} [params.getExerciseNameById]
  * @param {object|null} [params.recapState]
  */
+/**
+ * @param {object} params
+ * @param {'header'|'full'} [params.phase] header = bandeau + KPI (rapide) ; full = stats + mois + course
+ */
 export function buildRecapPeriodCalendarAnalytics({
   workoutData,
   garminData,
   periodWindow,
   period,
   getExerciseNameById,
-  recapState = null
+  recapState = null,
+  phase = 'full'
 }) {
   const startYmd = periodWindow?.start;
   const endYmd = periodWindow?.end;
@@ -148,22 +201,83 @@ export function buildRecapPeriodCalendarAnalytics({
     return null;
   }
 
-  const periodDays = buildSportDaysForRange(startYmd, endYmd, workoutData);
+  const memo = periodAnalyticsMemo;
+  if (
+    memo &&
+    memo.workoutData === workoutData &&
+    memo.garminData === garminData &&
+    memo.period === period &&
+    memo.startYmd === startYmd &&
+    memo.endYmd === endYmd &&
+    memo.recapState === recapState &&
+    memo.getExerciseNameById === getExerciseNameById &&
+    memo.phase === phase
+  ) {
+    return memo.result;
+  }
+  if (
+    phase === 'header' &&
+    memo &&
+    memo.phase === 'full' &&
+    memo.workoutData === workoutData &&
+    memo.garminData === garminData &&
+    memo.period === period &&
+    memo.startYmd === startYmd &&
+    memo.endYmd === endYmd &&
+    memo.recapState === recapState &&
+    memo.getExerciseNameById === getExerciseNameById
+  ) {
+    return memo.result;
+  }
+
+  const sportCache = getCalendarSportStatsCache(workoutData, garminData);
+  const lookup = createDayRepsLookup(workoutData);
+  const periodDays = buildSportDaysForRange(startYmd, endYmd, lookup.repsFor);
   const periodStats = computeCalendarMonthSportStats(
     periodDays,
     workoutData,
     garminData,
-    getDateStr
+    getDateStr,
+    sportCache
   );
+  const weekStrip = buildRecapWeekStrip(startYmd, endYmd, getExerciseNameById, lookup);
+
+  if (phase === 'header') {
+    const result = {
+      periodStats,
+      months: [],
+      bestMonthsByMetric: {},
+      topExercises: [],
+      streakRange: null,
+      topMuscleGroups: [],
+      running: { hasData: false, highlights: null, kindDistribution: null, bestSessions: [] },
+      window: { start: startYmd, end: endYmd },
+      weekStrip,
+      phase: 'header'
+    };
+    periodAnalyticsMemo = {
+      workoutData,
+      garminData,
+      period,
+      startYmd,
+      endYmd,
+      recapState,
+      getExerciseNameById,
+      phase,
+      result
+    };
+    return result;
+  }
 
   const monthMeta = listCalendarMonthsOverlapping(startYmd, endYmd);
   const months = monthMeta.map(({ year, monthIndex, ym, label }) => {
-    const monthDays = buildMonthDaysClipped(year, monthIndex, startYmd, endYmd, workoutData);
+    const monthDays = buildMonthDaysClipped(year, monthIndex, startYmd, endYmd, lookup.repsFor);
     const sportStats = computeCalendarMonthSportStats(
       monthDays,
       workoutData,
       garminData,
-      getDateStr
+      getDateStr,
+      sportCache
     );
     return { ym, label, sportStats };
   });
@@ -206,12 +320,7 @@ export function buildRecapPeriodCalendarAnalytics({
           repShare: reps
         }));
 
-  const garminById = buildGarminCardioById(garminData?.activities?.cardio);
-  const stored = workoutData?.enduranceData?.sessions?.running || [];
-  const merged = mergeRunningSessionsWithGarmin(stored, garminById);
-  const filtered = filterRunningSessionsBase(merged, garminById);
-  const allRows = buildRunningSessionRows(filtered, garminById);
-  const runningRows = filterRunningRowsToWindow(allRows, startYmd, endYmd);
+  const runningRows = filterRunningRowsToWindow(sportCache.runRows, startYmd, endYmd);
   const runningHighlights = computeRunningVolumeHighlights(runningRows);
   const kindDistribution = computeRunningKindDistribution(runningRows);
 
@@ -228,7 +337,7 @@ export function buildRecapPeriodCalendarAnalytics({
 
   const hasRunning = runningRows.some((r) => r.dist > 0 || r.durMin > 0);
 
-  return {
+  const result = {
     periodStats,
     months,
     bestMonthsByMetric,
@@ -241,8 +350,22 @@ export function buildRecapPeriodCalendarAnalytics({
       kindDistribution,
       bestSessions: bestRunningSessions
     },
-    window: { start: startYmd, end: endYmd }
+    window: { start: startYmd, end: endYmd },
+    weekStrip,
+    phase: 'full'
   };
+  periodAnalyticsMemo = {
+    workoutData,
+    garminData,
+    period,
+    startYmd,
+    endYmd,
+    recapState,
+    getExerciseNameById,
+    phase: 'full',
+    result
+  };
+  return result;
 }
 
 export function formatRecapCalendarMetricValue(metricKey, value) {
@@ -266,10 +389,19 @@ export function formatRecapCalendarMetricValue(metricKey, value) {
   }
 }
 
+function shortMonthAxisLabel(ym) {
+  const [y, m] = String(ym || '').split('-').map(Number);
+  if (!y || !m) return ym;
+  return new Date(y, m - 1, 1)
+    .toLocaleDateString('fr-FR', { month: 'short' })
+    .replace('.', '');
+}
+
 export function buildMonthlyMetricSeries(months, metricKey) {
   return (months || []).map((m) => ({
     date: `${m.ym}-01`,
     value: Number(m.sportStats?.[metricKey]) || 0,
-    label: m.label
+    label: m.label,
+    axisLabel: shortMonthAxisLabel(m.ym)
   }));
 }

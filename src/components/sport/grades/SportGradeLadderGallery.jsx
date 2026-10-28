@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from '../../../utils/translations';
 import {
   SPORT_GRADE_IDS,
-  SPORT_GRADE_ACCENT,
   tierRowsForGrade,
   hasConditionalTierRequirements
 } from '../../../services/xp/sportGradeCatalog';
@@ -39,50 +38,43 @@ export default function SportGradeLadderGallery({
 
   return (
     <section>
-      <h3 className="text-sm font-semibold text-white mb-1">
-        {t('recap.grades.ladderGalleryTitle', 'Parcours des grades')}
-      </h3>
-      <p className="text-[11px] text-slate-500 mb-4 max-w-2xl">
+      <div className="sh">
+        <h2>{t('recap.grades.ladderGalleryTitle', 'Parcours des grades')}</h2>
+      </div>
+      <p className="sub">
         {t(
           'recap.grades.ladderGalleryIntro',
           'Chaque grade comporte trois paliers (I, II, III), débloqués par le niveau. Clique une carte pour voir les conditions et ta progression.'
         )}
       </p>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="ggrid">
         {cards.map(({ gradeId, tiers, maxTierRow, isCurrentGrade, unlocked, conditional }) => {
-          const accent = SPORT_GRADE_ACCENT[gradeId] || '#2dd4bf';
           return (
             <button
               key={gradeId}
               type="button"
               onClick={() => onSelectGrade?.(gradeId)}
-              className={`flex flex-col overflow-hidden rounded-2xl border bg-gradient-to-b from-black/90 to-[#041a14]/80 text-left transition-all hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60 ${
-                isCurrentGrade
-                  ? 'border-emerald-500/50 shadow-lg shadow-emerald-900/20 ring-1 ring-emerald-500/30'
-                  : unlocked
-                    ? 'border-[#0F4C5C]/50'
-                    : 'border-[#0F4C5C]/25 opacity-75'
-              }`}
+              className={`gc ${isCurrentGrade ? 'here' : ''} ${unlocked ? '' : 'lock'}`}
             >
-              <div className="relative px-3 pt-3 pb-2 w-full">
+              <div className="relative">
                 <SportGradeEmblem gradeId={gradeId} layout="gallery" />
                 {isCurrentGrade ? (
-                  <span className="absolute top-5 right-5 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-black">
+                  <span className="here-t">
                     {t('recap.grades.ladderYouAreHere', 'Tu es ici')}
                   </span>
                 ) : null}
               </div>
-              <div className="flex flex-1 flex-col px-3 pb-3 w-full">
-                <h4 className="text-base font-bold text-white">{sportGradeLabel(gradeId, t)}</h4>
-                <p className="mt-0.5 text-[10px] text-slate-500">
+              <div>
+                <h4>{sportGradeLabel(gradeId, t)}</h4>
+                <p className="hn">
                   {t('recap.grades.ladderTapDetail', 'Appuyer pour le détail')}
                 </p>
-                <p className="mt-1 text-[10px] text-slate-600">
+                <p className="lv2">
                   {t('recap.grades.ladderLevelFrom', 'Dès le niveau {{n}}', {
                     n: tiers[0]?.levelMin ?? 1
                   })}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="pl">
                   {tiers.map((row) => {
                     const tierReached = conditional
                       ? evaluateTierRowConditions(row, { level, masteryScore, aggregates }).met
@@ -92,16 +84,7 @@ export default function SportGradeLadderGallery({
                     return (
                       <span
                         key={row.tier}
-                        className={`rounded-md border px-2 py-0.5 text-[10px] font-medium tabular-nums ${
-                          isActiveTier
-                            ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-100'
-                            : tierReached
-                              ? 'border-teal-700/50 bg-teal-950/40 text-teal-200/90'
-                              : 'border-slate-800 bg-black/40 text-slate-600'
-                        }`}
-                        style={
-                          isActiveTier ? { boxShadow: `0 0 12px -4px ${accent}` } : undefined
-                        }
+                        className={isActiveTier ? 'cur' : tierReached ? '' : 'lk'}
                       >
                         {sportPalierLabel(row.tier, t)} · {row.levelMin}
                       </span>
@@ -109,7 +92,7 @@ export default function SportGradeLadderGallery({
                   })}
                 </div>
                 {maxTierRow && unlocked ? (
-                  <p className="mt-auto pt-2 text-[10px] text-slate-600">
+                  <p className="pa">
                     {t('recap.grades.ladderTierProgress', 'Palier atteint : {{palier}}', {
                       palier: sportPalierLabel(maxTierRow.tier, t)
                     })}

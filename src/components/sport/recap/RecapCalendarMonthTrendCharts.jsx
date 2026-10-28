@@ -29,6 +29,8 @@ const TREND_METRICS = [
   'activeKcal'
 ];
 
+const METRIC_COLORS = ['#ffb938', '#a98bff', '#2dd4b5', '#ff7a5c', '#5cc3ff', '#f26fb5'];
+
 const chartCardClass =
   'rounded-xl border border-[#0F4C5C]/45 bg-gradient-to-b from-slate-950/70 to-black p-3';
 
@@ -36,7 +38,9 @@ export default function RecapCalendarMonthTrendCharts({
   period,
   periodWindow,
   garminData = null,
-  chartHeight = 150
+  chartHeight = 150,
+  showPeak = false,
+  peakPrefix = 'pic'
 }) {
   const t = useTranslation();
   const { getCurrentData, data, getExerciseNameById } = useWorkout();
@@ -69,11 +73,11 @@ export default function RecapCalendarMonthTrendCharts({
 
   return (
     <section className="space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold text-teal-100">
+      <div className="sh">
+        <h2>
           {t('recap.tendances.calendarMetrics', 'Évolution mensuelle (comme le calendrier)')}
         </h2>
-        <p className="mt-1 text-[11px] text-slate-500">
+        <p className="sub">
           {t(
             'recap.tendances.calendarMetricsHint',
             'Une point par mois calendaire sur la plage sélectionnée — mêmes indicateurs que la vue année Sport.'
@@ -81,7 +85,7 @@ export default function RecapCalendarMonthTrendCharts({
         </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        {TREND_METRICS.map((metricKey) => {
+        {TREND_METRICS.map((metricKey, index) => {
           const series = buildMonthlyMetricSeries(months, metricKey);
           const hasData = series.some((p) => p.value > 0);
           if (!hasData) return null;
@@ -91,12 +95,13 @@ export default function RecapCalendarMonthTrendCharts({
               <h3 className="mb-2 text-xs font-medium text-slate-200">{title}</h3>
               <DenseDailyLineChart
                 seriesA={series}
-                metaA={{ label: title, color: '#14b8a6' }}
+                metaA={{ label: title, color: METRIC_COLORS[index % METRIC_COLORS.length] }}
                 height={chartHeight}
                 valueFormatA={(v) => formatRecapCalendarMetricValue(metricKey, v)}
                 emptyMessage={t('recap.tendances.noData', 'Pas de données.')}
-                xAxisLabel={t('recap.tendances.axisMonth', 'Mois')}
                 interactive
+                showPeak={showPeak}
+                peakPrefix={peakPrefix}
               />
             </div>
           );

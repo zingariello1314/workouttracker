@@ -1,43 +1,112 @@
 import React, { useMemo, useState } from 'react';
-import { Gauge, Mountain, PersonStanding, Sparkles, Timer, TrendingUp } from 'lucide-react';
 import { useWorkout } from '../../../context/WorkoutContext';
 import { buildRecapBenchmarkInsights } from '../../../utils/sport/recapBenchmarkInsights';
 import { RecapSection } from './components/RecapUiBlocks';
 import RecapBenchmarkInsightDetailModal from './RecapBenchmarkInsightDetailModal';
 
 const CATEGORY_META = {
-  running: { icon: Timer, label: 'Course', accent: 'border-sky-500/35 bg-sky-950/20' },
-  consistency: { icon: Gauge, label: 'Régularité', accent: 'border-teal-500/35 bg-teal-950/25' },
-  strength: { icon: PersonStanding, label: 'Street / force', accent: 'border-violet-500/35 bg-violet-950/20' },
-  progression: { icon: TrendingUp, label: 'Progression séries/reps', accent: 'border-cyan-500/35 bg-cyan-950/20' },
-  wow: { icon: Mountain, label: 'Comparaisons', accent: 'border-amber-500/35 bg-amber-950/20' }
+  running: { label: 'Course', tone: 'running' },
+  consistency: { label: 'Régularité', tone: 'consistency' },
+  strength: { label: 'Street / force', tone: 's' },
+  progression: { label: 'Progression séries/reps', tone: 'p' },
+  wow: { label: 'Comparaisons', tone: 'k2' }
 };
+
+const LEAD_UNIT = '(?:%|reps?|kg|km|min|s|kcal|t)';
+
+function tidyLead(value) {
+  let s = String(value || '').replace(/\s+/g, ' ').trim();
+  s = s.replace(/\d+[.,]\d{3,}/, (m) => {
+    const n = Number(m.replace(/\s/g, '').replace(',', '.'));
+    return Number.isFinite(n) ? String(Math.round(n * 10) / 10).replace('.', ',') : m;
+  });
+  return s.length > 0 && s.length <= 14 ? s : null;
+}
+
+function leadFromText(text) {
+  const raw = String(text || '');
+  const gap = raw.match(new RegExp(`manque\\s+([+-]?\\d(?:[\\d\\s:.,]|[.,]\\d){0,12}\\s?${LEAD_UNIT}?)`, 'i'));
+  const gapLead = gap ? tidyLead(gap[1]) : null;
+  if (gapLead) return gapLead;
+  const percent = raw.match(/[+-]?\d[\d.,]*\s?%/);
+  const percentLead = percent ? tidyLead(percent[0]) : null;
+  if (percentLead) return percentLead;
+  const fois = raw.match(/(\d+(?:[.,]\d+)?)\s*fois/i);
+  const foisLead = fois ? tidyLead(fois[1]) : null;
+  if (foisLead) return foisLead;
+  const seances = raw.match(/(\d+[.,]\d+)\s*séances/i);
+  if (seances) {
+    const n = Number(seances[1].replace(',', '.'));
+    if (Number.isFinite(n)) {
+      const rounded = tidyLead(String(Math.round(n * 10) / 10).replace('.', ','));
+      if (rounded) return rounded;
+    }
+  }
+  const time = raw.match(/\b\d{1,2}:\d{2}(?::\d{2})?\b/);
+  if (time) return time[0];
+  const withUnit = raw.match(new RegExp(`[+-]?\\d(?:[\\d\\s]|[.,]\\d){0,12}\\s?${LEAD_UNIT}\\b`, 'i'));
+  const unitLead = withUnit ? tidyLead(withUnit[0]) : null;
+  if (unitLead) return unitLead;
+  const grouped = raw.match(/\b\d{1,3}(?:\s\d{3})+\b/);
+  if (grouped) return grouped[0];
+  const pair = raw.match(/\b\d+\s?[×x]\s?\d+\b/);
+  if (pair) return pair[0].replace(/x/gi, '×');
+  return null;
+}
+
+function figureTone(text) {
+  const s = String(text || '').toLowerCase();
+  if (/manque|en baisse|régression|regression|stagnation/.test(s)) return 'gap';
+  if (/place au|atteint|au-dessus|au dessus|plus rapide/.test(s)) return 'pos';
+  return '';
+}
+
+function RichLine({ text }) {
+  const src = String(text || '');
+  const re = /(«[^»]+»|\b(?:novice|débutant|debutant|intermédiaire|intermediaire|confirmé|confirme|avancé|avance|élite|elite|moyen)\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|[+-]?\d(?:[\d\s]|[.,]\d){0,12}(?:\s?(?:%|reps?|kg|km|min|s|kcal|t)\b)?|\d+\s?[×x]\s?\d+)/gi;
+  const out = [];
+  let last = 0;
+  let key = 0;
+  for (const match of src.matchAll(re)) {
+    const token = match[0];
+    const index = match.index ?? 0;
+    if (!token) continue;
+    if (index > last) out.push(src.slice(last, index));
+    if (token.startsWith('«') && token.endsWith('»')) {
+      out.push(<em className="q" key={key++}>{token.slice(1, -1)}</em>);
+    } else if (/^(novice|débutant|debutant|intermédiaire|intermediaire|confirmé|confirme|avancé|avance|élite|elite|moyen)$/i.test(token)) {
+      out.push(<em className="q" key={key++}>{token}</em>);
+    } else if (/^\d{4}$/.test(token.trim()) || /^\d{7,}$/.test(token.replace(/\s/g, '')) || /\d[.,]\d{3,}/.test(token)) {
+      out.push(token);
+    } else {
+      out.push(<em className="v" key={key++}>{token}</em>);
+    }
+    last = index + token.length;
+  }
+  if (last < src.length) out.push(src.slice(last));
+  return out;
+}
 
 function InsightCard({ insight, onSelect }) {
   const meta = CATEGORY_META[insight.category] || CATEGORY_META.wow;
-  const Icon = meta.icon;
   const clickable = Boolean(insight.drillDown);
-
+  const lead = leadFromText(insight.text);
   const inner = (
     <>
-      <div className="mb-2 flex items-center gap-2">
-        <Icon size={14} className="opacity-80" aria-hidden />
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-          {meta.label}
-        </span>
-        {clickable ? (
-          <span className="ml-auto text-[10px] text-teal-400/80">
-            Détail →
-          </span>
-        ) : null}
+      <div className="n">{lead || '—'}</div>
+      <div className="h">
+        <span>{meta.label}</span>
+        {clickable ? <span className="go">Détail →</span> : null}
       </div>
-      <p className="text-[12px] leading-relaxed text-slate-100/95">{insight.text}</p>
+      <p><RichLine text={insight.text} /></p>
     </>
   );
 
+  const tone = `${meta.tone} ${figureTone(insight.text)}`.trim();
+
   if (!clickable) {
     return (
-      <div className={`rounded-xl border p-4 ${meta.accent}`}>
+      <div className={`rc ${tone}`}>
         {inner}
       </div>
     );
@@ -47,7 +116,7 @@ function InsightCard({ insight, onSelect }) {
     <button
       type="button"
       onClick={() => onSelect(insight)}
-      className={`w-full rounded-xl border p-4 text-left transition-colors hover:border-teal-400/50 hover:bg-white/[0.02] ${meta.accent}`}
+      className={`rc ${tone}`}
     >
       {inner}
     </button>
@@ -96,8 +165,7 @@ export default function RecapBenchmarkCoachPanel({
           'Votre profil comparé aux standards course, street workout et population — pas seulement des chiffres bruts.'
         )}
       >
-        <div className="mb-3 flex items-center gap-2 text-[11px] text-teal-200/80">
-          <Sparkles size={14} className="text-teal-400" aria-hidden />
+        <div className="note">
           <span>
             {tr(
               'recap.benchmark.hint',
@@ -105,7 +173,7 @@ export default function RecapBenchmarkCoachPanel({
             )}
           </span>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="rp">
           {insights.map((insight) => (
             <InsightCard
               key={insight.id}

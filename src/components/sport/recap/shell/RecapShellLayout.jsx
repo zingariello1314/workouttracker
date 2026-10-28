@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   Activity,
   BarChart3,
@@ -10,6 +10,79 @@ import {
 import { useTranslation } from '../../../../utils/translations';
 import { RECAP_NAV_SECTIONS, RECAP_VIEW_IDS } from '../../../../utils/sport/recapViewConfig';
 import { RECAP_VIEW_PERIODS } from '../../../../utils/sport/recapViewPeriods';
+import '../recap-board.css';
+
+const RECAP_THEMES = [
+  { id: 'gold', name: 'Or', c: '#ffb938' },
+  { id: 'blue', name: 'Bleu', c: '#4f9dff' },
+  { id: 'cyan', name: 'Cyan', c: '#2ad4ff' },
+  { id: 'violet', name: 'Violet', c: '#a98bff' },
+  { id: 'pink', name: 'Rose', c: '#f26fb5' },
+  { id: 'red', name: 'Rouge', c: '#ff5a4a' },
+  { id: 'orange', name: 'Orange', c: '#ff8a3d' }
+];
+
+const RECAP_THEME_LS = 'recap-theme';
+
+const PAGE_LINKS = {
+  [RECAP_VIEW_IDS.SNAPSHOT]: [
+    ['#sn-ind', 'Indicateurs'],
+    ['#sn-stat', 'Statut'],
+    ['#sn-def', 'Défis'],
+    ['#sn-quiz', 'Quiz profil'],
+    ['#sn-zones', 'Zones']
+  ],
+  [RECAP_VIEW_IDS.ANALYSE]: [
+    ['#recap', 'Récap'],
+    ['#reperes', 'Repères'],
+    ['#coach', 'Vision coach'],
+    ['#prog', 'Programme'],
+    ['#synth', 'Synthèse']
+  ],
+  [RECAP_VIEW_IDS.GRADES]: [
+    ['#g-grade', 'Grade actuel'],
+    ['#g-xp', 'XP & niveau'],
+    ['#g-next', 'Prochain grade'],
+    ['#g-parcours', 'Parcours'],
+    ['#g-hist', 'Historique']
+  ],
+  [RECAP_VIEW_IDS.CORPS]: [
+    ['#c-map', 'Carte corporelle'],
+    ['#c-rep', 'Répartition'],
+    ['#c-zones', 'Détail par zone'],
+    ['#c-trp', 'Trophées']
+  ],
+  [RECAP_VIEW_IDS.TENDANCES]: [
+    ['#mensuel', 'Mensuel'],
+    ['#quotidien', 'Quotidien'],
+    ['#records', 'Records course'],
+    ['#modules', 'Course · Marche · Muscu']
+  ],
+  [RECAP_VIEW_IDS.SESSIONS]: [
+    ['#j-journal', 'Journal'],
+    ['#j-prog', 'Progression'],
+    ['#j-hist', 'Historique']
+  ]
+};
+
+function scrollToSection(event, href) {
+  event.preventDefault();
+  document.querySelector(href)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function PageLinks({ view, className }) {
+  const links = PAGE_LINKS[view] || [];
+  if (!links.length) return null;
+  return (
+    <div className={className}>
+      {links.map(([href, label]) => (
+        <a key={href} href={href} onClick={(event) => scrollToSection(event, href)}>
+          {label}
+        </a>
+      ))}
+    </div>
+  );
+}
 
 const VIEW_ICONS = {
   [RECAP_VIEW_IDS.SNAPSHOT]: LayoutDashboard,
@@ -42,63 +115,106 @@ export default function RecapShellLayout({
   children
 }) {
   const t = useTranslation();
+  const boardRef = useRef(null);
+  useLayoutEffect(() => {
+    const root = boardRef.current;
+    if (!root) return undefined;
+    const apply = () => {
+      root.querySelectorAll('.rb-fit').forEach((el) => {
+        if (el.hidden || el.classList.contains('rb-park')) return;
+        const inner = el.querySelector(':scope > .rb-scale');
+        if (!inner) return;
+        const next = Math.ceil(inner.offsetHeight * 0.9);
+        if (next > 0 && el.style.height !== `${next}px`) el.style.height = `${next}px`;
+      });
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    root.querySelectorAll('.rb-scale').forEach((el) => ro.observe(el));
+    return () => ro.disconnect();
+  }, [activeView]);
+  const [theme, setTheme] = useState(() => {
+    try {
+      const stored = localStorage.getItem(RECAP_THEME_LS);
+      if (stored && RECAP_THEMES.some((item) => item.id === stored)) return stored;
+    } catch {
+      /* ignore */
+    }
+    return 'gold';
+  });
+
+  const setRecapTheme = (id) => {
+    setTheme(id);
+    try {
+      localStorage.setItem(RECAP_THEME_LS, id);
+    } catch {
+      /* ignore */
+    }
+  };
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1400px] flex-col px-3 py-4 text-slate-100 sm:px-4">
-      <header className="sticky top-0 z-30 mb-4 rounded-xl border border-[#0F4C5C]/55 bg-black/95 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-md">
-        <div className="flex flex-wrap items-center gap-3 gap-y-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-600">
-              {t('recap.breadcrumbSport', 'Sport')}
-            </p>
-            <h1 className="text-lg font-bold tracking-tight text-white sm:text-xl">{t('recap.title')}</h1>
-          </div>
+    <div
+      ref={boardRef}
+      className="recap-board mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1640px] flex-col px-3 py-4 sm:px-6"
+      data-theme={theme}
+    >
+      <header className="rb-top">
+        <div className="min-w-0">
+          <p className="rb-kicker">{t('recap.breadcrumbSport', 'Sport')}</p>
+          <h1>{t('recap.title')}</h1>
+        </div>
 
-          {gradeHeader ? (
-            <div className="w-full sm:w-auto order-last sm:order-none">{gradeHeader}</div>
-          ) : null}
+        {gradeHeader ? <div className="w-full sm:w-auto">{gradeHeader}</div> : null}
 
+        <div className="rb-tools">
           {showTopMetrics && scoreLevel != null ? (
-            <div
-              className="flex items-center gap-2 rounded-full border border-[#0F4C5C]/50 bg-[#041a14]/90 px-3 py-1.5"
-              title={t('recap.assessment.scoreHint')}
-            >
-              <span
-                className={`h-2 w-2 shrink-0 rounded-full ${scoreDotClass(scoreLevel)}`}
-                aria-hidden
-              />
-              <span className="text-sm font-bold tabular-nums text-white">{scoreLevel}</span>
-              <span className="hidden text-xs text-emerald-300/90 sm:inline">· {scoreTier}</span>
+            <div className="rb-lvl" title={t('recap.assessment.scoreHint')}>
+              <span className={`h-2 w-2 shrink-0 rounded-full ${scoreDotClass(scoreLevel)}`} aria-hidden />
+              <b>{scoreLevel}</b>
+              {scoreTier ? <span>{scoreTier}</span> : null}
             </div>
           ) : null}
 
           {showTopMetrics ? (
-            <div className="flex flex-wrap gap-1.5 sm:ml-auto">
+            <div className="rb-seg" role="group" aria-label={t('recap.period.today', 'Période')}>
               {RECAP_VIEW_PERIODS.map((p) => (
                 <button
                   key={p.id}
                   type="button"
+                  aria-pressed={period === p.id}
                   onClick={() => onPeriodChange(p.id)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    period === p.id
-                      ? 'border-[#0F5C45]/90 bg-[#0F5C45]/90 text-white shadow-md shadow-black/30'
-                      : 'border-[#0F4C5C]/55 bg-black text-teal-100/90 hover:border-[#0F5C45]/70'
-                  }`}
                 >
                   {t(p.labelKey)}
                 </button>
               ))}
             </div>
           ) : null}
+
+          <div className="rb-th">
+            <span>{t('recap.color', 'Couleur')}</span>
+            {RECAP_THEMES.map((swatch) => (
+              <button
+                key={swatch.id}
+                type="button"
+                style={{ '--c': swatch.c }}
+                title={swatch.name}
+                aria-label={swatch.name}
+                aria-pressed={theme === swatch.id}
+                onClick={() => setRecapTheme(swatch.id)}
+              />
+            ))}
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-1 gap-4 lg:gap-5">
-        <aside className="sticky top-[5.5rem] hidden h-[calc(100vh-6.5rem)] w-[160px] shrink-0 flex-col lg:flex">
-          <nav className="flex flex-col gap-1 rounded-xl border border-[#0F4C5C]/55 bg-black/80 p-2">
-            {RECAP_NAV_SECTIONS.map((section, si) => (
+      <div className="rb-body">
+        <aside className="rb-side">
+          <nav aria-label={t('recap.title')}>
+            {RECAP_NAV_SECTIONS.map((section) => (
               <React.Fragment key={section.id}>
-                {si > 0 ? <div className="my-2 border-t border-[#0F4C5C]/40" aria-hidden /> : null}
+                {section.id === 'data' ? (
+                  <div className="rb-lb">{t('recap.nav.data', 'Données')}</div>
+                ) : null}
                 {section.items.map((item) => {
                   const Icon = VIEW_ICONS[item.id] || LayoutDashboard;
                   const active = activeView === item.id;
@@ -107,29 +223,27 @@ export default function RecapShellLayout({
                       key={item.id}
                       type="button"
                       onClick={() => onViewChange(item.id)}
-                      className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors ${
-                        active
-                          ? 'bg-[#0F5C45]/35 text-emerald-100 ring-1 ring-[#0F5C45]/50'
-                          : 'text-slate-400 hover:bg-[#0F4C5C]/20 hover:text-teal-100'
-                      }`}
+                      aria-current={active ? 'page' : undefined}
                     >
-                      <Icon size={16} className={active ? 'text-emerald-400' : 'text-teal-600'} />
+                      <Icon size={16} />
                       <span>{t(item.labelKey, item.defaultLabel)}</span>
                     </button>
                   );
                 })}
               </React.Fragment>
             ))}
+            <div className="rb-lb">{t('recap.nav.thisPage', 'Cette page')}</div>
+            <PageLinks view={activeView} className="rb-nv" />
           </nav>
         </aside>
 
-        <main className="min-w-0 flex-1 pb-20 lg:pb-8">{children}</main>
+        <main className="rb-main">
+          <PageLinks view={activeView} className="rb-page" />
+          {children}
+        </main>
       </div>
 
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-[#0F4C5C]/55 bg-black/95 px-1 py-1 backdrop-blur-md lg:hidden"
-        aria-label={t('recap.nav.mobile', 'Navigation Récap')}
-      >
+      <nav className="rb-dock" aria-label={t('recap.nav.mobile', 'Navigation Récap')}>
         {RECAP_NAV_SECTIONS.flatMap((s) => s.items).map((item) => {
           const Icon = VIEW_ICONS[item.id] || LayoutDashboard;
           const active = activeView === item.id;

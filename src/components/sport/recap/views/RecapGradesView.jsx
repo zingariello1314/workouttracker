@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { useSportGrade } from '../../../../hooks/useSportGrade';
 import { useWorkout } from '../../../../context/WorkoutContext';
@@ -20,31 +19,22 @@ function PathRow({ pathKey, data }) {
   if (!data) return null;
   const pct = Math.round(data.pct ?? 0);
   return (
-    <div className="rounded-lg border border-[#0F4C5C]/40 bg-black/60 px-3 py-2">
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="font-medium text-teal-100/90">
-          {pathKey} — {data.label}
-        </span>
-        {data.met ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-        ) : (
-          <span className="text-[10px] tabular-nums text-slate-500">{pct} %</span>
-        )}
+    <div className={`cd ${data.met ? 'ok' : ''}`}>
+      <h4>
+        {pathKey} — {data.label}
+      </h4>
+      {data.met ? <span className="ck">✓</span> : <span className="pc">{pct} %</span>}
+      <div className="gz">
+        <i style={{ '--w': `${Math.min(100, pct)}%` }} />
       </div>
-      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-900">
-        <div
-          className={`h-full transition-all ${data.met ? 'bg-emerald-500' : 'bg-cyan-600'}`}
-          style={{ width: `${Math.min(100, pct)}%` }}
-        />
-      </div>
-      <p className="mt-1 text-[10px] text-slate-500 tabular-nums">
+      <small>
         {Number(data.current).toLocaleString('fr-FR')} / {Number(data.target).toLocaleString('fr-FR')}
-      </p>
+      </small>
     </div>
   );
 }
 
-export default function RecapGradesView() {
+export default function RecapGradesView({ paneActive = true }) {
   const t = useTranslation();
   const { totalXP, level, masteryScore, grades, progress, isLoading, aggregates, dailyInsights } = useSportGrade();
   const { getCurrentData } = useWorkout();
@@ -62,7 +52,7 @@ export default function RecapGradesView() {
   const exerciseGrades = useExerciseGrades({
     sortMode: exerciseSortMode,
     vitalsRefreshKey: tick,
-    enabled: true
+    enabled: Boolean(paneActive) && gradesSubTab === 'exercises'
   });
 
   /** Attendre la fin du bootstrap XP (workout + Garmin + nutrition), pas seulement totalXP === 0. */
@@ -75,10 +65,10 @@ export default function RecapGradesView() {
   return (
     <div className="space-y-6">
       <section id="recap-grades-section" className="scroll-mt-28">
-        <h2 className="text-base font-bold text-white mb-1">
+        <p className="sub">
           {t('recap.grades.title', 'Grades & progression')}
-        </h2>
-        <p className="text-xs text-slate-500 max-w-2xl">
+        </p>
+        <p className="sub">
           {gradesSubTab === 'sport'
             ? t(
                 'recap.grades.intro',
@@ -89,10 +79,11 @@ export default function RecapGradesView() {
                 'Grades par mouvement (Bois → Platine) selon ton pic du jour, ton volume total et ton profil physique.'
               )}
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="rb-gtabs mt-3 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setGradesSubTab('sport')}
+            aria-pressed={gradesSubTab === 'sport'}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               gradesSubTab === 'sport'
                 ? 'bg-[#0F4C5C] text-white'
@@ -104,6 +95,7 @@ export default function RecapGradesView() {
           <button
             type="button"
             onClick={() => setGradesSubTab('exercises')}
+            aria-pressed={gradesSubTab === 'exercises'}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               gradesSubTab === 'exercises'
                 ? 'bg-[#0F4C5C] text-white'
@@ -116,6 +108,7 @@ export default function RecapGradesView() {
       </section>
 
       {gradesSubTab === 'exercises' ? (
+        <div className="rb-gex">
         <RecapExerciseGradesView
           sortMode={exerciseSortMode}
           onSortModeChange={setExerciseSortMode}
@@ -126,6 +119,7 @@ export default function RecapGradesView() {
           onVitalsSaved={bump}
           vitalsRefreshKey={tick}
         />
+        </div>
       ) : gradesDataPending ? (
         <div className="animate-pulse space-y-4 rounded-xl border border-[#0F4C5C]/40 bg-black p-6 h-64" />
       ) : selectedGradeId ? (
@@ -141,6 +135,8 @@ export default function RecapGradesView() {
         />
       ) : (
         <>
+      <section id="g-grade">
+      <div className="sh"><h2>{t('recap.grades.currentGrade', 'Grade actuel')}</h2></div>
       <SportGradeRecapHero
         progressionGradeId={prog?.gradeId}
         progressionTier={prog?.tier}
@@ -150,13 +146,12 @@ export default function RecapGradesView() {
         totalXP={totalXP}
         dailyInsights={dailyInsights}
       />
-
-      <section className="rounded-xl border border-[#0F4C5C]/50 bg-black/80 p-4">
-        <h3 className="text-sm font-semibold text-cyan-100 mb-2">
-          {t('recap.grades.xpBlock', 'XP & niveau')}
-        </h3>
-        <p className="text-2xl font-bold tabular-nums text-white">{totalXP.toLocaleString('fr-FR')} XP</p>
-        <p className="text-xs text-teal-200/80 mt-1">
+      </section>
+      <section id="g-xp">
+        <div className="sh"><h2>{t('recap.grades.xpBlock', 'XP & niveau')}</h2></div>
+        <div className="rb-xpn">
+        <p className="big">{totalXP.toLocaleString('fr-FR')}<u>XP</u></p>
+        <p className="lv">
           {t(
             'recap.grades.levelLine',
             `Niveau ${level} — ${progress.xpOnLevel} / ${progress.xpForLevel} XP sur ce palier`,
@@ -167,31 +162,32 @@ export default function RecapGradesView() {
             }
           )}
         </p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-[#0F4C5C]/50 bg-black">
-          <div
-            className="h-full bg-gradient-to-r from-[#0F4C5C] to-emerald-600"
-            style={{ width: `${progress.percent ?? 0}%` }}
-          />
+        <div className="gz">
+          <i style={{ '--w': `${progress.percent ?? 0}%` }} />
         </div>
-        <p id="recap-grades-mastery" className="mt-2 scroll-mt-28 text-[11px] text-slate-500">
+        <p id="recap-grades-mastery" className="ms">
           {t(
             'recap.grades.masteryLine',
             `Score de maîtrise : ${masteryScore.toLocaleString('fr-FR')}`,
             { score: masteryScore.toLocaleString('fr-FR') }
           )}
         </p>
+        </div>
       </section>
 
       {next ? (
-        <section className="rounded-xl border border-amber-600/30 bg-amber-950/10 p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-amber-100">
+        <section id="g-next">
+          <div className="sh"><h2>{t('recap.grades.nextSection', 'Prochain grade')}</h2></div>
+          <div className="rb-nxt">
+          <p className="eb">{t('recap.grades.nextObjective', 'Objectif')}</p>
+          <h3>
             {t(
               'recap.grades.nextGate',
               `Prochain grade : ${sportGradeLabel(next.gate.toGradeId, t)}`,
               { grade: sportGradeLabel(next.gate.toGradeId, t) }
             )}
           </h3>
-          <p className="text-[11px] text-slate-400">
+          <p className="mn">
             {t(
               'recap.grades.nextGateLevel',
               `Niveau minimum : ${next.gate.levelMin} (actuel : ${level})`,
@@ -203,14 +199,14 @@ export default function RecapGradesView() {
               <span className="text-amber-400 ml-1">—</span>
             )}
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="cdg">
             <PathRow pathKey="A" data={next.paths.A} />
             <PathRow pathKey="B" data={next.paths.B} />
             <PathRow pathKey="C" data={next.paths.C} />
             <PathRow pathKey="D" data={next.paths.D} />
             {next.paths.F ? <PathRow pathKey="F" data={next.paths.F} /> : null}
           </div>
-          <p className="text-[10px] text-slate-600">
+          <p className="nt">
             {next.pathsRequired >= 4
               ? t(
                   'recap.grades.pathEHintFinalWithF',
@@ -229,9 +225,11 @@ export default function RecapGradesView() {
                     { pct: next.pathEThresholdPct ?? 70 }
                   )}
           </p>
+          </div>
         </section>
       ) : null}
 
+      <div id="g-parcours">
       <SportGradeLadderGallery
         level={level}
         progressionGradeId={prog?.gradeId}
@@ -241,11 +239,11 @@ export default function RecapGradesView() {
         masteryScore={masteryScore}
       />
 
-      <section className="rounded-xl border border-[#0F4C5C]/45 bg-black/70 p-4">
-        <h3 className="text-sm font-semibold text-white mb-1">
-          {t('recap.grades.timelineTitle', 'Historique des grades')}
-        </h3>
-        <p className="text-[11px] text-slate-500 mb-4 max-w-2xl">
+      </div>
+      <section id="g-hist">
+        <div className="sh"><h2>{t('recap.grades.timelineTitle', 'Historique des grades')}</h2></div>
+        <div className="rb-hst">
+        <p className="sub">
           {t(
             'recap.grades.timelineIntro',
             `Parcours reconstitué d’après ton niveau ${level} : du premier palier jusqu’à ta position actuelle. Les dates sont enregistrées à chaque nouveau palier ou grade débloqué.`,
@@ -255,7 +253,7 @@ export default function RecapGradesView() {
         {timeline.length === 0 ? (
           <p className="text-xs text-slate-600">{t('recap.grades.timelineEmpty', 'Aucun événement enregistré pour l’instant.')}</p>
         ) : (
-          <ol className="relative border-l border-teal-800/60 ml-3 space-y-4 pl-5">
+          <ol className="tl">
             {timeline.map((ev) => {
               const gradeName = sportGradeLabel(ev.gradeId, t);
               const roman = SPORT_TIER_ROMAN[ev.tier] || ev.tier;
@@ -279,37 +277,27 @@ export default function RecapGradesView() {
                   ? t('sport.grades.levelShort', `Niveau ${ev.levelMin}`, { level: ev.levelMin })
                   : null;
               return (
-                <li key={ev.id} className="relative">
-                  <span
-                    className={`absolute -left-[1.35rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 ${
-                      isCurrent ? 'border-emerald-400 bg-emerald-500/30' : 'border-teal-500 bg-black'
-                    }`}
-                  />
-                  <div className="flex flex-wrap items-start gap-2 gap-y-1">
-                    <SportGradeEmblem gradeId={ev.gradeId} layout="chip" />
-                    <div className="min-w-0 flex-1">
-                      <div className={`text-sm font-medium ${isCurrent ? 'text-emerald-100' : 'text-teal-50'}`}>
-                        {title}
-                        {isCurrent ? (
-                          <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
-                            {t('recap.grades.timelineYouAreHere', 'Actuel')}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="text-[10px] text-slate-500">
+                <li key={ev.id} className={`tli ${isCurrent ? 'cur' : 'pass'}`}>
+                  <SportGradeEmblem gradeId={ev.gradeId} layout="chip" />
+                  <div>
+                    <b>
+                      {title}
+                      {isCurrent ? <em>{t('recap.grades.timelineYouAreHere', 'Actuel')}</em> : null}
+                    </b>
+                    <span>
                         {levelLine}
                         {dateLabel ? ` · ${dateLabel}` : null}
                         {ev.kind === 'gate' && ev.path
                           ? ` · ${t('recap.grades.timelinePath', `Voie ${ev.path}`, { path: ev.path })}`
                           : null}
-                      </div>
-                    </div>
+                    </span>
                   </div>
                 </li>
               );
             })}
           </ol>
         )}
+        </div>
       </section>
         </>
       )}

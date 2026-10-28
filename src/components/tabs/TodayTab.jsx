@@ -35,6 +35,7 @@ import {
   resumeLastExerciseWeightIndex,
   extractDateStrFromWorkoutKey
 } from '../../utils/exerciseKeyGenerator';
+import { findLastSameWeekdayExercisePerformance } from '../../utils/sport/sameWeekdayExerciseMemory';
 import { normalizeStretchSlots, countStretchItems, resolveEtirementsForDay } from '../../utils/stretchUtils';
 import { syncStretchLinkedQuests } from '../../utils/questStretchSync';
 
@@ -47,6 +48,7 @@ import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../
 import { todayExerciseVisualGroup, todayFocusTags, uniqueTodayExerciseGroups } from './TodayTab/utils/todayExerciseVisualGroup';
 import PushupChallengeTodayPanel from './TodayTab/components/PushupChallengeTodayPanel.jsx';
 import GtgTodaySchedulePanel from './TodayTab/components/GtgTodaySchedulePanel.jsx';
+import TodayWeekNavBar from './TodayTab/components/TodayWeekNavBar.jsx';
 import {
   getExerciseWeightUiMode,
   exerciseShowsWeightField
@@ -454,18 +456,31 @@ const TodayTab = () => {
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [exerciseGroupFilter, setExerciseGroupFilter] = useState('all');
   const [activeNutritionProgram, setActiveNutritionProgram] = useState(null);
+  /** Mode « combiner plusieurs séances » : sélection multi avant validation. */
+  const [combineSelectMode, setCombineSelectMode] = useState(false);
+  const [combineDraftDays, setCombineDraftDays] = useState([]);
+
+  const overrideDaysList = useMemo(() => {
+    if (Array.isArray(workoutDayOverride)) {
+      return workoutDayOverride.filter((d) => typeof d === 'string' && d);
+    }
+    if (typeof workoutDayOverride === 'string' && workoutDayOverride) return [workoutDayOverride];
+    return [];
+  }, [workoutDayOverride]);
+  const primaryOverrideDay = overrideDaysList[0] || null;
+  const isCombinedOverride = overrideDaysList.length > 1;
 
   const maybeApplyRestDaySwapBeforeSave = useCallback(async () => {
-    if (!activeProgram || !workoutDayOverride) return false;
+    if (!activeProgram || !primaryOverrideDay || isCombinedOverride) return false;
     const todayName = getDayName(currentDate);
     const effectiveRestDay = getEffectiveRestDayForDate(currentDate, activeProgram, getCurrentData());
     if (!effectiveRestDay || todayName !== effectiveRestDay) return false;
-    if (workoutDayOverride === effectiveRestDay) return false;
+    if (primaryOverrideDay === effectiveRestDay) return false;
 
     const confirmEnabled = getCurrentData()?.trainingPrefs?.swapRestConfirmEnabled !== false;
     if (confirmEnabled) {
       const ok = window.confirm(
-        `Tu es en jour de repos (${effectiveRestDay}) mais tu as suivi la séance de ${workoutDayOverride}. Voulez-vous déplacer le repos de cette semaine sur ${workoutDayOverride} ?`
+        `Tu es en jour de repos (${effectiveRestDay}) mais tu as suivi la séance de ${primaryOverrideDay}. Voulez-vous déplacer le repos de cette semaine sur ${primaryOverrideDay} ?`
       );
       if (!ok) return false;
     }
@@ -474,15 +489,16 @@ const TodayTab = () => {
       programId: activeProgram.id,
       date: currentDate,
       fromDay: effectiveRestDay,
-      toDay: workoutDayOverride
+      toDay: primaryOverrideDay
     });
     if (swapped) {
-      showSuccess(`Jour de repos déplacé vers ${workoutDayOverride} pour cette semaine.`);
+      showSuccess(`Jour de repos déplacé vers ${primaryOverrideDay} pour cette semaine.`);
     }
     return swapped;
   }, [
     activeProgram,
-    workoutDayOverride,
+    primaryOverrideDay,
+    isCombinedOverride,
     currentDate,
     getDayName,
     getEffectiveRestDayForDate,
@@ -691,7 +707,7 @@ const TodayTab = () => {
       const calendarDateStr = getDateStr(date);
       if (!calendarDateStr || calendarDateStr !== quietEngineToday) return;
       if (!Array.isArray(quietQuests) || quietQuests.length === 0) return;
-      const stretchDay = workoutDayOverride || getDayName(date);
+      const stretchDay = primaryOverrideDay || getDayName(date);
       const workoutForDay = getTodayWorkout(date, isGymMode);
       const resolved = resolveEtirementsForDay(
         workoutForDay?.etirements,
@@ -719,7 +735,7 @@ const TodayTab = () => {
       getQuestsForDateMemoized,
       getTodayWorkout,
       isGymMode,
-      workoutDayOverride,
+      primaryOverrideDay,
       workoutProgram,
     ]
   );
@@ -840,12 +856,38 @@ const TodayTab = () => {
       prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
         ? String(currentData.exerciseWeights?.[prevKeyForWeight] ?? '').trim()
         : '';
+    const weekdayMemory = findLastSameWeekdayExercisePerformance(
+      currentData,
+      lastWeightIdsForExercise(exercise, exerciseId),
+      dateStr
+    );
     const peekedWeight =
       exerciseShowsWeightField(exercise, false) && isLastExerciseWeightIndexReady()
         ? peekLastExerciseWeightValue(lastWeightIdsForExercise(exercise, exerciseId))
         : '';
-    const weightToStore = todayWeight || peekedWeight;
-    const repsVal = plannedRepsForExercise(exercise);
+    const weightToStore =
+      todayWeight ||
+      (weekdayMemory?.weight ? weekdayMemory.weight : '') ||
+      peekedWeight;
+    const repsVal =
+      (weekdayMemory?.reps ? weekdayMemory.reps : '') || plannedRepsForExercise(exercise);
+    const memorySourceKey = weekdayMemory?.key || null;
+    const perArmSourceKey =
+      prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
+        ? prevKeyForWeight
+        : memorySourceKey;
+    const setWeightsSource =
+      prevKeyForWeight &&
+      extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr &&
+      Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])
+        ? currentData.exerciseSetWeights[prevKeyForWeight]
+        : weekdayMemory?.setWeights;
+    const setLogSource =
+      prevKeyForWeight &&
+      extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr &&
+      currentData.exerciseSetLogs?.[prevKeyForWeight]
+        ? currentData.exerciseSetLogs[prevKeyForWeight]
+        : weekdayMemory?.setLog;
 
     measure.mark('apply:check');
     patchSessionExerciseDraft(
@@ -854,11 +896,13 @@ const TodayTab = () => {
         draft.checkedExercises[primaryKey] = true;
         draft.reps[primaryKey] = repsVal;
         if (weightToStore) draft.exerciseWeights[primaryKey] = weightToStore;
-        if (prevKeyForWeight && currentData.exerciseWeightPerArm?.[prevKeyForWeight] === true) {
+        if (perArmSourceKey && currentData.exerciseWeightPerArm?.[perArmSourceKey] === true) {
+          draft.exerciseWeightPerArm[primaryKey] = true;
+        } else if (weekdayMemory?.perArm) {
           draft.exerciseWeightPerArm[primaryKey] = true;
         }
-        if (prevKeyForWeight && Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])) {
-          draft.exerciseSetWeights[primaryKey] = [...currentData.exerciseSetWeights[prevKeyForWeight]];
+        if (Array.isArray(setWeightsSource)) {
+          draft.exerciseSetWeights[primaryKey] = [...setWeightsSource];
         }
         if (exercise.id != null && exercise.name) {
           draft.exerciseDisplayNames[String(exercise.id)] = String(exercise.name);
@@ -875,8 +919,8 @@ const TodayTab = () => {
         }
         if (builtLog?.sets?.length) {
           draft.exerciseSetLogs[primaryKey] = builtLog;
-        } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
-          draft.exerciseSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
+        } else if (setLogSource) {
+          draft.exerciseSetLogs[primaryKey] = { ...setLogSource };
         }
         if (weightToStore) noteLastExerciseWeightFromKey(primaryKey, weightToStore);
       },
@@ -1698,7 +1742,7 @@ const TodayTab = () => {
   //   - tableau ({ matin: [{...}], midi: [...], soir: [...] })  ← nouveau format
   //   - chaîne ({ matin: "...", midi: "..." })                  ← legacy
   //   - objet enrichi ({ matin: { instructions, ... } })        ← exporté/importé
-  const effectiveStretchDay = workoutDayOverride || dayName;
+  const effectiveStretchDay = primaryOverrideDay || dayName;
   const resolvedWorkoutEtirements = useMemo(
     () => resolveEtirementsForDay(workout?.etirements, effectiveStretchDay, workoutProgram),
     [workout?.etirements, effectiveStretchDay]
@@ -1751,6 +1795,7 @@ const TodayTab = () => {
     return (
       <div className="today-sport-shell max-w-[1240px] mx-auto px-4 py-6 space-y-6">
         {sportSessionDateNavRow}
+        <TodayWeekNavBar onBeforeNavigate={confirmLeaveDayWithUnsavedDraft} />
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -1847,20 +1892,67 @@ const TodayTab = () => {
           </div>
         )}
         <div className="today-control-row">
-          <p className="today-control-label">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="today-control-label mb-0">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
+            <label className="inline-flex items-center gap-2 text-xs text-teal-100/90 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={combineSelectMode}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setCombineSelectMode(on);
+                  if (on) {
+                    setCombineDraftDays(
+                      overrideDaysList.length
+                        ? [...overrideDaysList]
+                        : dayName
+                          ? [dayName]
+                          : []
+                    );
+                  } else {
+                    setCombineDraftDays([]);
+                  }
+                }}
+                className="rounded border-[#0F5C45]/60 bg-black"
+              />
+              {t('today.workout.combineMode', 'Sélection multiple')}
+            </label>
+          </div>
           <div className="today-day-row">
             {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((d) => {
               const shorts = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven', samedi: 'Sam', dimanche: 'Dim' };
               const label = shorts[d] || d;
               const isCurrentDay = d === dayName;
-              const isSelected = workoutDayOverride ? workoutDayOverride === d : isCurrentDay;
+              const isSelected = combineSelectMode
+                ? combineDraftDays.includes(d)
+                : overrideDaysList.length
+                  ? overrideDaysList.includes(d)
+                  : isCurrentDay;
               return (
                 <button
                   key={d}
                   type="button"
-                  onClick={() => setWorkoutDayOverride(isCurrentDay ? null : d)}
+                  onClick={() => {
+                    if (combineSelectMode) {
+                      setCombineDraftDays((prev) =>
+                        prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
+                      );
+                      return;
+                    }
+                    setWorkoutDayOverride(isCurrentDay ? null : d);
+                  }}
                   className={`today-day-pill ${isSelected ? 'is-today' : ''}`}
-                  title={isCurrentDay ? t('today.workout.todayWorkout', "Entraînement du jour") : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", { day: d.charAt(0).toUpperCase() + d.slice(1) })}
+                  title={
+                    combineSelectMode
+                      ? t('today.workout.toggleCombineDay', 'Inclure / retirer {{day}}', {
+                          day: d.charAt(0).toUpperCase() + d.slice(1),
+                        })
+                      : isCurrentDay
+                        ? t('today.workout.todayWorkout', "Entraînement du jour")
+                        : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", {
+                            day: d.charAt(0).toUpperCase() + d.slice(1),
+                          })
+                  }
                 >
                   {isCurrentDay
                     ? isRecordingRealToday
@@ -1871,25 +1963,75 @@ const TodayTab = () => {
               );
             })}
           </div>
-          {workoutDayOverride && (
+          {combineSelectMode ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={combineDraftDays.length === 0}
+                onClick={() => {
+                  if (combineDraftDays.length === 0) return;
+                  if (combineDraftDays.length === 1) {
+                    const only = combineDraftDays[0];
+                    setWorkoutDayOverride(only === dayName ? null : only);
+                  } else {
+                    setWorkoutDayOverride([...combineDraftDays]);
+                  }
+                  setCombineSelectMode(false);
+                  setCombineDraftDays([]);
+                  showSuccess(
+                    combineDraftDays.length > 1
+                      ? t('today.workout.combineApplied', 'Séances combinées ({{n}} jours)', {
+                          n: combineDraftDays.length,
+                        })
+                      : t('today.workout.dayApplied', 'Séance du jour appliquée')
+                  );
+                }}
+                className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/35 px-3 py-1.5 text-xs text-white disabled:opacity-40"
+              >
+                {t('today.workout.combineApply', 'Utiliser la sélection')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCombineSelectMode(false);
+                  setCombineDraftDays([]);
+                }}
+                className="rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-1.5 text-xs text-teal-100/90"
+              >
+                {t('today.workout.combineCancel', 'Annuler')}
+              </button>
+              <span className="text-[11px] text-teal-200/70">
+                {t('today.workout.combineHint', '{{n}} jour(s) sélectionné(s)', {
+                  n: combineDraftDays.length,
+                })}
+              </span>
+            </div>
+          ) : null}
+          {!combineSelectMode && overrideDaysList.length > 0 && (
             <p className="text-xs text-amber-400/90 mt-2">
-              {dateStr < calendarTodayYmd
-                ? t('today.workout.overrideHintForDate', {
-                    day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
-                    date: currentDate.toLocaleDateString(uiLocale, {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
+              {isCombinedOverride
+                ? t('today.workout.combineActiveHint', {
+                    days: overrideDaysList
+                      .map((d) => d.charAt(0).toUpperCase() + d.slice(1))
+                      .join(', '),
+                  }, 'Séances combinées : {{days}}')
+                : dateStr < calendarTodayYmd
+                  ? t('today.workout.overrideHintForDate', {
+                      day: primaryOverrideDay.charAt(0).toUpperCase() + primaryOverrideDay.slice(1),
+                      date: currentDate.toLocaleDateString(uiLocale, {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })
                     })
-                  })
-                : t('today.workout.overrideHint', {
-                    day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
-                    date: currentDate.toLocaleDateString(uiLocale, {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long'
-                    })
-                  })}
+                  : t('today.workout.overrideHint', {
+                      day: primaryOverrideDay.charAt(0).toUpperCase() + primaryOverrideDay.slice(1),
+                      date: currentDate.toLocaleDateString(uiLocale, {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long'
+                      })
+                    })}
             </p>
           )}
         </div>
@@ -1907,6 +2049,7 @@ const TodayTab = () => {
 
       <div className="today-bento">
       {sportSessionDateNavRow}
+      <TodayWeekNavBar onBeforeNavigate={confirmLeaveDayWithUnsavedDraft} />
 
       {workout?.exercices?.length > 0 && (
         <div className="today-b-load rounded-xl border-2 border-[#0F5C45]/45 bg-black px-5 py-4">

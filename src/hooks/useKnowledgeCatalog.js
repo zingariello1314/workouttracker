@@ -26,6 +26,14 @@ export function useKnowledgeCatalog({ enabled = true, userId = 'anonymous' } = {
     setLoading(true);
     setError(null);
     try {
+      try {
+        const { ensureTiktopNativeVideosSeeded } = await import(
+          '../services/knowledge/tiktopNativeVideos'
+        );
+        await ensureTiktopNativeVideosSeeded();
+      } catch {
+        /* seed optionnel */
+      }
       const [status, cats, prefs, storageStats] = await Promise.all([
         fetchKnowledgeStatus(),
         fetchKnowledgeCategories(),

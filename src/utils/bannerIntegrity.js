@@ -12,7 +12,7 @@
  */
 
 import logger from './logger';
-import { isSharedWallpaperSrc } from './sharedWallpaperSrc';
+import { isAllowedHomepageMediaSrc, isSharedWallpaperSrc } from './sharedWallpaperSrc';
 
 const log = logger.module('bannerIntegrity');
 
@@ -124,8 +124,12 @@ function validateBase64Format(imageData) {
     return { valid: false, error: 'Image invalide: pas une chaîne de caractères' };
   }
 
-  if (isSharedWallpaperSrc(imageData)) {
-    return { valid: true, size: imageData.length, format: 'wallpaper-bank' };
+  if (isAllowedHomepageMediaSrc(imageData)) {
+    return {
+      valid: true,
+      size: imageData.length,
+      format: isSharedWallpaperSrc(imageData) ? 'wallpaper-bank' : 'welcome-video',
+    };
   }
 
   if (!imageData.startsWith('data:image/')) {

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Calendar, ChevronRight, Dumbbell, Footprints, Timer } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import { analyzeRunningSessionFactors } from '../../../../utils/trainingLoadUtils';
@@ -9,16 +9,38 @@ import RecapExerciseProgressionPanel from '../RecapExerciseProgressionPanel';
 const FILTER_ALL = 'all';
 const PAGE_SIZE = 15;
 
-const TYPE_ICONS = {
-  running: Footprints,
-  swimming: Timer,
-  boxing: Timer,
-  jumprope: Timer,
-  pushups: Dumbbell,
-  gainage: Timer,
-  strength: Dumbbell,
-  circuit: Dumbbell
+const TYPE_MARK = {
+  running: 'road',
+  swimming: 'timer',
+  boxing: 'timer',
+  jumprope: 'timer',
+  pushups: 'dumb',
+  gainage: 'timer',
+  strength: 'dumb',
+  circuit: 'dumb'
 };
+
+const TYPE_TONE = {
+  running: 'var(--a5)',
+  swimming: 'var(--a5)',
+  boxing: 'var(--a3)',
+  jumprope: 'var(--a1)',
+  pushups: 'var(--a3)',
+  gainage: 'var(--d)',
+  strength: 'var(--a1)',
+  circuit: 'var(--a4)'
+};
+
+function splitDay(dateYmd) {
+  const [y, m, d] = String(dateYmd || '').split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const date = new Date(y, m - 1, d);
+  return {
+    day: String(d).padStart(2, '0'),
+    month: date.toLocaleDateString(undefined, { month: 'short' }),
+    week: date.toLocaleDateString(undefined, { weekday: 'short' })
+  };
+}
 
 function groupByDate(rows) {
   const map = new Map();
@@ -37,12 +59,26 @@ export default function RecapSessionsView({
   periodWindow,
   snapshot,
   getExerciseNameById,
-  onOpenEndurance
+  onOpenEndurance,
+  paneActive = true
 }) {
   const t = useTranslation();
   const { formatDate } = useFormatters();
   const [filter, setFilter] = useState(FILTER_ALL);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [progressionOn, setProgressionOn] = useState(false);
+
+  useEffect(() => {
+    if (!paneActive || progressionOn) return undefined;
+    const run = () => setProgressionOn(true);
+    const handle = window.requestIdleCallback
+      ? window.requestIdleCallback(run, { timeout: 900 })
+      : window.setTimeout(run, 320);
+    return () => {
+      if (window.requestIdleCallback) window.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+    };
+  }, [paneActive, progressionOn]);
 
   const timeline = enrichment?.timeline?.rows || [];
   const totalsByType = enrichment?.timeline?.totalsByType || {};
@@ -70,31 +106,26 @@ export default function RecapSessionsView({
   const periodLabel = t(`recap.period.${period}`);
 
   return (
-    <div id="recap-sessions-feedback" className="scroll-mt-28 space-y-5">
-      <header className="rounded-xl border border-[#0F4C5C]/55 bg-gradient-to-br from-teal-950/30 to-black px-4 py-4">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg border border-teal-500/30 bg-teal-950/40 p-2.5">
-            <Calendar size={20} className="text-teal-300" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-white">
-              {t('recap.sessions.journalTitle', 'Journal des séances')}
-            </h2>
-            <p className="mt-1 text-xs text-slate-400 leading-relaxed max-w-xl">
-              {t(
-                'recap.sessions.journalSubtitle',
-                'Historique chronologique — muscu, endurance et circuits sur la période.'
-              )}
-            </p>
-            <p className="mt-2 text-[11px] font-medium text-teal-500/90">
-              {t('recap.periodNote', { label: periodLabel })} · {filtered.length}{' '}
-              {filtered.length > 1 ? 'entrées' : 'entrée'}
-            </p>
+    <div id="recap-sessions-feedback" className="rb-sess scroll-mt-28">
+      <header id="j-journal" className="jh">
+        <span className="ico" />
+        <div>
+          <h2>{t('recap.sessions.journalTitle', 'Journal des séances')}</h2>
+          <p>
+            {t(
+              'recap.sessions.journalSubtitle',
+              'Historique chronologique — muscu, endurance et circuits sur la période.'
+            )}
+          </p>
+          <div className="mt">
+            {t('recap.periodNote', { label: periodLabel })} · {filtered.length}{' '}
+            {filtered.length > 1 ? 'entrées' : 'entrée'}
           </div>
         </div>
       </header>
 
-      {snapshot && getExerciseNameById ? (
+      <div id="j-prog">
+      {progressionOn && snapshot && getExerciseNameById ? (
         <RecapExerciseProgressionPanel
           snapshot={snapshot}
           window={periodWindow}
@@ -102,9 +133,14 @@ export default function RecapSessionsView({
           periodLabel={periodLabel}
         />
       ) : null}
+      </div>
 
+      <section id="j-hist">
+      <div className="sh">
+        <h2>{t('recap.sessions.historyTitle', 'Historique')}</h2>
+      </div>
       {activityFilters.length > 1 ? (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="jf">
           {activityFilters.map((f) => (
             <button
               key={f.id}
@@ -113,70 +149,56 @@ export default function RecapSessionsView({
                 setFilter(f.id);
                 setVisibleCount(PAGE_SIZE);
               }}
-              className={`rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                filter === f.id
-                  ? 'border-teal-400/60 bg-teal-950/50 text-teal-100'
-                  : 'border-[#0F4C5C]/45 bg-black/40 text-slate-400 hover:text-slate-200'
-              }`}
+              className={filter === f.id ? 'on' : undefined}
             >
               {f.label}
-              <span className="ml-1 tabular-nums opacity-70">{f.count}</span>
+              <b>{f.count}</b>
             </button>
           ))}
         </div>
       ) : null}
 
       {grouped.length === 0 ? (
-        <p className="rounded-xl border border-[#0F4C5C]/40 bg-black/50 px-4 py-8 text-center text-sm text-slate-500">
+        <p className="emp">
           {t('recap.sessions.emptyPeriod', 'Aucune séance enregistrée sur cette période.')}
         </p>
       ) : (
-        <div className="space-y-4">
-          {grouped.map(([dateYmd, dayRows]) => (
-            <section key={dateYmd} className="rounded-xl border border-[#0F4C5C]/50 bg-black/70 overflow-hidden">
-              <div className="border-b border-[#0F4C5C]/35 bg-teal-950/20 px-3 py-2">
-                <span className="text-xs font-semibold text-teal-300">{formatDate(dateYmd)}</span>
-                <span className="ml-2 text-[10px] text-slate-500">
+        <div>
+          {grouped.map(([dateYmd, dayRows]) => {
+            const parts = splitDay(dateYmd);
+            return (
+            <section key={dateYmd} className="dg">
+              <div>
+                <div className="dd">{parts?.day || ''}</div>
+                <div className="dm">{parts?.month || formatDate(dateYmd)}</div>
+                <div className="dc">
+                  {parts?.week ? `${parts.week} · ` : ''}
                   {dayRows.length} activité{dayRows.length > 1 ? 's' : ''}
-                </span>
+                </div>
               </div>
-              <ul className="divide-y divide-[#0F4C5C]/25">
+              <div className="evl">
                 {dayRows.map((row) => {
                   const s = row.raw;
                   const summary = formatTimelineRowSummary(row);
                   const typeLabel = t(`recap.sessions.type.${row.activityType}`, row.activityType);
-                  const Icon = TYPE_ICONS[row.activityType] || Footprints;
+                  const mark = TYPE_MARK[row.activityType] || 'timer';
                   const isGarmin =
                     row.activityType === 'running' && Boolean(s?.garminId || s?.source === 'garmin');
                   const rf = row.runningFactors || (s ? analyzeRunningSessionFactors(s) : null);
                   const typeKey = rf?.type || s?.type;
 
                   return (
-                    <li key={row.id} className="flex items-start gap-3 px-3 py-3">
-                      <div
-                        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#0F4C5C]/40"
-                        style={{ backgroundColor: `${row.meta?.color || '#94a3b8'}18` }}
-                      >
-                        <Icon size={14} style={{ color: row.meta?.color || '#94a3b8' }} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          <span className="text-sm font-semibold text-white">{typeLabel}</span>
-                          {summary.primary ? (
-                            <span className="text-sm font-bold tabular-nums text-emerald-300">
-                              {summary.primary}
-                            </span>
-                          ) : null}
-                          {summary.secondary ? (
-                            <span className="text-xs tabular-nums text-slate-400">{summary.secondary}</span>
-                          ) : null}
-                          {isGarmin ? (
-                            <span className="rounded-full border border-sky-500/40 bg-sky-950/40 px-1.5 py-0.5 text-[9px] text-sky-200">
-                              Garmin
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
+                    <div
+                      key={row.id}
+                      className="ev"
+                      style={{ '--c': TYPE_TONE[row.activityType] || 'var(--d)' }}
+                    >
+                      <span className={`et ${mark}`} />
+                      <div className="min-w-0">
+                        <div className="en">{typeLabel}</div>
+                        <div className="es">
+                          {summary.secondary ? <span>{summary.secondary}</span> : null}
+                          {isGarmin ? <span>Garmin</span> : null}
                           {typeKey && row.activityType === 'running' ? (
                             <span>{t('recap.endurance.row.runType', { type: typeKey })}</span>
                           ) : null}
@@ -186,12 +208,14 @@ export default function RecapSessionsView({
                           ) : null}
                         </div>
                       </div>
-                    </li>
+                      {summary.primary ? <span className="vc">{summary.primary}</span> : null}
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             </section>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -199,7 +223,7 @@ export default function RecapSessionsView({
         <button
           type="button"
           onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
-          className="w-full rounded-xl border border-[#0F4C5C]/45 bg-black/40 py-2.5 text-xs font-medium text-teal-300 hover:bg-teal-950/20"
+          className="more"
         >
           {t('recap.sessions.loadMore', 'Afficher plus')} ({filtered.length - visibleCount} restantes)
         </button>
@@ -208,11 +232,12 @@ export default function RecapSessionsView({
       <button
         type="button"
         onClick={() => onOpenEndurance?.('running')}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#0F5C45]/55 bg-[#0F5C45]/20 px-4 py-3 text-sm font-medium text-emerald-100 transition-colors hover:bg-[#0F5C45]/30"
+        className="go"
       >
         {t('recap.sessions.viewAll', 'Voir l’historique complet dans Endurance')}
         <ChevronRight size={16} />
       </button>
+      </section>
     </div>
   );
 }

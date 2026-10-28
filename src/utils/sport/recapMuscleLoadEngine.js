@@ -132,9 +132,20 @@ function decayFactor(earlierYmd, refYmd) {
  * @param {Date} ref
  */
 export function getRecapDateWindow(period, ref = new Date()) {
-  const end = toYmd(ref);
-  if (period === 'all') return { start: null, end };
-  if (period === 'today') return { start: end, end };
+  const endAt = ref instanceof Date ? new Date(ref.getTime()) : new Date(ref);
+  const end = toYmd(endAt);
+  if (period === 'all') return { start: null, end, endAt: endAt.toISOString() };
+  // « Aujourd’hui » = dernières 24 h glissantes (pas minuit → maintenant).
+  if (period === 'today') {
+    const startAt = new Date(endAt.getTime() - 24 * 60 * 60 * 1000);
+    return {
+      start: toYmd(startAt),
+      end,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
+      mode: 'rolling-24h'
+    };
+  }
   const spanById = {
     '7d': 7,
     '30d': 30,
@@ -144,10 +155,10 @@ export function getRecapDateWindow(period, ref = new Date()) {
     '2y': 730
   };
   const span = spanById[period] ?? 7;
-  const d = new Date(ref);
+  const d = new Date(endAt);
   d.setHours(12, 0, 0, 0);
   d.setDate(d.getDate() - (span - 1));
-  return { start: toYmd(d), end };
+  return { start: toYmd(d), end, endAt: endAt.toISOString() };
 }
 
 /** Fenêtre récap (inclusif). `start == null` ⇒ tout l’historique jusqu’à `end`. */

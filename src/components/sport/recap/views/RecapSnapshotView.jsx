@@ -277,7 +277,7 @@ export default function RecapSnapshotView({
 
     <div className="space-y-5">
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+      <div id="sn-ind" className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
 
         <RecapKpiCard
 
@@ -449,7 +449,7 @@ export default function RecapSnapshotView({
 
 
 
-      <RecapSection title={t('recap.snapshot.status', 'Statut')}>
+      <RecapSection id="sn-stat" className="rb-stat" title={t('recap.snapshot.status', 'Statut')}>
 
         <ul className="space-y-2">
 
@@ -563,7 +563,7 @@ export default function RecapSnapshotView({
 
       {(enrichment?.activeChallenges?.length > 0 || justificationBars.length > 0) && (
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div id="sn-def" className="grid gap-3 md:grid-cols-2">
 
           {enrichment?.activeChallenges?.length > 0 ? (
 
@@ -614,11 +614,13 @@ export default function RecapSnapshotView({
 
         <button
 
+          id="sn-quiz"
+
           type="button"
 
           onClick={() => openSettingsQuizSection(setActiveTab)}
 
-          className="group w-full rounded-xl border border-violet-500/25 bg-violet-950/15 px-4 py-3 text-left transition-colors hover:border-violet-400/45 hover:bg-violet-950/25"
+          className="rb-quiz group w-full text-left"
 
         >
 
@@ -682,7 +684,7 @@ export default function RecapSnapshotView({
 
       {topZones.length > 0 ? (
 
-        <RecapSection title={t('recap.snapshot.topZones', 'Zones les plus sollicitées')}>
+        <RecapSection id="sn-zones" title={t('recap.snapshot.topZones', 'Zones les plus sollicitées')}>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
 

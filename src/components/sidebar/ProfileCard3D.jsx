@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { useProfileCard } from '../../hooks/useProfileCard';
 import ProfileCardSettings from './ProfileCardSettings';
+import {
+  getProfileCardDisplayPreference,
+  subscribeProfileCardDisplay
+} from '../../utils/profileCardDisplayPreference';
 import './ProfileCard3D.css';
 
 const DEFAULT_INNER_GRADIENT = 'linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)';
@@ -62,7 +66,14 @@ const ProfileCard3D = ({
   } = useProfileCard(username);
 
   const name = currentUsername || username || 'Utilisateur';
-  
+  const [displayPrefs, setDisplayPrefs] = useState(getProfileCardDisplayPreference);
+  useEffect(() => subscribeProfileCardDisplay(setDisplayPrefs), []);
+
+  const showTitleTop = displayPrefs.showTitle && displayPrefs.titlePosition === 'top';
+  const showTitleBottom = displayPrefs.showTitle && displayPrefs.titlePosition === 'bottom';
+  const showHandleTop = displayPrefs.showHandle && displayPrefs.handlePosition === 'top';
+  const showHandleBottom = displayPrefs.showHandle && displayPrefs.handlePosition === 'bottom';
+
   // Avatar = petite image ronde ; CardIcon = fond de carte (upload ou art de grade)
   const isValidCardImage = (url) =>
     Boolean(
@@ -489,12 +500,14 @@ const ProfileCard3D = ({
                 {/* NE RIEN AFFICHER ICI - L'image de fond est déjà dans pc-card-icon */}
                 {/* L'avatar (image de profil) n'apparaît QUE dans le petit cercle en bas */}
               </div>
-              <div className="pc-content">
-                <div className="pc-details">
-                  <h3>{name}</h3>
-                  <p>{title}</p>
+              {(showHandleTop || showTitleTop) && (
+                <div className="pc-content">
+                  <div className="pc-details">
+                    {showHandleTop ? <h3>@{handle || name}</h3> : null}
+                    {showTitleTop ? <p>{title}</p> : null}
+                  </div>
                 </div>
-              </div>
+              )}
               {/* Rectangle utilisateur HORS de pc-avatar-content pour éviter le mix-blend-mode */}
               {showUserInfo && (
                 <div className="pc-user-info">
@@ -536,8 +549,11 @@ const ProfileCard3D = ({
                       </div>
                     )}
                     <div className="pc-user-text">
-                      <div className="pc-handle">@{handle}</div>
-                      <div className="pc-status">{status}</div>
+                      {showHandleBottom ? <div className="pc-handle">@{handle}</div> : null}
+                      {showTitleBottom ? <div className="pc-status">{title}</div> : null}
+                      {!showHandleBottom && !showTitleBottom ? (
+                        <div className="pc-status">{status}</div>
+                      ) : null}
                     </div>
                   </div>
                   <button

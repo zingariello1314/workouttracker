@@ -1,28 +1,15 @@
 import React, { useMemo } from 'react';
-import { Dumbbell, Salad, Sparkles } from 'lucide-react';
 import CoachVisionPanel from '../CoachVisionPanel';
 import ProgramStructurePanel from '../ProgramStructurePanel';
 import RecapDenseInsightsPanel from '../RecapDenseInsightsPanel';
 import RecapBenchmarkCoachPanel from '../RecapBenchmarkCoachPanel';
 import RecapTrainingStateDebugPanel from '../RecapTrainingStateDebugPanel';
-import { RecapSection } from '../components/RecapUiBlocks';
+import CoachMetricText from '../CoachMetricText';
 import { useTranslation } from '../../../../utils/translations';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { openSettingsQuizSection } from '../../../../utils/settingsNavigation';
 import { countDistinctCheckedExerciseIds28 } from '../../../../utils/sport/recapCrossCoachAggregate';
 import { countTrainingDaysInRange } from '../../../../utils/sport/recapTrainingDayTruth';
-
-function CoachCard({ icon: Icon, title, accentBorder, accentBg, children }) {
-  return (
-    <div className={`rounded-xl border ${accentBorder} ${accentBg} p-4`}>
-      <div className="mb-2 flex items-center gap-2">
-        <Icon size={16} className="text-current opacity-90" />
-        <h3 className="text-xs font-semibold uppercase tracking-wide">{title}</h3>
-      </div>
-      <div className="space-y-2 text-xs leading-relaxed text-slate-200/95">{children}</div>
-    </div>
-  );
-}
 
 function flattenProgramLevels(levels) {
   if (!levels) return [];
@@ -31,10 +18,28 @@ function flattenProgramLevels(levels) {
   keys.forEach((k) => {
     (levels[k] || []).forEach((item) => {
       const text = typeof item === 'string' ? item : item?.text;
-      if (text) out.push(text);
+      if (text) out.push({ text, bucket: k });
     });
   });
   return out.slice(0, 10);
+}
+
+function signalKind(text, bucket) {
+  if (bucket === 'recommendations') return 'rc2';
+  if (bucket === 'progression' || bucket === 'trends') return 'dt';
+  if (/écart|alerte|attention|ambitieux|incomplet|~0\s*%|déséquilibre/i.test(text)) return 'wr';
+  if (/max enregistré|exercice |compare avec|moyenne récente|reps\/séance/i.test(text)) return 'dt';
+  if (/ajouter|vise|plutôt|pourrait|conseil|GTG|étirement/i.test(text)) return 'rc2';
+  return 'wr';
+}
+
+function synthTone(text, index) {
+  if (/nutrition|calorie|repas/i.test(text)) return 'na4';
+  if (/quiz|questionnaire|profil incomplet/i.test(text)) return 'na5';
+  if (/GTG|fréquence spécifique|qualité du geste/i.test(text)) return 'na2';
+  if (/écart|régularité|dessous|loin du plan|retard/i.test(text)) return 'na3';
+  if (index === 0) return 'nd';
+  return 'na3';
 }
 
 export default function RecapAnalyseDetails({
@@ -61,6 +66,7 @@ export default function RecapAnalyseDetails({
     (c) => c.pillar === 'sport' || c.pillar === 'combined' || c.pillar === 'body'
   );
   const nutritionCards = (coach?.engine?.cards || []).filter((c) => c.pillar === 'nutrition');
+  const calendarCards = (coach?.engine?.cards || []).filter((c) => c.pillar === 'calendar');
   const periodLabel = t(`recap.period.${period}`, period);
   const windowPeriod = assessment?.windowPeriod;
   const showInterpretationDebug = import.meta.env.DEV || isAdmin;
@@ -87,7 +93,7 @@ export default function RecapAnalyseDetails({
         key: d.dow,
         label: d.label,
         value: d.avgCompletionPct ?? 0,
-        display: d.avgCompletionPct != null ? `${d.avgCompletionPct}%` : '—',
+        display: d.avgCompletionPct != null ? `${d.avgCompletionPct} %` : '—',
         color: '#2dd4bf'
       }));
   }, [enrichment?.dayOfWeek]);
@@ -96,6 +102,60 @@ export default function RecapAnalyseDetails({
     () => flattenProgramLevels(programCoachAnalysis?.levels),
     [programCoachAnalysis?.levels]
   );
+
+  const challengeRows = programCoachAnalysis?.denseAnalytics?.challengeRows || [];
+
+  const trainingLines = useMemo(() => {
+    const lines = [];
+    lines.push({
+      text: `${periodTrainingLine.days} jour${periodTrainingLine.days > 1 ? 's' : ''} avec activité · ${periodTrainingLine.reps.toLocaleString('fr-FR')} reps sur la fenêtre${
+        periodTrainingLine.vol > 0
+          ? ` · volume (kg×reps) total : ${periodTrainingLine.vol.toLocaleString('fr-FR')}`
+          : ''
+      }.`,
+      tone: 'nd'
+    });
+    if (
+      assessment?.sessionLoadAlignment28?.avgScore0to100 != null &&
+      assessment.sessionLoadAlignment28.sessionDaysScored >= 2
+    ) {
+      const score = assessment.sessionLoadAlignment28.avgScore0to100;
+      lines.push({
+        text:
+          score >= 70
+            ? `Alignement prévu/réalisé ~${score} % — bonne exécution du plan.`
+            : `Sur les séances comparables, écart au plan ~${score} % en moyenne — coche charges et reps pour affiner.`,
+        tone: synthTone(`écart ${score}`, 1)
+      });
+    }
+    if (periodTrainingLine.distinct > 0) {
+      lines.push({
+        text: `~${periodTrainingLine.distinct} mouvements du programme touchés — ${
+          periodTrainingLine.distinct >= 40
+            ? 'variété raisonnable si la récup suit.'
+            : 'base étroite, normal si tu consolides.'
+        }`,
+        tone: 'nd'
+      });
+    }
+    trainingCards.forEach((card) => {
+      const tpl = `recap.crossCoach.insight.${card.templateKey}`;
+      const text = t(tpl, card.payload || {});
+      lines.push({ text, tone: synthTone(text, lines.length) });
+    });
+    suggestions.forEach((s) => {
+      lines.push({ text: s.text, tone: synthTone(s.text, lines.length) });
+    });
+    return lines;
+  }, [periodTrainingLine, assessment, trainingCards, suggestions, t]);
+
+  const calendarLines = useMemo(() => {
+    return calendarCards.map((card) => {
+      const tpl = `recap.crossCoach.insight.${card.templateKey}`;
+      const text = t(tpl, card.payload || {});
+      return { text, tone: synthTone(text, 1) };
+    });
+  }, [calendarCards, t]);
 
   return (
     <>
@@ -116,141 +176,162 @@ export default function RecapAnalyseDetails({
         />
       ) : null}
 
-      <RecapBenchmarkCoachPanel
-        snapshot={getCurrentData()}
-        enrichment={enrichment}
-        garminData={garminData}
-        assessment={assessment}
-        getExerciseNameById={getExerciseNameById}
-        profileQuestionnaireRaw={profileQuestionnaireRaw}
-        period={period}
-        t={t}
-      />
-
-      {programCoachAnalysis?.coachVisionReport || programCoachAnalysis?.coachVision ? (
-        <CoachVisionPanel
-          report={programCoachAnalysis.coachVisionReport}
-          fallbackText={programCoachAnalysis.coachVision}
-          periodLabel={periodLabel}
+      <div id="reperes">
+        <RecapBenchmarkCoachPanel
+          snapshot={getCurrentData()}
+          enrichment={enrichment}
+          garminData={garminData}
+          assessment={assessment}
+          getExerciseNameById={getExerciseNameById}
+          profileQuestionnaireRaw={profileQuestionnaireRaw}
+          period={period}
+          t={t}
         />
-      ) : null}
+      </div>
 
-      {programCoachAnalysis?.denseAnalytics ? (
-        <RecapDenseInsightsPanel
-          denseAnalytics={programCoachAnalysis.denseAnalytics}
-          periodLabel={periodLabel}
-        />
-      ) : null}
+      <div id="coach">
+        {programCoachAnalysis?.coachVisionReport || programCoachAnalysis?.coachVision ? (
+          <CoachVisionPanel
+            report={programCoachAnalysis.coachVisionReport}
+            fallbackText={programCoachAnalysis.coachVision}
+            periodLabel={periodLabel}
+            challengeRows={challengeRows}
+          />
+        ) : null}
+      </div>
 
-      {programCoachAnalysis?.structureReport ? (
-        <ProgramStructurePanel
-          report={programCoachAnalysis.structureReport}
-          dowRows={dowRows}
-          periodLabel={periodLabel}
-        />
-      ) : null}
+      <div id="prog">
+        {programCoachAnalysis?.denseAnalytics ? (
+          <RecapDenseInsightsPanel
+            denseAnalytics={programCoachAnalysis.denseAnalytics}
+            periodLabel={periodLabel}
+          />
+        ) : null}
 
-      {extraProgramInsights.length > 0 ? (
-        <RecapSection
-          title={t('recap.programCoach.signalsExtra', 'Signaux programme détaillés')}
-          subtitle={activeProgram?.name || null}
-        >
-          <ul className="grid gap-2 md:grid-cols-2">
-            {extraProgramInsights.map((text, i) => (
-              <li key={i} className="flex gap-2 text-[11px] leading-relaxed text-slate-300">
-                <Sparkles size={12} className="mt-0.5 shrink-0 text-teal-500/70" />
-                <span>{text}</span>
-              </li>
-            ))}
-          </ul>
-        </RecapSection>
-      ) : null}
+        {programCoachAnalysis?.structureReport ? (
+          <ProgramStructurePanel
+            report={programCoachAnalysis.structureReport}
+            dowRows={dowRows}
+            periodLabel={periodLabel}
+          />
+        ) : null}
+
+        {extraProgramInsights.length > 0 ? (
+          <>
+            <div className="sgt">
+              <h3>Signaux programme détaillés</h3>
+              {activeProgram?.name ? <span>{activeProgram.name}</span> : null}
+            </div>
+            <div className="sig">
+              {extraProgramInsights.map((item, i) => (
+                <div key={i} className={`sg ${signalKind(item.text, item.bucket)}`}>
+                  <span>
+                    <CoachMetricText text={item.text} variant="v" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </div>
 
       {(dataGaps.length > 0 || quizIncomplete) && (
-        <div className="rounded-xl border border-amber-500/35 bg-amber-950/25 px-4 py-3">
-          <p className="text-xs font-semibold text-amber-100">{t('recap.analyse.alerts', 'Points d’attention')}</p>
-          <ul className="mt-2 space-y-1 text-[11px] text-amber-50/90">
-            {quizIncomplete ? (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => openSettingsQuizSection(setActiveTab)}
-                  className="text-left underline decoration-amber-400/50 underline-offset-2 hover:text-amber-50"
-                >
-                  {t(
-                    'recap.analyse.quizIncomplete',
-                    'Questionnaire profil incomplet — complète-le pour affiner les conseils.'
-                  )}
-                </button>
-              </li>
-            ) : null}
-            {!enrichment?.weight?.hasData ? (
-              <li>
-                {t(
-                  'recap.analyse.noWeight',
-                  'Ajoute une pesée (Suivi corporel) pour ancrer la tendance de poids.'
-                )}
-              </li>
-            ) : null}
-            {dataGaps.map((g) => (
-              <li key={g.code}>{t(`recap.crossCoach.gap.${g.code}`) || g.code}</li>
-            ))}
-          </ul>
+        <div className="att">
+          <b>{t('recap.analyse.alerts', 'Points d’attention')}</b>
+          {quizIncomplete ? (
+            <a
+              href="#quiz"
+              onClick={(e) => {
+                e.preventDefault();
+                openSettingsQuizSection(setActiveTab);
+              }}
+            >
+              {t(
+                'recap.analyse.quizIncomplete',
+                'Questionnaire profil incomplet — complète-le pour affiner les conseils.'
+              )}
+            </a>
+          ) : null}
+          {!enrichment?.weight?.hasData ? (
+            <>
+              <br />
+              {t(
+                'recap.analyse.noWeight',
+                'Ajoute une pesée (Suivi corporel) pour ancrer la tendance de poids.'
+              )}
+            </>
+          ) : null}
+          {dataGaps.map((g) => (
+            <React.Fragment key={g.code}>
+              <br />
+              {t(`recap.crossCoach.gap.${g.code}`) || g.code}
+            </React.Fragment>
+          ))}
         </div>
       )}
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-teal-100">
-          {t('recap.crossCoach.title', 'Synthèse corps · entraînement · nutrition')}
-        </h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <CoachCard
-            icon={Dumbbell}
-            title={t('recap.crossCoach.pillar.training', 'Entraînement')}
-            accentBorder="border-emerald-500/35"
-            accentBg="bg-emerald-950/20 text-emerald-100"
-          >
-            <p>
-              {periodTrainingLine.days} jour{periodTrainingLine.days > 1 ? 's' : ''} avec activité ·{' '}
-              {periodTrainingLine.reps.toLocaleString('fr-FR')} reps sur la fenêtre
-              {periodTrainingLine.vol > 0
-                ? ` · volume (kg×reps) total : ${periodTrainingLine.vol.toLocaleString('fr-FR')}`
-                : ''}
-              .
-            </p>
-            {assessment?.sessionLoadAlignment28?.avgScore0to100 != null &&
-            assessment.sessionLoadAlignment28.sessionDaysScored >= 2 ? (
-              <p>
-                {assessment.sessionLoadAlignment28.avgScore0to100 >= 70
-                  ? `Alignement prévu/réalisé ~${assessment.sessionLoadAlignment28.avgScore0to100} % — bonne exécution du plan.`
-                  : `Sur les séances comparables, écart au plan ~${assessment.sessionLoadAlignment28.avgScore0to100} % en moyenne — coche charges et reps pour affiner.`}
-              </p>
+      <section id="synth">
+        <div className="sh">
+          <h2>{t('recap.crossCoach.title', 'Synthèse corps · entraînement · nutrition')}</h2>
+        </div>
+        <div className="sy">
+          <div>
+            <div className="sb">⚒ Entraînement</div>
+            <ul className="bl">
+              {trainingLines.map((line, i) => (
+                <li
+                  key={i}
+                  className={line.tone}
+                  style={{
+                    '--a':
+                      line.tone === 'nd'
+                        ? 'var(--d)'
+                        : line.tone === 'na2'
+                          ? 'var(--a2)'
+                          : line.tone === 'na3'
+                            ? 'var(--a3)'
+                            : line.tone === 'na4'
+                              ? 'var(--a4)'
+                              : line.tone === 'na5'
+                                ? 'var(--a5)'
+                                : 'var(--a4)'
+                  }}
+                >
+                  <span>
+                    <CoachMetricText text={line.text} variant="v" />
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {calendarLines.length > 0 ? (
+              <div className="ag">
+                <div className="sb">Calendrier &amp; nutrition</div>
+                <ul className="bl">
+                  {calendarLines.map((line, i) => (
+                    <li
+                      key={i}
+                      className={line.tone}
+                      style={{
+                        '--a':
+                          line.tone === 'na4'
+                            ? 'var(--a4)'
+                            : line.tone === 'na5'
+                              ? 'var(--a5)'
+                              : 'var(--a3)'
+                      }}
+                    >
+                      <span>
+                        <CoachMetricText text={line.text} variant="v" />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
-            {periodTrainingLine.distinct > 0 ? (
-              <p>
-                ~{periodTrainingLine.distinct} mouvements du programme touchés —{' '}
-                {periodTrainingLine.distinct >= 40
-                  ? 'variété raisonnable si la récup suit.'
-                  : 'base étroite, normal si tu consolides.'}
-              </p>
-            ) : null}
-            {trainingCards.map((card) => {
-              const tpl = `recap.crossCoach.insight.${card.templateKey}`;
-              return <p key={card.id}>{t(tpl, card.payload || {})}</p>;
-            })}
-            {suggestions.map((s) => (
-              <p key={s.kind} className="text-emerald-50/90">
-                · {s.text}
-              </p>
-            ))}
-          </CoachCard>
+          </div>
 
-          <CoachCard
-            icon={Salad}
-            title={t('recap.crossCoach.pillar.nutrition', 'Nutrition')}
-            accentBorder="border-amber-500/35"
-            accentBg="bg-amber-950/15 text-amber-100"
-          >
+          <div className="nut">
+            <h3>◉ Nutrition</h3>
             {coach ? (
               <>
                 <p>
@@ -266,9 +347,9 @@ export default function RecapAnalyseDetails({
                 })}
               </>
             ) : (
-              <p className="text-slate-500">{t('recap.crossCoach.loadingChip')}</p>
+              <p>{t('recap.crossCoach.loadingChip')}</p>
             )}
-          </CoachCard>
+          </div>
         </div>
       </section>
     </>

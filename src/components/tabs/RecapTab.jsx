@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState, startTransition } from 'react';
+import React, { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
@@ -9,7 +9,6 @@ import { useRecapCrossCoachGarmin } from '../../hooks/useRecapCrossCoachGarmin';
 import { useRecapTabMetrics } from '../../hooks/useRecapTabMetrics';
 import DateHelper from '../../utils/dateHelper';
 import RecapShellLayout from '../sport/recap/shell/RecapShellLayout';
-import RecapTabSkeleton, { RecapContentSkeleton } from '../sport/recap/shell/RecapTabSkeleton';
 const RecapSnapshotView = lazy(() => import('../sport/recap/views/RecapSnapshotView'));
 const RecapAnalyseView = lazy(() => import('../sport/recap/views/RecapAnalyseView'));
 const RecapCorpsView = lazy(() => import('../sport/recap/views/RecapCorpsView'));
@@ -69,8 +68,45 @@ const VIEW_CHUNK_LOADERS = {
   analyse: () => import('../sport/recap/views/RecapAnalyseView'),
   corps: () => import('../sport/recap/views/RecapCorpsView'),
   tendances: () => import('../sport/recap/views/RecapTendancesView'),
-  sessions: () => import('../sport/recap/views/RecapSessionsView')
+  sessions: () => import('../sport/recap/views/RecapSessionsView'),
+  grades: () => import('../sport/recap/views/RecapGradesView')
 };
+
+function prefetchRecapChunks() {
+  Object.entries(VIEW_CHUNK_LOADERS).forEach(([id, load]) => {
+    if (loadedRecapChunks.has(id)) return;
+    load()
+      .then(() => {
+        loadedRecapChunks.add(id);
+      })
+      .catch(() => {
+        loadedRecapChunks.add(id);
+      });
+  });
+}
+
+prefetchRecapChunks();
+
+const SnapshotPane = React.memo(function SnapshotPane(props) {
+  return <RecapSnapshotView {...props} />;
+});
+const AnalysePane = React.memo(function AnalysePane(props) {
+  return <RecapAnalyseView {...props} />;
+});
+const CorpsPane = React.memo(function CorpsPane(props) {
+  return <RecapCorpsView {...props} />;
+});
+const TendancesPane = React.memo(function TendancesPane(props) {
+  return <RecapTendancesView {...props} />;
+});
+const SessionsPane = React.memo(function SessionsPane(props) {
+  return <RecapSessionsView {...props} />;
+});
+const GradesPane = React.memo(function GradesPane({ paneActive = true }) {
+  return <RecapGradesView paneActive={paneActive} />;
+});
+
+let sessionGarminBundle = null;
 
 /**
  * Sous-onglet Sport — Récap musculaire (navigation latérale + 5 vues).
@@ -116,33 +152,47 @@ const RecapTab = ({ isActive = true }) => {
 
   const [activeView, setActiveView] = useState(() => readStoredRecapView());
   const isGradesView = activeView === RECAP_VIEW_IDS.GRADES;
-  const liveMetricsEnabled = Boolean(isActive) && !isGradesView;
+  const liveMetricsEnabled = Boolean(isActive);
   const [chunkReady, setChunkReady] = useState(() => {
-    const stored = readStoredRecapView();
-    return loadedRecapChunks.has(stored) ? { [stored]: true } : {};
+    const ready = {};
+    loadedRecapChunks.forEach((id) => {
+      ready[id] = true;
+    });
+    return ready;
   });
+  const visitedRef = useRef(new Set());
+  const panePropsRef = useRef({});
+  visitedRef.current.add(activeView);
 
   useEffect(() => {
-    if (isGradesView) return undefined;
-    const load = VIEW_CHUNK_LOADERS[activeView];
-    if (!load || chunkReady[activeView]) return undefined;
     let cancelled = false;
-    load()
-      .then(() => {
-        loadedRecapChunks.add(activeView);
-        if (!cancelled) {
-          setChunkReady((prev) => (prev[activeView] ? prev : { ...prev, [activeView]: true }));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setChunkReady((prev) => (prev[activeView] ? prev : { ...prev, [activeView]: true }));
-        }
+    const loads = Object.entries(VIEW_CHUNK_LOADERS).map(([id, load]) =>
+      load()
+        .then(() => {
+          loadedRecapChunks.add(id);
+        })
+        .catch(() => {
+          loadedRecapChunks.add(id);
+        })
+    );
+    Promise.all(loads).then(() => {
+      if (cancelled) return;
+      setChunkReady((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        loadedRecapChunks.forEach((id) => {
+          if (!next[id]) {
+            next[id] = true;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
       });
+    });
     return () => {
       cancelled = true;
     };
-  }, [activeView, isGradesView, chunkReady]);
+  }, []);
 
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
   const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: liveMetricsEnabled });
@@ -163,6 +213,10 @@ const RecapTab = ({ isActive = true }) => {
     startTransition(() => setPeriod(next));
   }, []);
 
+  const openEndurance = useCallback((id) => {
+    requestOpenEnduranceSubTab?.(id);
+  }, [requestOpenEnduranceSubTab]);
+
   const periodWindow = useMemo(() => getRecapDateWindow(deferredPeriod), [deferredPeriod]);
 
   const garminRangeForRecap = useMemo(() => {
@@ -182,11 +236,12 @@ const RecapTab = ({ isActive = true }) => {
     startYmd: garminRangeForRecap.startYmd,
     endYmd: garminRangeForRecap.endYmd,
     enabled: liveMetricsEnabled,
-    manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
+    manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null,
+    manualSleepByDate: snapshotForRecap?.manualSleepByDate ?? null
   });
 
   const { loadAllData, dbReady } = useGarminData();
-  const [garminBundle, setGarminBundle] = useState(null);
+  const [garminBundle, setGarminBundle] = useState(() => sessionGarminBundle);
 
   useEffect(() => {
     if (!isActive || !dbReady || !isAuthenticated) {
@@ -195,11 +250,11 @@ const RecapTab = ({ isActive = true }) => {
     let cancelled = false;
     loadAllData()
       .then((bundle) => {
-        if (!cancelled) setGarminBundle(bundle);
+        if (cancelled || !bundle) return;
+        sessionGarminBundle = bundle;
+        setGarminBundle(bundle);
       })
-      .catch(() => {
-        if (!cancelled) setGarminBundle(null);
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -207,6 +262,7 @@ const RecapTab = ({ isActive = true }) => {
 
   const {
     contentReady,
+    cacheReady,
     loadMode,
     recapAssessment,
     recapState,
@@ -234,7 +290,7 @@ const RecapTab = ({ isActive = true }) => {
 
   const synthesisCoach = useRecapSynthesisCoach({
     snapshot: snapshotForRecap,
-    assessment: !isActive || isGradesView ? null : recapAssessment ?? null,
+    assessment: !isActive ? null : recapAssessment ?? null,
     activeProgram: activeProgram ?? null,
     profileQuestionnaireRaw: currentUser?.profileQuestionnaire
   });
@@ -284,91 +340,99 @@ const RecapTab = ({ isActive = true }) => {
     };
   }, [data, getCurrentData]);
 
-  const viewContent = useMemo(() => {
-    switch (activeView) {
-      case RECAP_VIEW_IDS.GRADES:
-        return <RecapGradesView />;
-      case RECAP_VIEW_IDS.ANALYSE:
-        return (
-          <RecapAnalyseView
-            assessment={recapAssessment}
-            synthesisCoach={synthesisCoach}
-            profileQuestionnaireRaw={currentUser?.profileQuestionnaire}
-            enrichment={enrichment}
-            recapState={recapState}
-            programCoachAnalysis={programCoachAnalysis}
-            activeProgram={activeProgram}
-            period={deferredPeriod}
-            garminData={garminBundle}
-            periodWindow={periodWindow}
-            isAdmin={isAdmin}
-          />
-        );
-      case RECAP_VIEW_IDS.CORPS:
-        return (
-          <RecapCorpsView
-            recapState={recapState}
-            period={deferredPeriod}
-            enduranceSessions={enduranceSessions}
-            enrichment={enrichment}
-            onOpenEnduranceCategory={(id) => requestOpenEnduranceSubTab?.(id)}
-          />
-        );
-      case RECAP_VIEW_IDS.TENDANCES:
-        return (
-          <RecapTendancesView
-            period={deferredPeriod}
-            onPeriodChange={handlePeriodChange}
-            enrichment={enrichment}
-            periodWindow={periodWindow}
-            garminData={garminBundle}
-          />
-        );
-      case RECAP_VIEW_IDS.SESSIONS:
-        return (
-          <RecapSessionsView
-            digest={enduranceDigest}
-            enrichment={enrichment}
-            period={deferredPeriod}
-            periodWindow={periodWindow}
-            snapshot={snapshotForRecap}
-            getExerciseNameById={getExerciseNameById}
-            onOpenEndurance={(id) => requestOpenEnduranceSubTab?.(id)}
-          />
-        );
-      case RECAP_VIEW_IDS.SNAPSHOT:
-      default:
-        return (
-          <RecapSnapshotView
-            assessment={recapAssessment}
-            recapState={recapState}
-            runningKm={runningKm}
-            period={deferredPeriod}
-            currentUser={currentUser}
-            enrichment={enrichment}
-          />
-        );
+  const hasMetrics = Boolean(recapState || recapAssessment || enrichment || enduranceDigest);
+
+  const buildPaneProps = (id) => {
+    if (id === RECAP_VIEW_IDS.ANALYSE) {
+      return {
+        assessment: recapAssessment,
+        synthesisCoach,
+        profileQuestionnaireRaw: currentUser?.profileQuestionnaire,
+        enrichment,
+        recapState,
+        programCoachAnalysis,
+        activeProgram,
+        period: deferredPeriod,
+        garminData: garminBundle,
+        periodWindow,
+        isAdmin
+      };
     }
-  }, [
-    activeView,
-    recapAssessment,
-    synthesisCoach,
-    currentUser,
-    recapState,
-    deferredPeriod,
-    enduranceSessions,
-    enduranceDigest,
-    runningKm,
-    enrichment,
-    handlePeriodChange,
-    requestOpenEnduranceSubTab,
-    snapshotForRecap,
-    getExerciseNameById,
-    periodWindow,
-    programCoachAnalysis,
-    garminBundle,
-    activeProgram
-  ]);
+    if (id === RECAP_VIEW_IDS.CORPS) {
+      return {
+        recapState,
+        period: deferredPeriod,
+        enduranceSessions,
+        enrichment,
+        onOpenEnduranceCategory: openEndurance
+      };
+    }
+    if (id === RECAP_VIEW_IDS.TENDANCES) {
+      return {
+        period: deferredPeriod,
+        onPeriodChange: handlePeriodChange,
+        enrichment,
+        periodWindow,
+        garminData: garminBundle
+      };
+    }
+    if (id === RECAP_VIEW_IDS.SESSIONS) {
+      return {
+        digest: enduranceDigest,
+        enrichment,
+        period: deferredPeriod,
+        periodWindow,
+        snapshot: snapshotForRecap,
+        getExerciseNameById,
+        onOpenEndurance: openEndurance
+      };
+    }
+    return {
+      assessment: recapAssessment,
+      recapState,
+      runningKm,
+      period: deferredPeriod,
+      currentUser,
+      enrichment
+    };
+  };
+
+  const propsEpoch = `${deferredPeriod}:${hasMetrics}:${Boolean(garminBundle)}:${Boolean(recapAssessment)}:${Boolean(enrichment)}`;
+  const propsEpochRef = useRef(propsEpoch);
+  const propsEpochChanged = propsEpochRef.current !== propsEpoch;
+  propsEpochRef.current = propsEpoch;
+
+  if (activeView === RECAP_VIEW_IDS.ANALYSE && !visitedRef.current.has(RECAP_VIEW_IDS.ANALYSE)) {
+    visitedRef.current.add(RECAP_VIEW_IDS.ANALYSE);
+  }
+
+  visitedRef.current.forEach((id) => {
+    if (id === RECAP_VIEW_IDS.GRADES) return;
+    if (id === activeView || propsEpochChanged || !panePropsRef.current[id]) {
+      panePropsRef.current[id] = buildPaneProps(id);
+    }
+  });
+
+  const renderPane = (id) => {
+    const props = panePropsRef.current[id];
+    if (id === RECAP_VIEW_IDS.GRADES) {
+      return <GradesPane paneActive={isActive && id === activeView} />;
+    }
+    if (!props) return null;
+    if (id === RECAP_VIEW_IDS.ANALYSE) return <AnalysePane {...props} />;
+    if (id === RECAP_VIEW_IDS.CORPS) {
+      return <CorpsPane {...props} sceneActive={isActive && id === activeView} />;
+    }
+    if (id === RECAP_VIEW_IDS.TENDANCES) return <TendancesPane {...props} />;
+    if (id === RECAP_VIEW_IDS.SESSIONS) {
+      return <SessionsPane {...props} paneActive={isActive && id === activeView} />;
+    }
+    return <SnapshotPane {...props} />;
+  };
+
+  const activeNeedsMetrics =
+    activeView !== RECAP_VIEW_IDS.GRADES && activeView !== RECAP_VIEW_IDS.ANALYSE;
+  const waitingFirstMetrics = activeNeedsMetrics && cacheReady && !hasMetrics;
 
   return (
     <RecapShellLayout
@@ -380,10 +444,40 @@ const RecapTab = ({ isActive = true }) => {
       scoreTier={!isGradesView && contentReady ? recapAssessment?.tier : undefined}
       showTopMetrics={!isGradesView && contentReady}
     >
-      {isGradesView || (contentReady && chunkReady[activeView]) ? (
-        <Suspense fallback={isGradesView ? null : <RecapContentSkeleton />}>{viewContent}</Suspense>
-      ) : (
+      {waitingFirstMetrics ? (
         <RecapLoadingLabel view={activeView} mode={loadMode} />
+      ) : (
+        [...visitedRef.current].map((id) => {
+          const visible = id === activeView;
+          const ready = Boolean(chunkReady[id]);
+          if (!visible && !ready) return null;
+          if (
+            id !== RECAP_VIEW_IDS.GRADES &&
+            id !== RECAP_VIEW_IDS.ANALYSE &&
+            !hasMetrics
+          ) {
+            return null;
+          }
+          const shrink = id !== RECAP_VIEW_IDS.TENDANCES;
+          const park = !visible;
+          return (
+            <div
+              key={id}
+              aria-hidden={park || undefined}
+              className={[shrink ? 'rb-fit' : '', park ? 'rb-park' : ''].filter(Boolean).join(' ') || undefined}
+            >
+              <div className={shrink ? 'rb-scale' : undefined}>
+                {ready ? (
+                  <Suspense fallback={<RecapLoadingLabel view={id} mode={loadMode} />}>
+                    {renderPane(id)}
+                  </Suspense>
+                ) : (
+                  <RecapLoadingLabel view={id} mode={loadMode} />
+                )}
+              </div>
+            </div>
+          );
+        })
       )}
     </RecapShellLayout>
   );

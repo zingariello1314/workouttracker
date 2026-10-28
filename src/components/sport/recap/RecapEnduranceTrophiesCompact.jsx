@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Layers } from 'lucide-react';
 import { evaluateRunningTrophies } from '../../../services/endurance/runningTrophiesService';
 import { evaluateWalkingTrophies } from '../../../services/endurance/walkingTrophiesService';
 import { evaluatePushupTrophies } from '../../../services/endurance/pushupTrophiesService';
@@ -19,13 +18,7 @@ function summarize(results = []) {
   return { total, unlocked, unlockedLevels, totalLevels };
 }
 
-function ProgressBar({ pct }) {
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-      <div className="h-full bg-[#0F4C5C]" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
-    </div>
-  );
-}
+const TROPHY_TONES = ['var(--a5)', 'var(--a2)', 'var(--a3)', 'var(--a1)', 'var(--d)'];
 
 export default function RecapEnduranceTrophiesCompact({ sessions = {}, onOpenCategory = null }) {
   const { data: workoutData } = useWorkout();
@@ -132,42 +125,42 @@ export default function RecapEnduranceTrophiesCompact({ sessions = {}, onOpenCat
   const globalPct = global.total ? (global.unlocked / global.total) * 100 : 0;
 
   return (
-    <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <div className="rounded-lg bg-[#0F4C5C]/25 p-2">
-          <Layers className="h-4 w-4 text-sky-300" />
+    <div className="trp">
+      <div>
+        <div className="th2">
+          <span className="ico" />
+          <h3>Trophees Defis</h3>
         </div>
-        <div>
-          <h3 className="text-sm font-semibold text-white">Trophees Defis</h3>
-          <p className="text-[11px] text-teal-200/75">
-            {global.unlocked}/{global.total} debloques
-          </p>
+        <div className="big">
+          <em>{global.unlocked}</em>/{global.total} debloques
         </div>
-      </div>
-      <div className="mb-3">
-        <ProgressBar pct={globalPct} />
-        <p className="mt-1 text-[10px] text-teal-300/65">
+        <div className="gz">
+          <i style={{ '--w': `${globalPct}%`, '--c': 'var(--a1)' }} />
+        </div>
+        <div className="cap">
           {global.unlockedLevels}/{global.totalLevels} paliers debloques
-        </p>
+        </div>
       </div>
-      <div className="grid grid-cols-1 gap-2">
-        {categories.map((c) => {
+      <div className="trl">
+        {categories.map((c, index) => {
           const pct = c.stats.total ? (c.stats.unlocked / c.stats.total) * 100 : 0;
+          const tone = TROPHY_TONES[index % TROPHY_TONES.length];
           return (
             <button
               key={c.id}
               type="button"
               onClick={() => onOpenCategory?.(c.id)}
-              className="rounded-lg border border-[#0F4C5C]/45 bg-black p-2 text-left transition hover:border-[#1E7FA3]/75 hover:bg-[#0F4C5C]/10"
+              className={c.stats.unlocked ? '' : 'z'}
+              style={{ '--c': tone }}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-white">{c.label}</span>
-                <span className="text-xs font-semibold text-sky-200">
+              <div className="r">
+                <span>{c.label}</span>
+                <b>
                   {c.stats.unlocked}/{c.stats.total}
-                </span>
+                </b>
               </div>
-              <div className="mt-1">
-                <ProgressBar pct={pct} />
+              <div className="gz">
+                <i style={{ '--w': `${pct}%`, '--c': tone }} />
               </div>
             </button>
           );

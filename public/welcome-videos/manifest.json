@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "count": 10,
+  "videos": [
+    {
+      "id": "v001",
+      "name": "animevide",
+      "src": "/welcome-videos/animevide.mp4",
+      "poster": null
+    },
+    {
+      "id": "v002",
+      "name": "clavier",
+      "src": "/welcome-videos/clavier.mp4",
+      "poster": null
+    },
+    {
+      "id": "v003",
+      "name": "epic",
+      "src": "/welcome-videos/epic.mp4",
+      "poster": null
+    },
+    {
+      "id": "v004",
+      "name": "eternity",
+      "src": "/welcome-videos/eternity.mp4",
+      "poster": null
+    },
+    {
+      "id": "v005",
+      "name": "friend",
+      "src": "/welcome-videos/friend.mp4",
+      "poster": null
+    },
+    {
+      "id": "v006",
+      "name": "ghibli style",
+      "src": "/welcome-videos/ghibli%20style.mp4",
+      "poster": null
+    },
+    {
+      "id": "v007",
+      "name": "kalinkacoupée",
+      "src": "/welcome-videos/kalinkacoup%C3%A9e.mp4",
+      "poster": null
+    },
+    {
+      "id": "v008",
+      "name": "preparing the projects",
+      "src": "/welcome-videos/preparing%20the%20projects.mp4",
+      "poster": null
+    },
+    {
+      "id": "v009",
+      "name": "pursuit of hapiness",
+      "src": "/welcome-videos/pursuit%20of%20hapiness.mp4",
+      "poster": null
+    },
+    {
+      "id": "v010",
+      "name": "what do u want to do when u grow up",
+      "src": "/welcome-videos/what%20do%20u%20want%20to%20do%20when%20u%20grow%20up.mp4",
+      "poster": null
+    }
+  ]
+}

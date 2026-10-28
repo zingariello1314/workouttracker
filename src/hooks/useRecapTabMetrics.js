@@ -13,7 +13,9 @@ import { markRecapViewPrepared } from '../utils/preloadTabs';
 
 function yieldFrame() {
   return new Promise((resolve) => {
-    window.setTimeout(resolve, 0);
+    window.requestAnimationFrame(() => {
+      window.setTimeout(resolve, 0);
+    });
   });
 }
 
@@ -46,7 +48,144 @@ function cancelHeavyWork(cancel) {
 /** Une entrée par plage : changer de période ne relance pas un calcul déjà fait. */
 const bundlesByFull = new Map();
 const bundlesByWorkout = new Map();
+const RECAP_BUNDLE_DB = 'momentum-recap';
+const RECAP_BUNDLE_STORE = 'bundles';
 let hasPublishedPeriod = false;
+let persistTimer = 0;
+let recapCacheHydrated = false;
+let recapCacheHydratePromise = null;
+
+function openRecapBundleDb() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('indexedDB'));
+      return;
+    }
+    const req = indexedDB.open(RECAP_BUNDLE_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(RECAP_BUNDLE_STORE)) db.createObjectStore(RECAP_BUNDLE_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function restoreRecapBundleRows(rows) {
+  if (!Array.isArray(rows)) return;
+  rows.forEach((row) => {
+    if (!row?.full || !row?.bundle) return;
+    bundlesByFull.set(row.full, row.bundle);
+    if (row.workout) bundlesByWorkout.set(row.workout, { fullKey: row.full, bundle: row.bundle });
+  });
+}
+
+function ensureRecapCacheHydrated() {
+  if (recapCacheHydrated) return Promise.resolve();
+  if (!recapCacheHydratePromise) {
+    recapCacheHydratePromise = openRecapBundleDb()
+      .then(
+        (db) =>
+          new Promise((resolve, reject) => {
+            const tx = db.transaction(RECAP_BUNDLE_STORE, 'readonly');
+            const req = tx.objectStore(RECAP_BUNDLE_STORE).get('latest');
+            req.onsuccess = () => {
+              db.close();
+              resolve(req.result || null);
+            };
+            req.onerror = () => {
+              db.close();
+              reject(req.error);
+            };
+          })
+      )
+      .then((rows) => {
+        restoreRecapBundleRows(rows);
+        recapCacheHydrated = true;
+      })
+      .catch(() => {
+        recapCacheHydrated = true;
+      });
+  }
+  return recapCacheHydratePromise;
+}
+
+ensureRecapCacheHydrated();
+
+function stripForCache(value, seen = new WeakMap()) {
+  if (typeof value === 'function' || typeof value === 'symbol') return undefined;
+  if (value == null || typeof value !== 'object') return value;
+  if (seen.has(value)) return seen.get(value);
+  if (value instanceof Date) return new Date(value.getTime());
+  if (value instanceof Map) {
+    const out = new Map();
+    seen.set(value, out);
+    value.forEach((v, k) => {
+      if (typeof k === 'function' || typeof v === 'function') return;
+      out.set(stripForCache(k, seen), stripForCache(v, seen));
+    });
+    return out;
+  }
+  if (value instanceof Set) {
+    const out = new Set();
+    seen.set(value, out);
+    value.forEach((v) => {
+      if (typeof v === 'function') return;
+      out.add(stripForCache(v, seen));
+    });
+    return out;
+  }
+  if (Array.isArray(value)) {
+    const out = [];
+    seen.set(value, out);
+    value.forEach((v) => {
+      if (typeof v === 'function') return;
+      out.push(stripForCache(v, seen));
+    });
+    return out;
+  }
+  const out = {};
+  seen.set(value, out);
+  Object.keys(value).forEach((k) => {
+    if (typeof value[k] === 'function') return;
+    out[k] = stripForCache(value[k], seen);
+  });
+  return out;
+}
+
+function schedulePersistRecapBundles() {
+  if (persistTimer) window.clearTimeout(persistTimer);
+  persistTimer = window.setTimeout(() => {
+    persistTimer = 0;
+    const rows = [];
+    for (const [workout, row] of bundlesByWorkout) {
+      rows.push({ workout, full: row.fullKey, bundle: row.bundle });
+    }
+    let latest;
+    try {
+      latest = structuredClone(stripForCache(rows.slice(-3)));
+    } catch {
+      return;
+    }
+    openRecapBundleDb()
+      .then(
+        (db) =>
+          new Promise((resolve, reject) => {
+            const tx = db.transaction(RECAP_BUNDLE_STORE, 'readwrite');
+            tx.objectStore(RECAP_BUNDLE_STORE).put(latest, 'latest');
+            tx.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+            tx.onerror = () => {
+              db.close();
+              reject(tx.error);
+            };
+          })
+      )
+      .catch(() => {});
+  }, 500);
+}
 
 function rememberBundle(fullKey, workoutKey, bundle) {
   if (!fullKey || !bundle) return;
@@ -63,6 +202,7 @@ function rememberBundle(fullKey, workoutKey, bundle) {
       if (row.fullKey === oldest) bundlesByWorkout.delete(wk);
     }
   }
+  schedulePersistRecapBundles();
 }
 
 function garminWindowForPeriod(periodWindow) {
@@ -290,6 +430,7 @@ export function useRecapTabMetrics({
   } else if (enabled && !cachedHit && !bundle && !computing) {
     setComputing(true);
   }
+  const [cacheReady, setCacheReady] = useState(() => recapCacheHydrated);
   const genRef = useRef(0);
   const publishedInsightsRef = useRef(null);
   const callbacksRef = useRef({});
@@ -300,19 +441,25 @@ export function useRecapTabMetrics({
   };
 
   useEffect(() => {
+    let cancelled = false;
+    ensureRecapCacheHydrated().then(() => {
+      if (!cancelled) setCacheReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!enabled) {
       setComputing(false);
       return undefined;
     }
 
-    if (!snapshot) {
-      setBundle(null);
-      setComputing(false);
-      return undefined;
-    }
+    if (!cacheReady) return undefined;
 
-    if (inputKey.pending && !readWorkoutHit(inputKey) && !bundle) {
-      setComputing(true);
+    if (!snapshot) {
+      setComputing(false);
       return undefined;
     }
 
@@ -333,7 +480,6 @@ export function useRecapTabMetrics({
       setComputing(false);
       hasPublishedPeriod = true;
     }
-    if (inputKey.pending) return undefined;
     if (!stale) setComputing(true);
 
     const runFor = async (periodId, windowForPeriod, keyFull, publish) => {
@@ -360,6 +506,22 @@ export function useRecapTabMetrics({
           new Date()
         );
         const enduranceDigest = buildRecapEnduranceDigest(snapshot, recapState.window);
+        if (publish && gen === genRef.current) {
+          shownKeyRef.current = inputKey.workout;
+          setBundle({
+            recapState,
+            enduranceDigest,
+            recapAssessment: null,
+            enrichment: null,
+            programCoachAnalysis: null
+          });
+          setComputing(false);
+          hasPublishedPeriod = true;
+        }
+        await yieldFrame();
+        await yieldFrame();
+        if (gen !== genRef.current) return;
+
         const recapAssessment = computeRecapUserAssessment({
           snapshot,
           activeProgram,
@@ -373,8 +535,19 @@ export function useRecapTabMetrics({
           programs: Array.isArray(programs) ? programs : [],
           periodWindow: windowForPeriod
         });
+        if (publish && gen === genRef.current) {
+          setBundle({
+            recapState,
+            enduranceDigest,
+            recapAssessment,
+            enrichment: null,
+            programCoachAnalysis: null
+          });
+        }
+        await yieldFrame();
         await yieldFrame();
         if (gen !== genRef.current) return;
+
         const enrichment = buildRecapEnrichmentBundle({
           snapshot,
           window: recapState.window,
@@ -389,6 +562,16 @@ export function useRecapTabMetrics({
           isAdmin,
           isAuthenticated
         });
+        if (publish && gen === genRef.current) {
+          setBundle({
+            recapState,
+            enduranceDigest,
+            recapAssessment,
+            enrichment,
+            programCoachAnalysis: null
+          });
+        }
+        await yieldFrame();
         await yieldFrame();
         if (gen !== genRef.current) return;
 
@@ -551,13 +734,12 @@ export function useRecapTabMetrics({
       genRef.current += 1;
       cancelHeavyWork(cancel);
     };
-  }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled, periodWindow]);
+  }, [cacheReady, deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled, periodWindow]);
 
-  const showingThisPeriod =
-    shownKeyRef.current === inputKey.full || shownKeyRef.current === inputKey.workout;
-  const contentReady = !enabled || (Boolean(bundle) && showingThisPeriod);
+  const contentReady = !enabled || Boolean(bundle);
   return {
     computing,
+    cacheReady,
     contentReady,
     loadMode: !contentReady && hasPublishedPeriod ? 'refresh' : 'initial',
     ...bundle

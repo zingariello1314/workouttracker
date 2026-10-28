@@ -114,9 +114,20 @@ export function resolveLockWallpaperUrls(homeImages, lockRecord) {
   return resolveLockWallpaperEntries(homeImages, lockRecord).map((entry) => entry.url);
 }
 
-/** Images visibles sur la page d’accueil (rotation). */
-export function getHomeRotationImages(homeImages) {
-  return normalizeHomepageImages(homeImages || []).filter(
-    (img) => img.useOnHome !== false && !img.hidden
-  );
+/**
+ * Images / vidéos visibles sur la page d’accueil (rotation).
+ * @param {unknown[]} homeImages
+ * @param {{ mediaKinds?: 'all'|'images'|'videos' }} [options]
+ */
+export function getHomeRotationImages(homeImages, options = {}) {
+  const mediaKinds = options.mediaKinds || 'all';
+  return normalizeHomepageImages(homeImages || []).filter((img) => {
+    if (img.useOnHome === false || img.hidden) return false;
+    if (mediaKinds === 'all') return true;
+    const isVideo = img.mediaType === 'video' || img.kind === 'video'
+      || /\.(mp4|webm|mov)(\?|#|$)/i.test(String(img.full || ''));
+    if (mediaKinds === 'videos') return isVideo;
+    if (mediaKinds === 'images') return !isVideo;
+    return true;
+  });
 }

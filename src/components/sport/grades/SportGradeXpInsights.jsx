@@ -13,20 +13,19 @@ export default function SportGradeXpInsights({ dailyInsights, totalXP }) {
 
   if (total <= 0 && daysWithXp <= 0) return null;
 
+  const srcColors = ['var(--d)', 'var(--a2)', 'var(--a1)', 'var(--a3)', 'var(--a5)', 'var(--a4)'];
+
   return (
-    <div className="mt-4 space-y-3 border-t border-[#0F4C5C]/35 pt-4">
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-500/90">
+    <div className="rb-xp">
+      <div className="bl">
+        <p className="lb2">
           {t('recap.grades.dailyXpTitle', 'Moyenne journalière d’XP')}
         </p>
-        <p className="mt-1 text-lg font-bold tabular-nums text-white">
+        <p className="avg">
           {averageDailyXp.toLocaleString('fr-FR')} XP
-          <span className="text-sm font-normal text-slate-500">
-            {' '}
-            / {t('recap.grades.dailyXpPerActiveDay', 'jour actif')}
-          </span>
+          <u>/ {t('recap.grades.dailyXpPerActiveDay', 'jour actif')}</u>
         </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+        <small>
           {daysWithXp > 0
             ? t(
                 'recap.grades.dailyXpExplain',
@@ -40,32 +39,31 @@ export default function SportGradeXpInsights({ dailyInsights, totalXP }) {
                 'recap.grades.dailyXpNoDays',
                 'Aucun jour avec activité XP enregistré pour l’instant — la moyenne apparaîtra dès que tu coches des séances ou synchronises Garmin.'
               )}
-        </p>
+        </small>
       </div>
 
       {breakdownRows.length > 0 ? (
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <div className="bl">
+          <p className="lb2">
             {t('recap.grades.xpBreakdownTitle', 'D’où vient ton XP Sport')}
           </p>
-          <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-            {breakdownRows.map((row) => (
-              <li
-                key={row.id}
-                className="flex items-center justify-between gap-2 rounded-md border border-[#0F4C5C]/30 bg-black/40 px-2.5 py-1.5 text-[11px]"
-              >
-                <span className="min-w-0 truncate text-slate-400">{t(row.labelKey, row.fallback)}</span>
-                <span className="shrink-0 font-semibold tabular-nums text-cyan-200/95">
-                  +{row.xp.toLocaleString('fr-FR')} XP
-                  {row.pctOfTotal != null && row.pctOfTotal > 0 ? (
-                    <span className="ml-1.5 font-normal text-slate-500">
-                      ({row.pctOfTotal.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %)
-                    </span>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="srcg">
+            {breakdownRows.map((row, index) => {
+              const width = Math.max(0, Math.min(100, Number(row.pctOfTotal) || 0));
+              return (
+                <div key={row.id} className="src" style={{ '--c': srcColors[index % srcColors.length], '--w': `${width}%` }}>
+                  <span>{t(row.labelKey, row.fallback)}</span>
+                  <span>
+                    <b>+{row.xp.toLocaleString('fr-FR')} XP</b>
+                    {row.pctOfTotal != null && row.pctOfTotal > 0 ? (
+                      <em>({row.pctOfTotal.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %)</em>
+                    ) : null}
+                  </span>
+                  <i />
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : null}
     </div>

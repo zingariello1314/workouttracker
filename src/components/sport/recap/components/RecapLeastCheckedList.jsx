@@ -7,7 +7,7 @@ import { ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 
 function barColor(pct) {
-  if (pct >= 70) return '#34d399';
+  if (pct >= 70) return '#ffb938';
   if (pct >= 40) return '#fbbf24';
   return '#fb7185';
 }

@@ -14,6 +14,7 @@ import {
 import { useAppBackground } from '../../../../backgrounds/useAppBackground';
 import { BACKGROUND_TAB_TARGETS, ROTATE_INTERVALS } from '../../../../backgrounds/backgroundTargets';
 import BackgroundStudio from '../../../../backgrounds/BackgroundStudioPanel';
+import { subscribeAppStaticBackgrounds } from '../../../../utils/appStaticBackgroundPreference';
 
 const TYPE_LABEL = {
   animated: 'Animé',
@@ -28,6 +29,8 @@ const MODES = [
 
 const FILTERS = [
   { id: 'all', label: 'Tous' },
+  { id: 'animated', label: 'Animés' },
+  { id: 'static', label: 'Statiques' },
   { id: 'base', label: 'Fonds de base' },
   { id: 'mine', label: 'Mes copies' },
 ];
@@ -65,6 +68,14 @@ const AppBackgroundSettings = () => {
       subscribeVariants(() => {
         setOptions(listBackgroundOptions());
         setHiddenIds(listHiddenBackgroundIds());
+      }),
+    []
+  );
+
+  useEffect(
+    () =>
+      subscribeAppStaticBackgrounds(() => {
+        setOptions(listBackgroundOptions());
       }),
     []
   );
@@ -149,6 +160,8 @@ const AppBackgroundSettings = () => {
       const isHidden = hiddenSet.has(option.id);
       if (showHidden) return isHidden;
       if (isHidden) return false;
+      if (filter === 'animated') return option.type === 'animated';
+      if (filter === 'static') return option.type === 'static';
       if (filter === 'base') return !option.variant;
       if (filter === 'mine') return Boolean(option.variant);
       return true;
@@ -173,7 +186,12 @@ const AppBackgroundSettings = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <p className={S.body}>Choisis l&apos;ambiance visuelle de Momentum.</p>
+            <p className={S.body}>
+              Fonds animés ci-dessous. Pour les <strong className="text-zinc-100">statiques</strong>,
+              ouvre « Gérer les fonds d&apos;écran » plus bas et active le badge{' '}
+              <strong className="text-zinc-100">Fond app</strong> sur les images voulues — elles
+              apparaissent alors dans le filtre Statiques.
+            </p>
 
             <div className="flex flex-wrap gap-2" role="tablist" aria-label="Mode du fond">
               {MODES.map((item) => {
@@ -264,6 +282,13 @@ const AppBackgroundSettings = () => {
               </p>
             )}
 
+            {!showHidden && filter === 'static' && visibleOptions.length === 0 && (
+              <p className={`text-xs ${S.muted}`}>
+                Aucun fond statique choisi. Dans « Gérer les fonds d&apos;écran », active{' '}
+                <strong className="text-zinc-200">Fond app</strong> sur une image de ta collection.
+              </p>
+            )}
+
             <div
               className="grid grid-cols-2 gap-3 sm:grid-cols-3"
               role={mode === 'single' ? 'radiogroup' : 'group'}
@@ -274,7 +299,7 @@ const AppBackgroundSettings = () => {
                 const selected = mode === 'rotate' ? inRotation : preference.singleId === option.id;
                 const order = preference.rotateIds.indexOf(option.id);
                 const canEdit = Boolean(studioFor(option.baseId || option.id));
-                const isBase = !option.variant;
+                const isBase = !option.variant && !option.userStatic;
                 const choose = () => {
                   if (mode === 'rotate') toggleRotate(option.id);
                   else if (mode === 'single') setBackgroundId(option.id);

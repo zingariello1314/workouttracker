@@ -85,28 +85,34 @@ const RecapIntensityLegend = ({ compact = false }) => {
   );
 
   if (compact) {
+    const recovery = [
+      { key: 'recap.legendRecovery.ready', color: COMPACT_INTENSITY_STEPS[2].color },
+      { key: 'recap.legendRecovery.inProgress', color: COMPACT_INTENSITY_STEPS[4].color },
+      { key: 'recap.legendRecovery.fatigued', color: COMPACT_INTENSITY_STEPS[5].color }
+    ];
     return (
-      <div className="space-y-3">
-        <p className="text-xs text-teal-200/70 leading-relaxed">{t('recap.legendIntro')}</p>
-        <ul className="space-y-1.5">
+      <div className="rb-legend">
+        <p className="in">{t('recap.legendIntro')}</p>
+        <div className="scale">
           {COMPACT_INTENSITY_STEPS.map((row) => (
-            <li key={row.key} className="flex items-center gap-2.5 text-xs leading-snug text-slate-200">
-              <span
-                className="h-3.5 w-3.5 shrink-0 rounded-sm border border-white/20 shadow-sm"
-                style={{ backgroundColor: row.color }}
-                aria-hidden
-              />
-              <span>{t(row.key)}</span>
-            </li>
+            <i key={row.key} style={{ background: row.color }} />
           ))}
-        </ul>
-        <div className="mt-3 pt-3 border-t border-[#0F4C5C]/40">
-          <p className="text-xs font-semibold text-teal-100 mb-2">{t('recap.legendRecoveryTitle')}</p>
-          <ul className="space-y-1 text-xs text-teal-50/95">
-            <li>🟢 {t('recap.legendRecovery.ready')}</li>
-            <li>🟡 {t('recap.legendRecovery.inProgress')}</li>
-            <li>🔴 {t('recap.legendRecovery.fatigued')}</li>
-          </ul>
+        </div>
+        <div className="lg">
+          {COMPACT_INTENSITY_STEPS.map((row) => (
+            <div key={row.key}>
+              <i style={{ background: row.color }} />
+              <span>{t(row.key)}</span>
+            </div>
+          ))}
+        </div>
+        <h4>{t('recap.legendRecoveryTitle')}</h4>
+        <div className="rec2">
+          {recovery.map((row) => (
+            <div key={row.key} style={{ '--lv': row.color }}>
+              {t(row.key)}
+            </div>
+          ))}
         </div>
       </div>
     );

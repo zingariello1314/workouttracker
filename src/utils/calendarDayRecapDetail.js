@@ -24,6 +24,7 @@ import {
   getStreetWorkoutDurationMinForDate
 } from './calendarPhysicalSessionStripes';
 import { formatCalendarExerciseRecordedValue } from './exerciseCalculations';
+import { resolveDaySleep } from './sport/manualSleepUtils';
 
 function parseNum(v) {
   if (v != null && typeof v === 'object' && !Array.isArray(v)) {
@@ -131,16 +132,19 @@ export function buildStepsDetailContext(garminData, dateStr, manualWalkByDate = 
   };
 }
 
-export function buildSleepDetailContext(garminData, dateStr) {
+export function buildSleepDetailContext(garminData, dateStr, manualSleepByDate = null) {
   const dm = garminData?.dailyMetrics?.[dateStr];
-  const sleep = dm?.sleep;
+  const resolved = resolveDaySleep(garminData, dateStr, manualSleepByDate);
+  const sleep = resolved || dm?.sleep || null;
+  const manualOverride = Boolean(resolved?._manualOverride);
+  const phasesUnavailable = Boolean(resolved?._phasesUnavailable);
   if (!sleep) return null;
 
   const totalMin = parseHoursToMinutes(sleep.duration);
-  const deepMin = parseHoursToMinutes(sleep.deepSleep ?? sleep.deep);
-  const lightMin = parseHoursToMinutes(sleep.lightSleep ?? sleep.light);
-  const remMin = parseHoursToMinutes(sleep.remSleep ?? sleep.rem);
-  const awakeMin = parseHoursToMinutes(sleep.awake);
+  const deepMin = phasesUnavailable ? 0 : parseHoursToMinutes(sleep.deepSleep ?? sleep.deep);
+  const lightMin = phasesUnavailable ? 0 : parseHoursToMinutes(sleep.lightSleep ?? sleep.light);
+  const remMin = phasesUnavailable ? 0 : parseHoursToMinutes(sleep.remSleep ?? sleep.rem);
+  const awakeMin = phasesUnavailable ? 0 : parseHoursToMinutes(sleep.awake);
 
   const respSleep = dm?.respiration?.sleep;
   const spo2 = parseNum(dm?.spo2) ?? parseNum(sleep.avgSpO2) ?? parseNum(sleep.spo2);
@@ -165,28 +169,43 @@ export function buildSleepDetailContext(garminData, dateStr) {
     lightMin,
     remMin,
     awakeMin,
-    quality: parseNum(sleep.quality ?? sleep.score),
+    quality: phasesUnavailable ? null : parseNum(sleep.quality ?? sleep.score),
     bedTime: sleep.bedTime ?? sleep.startTime ?? null,
     wakeTime: sleep.wakeTime ?? sleep.endTime ?? null,
-    respiration: respSleep
+    sleepStart: sleep.startTime ?? sleep.bedTime ?? null,
+    sleepEnd: sleep.endTime ?? sleep.wakeTime ?? null,
+    manualOverride,
+    phasesUnavailable,
+    respiration:
+      phasesUnavailable || !respSleep
+        ? null
+        : {
+            min: parseNum(respSleep.min),
+            max: parseNum(respSleep.max),
+            avg: parseNum(respSleep.avg)
+          },
+    spo2: phasesUnavailable ? null : spo2,
+    heartRate: phasesUnavailable
       ? {
-          min: parseNum(respSleep.min),
-          max: parseNum(respSleep.max),
-          avg: parseNum(respSleep.avg)
+          sleepAvg: null,
+          sleepMin: null,
+          sleepMax: null,
+          resting: restingHr,
+          dayAvg: dayHrAvg,
+          dayMin: dayHrMin,
+          dayMax: dayHrMax
         }
-      : null,
-    spo2,
-    heartRate: {
-      sleepAvg: sleepHrAvg,
-      sleepMin: sleepHrMin,
-      sleepMax: sleepHrMax,
-      resting: restingHr,
-      dayAvg: dayHrAvg,
-      dayMin: dayHrMin,
-      dayMax: dayHrMax
-    },
+      : {
+          sleepAvg: sleepHrAvg,
+          sleepMin: sleepHrMin,
+          sleepMax: sleepHrMax,
+          resting: restingHr,
+          dayAvg: dayHrAvg,
+          dayMin: dayHrMin,
+          dayMax: dayHrMax
+        },
     sleepChartData:
-      deepMin || lightMin || remMin || awakeMin
+      !phasesUnavailable && (deepMin || lightMin || remMin || awakeMin)
         ? [
             {
               date: dateStr,

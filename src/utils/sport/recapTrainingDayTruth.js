@@ -18,6 +18,10 @@ import {
   resolveGarminActivityCalendarDate,
   readGarminActivityDateOverrides
 } from '../sessionCalendarDate';
+import {
+  gtgAloneCountsAsTrainingDay,
+  hasNonGtgMomentumWorkoutForDate
+} from '../calendarGtgDay';
 
 const MIN_GARMIN_DURATION_SEC = 60;
 
@@ -111,10 +115,12 @@ export function collectGarminTrainingDates(garminData, snapshot = null) {
 
 /**
  * Jour d'entraînement au sens Récap (muscu + endurance + circuit + Garmin hors marche).
+ * Le GTG partiel ne compte pas ; GTG 100 % sans séance classique compte.
  */
 export function dayHasTrainingActivity(snapshot, dateStr, garminData = null) {
   if (!dateStr) return false;
-  if (dayHasCheckedWorkout(snapshot, dateStr)) return true;
+  if (hasNonGtgMomentumWorkoutForDate(snapshot, dateStr)) return true;
+  if (gtgAloneCountsAsTrainingDay(snapshot, dateStr)) return true;
   if (dayHasMomentumEnduranceSession(snapshot, dateStr)) return true;
   if (dayHasCircuitProgress(snapshot, dateStr)) return true;
   if (garminData) {
@@ -135,12 +141,14 @@ export function dayHasRecordedReps(snapshot, dateStr) {
 }
 
 /**
- * Jour « entraîné » pour le calendrier : reps enregistrées OU activité (hors pas seuls).
+ * Jour « entraîné » pour le calendrier : reps / activité hors marche.
+ * GTG : exclu par défaut ; exception si 100 % des créneaux planifiés sont faits
+ * et qu’aucune séance classique n’est présente ce jour-là.
  */
 export function dayCountsAsCalendarTrainingDay(snapshot, dateStr, garminData = null) {
   if (!dateStr) return false;
-  if (dayHasRecordedReps(snapshot, dateStr)) return true;
-  if (dayHasCheckedWorkout(snapshot, dateStr)) return true;
+  if (hasNonGtgMomentumWorkoutForDate(snapshot, dateStr)) return true;
+  if (gtgAloneCountsAsTrainingDay(snapshot, dateStr)) return true;
   if (dayHasMomentumEnduranceSession(snapshot, dateStr)) return true;
   if (dayHasCircuitProgress(snapshot, dateStr)) return true;
   if (garminData) {
@@ -157,22 +165,9 @@ export function dayCountsAsCalendarTrainingDay(snapshot, dateStr, garminData = n
  */
 export function countTrainingDaysInRange(snapshot, startYmd, endYmd, garminData = null) {
   if (!startYmd || !endYmd || startYmd > endYmd) return 0;
-  const garminDates = garminData ? collectGarminTrainingDates(garminData, snapshot) : new Set();
   let count = 0;
   for (const d of DateHelper.getDateRange(startYmd, endYmd)) {
-    if (dayHasCheckedWorkout(snapshot, d)) {
-      count += 1;
-      continue;
-    }
-    if (dayHasMomentumEnduranceSession(snapshot, d)) {
-      count += 1;
-      continue;
-    }
-    if (dayHasCircuitProgress(snapshot, d)) {
-      count += 1;
-      continue;
-    }
-    if (garminDates.has(d)) count += 1;
+    if (dayCountsAsCalendarTrainingDay(snapshot, d, garminData)) count += 1;
   }
   return count;
 }

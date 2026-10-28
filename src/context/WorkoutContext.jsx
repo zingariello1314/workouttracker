@@ -90,7 +90,11 @@ const WorkoutProvider = ({ children }) => {
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
   const [isGymMode, setIsGymMode] = useState(false);
-  /** Remplacement du jour pour afficher l'entraînement d'un autre jour (ex. faire lundi un vendredi). null = jour actuel. */
+  /**
+   * Remplacement du/des jour(s) pour afficher l'entraînement d'un autre jour
+   * (ex. faire lundi un vendredi) ou combiner plusieurs séances.
+   * null | string | string[] — null = jour calendaire actuel.
+   */
   const [workoutDayOverride, setWorkoutDayOverride] = useState(null);
   const lastDateStrRef = useRef(getDateStr(currentDate));
 
@@ -557,149 +561,176 @@ const WorkoutProvider = ({ children }) => {
 
   // Fonction wrapper pour getTodayWorkout qui utilise activeProgram si disponible
   const getTodayWorkoutWrapper = useCallback((requestedDate, isGymMode = false) => {
-    // Si un programme actif existe, utiliser son schedule
-    if (activeProgram && activeProgram.schedule) {
-      const sessionDateStr = getDateStr(requestedDate);
-      const todayStr = getDateStr(currentDate);
-      const useDayOverride =
-        workoutDayOverride && sessionDateStr === todayStr;
-      const dayName = (useDayOverride ? workoutDayOverride : null) || getDayName(requestedDate);
+    const DAY_ORDER = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+    const normalizeOverrideDays = (override) => {
+      if (override == null) return [];
+      if (Array.isArray(override)) {
+        return DAY_ORDER.filter((d) => override.includes(d));
+      }
+      if (typeof override === 'string' && override) return [override];
+      return [];
+    };
+
+    const sessionDateStr = getDateStr(requestedDate);
+    const todayStr = getDateStr(currentDate);
+    const overrideDays = normalizeOverrideDays(workoutDayOverride);
+    const useDayOverride = overrideDays.length > 0 && sessionDateStr === todayStr;
+    const resolvedDays = useDayOverride ? overrideDays : [getDayName(requestedDate)];
+
+    const buildFromProgramDay = (dayName, { combineLabel = false } = {}) => {
+      if (!activeProgram?.schedule) return null;
       const daySchedule = activeProgram.schedule[dayName];
-      
-      if (daySchedule) {
-        const currentWeekVariant = getAutoWeekVariant(requestedDate);
+      if (!daySchedule) return null;
 
-        // Programmes quiz : jour `active: false` = repos, sauf si des exercices / étirements y sont planifiés (ex. ajout banque).
-        if (activeProgram.availabilitySource === 'quiz' && daySchedule.active === false) {
-          const hasExercises =
-            Array.isArray(daySchedule.exercises) && daySchedule.exercises.length > 0;
-          const et = daySchedule.etirements;
-          const hasStretches =
-            et &&
-            typeof et === 'object' &&
-            ['matin', 'midi', 'soir'].some((m) => {
-              const slot = et[m];
-              return Array.isArray(slot) ? slot.length > 0 : Boolean(slot);
-            });
-          if (!hasExercises && !hasStretches) {
-            return {
-              name: daySchedule.name || 'Repos',
-              focus: daySchedule.focus || '',
-              duree: daySchedule.duration || '',
-              exercices: [],
-              etirements: undefined,
-              isGymMode,
-              weekVariant: currentWeekVariant
-            };
-          }
-        }
+      const currentWeekVariant = getAutoWeekVariant(requestedDate);
 
-        // ✅ FIX : Gérer les variations salle (maison/salle) si disponibles
-        let exercisesToUse = daySchedule.exercises || [];
-        let variantName = daySchedule.name || '';
-        
-        // Si mode salle et variantes disponibles, utiliser la variante appropriée
-        if (isGymMode && daySchedule.salleVariants) {
-          const weekVariantKey = currentWeekVariant === 'A' ? 'semaineA' : 'semaineB';
-          const gymVariant = daySchedule.salleVariants[weekVariantKey];
-
-          if (
-            gymVariant &&
-            Array.isArray(gymVariant.exercises) &&
-            gymVariant.exercises.length > 0
-          ) {
-            exercisesToUse = gymVariant.exercises;
-            variantName = gymVariant.name || variantName;
-          }
-        }
-
-        // ✅ Retraits logiques : n'afficher l'exo que pour les dates de séance <= removedFromProgramAt
-        exercisesToUse = filterExercisesForSessionDate(exercisesToUse, sessionDateStr);
-
-        if (activeProgram.availabilitySource === 'quiz' && activeProgram.quizGenerationMeta?.liveCoachEnabled !== false) {
-          try {
-            const live = applyLiveCoachToExercises(
-              exercisesToUse.map((ex) => ({
-                ...ex,
-                originalId: ex.originalId ?? ex.id
-              })),
-              {
-                activeProgram,
-                sessionYmd: sessionDateStr,
-                snapshot: getCurrentData(),
-                trainingEvidence: activeProgram.quizGenerationMeta?.trainingEvidence
-              }
-            );
-            exercisesToUse = live.exercises;
-            if (live.coachNotes?.length && !daySchedule.focus?.includes('Coach :')) {
-              daySchedule.focus = [daySchedule.focus, live.coachNotes[0]].filter(Boolean).join(' · ');
-            }
-          } catch {
-            // coach live optionnel
-          }
-        }
-        
-        // Convertir le format du programme actif au format attendu
-        // Générer des IDs numériques stables pour chaque exercice
-        const usedIds = new Set();
-        const exercises = exercisesToUse.map((ex, index) => {
-          const baseId = convertToStableNumericId(ex.id, index);
-          const numericId = makeUniqueNumericId(baseId, usedIds);
-          
+      if (activeProgram.availabilitySource === 'quiz' && daySchedule.active === false) {
+        const hasExercises =
+          Array.isArray(daySchedule.exercises) && daySchedule.exercises.length > 0;
+        const et = daySchedule.etirements;
+        const hasStretches =
+          et &&
+          typeof et === 'object' &&
+          ['matin', 'midi', 'soir'].some((m) => {
+            const slot = et[m];
+            return Array.isArray(slot) ? slot.length > 0 : Boolean(slot);
+          });
+        if (!hasExercises && !hasStretches) {
           return {
-            id: numericId,
-            name: ex.name,
-            series: ex.series,
-            type: ex.type || 'standard',
-            materiel: ex.materiel || 'poids du corps',
-            notes: ex.notes || '',
-            rest: ex.rest || 90,
-            intensity: ex.intensity || 'moderate',
-            // Stocker l'ID original pour référence (important pour getExerciseNameById)
-            originalId: ex.id
+            name: daySchedule.name || 'Repos',
+            focus: daySchedule.focus || '',
+            duree: daySchedule.duration || '',
+            exercices: [],
+            etirements: undefined,
+            isGymMode,
+            weekVariant: currentWeekVariant,
+            sourceDay: dayName,
           };
-        });
-        
-        // Étirements : passer le bloc tel quel (tableaux par moment, objets legacy, chaînes…).
-        // L’ancien code ne lisait que `*.instructions` sur des objets non-tableaux, ce qui
-        // supprimait tout le planning dès que l’éditeur Programme enregistrait le format moderne
-        // (`{ matin: [{ id, stretchKey, duration }], … }`). StretchList / normalizeStretchSlots gèrent tout.
-        const etirementsPayload =
+        }
+      }
+
+      let exercisesToUse = daySchedule.exercises || [];
+      let variantName = daySchedule.name || '';
+
+      if (isGymMode && daySchedule.salleVariants) {
+        const weekVariantKey = currentWeekVariant === 'A' ? 'semaineA' : 'semaineB';
+        const gymVariant = daySchedule.salleVariants[weekVariantKey];
+        if (
+          gymVariant &&
+          Array.isArray(gymVariant.exercises) &&
+          gymVariant.exercises.length > 0
+        ) {
+          exercisesToUse = gymVariant.exercises;
+          variantName = gymVariant.name || variantName;
+        }
+      }
+
+      exercisesToUse = filterExercisesForSessionDate(exercisesToUse, sessionDateStr);
+
+      let focus = daySchedule.focus || '';
+      if (activeProgram.availabilitySource === 'quiz' && activeProgram.quizGenerationMeta?.liveCoachEnabled !== false) {
+        try {
+          const live = applyLiveCoachToExercises(
+            exercisesToUse.map((ex) => ({
+              ...ex,
+              originalId: ex.originalId ?? ex.id
+            })),
+            {
+              activeProgram,
+              sessionYmd: sessionDateStr,
+              snapshot: getCurrentData(),
+              trainingEvidence: activeProgram.quizGenerationMeta?.trainingEvidence
+            }
+          );
+          exercisesToUse = live.exercises;
+          if (live.coachNotes?.length && !focus.includes('Coach :')) {
+            focus = [focus, live.coachNotes[0]].filter(Boolean).join(' · ');
+          }
+        } catch {
+          // coach live optionnel
+        }
+      }
+
+      const usedIds = new Set();
+      const exercises = exercisesToUse.map((ex, index) => {
+        const baseId = convertToStableNumericId(ex.id, index);
+        const numericId = makeUniqueNumericId(baseId, usedIds);
+        const dayTag = combineLabel
+          ? ` · ${dayName.charAt(0).toUpperCase()}${dayName.slice(1)}`
+          : '';
+        return {
+          id: numericId,
+          name: `${ex.name || ''}${dayTag}`,
+          series: ex.series,
+          type: ex.type || 'standard',
+          materiel: ex.materiel || 'poids du corps',
+          notes: ex.notes || '',
+          rest: ex.rest || 90,
+          intensity: ex.intensity || 'moderate',
+          originalId: ex.id,
+          sourceDay: dayName,
+        };
+      });
+
+      return {
+        name: variantName,
+        focus,
+        duree: daySchedule.duration || '',
+        exercices: exercises,
+        etirements:
           daySchedule.etirements && typeof daySchedule.etirements === 'object'
             ? daySchedule.etirements
-            : undefined;
-
-        const pliometriePayload =
+            : undefined,
+        pliometrie:
           daySchedule.pliometrie && typeof daySchedule.pliometrie === 'object'
             ? daySchedule.pliometrie
-            : undefined;
-        const drillsCoursePayload =
+            : undefined,
+        drillsCourse:
           daySchedule.drillsCourse && typeof daySchedule.drillsCourse === 'object'
             ? daySchedule.drillsCourse
-            : undefined;
+            : undefined,
+        isGymMode,
+        weekVariant: currentWeekVariant,
+        sourceDay: dayName,
+      };
+    };
 
+    if (activeProgram && activeProgram.schedule) {
+      const combine = resolvedDays.length > 1;
+      const parts = resolvedDays
+        .map((d) => buildFromProgramDay(d, { combineLabel: combine }))
+        .filter(Boolean);
+
+      if (parts.length === 1) {
+        return parts[0];
+      }
+      if (parts.length > 1) {
+        const usedIds = new Set();
+        const mergedExercices = [];
+        parts.forEach((part) => {
+          (part.exercices || []).forEach((ex) => {
+            const numericId = makeUniqueNumericId(ex.id, usedIds);
+            mergedExercices.push({ ...ex, id: numericId });
+          });
+        });
+        const names = parts.map((p) => p.name).filter(Boolean);
         return {
-          name: variantName,
-          focus: daySchedule.focus || '',
-          duree: daySchedule.duration || '',
-          exercices: exercises,
-          etirements: etirementsPayload,
-          pliometrie: pliometriePayload,
-          drillsCourse: drillsCoursePayload,
-          isGymMode: isGymMode,
-          weekVariant: currentWeekVariant
+          name: names.join(' + ') || 'Séances combinées',
+          focus: parts.map((p) => p.focus).filter(Boolean).join(' · '),
+          duree: parts.map((p) => p.duree).filter(Boolean).join(' + '),
+          exercices: mergedExercices,
+          etirements: parts.find((p) => p.etirements)?.etirements,
+          pliometrie: parts.find((p) => p.pliometrie)?.pliometrie,
+          drillsCourse: parts.find((p) => p.drillsCourse)?.drillsCourse,
+          isGymMode,
+          weekVariant: parts[0].weekVariant,
+          combinedDays: resolvedDays,
         };
       }
     }
-    
-    // Fallback vers la fonction originale de workoutLogic (avec jour override si besoin)
+
     if (workoutLogicRef.current?.getTodayWorkout) {
-      const sessionDateStr = getDateStr(requestedDate);
-      const todayStr = getDateStr(currentDate);
-      const useDayOverride =
-        workoutDayOverride && sessionDateStr === todayStr;
-      const dayToUse =
-        (useDayOverride ? workoutDayOverride : null) || getDayName(requestedDate);
+      const dayToUse = resolvedDays[0] || getDayName(requestedDate);
       const virtualDate = new Date(requestedDate);
       const dayIndex = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(dayToUse);
       if (dayIndex >= 0) {
@@ -708,16 +739,15 @@ const WorkoutProvider = ({ children }) => {
       }
       return workoutLogicRef.current.getTodayWorkout(requestedDate, isGymMode);
     }
-    
-    // Dernier fallback
-      return { 
-        name: null,
-        focus: null,
-        exercices: [],
-        etirements: undefined,
-        isGymMode: false,
-        weekVariant: getAutoWeekVariant(requestedDate)
-      };
+
+    return {
+      name: null,
+      focus: null,
+      exercices: [],
+      etirements: undefined,
+      isGymMode: false,
+      weekVariant: getAutoWeekVariant(requestedDate)
+    };
   }, [activeProgram, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, currentDate, getCurrentData]);
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,

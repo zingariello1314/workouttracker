@@ -191,7 +191,7 @@ const RecapUserAssessmentPanel = ({
             </h3>
             <DenseDailyLineChart
               seriesA={chartBundle.repsSeries}
-              metaA={{ label: t('recap.assessment.chartRepsAxis'), color: '#34d399' }}
+              metaA={{ label: t('recap.assessment.chartRepsAxis'), color: '#ffb938' }}
               height={190}
               valueFormatA={(v) => String(Math.round(v))}
               emptyMessage={t('recap.assessment.chartEmptyReps')}

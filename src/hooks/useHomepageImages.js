@@ -14,10 +14,11 @@ import {
   applyHomepageImagePreferences,
   hydrateHomepageImageFromDbItem,
   normalizeHomepageImages,
+  purgeRemovedWelcomeVideos,
   readHomepagePreferencesFromStorage,
   writeHomepagePreferencesToStorage,
 } from '../utils/homepageImagePreferences.js';
-import { isSharedWallpaperSrc } from '../utils/sharedWallpaperSrc.js';
+import { isAllowedHomepageMediaSrc } from '../utils/sharedWallpaperSrc.js';
 
 const log = logger.module('useHomepageImages');
 
@@ -63,7 +64,10 @@ export const useHomepageImages = () => {
 
   const finalizeLoadedImages = (rawImages) => {
     const prefs = readHomepagePreferencesFromStorage(scopedMetadataKey);
-    return applyHomepageImagePreferences(normalizeHomepageImages(rawImages), prefs);
+    return applyHomepageImagePreferences(
+      purgeRemovedWelcomeVideos(normalizeHomepageImages(rawImages)),
+      prefs
+    );
   };
 
   const persistImagePreferences = (images) => {
@@ -94,7 +98,7 @@ export const useHomepageImages = () => {
       log.warn('❌ Image invalide: pas une chaîne de caractères');
       return false;
     }
-    if (isSharedWallpaperSrc(base64)) return true;
+    if (isAllowedHomepageMediaSrc(base64)) return true;
     if (!base64.startsWith('data:image/')) {
       log.warn('❌ Image invalide: ne commence pas par data:image/');
       return false;
@@ -300,15 +304,20 @@ export const useHomepageImages = () => {
       if (indexedDBSuccess) {
         // IndexedDB fonctionne → Sauvegarde légère des métadonnées seulement
         try {
+          // Fusionner avec l’existant pour ne pas écraser playback (mediaKinds, etc.)
           persistImagePreferences(validImages);
-          const metadata = {
-            count: validImages.length,
-            timestamp: new Date().toISOString(),
-            version: '3.1',
-            storage: 'indexeddb_primary',
-            preferences: readHomepagePreferencesFromStorage(scopedMetadataKey)
-          };
-          localStorage.setItem(scopedMetadataKey, JSON.stringify(metadata));
+          const existing = JSON.parse(localStorage.getItem(scopedMetadataKey) || '{}');
+          localStorage.setItem(
+            scopedMetadataKey,
+            JSON.stringify({
+              ...existing,
+              count: validImages.length,
+              timestamp: new Date().toISOString(),
+              version: '3.1',
+              storage: 'indexeddb_primary',
+              preferences: readHomepagePreferencesFromStorage(scopedMetadataKey),
+            })
+          );
           log.debug('✅ Métadonnées sauvegardées dans localStorage');
         } catch (error) {
           log.warn('⚠️ Impossible de sauvegarder les métadonnées:', error);

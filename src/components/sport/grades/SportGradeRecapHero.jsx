@@ -28,44 +28,45 @@ export default function SportGradeRecapHero({
     meritedGradeId === progressionGradeId && Number(meritedTier) === Number(progressionTier);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#0F4C5C]/55 bg-gradient-to-br from-black via-[#041a14]/95 to-black shadow-lg shadow-black/50">
-      <div className="flex flex-col gap-5 p-4 sm:flex-row sm:items-stretch sm:gap-6 sm:p-5">
-        <div className="flex shrink-0 justify-center sm:w-[min(42%,300px)] sm:justify-start">
+    <section className="rb-hero">
+      <div>
+        <div className="rb-ph">
           <SportGradeEmblem gradeId={progressionGradeId} layout="hero" className="sm:max-w-none sm:w-full" />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center text-center sm:text-left">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-500">
-            {t('sport.grades.progressionLabel', 'Progression')}
-          </p>
-          <h3 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{progName}</h3>
-          <p className="mt-1 text-sm font-medium text-cyan-200/90">{progPalier}</p>
-          {level != null ? (
-            <p className="mt-1 text-xs tabular-nums text-slate-500">
-              {t('sport.grades.levelShort', `Niveau ${level}`, { level })}
-            </p>
-          ) : null}
+        <div>
+          <div className="hh">
+            <div>
+              <p className="eb">{t('sport.grades.progressionLabel', 'Progression')}</p>
+              <h3>{progName}</h3>
+              <span className="pal">{progPalier}</span>
+            </div>
+            {level != null ? (
+              <p className="rb-lvn">
+                <b>{level}</b>
+                <span>{t('sport.grades.levelWord', 'Niveau')}</span>
+              </p>
+            ) : null}
+          </div>
 
-          <div className="my-4 h-px w-full bg-[#0F4C5C]/45" />
-
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600/90">
-            {t('sport.grades.meritedLabel', 'Grade mérité')}
-          </p>
-          {sameMerited ? (
-            <p className="mt-1 text-sm text-slate-400">
-              {t(
-                'recap.grades.meritedSameAsProgression',
-                'Identique à ta progression — toutes les conditions de grade sont remplies pour ce palier.'
-              )}
-            </p>
-          ) : (
-            <p className="mt-1 text-base font-semibold text-amber-100/95">
-              {t('recap.grades.meritedLine', `${merName} · ${merPalier}`, {
-                grade: merName,
-                palier: merPalier
-              })}
-            </p>
-          )}
+          <div className="bl">
+            <p className="lb2">{t('sport.grades.meritedLabel', 'Grade mérité')}</p>
+            {sameMerited ? (
+              <p>
+                {t(
+                  'recap.grades.meritedSameAsProgression',
+                  'Identique à ta progression — toutes les conditions de grade sont remplies pour ce palier.'
+                )}
+              </p>
+            ) : (
+              <p>
+                {t('recap.grades.meritedLine', `${merName} · ${merPalier}`, {
+                  grade: merName,
+                  palier: merPalier
+                })}
+              </p>
+            )}
+          </div>
           <SportGradeXpInsights dailyInsights={dailyInsights} totalXP={totalXP} />
         </div>
       </div>

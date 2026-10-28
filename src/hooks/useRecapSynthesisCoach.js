@@ -25,7 +25,8 @@ export function useRecapSynthesisCoach({ snapshot, assessment, activeProgram, pr
     startYmd: win?.startYmd,
     endYmd: win?.endYmd,
     enabled: enabled && Boolean(win?.startYmd && win?.endYmd),
-    manualWalkByDate: snapshot?.enduranceData?.manualDailyWalkByDate ?? null
+    manualWalkByDate: snapshot?.enduranceData?.manualDailyWalkByDate ?? null,
+    manualSleepByDate: snapshot?.manualSleepByDate ?? null
   });
 
   const aggregate = useMemo(() => {

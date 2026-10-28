@@ -24,7 +24,14 @@ import { buildWeightByDateMap } from '../../../utils/sport/recapAssessmentSeries
  * Tendances quotidiennes pour le Récap (et réutilisable dans le Dashboard).
  * @param {{ compact?: boolean, layout?: 'stack'|'grid', chartHeight?: number }} props
  */
-const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHeight }) => {
+const RecapDailyTrendChartsBlock = ({
+  compact = false,
+  layout = 'stack',
+  chartHeight,
+  showPeak = false,
+  peakPrefix = 'pic',
+  range = null
+}) => {
   const { data, getCurrentData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
   const { isAuthenticated } = useAuth();
@@ -50,7 +57,8 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
 
   const chartModel = useMemo(() => {
     const snap = getCurrentData();
-    const end = todayYmd();
+    const end = range?.end || todayYmd();
+    const clip = range?.start && range?.end ? { start: range.start, end: range.end } : null;
 
     const runningRaw = Array.isArray(snap?.enduranceData?.sessions?.running)
       ? snap.enduranceData.sessions.running
@@ -59,18 +67,18 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
     const merged = mergeRunningSessionsWithGarmin(runningRaw, garminById);
     const { rows } = computeRunningVolumeTotals(merged, garminById, { period: 'all' });
     const kmByDate = buildKmByDateFromRows(rows);
-    const runRange = defaultActivityRange(kmByDate, end);
+    const runRange = clip || defaultActivityRange(kmByDate, end);
     const runPoints = buildDenseDailyPoints(kmByDate, runRange.start, runRange.end);
 
     const repsByDate = buildTotalStrengthRepsByDate(snap);
-    const repsRange = defaultActivityRange(repsByDate, end);
+    const repsRange = clip || defaultActivityRange(repsByDate, end);
     const repsPoints = buildDenseDailyPoints(repsByDate, repsRange.start, repsRange.end);
 
     const volMap = aggregateLiftVolumeKgByDate(snap);
     const liftFirst = firstLiftVolumeDate(snap);
     const repsFirst = firstPositiveDateInMap(repsByDate);
-    const dualStart = liftFirst || repsFirst || end;
-    const dualEnd = end;
+    const dualStart = clip?.start || liftFirst || repsFirst || end;
+    const dualEnd = clip?.end || end;
     const volPts = buildDenseDailyPoints(volMap, dualStart, dualEnd);
     const repPtsAligned = buildDenseDailyPoints(repsByDate, dualStart, dualEnd);
 
@@ -78,11 +86,12 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
       garminBundle?.dailyMetrics,
       snap?.enduranceData?.manualDailyWalkByDate
     );
-    const stepsRange = defaultActivityRange(stepsMap, end);
+    const stepsRange = clip || defaultActivityRange(stepsMap, end);
     const stepsPoints = buildDenseDailyPoints(stepsMap, stepsRange.start, stepsRange.end);
 
     const weightMap = buildWeightByDateMap(snap?.progressEntries);
     const weightPoints = [...weightMap.entries()]
+      .filter(([date]) => !clip || (date >= clip.start && date <= clip.end))
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, value]) => ({ date, value }));
 
@@ -94,7 +103,7 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
       stepsPoints,
       weightPoints
     };
-  }, [data, getCurrentData, garminBundle]);
+  }, [data, getCurrentData, garminBundle, range?.start, range?.end]);
 
   const { runPoints, repsPoints, volPts, repPtsAligned, stepsPoints, weightPoints } = chartModel;
 
@@ -107,7 +116,7 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
   const runChart = (
     <div className={chartCardClass}>
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-sky-200/90">Course (km / jour)</h3>
-      <DenseDailyLineChart
+      <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
         seriesA={runPoints.map((p) => ({ date: p.date, value: p.value }))}
         metaA={{ label: 'km', color: '#38bdf8' }}
         valueFormatA={(v) => (Math.round(v * 100) / 100).toFixed(2)}
@@ -121,7 +130,7 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-fuchsia-200/90">
         Reps totaux / jour
       </h3>
-      <DenseDailyLineChart
+      <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
         seriesA={repsPoints.map((p) => ({ date: p.date, value: p.value }))}
         metaA={{ label: 'reps', color: '#e879f9' }}
         height={h}
@@ -134,9 +143,9 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-200/90">
         Volume (kg×reps) / jour
       </h3>
-      <DenseDailyLineChart
+      <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
         seriesA={volPts.map((p) => ({ date: p.date, value: p.value }))}
-        metaA={{ label: 'kg×reps', color: '#34d399' }}
+        metaA={{ label: 'kg×reps', color: '#ffb938' }}
         valueFormatA={(v) => (Math.round(v * 10) / 10).toFixed(1)}
         height={h}
       />
@@ -152,7 +161,7 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
         <p className="mb-2 text-[10px] text-slate-500">
           Un point par mesure (impédance ou mensurations). L’échelle est zoomée sur tes variations.
         </p>
-        <DenseDailyLineChart
+        <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
           seriesA={weightPoints}
           metaA={{ label: 'kg', color: '#fbbf24' }}
           valueFormatA={(v) => (v > 0 ? Number(v).toFixed(1) : '—')}
@@ -166,7 +175,7 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
   const stepsChart = (
     <div className={chartCardClass}>
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-200/90">Pas / jour</h3>
-      <DenseDailyLineChart
+      <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
         seriesA={stepsPoints.map((p) => ({ date: p.date, value: p.value }))}
         metaA={{ label: 'pas', color: '#fcd34d' }}
         height={h}
@@ -177,9 +186,9 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
   return (
     <section className={`rounded-xl border-2 border-[#0F4C5C]/70 bg-black ${padClass} space-y-4`}>
       {!compact ? (
-        <div>
-          <h2 className="text-sm font-semibold text-teal-100">Tendances quotidiennes</h2>
-          <p className="mt-1 text-xs text-teal-700 leading-relaxed">
+        <div className="sh">
+          <h2>Tendances quotidiennes</h2>
+          <p className="sub">
             Courbes denses : chaque jour calendaire apparaît ; les jours sans activité sont à 0.
           </p>
         </div>
@@ -206,10 +215,10 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
             <p className="mb-3 text-[11px] text-slate-500">
               La série commence au premier jour où du volume pondéré est enregistré.
             </p>
-            <DenseDailyLineChart
+            <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
               seriesA={volPts.map((p) => ({ date: p.date, value: p.value }))}
               seriesB={repPtsAligned.map((p) => ({ date: p.date, value: p.value }))}
-              metaA={{ label: 'kg×reps', color: '#34d399' }}
+              metaA={{ label: 'kg×reps', color: '#ffb938' }}
               metaB={{ label: 'reps', color: '#f472b6' }}
               valueFormatA={(v) => (Math.round(v * 10) / 10).toFixed(1)}
               height={compact ? 180 : 220}

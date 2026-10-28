@@ -14,7 +14,12 @@ const chartCardClass =
 /**
  * Graphiques additionnels alimentés par le bundle d'enrichissement Récap.
  */
-export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160 }) {
+export default function RecapExtendedTrendCharts({
+  enrichment,
+  chartHeight = 160,
+  showPeak = false,
+  peakPrefix = 'pic'
+}) {
   const { getCurrentData, data } = useWorkout();
 
   const enduranceCharts = useMemo(() => {
@@ -105,7 +110,7 @@ export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160
           {charts.map((c) => (
             <div key={c.key} className={chartCardClass}>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-200/90">{c.title}</h3>
-              <DenseDailyLineChart
+              <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
                 seriesA={c.series.map((p) => ({ date: p.date, value: p.value }))}
                 metaA={{ label: c.label, color: c.color }}
                 valueFormatA={c.format}
@@ -123,7 +128,7 @@ export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160
           <div className="grid gap-4 sm:grid-cols-3">
             <div className={chartCardClass}>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pink-200/90">Pompes / jour</h3>
-              <DenseDailyLineChart
+              <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
                 seriesA={enduranceCharts.pushups.map((p) => ({ date: p.date, value: p.value }))}
                 metaA={{ label: 'reps', color: '#f472b6' }}
                 height={chartHeight}
@@ -131,7 +136,7 @@ export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160
             </div>
             <div className={chartCardClass}>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-200/90">Corde / jour</h3>
-              <DenseDailyLineChart
+              <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
                 seriesA={enduranceCharts.jumprope.map((p) => ({ date: p.date, value: p.value }))}
                 metaA={{ label: 'sauts', color: '#a78bfa' }}
                 height={chartHeight}
@@ -139,9 +144,9 @@ export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160
             </div>
             <div className={chartCardClass}>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-200/90">Gainage (s / jour)</h3>
-              <DenseDailyLineChart
+              <DenseDailyLineChart showPeak={showPeak} peakPrefix={peakPrefix}
                 seriesA={enduranceCharts.gainage.map((p) => ({ date: p.date, value: p.value }))}
-                metaA={{ label: 's', color: '#34d399' }}
+                metaA={{ label: 's', color: '#ffb938' }}
                 height={chartHeight}
               />
             </div>

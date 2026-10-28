@@ -214,6 +214,11 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
             hidden: isV3Format ? Boolean(image.hidden) : false,
             useOnHome: isV3Format ? image.useOnHome !== false : true,
             useOnLock: isV3Format ? Boolean(image.useOnLock) : false,
+            mediaType: isV3Format ? (image.mediaType || null) : null,
+            allowSound: isV3Format ? Boolean(image.allowSound) : false,
+            loop: isV3Format ? Boolean(image.loop) : false,
+            name: isV3Format ? (image.name || null) : null,
+            videoId: isV3Format ? (image.videoId || null) : null,
             // ✅ Phase 4: Versions optionnelles (seulement si activé)
             ...(versions.length > 0 ? { versions } : {})
           };

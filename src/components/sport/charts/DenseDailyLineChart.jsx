@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState, useCallback } from 'react';
 import { formatChartDateDayMonth } from '../../../utils/sport/dailyDenseTimeSeries';
 
 function buildYAxisTicks(maxVal, steps = 4, minVal = 0) {
@@ -48,10 +48,29 @@ const DenseDailyLineChart = ({
   /** Infobulle au survol des points */
   interactive = true,
   /** Échelle Y collée aux valeurs (utile pour le poids, évite une courbe collée en haut). */
-  fitYToData = false
+  fitYToData = false,
+  /** Pastille « pic » : maximum déjà présent dans la série, rien n'est inventé. */
+  showPeak = false,
+  peakPrefix = 'pic'
 }) => {
   const gradId = useId().replace(/:/g, '');
   const dual = Boolean(seriesB && Array.isArray(seriesB) && seriesB.length && metaB);
+  const wrapRef = useRef(null);
+  const [plotWidth, setPlotWidth] = useState(480);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const apply = () => {
+      const cs = getComputedStyle(el);
+      const w = Math.floor(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+      if (w >= 240) setPlotWidth((prev) => (Math.abs(prev - w) > 2 ? w : prev));
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const [tip, setTip] = useState(null);
 
@@ -59,7 +78,7 @@ const DenseDailyLineChart = ({
     const ptsA = Array.isArray(seriesA) ? seriesA : [];
     const ptsB = dual && seriesB.length === seriesA.length ? seriesB : [];
     const n = ptsA.length;
-    const width = 720;
+    const width = plotWidth;
     const pad = { top: 16, right: dual ? 24 : 14, bottom: xAxisLabel ? 36 : 32, left: yAxisLabel ? 48 : 40 };
 
     if (n < 1) {
@@ -79,6 +98,12 @@ const DenseDailyLineChart = ({
     const maxB = dual ? Math.max(1, ...ptsB.map((p) => Number(p.value) || 0)) : 1;
     const yAxisA = buildYAxisTicks(maxA, 4, minA);
     const yAxisB = dual ? buildYAxisTicks(maxB, 4, 0) : null;
+
+    const yTickLabels = yAxisA.ticks.map((v) => String(valueFormatA(v)));
+    const longestTick = yTickLabels.reduce((m, s) => Math.max(m, s.length), 2);
+    pad.left = Math.max(pad.left, Math.ceil(longestTick * 7.6) + 20);
+    pad.right = Math.max(pad.right, 28);
+    pad.bottom = Math.max(pad.bottom, n > 24 ? 56 : 40);
 
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
@@ -149,7 +174,7 @@ const DenseDailyLineChart = ({
       ticks: ptsA.map((p, i) => ({
         i,
         x: xAt(i),
-        short: formatChartDateDayMonth(p.date),
+        short: p.axisLabel || formatChartDateDayMonth(p.date),
         fullDate: String(p.date || '')
       })),
       labelIndices,
@@ -157,7 +182,7 @@ const DenseDailyLineChart = ({
       pointsA,
       pointsB
     };
-  }, [seriesA, seriesB, dual, metaB, height, seriesA?.length, xAxisLabel, yAxisLabel, fitYToData]);
+  }, [seriesA, seriesB, dual, metaB, height, seriesA?.length, xAxisLabel, yAxisLabel, fitYToData, valueFormatA, plotWidth]);
 
   const showTipAtIndex = useCallback(
     (e, index) => {
@@ -236,8 +261,17 @@ const DenseDailyLineChart = ({
   const hitRadius = n > 100 ? 9 : n > 50 ? 11 : 14;
   const showDotsAlways = n <= 70;
 
+  const peakValue = showPeak
+    ? Math.max(...(Array.isArray(seriesA) ? seriesA : []).map((p) => Number(p.value) || 0), 0)
+    : null;
+
   return (
-    <div className="relative w-full overflow-x-auto rounded-xl border border-[#0F4C5C]/35 bg-gradient-to-b from-[#020617] to-black p-2.5" onMouseLeave={clearTip}>
+    <div ref={wrapRef} className="relative w-full overflow-x-auto rounded-xl border border-[#0F4C5C]/35 bg-gradient-to-b from-[#020617] to-black p-2.5" onMouseLeave={clearTip}>
+      {peakValue != null ? (
+        <span className="pic" style={{ background: metaA.color, color: '#07080c' }}>
+          {peakPrefix} {valueFormatA(peakValue)}
+        </span>
+      ) : null}
       <svg
         viewBox={`0 0 ${width} ${svgH}`}
         className="min-w-[320px] w-full h-auto rounded-lg border border-[#0F4C5C]/40 bg-black/90"
@@ -296,7 +330,7 @@ const DenseDailyLineChart = ({
                 x={pad.left - 6}
                 y={y + 3}
                 textAnchor="end"
-                fontSize="8"
+                fontSize="11"
                 fill="#64748b"
                 className="tabular-nums"
               >
@@ -447,20 +481,25 @@ const DenseDailyLineChart = ({
 
         {ticks
           .filter((t) => labelIndices.includes(t.i))
-          .map((t) => (
+          .map((t) => {
+            const crowded = ticks.length > 24;
+            const anchor = crowded ? 'end' : t.i === 0 ? 'start' : t.i === n - 1 ? 'end' : 'middle';
+            const y = svgH - (crowded ? 8 : 14);
+            return (
             <text
               key={`lbl-${t.i}`}
               x={t.x}
-              y={svgH - 10}
-              fontSize="8"
-              fill="#475569"
-              textAnchor="middle"
-              transform={ticks.length > 24 ? `rotate(-40 ${t.x} ${svgH - 10})` : undefined}
+              y={y}
+              fontSize="11"
+              fill="#94a3b8"
+              textAnchor={anchor}
+              transform={crowded ? `rotate(-40 ${t.x} ${y})` : undefined}
               pointerEvents="none"
             >
               {t.short}
             </text>
-          ))}
+            );
+          })}
       </svg>
 
       {interactive && tip && (

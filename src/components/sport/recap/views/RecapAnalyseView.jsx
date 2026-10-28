@@ -1,70 +1,61 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import RecapPeriodHighlightsPanel from '../RecapPeriodHighlightsPanel';
 import RecapAnalyseDetails from './RecapAnalyseDetails';
 import { useTranslation } from '../../../../utils/translations';
+import { useWorkout } from '../../../../context/WorkoutContext';
+import { buildRecapPeriodCalendarAnalytics } from '../../../../utils/sport/recapCalendarPeriodAnalytics';
 
-const HORIZON_PILLS = {
-  short: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/40',
-  medium: 'bg-teal-500/20 text-teal-200 border-teal-500/40',
-  long: 'bg-emerald-600/20 text-emerald-200 border-emerald-600/40'
+const FAMILIES = {
+  short: { id: 'a', cls: 'a' },
+  medium: { id: 'p', cls: 'p' },
+  long: { id: 'r', cls: 'r' }
 };
 
-const REWARD_CARD = {
-  daily: 'border-l-2 border-l-emerald-400/85',
-  jalon: 'border-l-2 border-l-sky-400/90',
-  discovery: 'border-l-2 border-l-violet-400/90',
-  transformation: 'border-l-2 border-l-orange-400/90',
-  historic: 'border-l-2 border-l-rose-500/90'
+const FAMILY_META = {
+  a: { label: 'Activité', color: 'var(--d)' },
+  p: { label: 'Progression', color: 'var(--a1)' },
+  s: { label: 'Sommeil', color: 'var(--a2)' },
+  r: { label: 'Rythme', color: 'var(--a3)' },
+  m: { label: 'Répertoire', color: 'var(--a4)' },
+  al: { label: 'Alerte', color: 'var(--a3)' }
 };
 
-const REWARD_TITLE = {
-  daily: 'text-emerald-100/95',
-  jalon: 'text-sky-100/95',
-  discovery: 'text-violet-100/95',
-  transformation: 'text-orange-100/95',
-  historic: 'text-rose-100/95'
-};
+function asCard(item) {
+  if (typeof item === 'object' && item) return item;
+  return { body: String(item || '') };
+}
 
-function InsightColumn({ title, items, horizonKey, accent }) {
-  const pill = HORIZON_PILLS[horizonKey] || HORIZON_PILLS.medium;
-  const cards = items || [];
-
-  return (
-    <div className={`rounded-xl border p-4 ${accent}`}>
-      <div className="mb-3 flex items-center gap-2">
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${pill}`}>
-          {title}
-        </span>
-      </div>
-      {cards.length === 0 ? (
-        <p className="text-[12px] leading-relaxed text-slate-500">
-          Pas assez de signal fiable sur cette fenêtre.
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {cards.map((item, i) => {
-            const card = typeof item === 'object' && item ? item : { body: String(item || '') };
-            const tone = REWARD_CARD[card.rewardTone] || '';
-            const titleTone = REWARD_TITLE[card.rewardTone] || 'text-teal-100/95';
-            return (
-              <article key={i} className={`border-t border-white/10 pt-3 first:border-t-0 first:pt-0 pl-3 ${tone}`}>
-                {card.title ? (
-                  <h4 className={`mb-1.5 text-[12px] font-semibold leading-snug ${titleTone}`}>{card.title}</h4>
-                ) : null}
-                <p className="whitespace-pre-line text-[12px] leading-relaxed text-slate-200/95">
-                  {card.body || card.text}
-                </p>
-                {card.evidence ? (
-                  <p className="mt-1.5 text-[10px] tracking-wide text-slate-500">{card.evidence}</p>
-                ) : null}
-                {card.confidence ? <p className="mt-0.5 text-[10px] text-slate-500">{card.confidence}</p> : null}
-              </article>
-            );
-          })}
-        </div>
-      )}
-    </div>
+function markValues(text) {
+  const raw = String(text || '');
+  if (!raw) return null;
+  const parts = raw.split(/(\d[\d\s.,]*\s?(?:%|km|reps|kcal|min|h)?)/gi);
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <em key={index} className="v">
+        {part}
+      </em>
+    ) : (
+      part
+    )
   );
+}
+
+function motifClass(card, fallback) {
+  const blob = `${card.kind || ''} ${card.title || ''} ${card.body || card.text || ''}`.toLowerCase();
+  if (/sommeil|sleep|nuit|récup|recup/.test(blob)) return 's';
+  if (/rythme|cadence|fréquence|frequence|par jour|par séance|par seance/.test(blob)) return 'r';
+  if (/répertoire|repertoire|variété|variete|mouvement/.test(blob)) return 'm';
+  if (/progress|hausse|baisse| vs /.test(blob)) return 'p';
+  if (/alerte|attention|manque|incomplet/.test(blob)) return 'al';
+  return fallback;
+}
+
+function leadFigure(card) {
+  const src = String(card.title || card.body || card.text || '').trim();
+  const match = src.match(/(-?\d[\d\s.,]*\s*%(?:\s*(?:→|->|vs)\s*-?\d[\d\s.,]*\s*%?)?|\d+\s*(?:→|->)\s*\d+|\d[\d\s.,]*\s+vs\s+\d[\d\s.,]*)/i);
+  if (!match) return null;
+  const figure = match[1].trim();
+  return figure.length >= 2 && figure.length <= 22 ? figure : null;
 }
 
 export default function RecapAnalyseView({
@@ -81,51 +72,144 @@ export default function RecapAnalyseView({
   isAdmin = false
 }) {
   const t = useTranslation();
-  const shortTerm = assessment?.insights?.shortTerm || [];
-  const mediumTerm = assessment?.insights?.mediumTerm || [];
-  const longTerm = assessment?.insights?.longTerm || [];
+  const { getCurrentData, data, getExerciseNameById } = useWorkout();
+  const [family, setFamily] = useState('all');
+  const [detailsOn, setDetailsOn] = useState(false);
+  const [periodAnalytics, setPeriodAnalytics] = useState(null);
+  const resolvedWindow = periodWindow ?? enrichment?.window ?? null;
+
+  useEffect(() => {
+    if (!resolvedWindow?.start || !resolvedWindow?.end) {
+      setPeriodAnalytics(null);
+      return undefined;
+    }
+    const snap = getCurrentData();
+    const base = {
+      workoutData: snap,
+      garminData,
+      periodWindow: resolvedWindow,
+      period,
+      getExerciseNameById,
+      recapState
+    };
+    setDetailsOn(false);
+    setPeriodAnalytics(buildRecapPeriodCalendarAnalytics({ ...base, phase: 'header' }));
+    let cancelled = false;
+    const finish = () => {
+      if (cancelled) return;
+      setPeriodAnalytics(buildRecapPeriodCalendarAnalytics({ ...base, phase: 'full' }));
+      setDetailsOn(true);
+    };
+    const handle = window.requestIdleCallback
+      ? window.requestIdleCallback(finish, { timeout: 900 })
+      : window.setTimeout(finish, 80);
+    return () => {
+      cancelled = true;
+      if (window.requestIdleCallback) window.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+    };
+  }, [data, getCurrentData, garminData, resolvedWindow, period, getExerciseNameById, recapState]);
+
+  const groups = useMemo(
+    () => [
+      { key: 'short', title: t('recap.assessment.horizonShort'), items: assessment?.insights?.shortTerm || [] },
+      { key: 'medium', title: t('recap.assessment.horizonMedium'), items: assessment?.insights?.mediumTerm || [] },
+      { key: 'long', title: t('recap.assessment.horizonLong'), items: assessment?.insights?.longTerm || [] }
+    ],
+    [assessment?.insights, t]
+  );
+  const cards = groups.flatMap((group) =>
+    group.items.map((item, index) => {
+      const base = asCard(item);
+      const cls = motifClass(base, FAMILIES[group.key].cls);
+      return {
+        ...base,
+        key: `${group.key}-${index}`,
+        family: cls,
+        cls,
+        badge: FAMILY_META[cls]?.label || group.title
+      };
+    })
+  );
+  const familyCounts = cards.reduce((acc, card) => {
+    acc[card.family] = (acc[card.family] || 0) + 1;
+    return acc;
+  }, {});
+  const visible = family === 'all' ? cards : cards.filter((card) => card.family === family);
 
   return (
-    <div className="space-y-5">
+    <div className="rb-analyse">
       <RecapPeriodHighlightsPanel
+        part="head"
         period={period}
-        periodWindow={periodWindow ?? enrichment?.window}
+        periodWindow={resolvedWindow}
         garminData={garminData}
         recapState={recapState}
+        analytics={periodAnalytics}
       />
 
-      <div className="grid gap-3 lg:grid-cols-3">
-        <InsightColumn
-          title={t('recap.assessment.horizonShort')}
-          items={shortTerm}
-          horizonKey="short"
-          accent="border-cyan-500/35 bg-cyan-950/25"
-        />
-        <InsightColumn
-          title={t('recap.assessment.horizonMedium')}
-          items={mediumTerm}
-          horizonKey="medium"
-          accent="border-teal-500/35 bg-teal-950/30"
-        />
-        <InsightColumn
-          title={t('recap.assessment.horizonLong')}
-          items={longTerm}
-          horizonKey="long"
-          accent="border-emerald-600/35 bg-emerald-950/25"
-        />
+      <div className="dist" role="tablist">
+        <button type="button" className={family === 'all' ? 'on all' : 'all'} onClick={() => setFamily('all')}>
+          {t('recap.analyse.filterAll', 'Toutes')} <b>{cards.length}</b>
+        </button>
+        {Object.entries(FAMILY_META).map(([id, meta]) =>
+          familyCounts[id] ? (
+            <button
+              key={id}
+              type="button"
+              className={family === id ? 'on' : ''}
+              style={{ '--a': meta.color }}
+              onClick={() => setFamily(id)}
+            >
+              {meta.label} <b>{familyCounts[id]}</b>
+            </button>
+          ) : null
+        )}
       </div>
 
-      <RecapAnalyseDetails
-        assessment={assessment}
-        synthesisCoach={synthesisCoach}
-        profileQuestionnaireRaw={profileQuestionnaireRaw}
-        enrichment={enrichment}
-        programCoachAnalysis={programCoachAnalysis}
-        activeProgram={activeProgram}
-        period={period}
-        garminData={garminData}
-        isAdmin={isAdmin}
-      />
+      {visible.length === 0 ? (
+        <p className="emp">{t('recap.analyse.emptyWindow', 'Pas assez de signal fiable sur cette fenêtre.')}</p>
+      ) : (
+        <div className="igrid">
+          {visible.map((card) => (
+            <article key={card.key} className={`k ${motifClass(card, card.cls)}`}>
+              <header>
+                <b>{card.badge}</b>
+              </header>
+              {leadFigure(card) ? <div className="n">{leadFigure(card)}</div> : null}
+              {card.title ? <h4>{markValues(card.title)}</h4> : null}
+              <p className="whitespace-pre-line">{markValues(card.body || card.text)}</p>
+              {card.evidence ? <div className="meta">{card.evidence}</div> : null}
+              {card.confidence ? <div className="meta">{card.confidence}</div> : null}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {detailsOn ? (
+        <RecapAnalyseDetails
+          assessment={assessment}
+          synthesisCoach={synthesisCoach}
+          profileQuestionnaireRaw={profileQuestionnaireRaw}
+          enrichment={enrichment}
+          programCoachAnalysis={programCoachAnalysis}
+          activeProgram={activeProgram}
+          period={period}
+          garminData={garminData}
+          isAdmin={isAdmin}
+        />
+      ) : null}
+
+      {periodAnalytics?.phase === 'full' ? (
+        <RecapPeriodHighlightsPanel
+          part="tail"
+          period={period}
+          periodWindow={resolvedWindow}
+          garminData={garminData}
+          recapState={recapState}
+          analytics={periodAnalytics}
+        />
+      ) : null}
     </div>
   );
 }

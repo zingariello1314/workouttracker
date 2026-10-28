@@ -1,8 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { useProfileCard } from '../../hooks/useProfileCard';
 import { useSportGrade } from '../../hooks/useSportGrade';
 import ProfileCardRotationSettings from './ProfileCardRotationSettings';
+import {
+  getProfileCardDisplayPreference,
+  updateProfileCardDisplayPreference,
+  subscribeProfileCardDisplay
+} from '../../utils/profileCardDisplayPreference';
 import {
   SPORT_GRADE_IDS,
   gradeIndex,
@@ -44,6 +49,8 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
   const meritedIdx = Math.max(0, gradeIndex(grades?.merited?.gradeId || 'novice'));
   
   const [newHandle, setNewHandle] = useState(handle);
+  const [displayPrefs, setDisplayPrefs] = useState(getProfileCardDisplayPreference);
+  useEffect(() => subscribeProfileCardDisplay(setDisplayPrefs), []);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingIcon, setIsUploadingIcon] = useState(false);
   const [message, setMessage] = useState('');
@@ -447,7 +454,7 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
           <div className="profile-settings-section">
             <h3>Nom d'utilisateur (@handle)</h3>
             <p className="profile-settings-description">
-              Ce nom apparaît dans le petit rectangle en bas de la carte
+              Ce nom apparaît selon la position choisie ci-dessous
             </p>
             <form onSubmit={handleHandleSubmit}>
               <div className="profile-settings-input-group">
@@ -464,6 +471,67 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
                 Mettre à jour le @handle
               </button>
             </form>
+          </div>
+
+          <div className="profile-settings-section">
+            <h3>Affichage sur la carte</h3>
+            <p className="profile-settings-description">
+              Afficher ou masquer le nom et le titre, et choisir leur position.
+            </p>
+            <label className="profile-settings-description" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+              <input
+                type="checkbox"
+                checked={displayPrefs.showHandle}
+                onChange={(e) =>
+                  setDisplayPrefs(updateProfileCardDisplayPreference({ showHandle: e.target.checked }))
+                }
+              />
+              Afficher le nom d&apos;utilisateur (@handle)
+            </label>
+            <label className="profile-settings-description" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+              Position du nom
+              <select
+                value={displayPrefs.handlePosition}
+                disabled={!displayPrefs.showHandle}
+                onChange={(e) =>
+                  setDisplayPrefs(
+                    updateProfileCardDisplayPreference({ handlePosition: e.target.value })
+                  )
+                }
+                className="profile-settings-input"
+                style={{ maxWidth: 140 }}
+              >
+                <option value="top">En haut</option>
+                <option value="bottom">En bas</option>
+              </select>
+            </label>
+            <label className="profile-settings-description" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+              <input
+                type="checkbox"
+                checked={displayPrefs.showTitle}
+                onChange={(e) =>
+                  setDisplayPrefs(updateProfileCardDisplayPreference({ showTitle: e.target.checked }))
+                }
+              />
+              Afficher le titre
+            </label>
+            <label className="profile-settings-description" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              Position du titre
+              <select
+                value={displayPrefs.titlePosition}
+                disabled={!displayPrefs.showTitle}
+                onChange={(e) =>
+                  setDisplayPrefs(
+                    updateProfileCardDisplayPreference({ titlePosition: e.target.value })
+                  )
+                }
+                className="profile-settings-input"
+                style={{ maxWidth: 140 }}
+              >
+                <option value="top">En haut</option>
+                <option value="bottom">En bas</option>
+              </select>
+            </label>
           </div>
 
           {/* Message de statut */}

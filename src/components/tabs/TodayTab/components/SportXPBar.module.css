@@ -88,7 +88,7 @@
 .top {
   position: relative;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
   gap: 0 26px;
   align-items: center;
   padding: 16px 20px 18px;
@@ -798,9 +798,13 @@ button.box,
     grid-template-areas:
       'img gr tg'
       'pr pr pr'
-      'tot tot tot';
+      'tot today today';
     gap: 12px 14px;
     padding: 14px 14px 16px;
+  }
+
+  .today {
+    grid-area: today;
   }
 
   .bgl {

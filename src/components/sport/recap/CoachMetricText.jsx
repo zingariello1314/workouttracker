@@ -1,13 +1,10 @@
 import React from 'react';
 
-const POSITIVE = /(?:\+|\~)\s*\d+[,.]?\d*\s*%|\+\d+\s*%|record|solide|exemplaire|hausse|accélère|meilleur mois/i;
-const NEGATIVE = /(?:−|-)\s*\d+[,.]?\d*\s*%|sous|faible|fragile|retrait|baisse|~0|0\s*%/i;
-const WARN = /légère|modéré|attention|déséquilibre|domine|priorité/i;
-
 /**
- * Met en couleur les métriques clés dans la prose coach (%, kg, h/j, reps).
+ * Met en évidence les métriques clés dans la prose coach (%, kg, h/j, reps).
+ * variant "hl" = pastille or (vision) · "v" = emphase teintée (signaux / synthèse).
  */
-export function CoachMetricText({ text, className = '' }) {
+export function CoachMetricText({ text, className = '', variant = 'hl' }) {
   if (!text) return null;
 
   const parts = String(text).split(
@@ -20,16 +17,8 @@ export function CoachMetricText({ text, className = '' }) {
         if (!part) return null;
         const isMetric = /^~?\d|^[+−-]\d/i.test(part.trim());
         if (!isMetric) return <span key={i}>{part}</span>;
-
-        let cls = 'font-semibold text-teal-300';
-        if (POSITIVE.test(part)) cls = 'font-semibold text-emerald-400';
-        else if (NEGATIVE.test(part)) cls = 'font-semibold text-rose-400';
-        else if (WARN.test(text.slice(Math.max(0, text.indexOf(part) - 20), text.indexOf(part) + part.length + 20))) {
-          cls = 'font-semibold text-amber-300';
-        }
-
         return (
-          <span key={i} className={cls}>
+          <span key={i} className={variant}>
             {part}
           </span>
         );

@@ -587,7 +587,18 @@ const WorkoutTrackerContent = () => {
             {(warmRecap || activeTab === 'recap') && (
               <div
                 className="container mx-auto px-4"
-                style={{ display: activeTab === 'recap' ? undefined : 'none' }}
+                style={
+                  activeTab === 'recap'
+                    ? undefined
+                    : {
+                        position: 'fixed',
+                        inset: 0,
+                        visibility: 'hidden',
+                        pointerEvents: 'none',
+                        zIndex: -1,
+                        overflow: 'hidden'
+                      }
+                }
                 aria-hidden={activeTab !== 'recap'}
               >
                 {activeTab === 'recap' && (

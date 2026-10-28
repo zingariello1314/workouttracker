@@ -19,26 +19,22 @@ import { isGarminRunningLikeActivity } from '../../../../utils/garminRunningLaps
 function RecordsGrid({ records, t }) {
   if (!records?.length) {
     return (
-      <p className="text-xs text-slate-500">{t('recap.tendances.noRecords', 'Aucun record course enregistré.')}</p>
+      <p className="emp">{t('recap.tendances.noRecords', 'Aucun record course enregistré.')}</p>
     );
   }
+  const tones = ['var(--a2)', 'var(--a1)', 'var(--a3)', 'var(--d)', 'var(--a5)', 'var(--a4)'];
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3">
-      {records.slice(0, 9).map((rec) => {
+    <div className="rec3">
+      {records.slice(0, 9).map((rec, index) => {
         const distLabel =
           rec.distanceKm === 42.195
             ? '42,2 km'
             : `${rec.distanceKm % 1 === 0 ? rec.distanceKm : rec.distanceKm.toFixed(1).replace('.', ',')} km`;
         return (
-          <div
-            key={rec.distanceKm}
-            className="rounded-lg border border-[#0F4C5C]/45 bg-black/50 px-3 py-2.5"
-          >
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">{distLabel}</div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-white">
-              {rec.timeSec ? formatDurationHms(rec.timeSec) : '—'}
-            </div>
-            {rec.date ? <div className="text-[10px] text-teal-700 mt-0.5">{rec.date}</div> : null}
+          <div key={rec.distanceKm} className="rr" style={{ '--c': tones[index % tones.length] }}>
+            <i>{distLabel}</i>
+            <b>{rec.timeSec ? formatDurationHms(rec.timeSec) : '—'}</b>
+            {rec.date ? <span>{rec.date}</span> : null}
           </div>
         );
       })}
@@ -88,46 +84,72 @@ export default function RecapTendancesView({
   }, [garminBundle, getCurrentData, data]);
 
   return (
-    <div className="space-y-5">
+    <div className="rb-tend">
+      <div id="mensuel">
       <RecapCalendarMonthTrendCharts
         period={period}
         periodWindow={periodWindow ?? enrichment?.window}
         garminData={garminData}
-        chartHeight={160}
+        chartHeight={190}
+        showPeak
+        peakPrefix={t('recap.tendances.peak', 'pic')}
       />
+      </div>
 
-      <RecapDailyTrendChartsBlock layout="grid" chartHeight={160} />
+      <div id="quotidien">
+      <RecapDailyTrendChartsBlock
+        layout="grid"
+        chartHeight={190}
+        showPeak
+        peakPrefix={t('recap.tendances.peak', 'pic')}
+        range={periodWindow ?? enrichment?.window ?? null}
+      />
+      </div>
 
-      <RecapExtendedTrendCharts enrichment={enrichment} chartHeight={160} />
-
-      <section className="rounded-xl border border-[#0F4C5C]/70 bg-black p-4">
-        <h2 className="text-sm font-semibold text-teal-100 mb-3">
-          {t('recap.tendances.records', 'Records course')}
-        </h2>
+      <section id="records">
+        <div className="sh">
+          <h2>{t('recap.tendances.records', 'Records course')}</h2>
+        </div>
         <RecordsGrid records={runningRecords} t={t} />
       </section>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <GarminRunningStatsCard
-          variant="embedded"
-          period={period}
-          onPeriodChange={onPeriodChange}
-          showPeriodSelector={false}
-        />
-        <GarminWalkingStatsCard
-          variant="embedded"
-          period={period}
-          onPeriodChange={onPeriodChange}
-          showPeriodSelector={false}
-        />
+      <div id="modules">
+      <div className="sh">
+        <h2>{t('recap.tendances.modules', 'Course · Marche · Muscu')}</h2>
       </div>
-
-      <RecapStrengthStatsCard
-        variant="embedded"
-        period={period}
-        onPeriodChange={onPeriodChange}
-        showPeriodSelector={false}
+      <RecapExtendedTrendCharts
+        enrichment={enrichment}
+        chartHeight={190}
+        showPeak
+        peakPrefix={t('recap.tendances.peak', 'pic')}
       />
+      <div className="mods">
+        <article className="md" style={{ '--c': 'var(--a2)' }}>
+          <GarminRunningStatsCard
+            variant="embedded"
+            period={period}
+            onPeriodChange={onPeriodChange}
+            showPeriodSelector={false}
+          />
+        </article>
+        <article className="md" style={{ '--c': 'var(--a1)' }}>
+          <GarminWalkingStatsCard
+            variant="embedded"
+            period={period}
+            onPeriodChange={onPeriodChange}
+            showPeriodSelector={false}
+          />
+        </article>
+        <article className="md md-wide" style={{ '--c': 'var(--a3)' }}>
+          <RecapStrengthStatsCard
+            variant="embedded"
+            period={period}
+            onPeriodChange={onPeriodChange}
+            showPeriodSelector={false}
+          />
+        </article>
+      </div>
+      </div>
     </div>
   );
 }

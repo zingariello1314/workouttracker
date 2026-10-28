@@ -1,31 +1,66 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
 import CoachMetricText from './CoachMetricText';
 
-const KPI_ACCENTS = {
-  violet: 'border-violet-400/30 bg-violet-500/10 text-violet-100',
-  cyan: 'border-cyan-400/30 bg-cyan-500/10 text-cyan-100',
-  teal: 'border-teal-400/30 bg-teal-500/10 text-teal-100',
-  sky: 'border-sky-400/30 bg-sky-500/10 text-sky-100',
-  amber: 'border-amber-400/30 bg-amber-500/10 text-amber-100',
-  lime: 'border-lime-400/30 bg-lime-500/10 text-lime-100'
-};
+function kpiPct(value, note) {
+  const fromVal = String(value || '').match(/([\d.,]+)\s*%/);
+  if (fromVal) return Math.max(0, Math.min(100, parseFloat(fromVal[1].replace(',', '.'))));
+  if (note && /^\d+\s*\/\s*\d+$/.test(String(note).trim())) {
+    const [a, b] = String(note)
+      .split('/')
+      .map((x) => Number(x.trim()));
+    if (b > 0) return Math.max(0, Math.min(100, (a / b) * 100));
+  }
+  return null;
+}
 
-function KpiPill({ label, value, note, accent = 'teal' }) {
+function classifyPara(text, index) {
+  const t = String(text || '');
+  if (/dernière séance|a produit|en \d+\s*min/i.test(t)) return 'fa';
+  if (/autour de toi|autour,|les \d+ derniers jours totalisent/i.test(t)) return 'ar';
+  if (/tant qu'|on ne compare pas|on décrit l'attente/i.test(t)) return 'rl';
+  if (/côté charge|groupe dominant|à surveiller/i.test(t)) return 'wn';
+  if (index === 0) return 'ld';
+  return '';
+}
+
+function ChallengeCard({ rows, periodLabel }) {
+  if (!rows?.length) return null;
   return (
-    <div
-      className={`flex min-w-0 flex-1 flex-col rounded-lg border px-3 py-2 sm:min-w-[7rem] ${KPI_ACCENTS[accent] || KPI_ACCENTS.teal}`}
-    >
-      <span className="truncate text-[9px] font-semibold uppercase tracking-wider text-slate-400">{label}</span>
-      <span className="mt-0.5 text-lg font-bold tabular-nums leading-none text-white">{value}</span>
-      {note ? <span className="mt-1 truncate text-[9px] leading-tight text-slate-400">{note}</span> : null}
+    <div className="df">
+      <div className="l">◎ Défis</div>
+      <h3>{periodLabel ? `Calendrier · récap · défis · ${periodLabel}` : 'Calendrier · récap · défis'}</h3>
+      {rows.slice(0, 2).map((row) => {
+        const rowPct = row.progressPct ?? 0;
+        return (
+          <React.Fragment key={row.id}>
+            <div className="d">
+              <div>
+                <b>{row.title}</b>
+                {row.type ? <small>{row.type}</small> : null}
+              </div>
+              <span>{row.status === 'completed' ? 'OK' : `${rowPct} %`}</span>
+            </div>
+            {row.status !== 'completed' ? (
+              <div className="gz">
+                <i style={{ '--w': `${Math.max(0, Math.min(100, rowPct))}%` }} />
+              </div>
+            ) : null}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }
 
-export default function CoachVisionPanel({ report, fallbackText, periodLabel }) {
+export default function CoachVisionPanel({
+  report,
+  fallbackText,
+  periodLabel,
+  challengeRows = []
+}) {
   const kpis = report?.kpis || [];
   const lead = report?.lead;
+  const sections = report?.sections || [];
   const paragraphs =
     report?.paragraphs?.length > 0
       ? report.paragraphs
@@ -35,44 +70,105 @@ export default function CoachVisionPanel({ report, fallbackText, periodLabel }) 
           ? [fallbackText]
           : [];
 
-  if (!paragraphs.length && !lead && !kpis.length) {
+  if (!paragraphs.length && !lead && !kpis.length && !sections.length) {
     return null;
   }
 
+  const programSection = sections.find((s) => s.id === 'program');
+  const otherSections = sections.filter((s) => s.id !== 'program');
+  const useSections = sections.length > 0;
+
   return (
-    <section className="overflow-hidden rounded-xl border border-[#0F4C5C]/70 bg-black shadow-[0_0_32px_-8px_rgba(45,212,191,0.15)]">
-      <div className="border-b border-[#0F4C5C]/50 bg-gradient-to-r from-teal-950/40 via-black to-black px-4 py-3 sm:px-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-500/30 bg-teal-950/50">
-            <Sparkles size={15} className="text-teal-300" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold tracking-tight text-white">Vision coach</h3>
-            {periodLabel ? <p className="text-[10px] text-teal-600/90">{periodLabel}</p> : null}
-          </div>
+    <section>
+      <div className="sh">
+        <h2>Vision coach</h2>
+        {periodLabel ? <span>{periodLabel}</span> : null}
+      </div>
+      <div className="cg">
+        <div className="art">
+          {lead ? (
+            <p>
+              <CoachMetricText text={lead} />
+            </p>
+          ) : null}
+
+          {useSections
+            ? otherSections.map((sec) => (
+                <section key={sec.id} className="bk">
+                  {sec.title ? <h4>{sec.title}</h4> : null}
+                  {sec.bullets?.map((b, i) => {
+                    const cls = classifyPara(b, i);
+                    return (
+                      <p key={i} className={cls || undefined}>
+                        <CoachMetricText text={b} />
+                      </p>
+                    );
+                  })}
+                </section>
+              ))
+            : paragraphs.length > 0
+              ? (() => {
+                  const body = lead ? paragraphs : paragraphs.slice(1);
+                  const head = lead ? null : paragraphs[0];
+                  return (
+                    <>
+                      {head ? (
+                        <p>
+                          <CoachMetricText text={head} />
+                        </p>
+                      ) : null}
+                      {body.length > 0 ? (
+                        <section className="bk">
+                          {body.map((para, i) => {
+                            const cls = classifyPara(para, i);
+                            return (
+                              <p key={i} className={cls || undefined}>
+                                <CoachMetricText text={para} />
+                              </p>
+                            );
+                          })}
+                        </section>
+                      ) : null}
+                    </>
+                  );
+                })()
+              : null}
+
+          {programSection ? (
+            <section className="bk rec">
+              {programSection.bullets?.map((b, i) => (
+                <p key={i} className={i === 0 ? 'ld' : undefined}>
+                  <CoachMetricText text={b} />
+                </p>
+              ))}
+            </section>
+          ) : null}
         </div>
 
-        {kpis.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {kpis.map((k) => (
-              <KpiPill key={k.id} label={k.label} value={k.value} note={k.note} accent={k.accent} />
-            ))}
+        {kpis.length > 0 || challengeRows.length > 0 ? (
+          <div className="side">
+            {kpis.length > 0 ? (
+              <div className="k2g">
+                {kpis.map((k, index) => {
+                  const pct = kpiPct(k.value, k.note);
+                  return (
+                    <div key={k.id} className={index === 0 ? 'kp e' : 'kp'}>
+                      <i>{k.label}</i>
+                      <b>{k.value}</b>
+                      {k.note ? <span>{k.note}</span> : null}
+                      {pct != null ? (
+                        <div className="gz">
+                          <i style={{ '--w': `${pct}%` }} />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+            <ChallengeCard rows={challengeRows} periodLabel={periodLabel} />
           </div>
         ) : null}
-      </div>
-
-      <div className="space-y-3 px-4 py-4 sm:px-5">
-        {lead ? (
-          <p className="text-sm font-medium leading-relaxed text-slate-100">
-            <CoachMetricText text={lead} />
-          </p>
-        ) : null}
-
-        {paragraphs.map((para, i) => (
-          <p key={i} className="text-xs leading-[1.65] text-slate-300/95 sm:text-[13px]">
-            <CoachMetricText text={para} />
-          </p>
-        ))}
       </div>
     </section>
   );

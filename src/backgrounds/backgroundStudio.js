@@ -267,6 +267,148 @@ export const BACKGROUND_STUDIOS = {
       toggle('cursor', 'Curseur', true)
     ],
     groups: []
+  },
+  'light-cables': {
+    baseId: 'light-cables',
+    title: 'Câbles lumineux',
+    fields: [
+      color('background', 'Fond', '#000000'),
+      color('baseColor', 'Couleur de base', '#000000'),
+      color('accentColor', "Couleur d'accent", '#ffb000'),
+      color('highlight', 'Surbrillance', '#ffd900'),
+      range('speed', 'Vitesse', 0, 100, 1, 34),
+      range('hover', 'Survol', 0, 200, 1, 114),
+      range('grab', 'Saisie', 10, 300, 1, 100),
+      select('direction', 'Direction', [
+        { value: 'ttb', label: 'Haut → bas' },
+        { value: 'btt', label: 'Bas → haut' },
+        { value: 'ltr', label: 'Gauche → droite' },
+        { value: 'rtl', label: 'Droite → gauche' }
+      ], 'ttb'),
+      range('positionX', 'Position X', -100, 100, 1, -13),
+      range('positionY', 'Position Y', -100, 100, 1, -21),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: [
+      {
+        id: 'bundle',
+        label: 'Faisceau',
+        fields: [
+          range('count', 'Nombre', 4, 48, 1, 48),
+          range('bend', 'Courbure', 0, 150, 1, 0),
+          range('spread', 'Écart', 10, 300, 1, 89),
+          range('thickness', 'Épaisseur', 20, 400, 1, 100),
+          range('widthStart', 'Largeur début', 0, 300, 1, 100),
+          range('widthEnd', 'Largeur fin', 0, 300, 1, 100)
+        ]
+      },
+      {
+        id: 'flow',
+        label: 'Flux',
+        fields: [
+          range('flow', 'Débit', 0, 300, 1, 300),
+          range('pulses', 'Impulsions', 1, 12, 1, 1)
+        ]
+      }
+    ]
+  },
+  'liquid-vortex': {
+    baseId: 'liquid-vortex',
+    title: 'Vortex liquide',
+    fields: [
+      color('smoke', 'Fumée', '#fff700'),
+      color('deep', 'Ombre', '#fff700'),
+      color('ember', 'Braise', '#fff700'),
+      range('swirl', 'Tourbillon', 1, 10, 1, 10),
+      range('turbulence', 'Turbulence', 0, 20, 1, 20),
+      range('detail', 'Détail', 1, 20, 1, 20),
+      range('density', 'Densité', 1, 10, 1, 4),
+      range('contrast', 'Contraste', 1, 20, 1, 20),
+      range('emberAmount', 'Braises', 0, 20, 1, 0),
+      range('speed', 'Vitesse', 0, 20, 1, 5),
+      range('hoverBoost', 'Boost survol', 0, 20, 1, 20),
+      range('sizePercent', 'Taille', 20, 200, 1, 100),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: []
+  },
+  'mood-field': {
+    baseId: 'mood-field',
+    title: "Champ d'humeur",
+    fields: [
+      color('background', 'Fond', '#05060a'),
+      color('intenseColor', 'Intense', '#ff00b3'),
+      color('calmColor', 'Calme', '#2f6bff'),
+      select('mood', 'Humeur', [
+        { value: 'intense', label: 'Intense' },
+        { value: 'calm', label: 'Calme' }
+      ], 'intense'),
+      range('speed', 'Vitesse', 0, 100, 1, 50),
+      range('density', 'Densité', 1, 200, 1, 100),
+      range('damping', 'Amortissement', 1, 100, 1, 50),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: [
+      {
+        id: 'flow',
+        label: 'Flux',
+        fields: [
+          range('warp', 'Déformation', 0, 200, 1, 100),
+          range('turbulence', 'Turbulence', 0, 200, 1, 100),
+          range('contrast', 'Contraste', 0, 200, 1, 100)
+        ]
+      },
+      {
+        id: 'cursorGroup',
+        label: 'Curseur',
+        fields: [
+          range('reach', 'Portée', 10, 500, 1, 260),
+          range('hover', 'Survol', 0, 200, 1, 100),
+          range('swirl', 'Tourbillon', -90, 90, 1, 80)
+        ]
+      }
+    ]
+  },
+  'rain-puddle': {
+    baseId: 'rain-puddle',
+    title: 'Flaques de pluie',
+    fields: [
+      color('background', 'Fond', '#000000'),
+      color('baseColor', 'Couleur de base', '#03661a'),
+      color('accentColor', "Couleur d'accent", '#ffffff'),
+      range('rain', 'Pluie', 0, 100, 1, 100),
+      range('speed', 'Vitesse', 0, 200, 1, 100),
+      range('tilt', 'Inclinaison', 2, 60, 1, 25),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: [
+      {
+        id: 'puddles',
+        label: 'Flaques',
+        fields: [
+          range('coverage', 'Couverture', 0, 100, 1, 62),
+          range('puddleScale', 'Échelle', 10, 300, 1, 170),
+          range('reflection', 'Réflexion', 0, 200, 1, 150)
+        ]
+      },
+      {
+        id: 'drops',
+        label: 'Gouttes',
+        fields: [
+          range('ripples', 'Ondulations', 0, 200, 1, 100),
+          range('streaks', 'Traînées', 0, 200, 1, 70)
+        ]
+      },
+      {
+        id: 'cursorGroup',
+        label: 'Curseur',
+        fields: [
+          range('reach', 'Portée', 10, 200, 1, 54),
+          range('cursorRipple', 'Onde', 0, 200, 1, 100),
+          range('glow', 'Lueur', 0, 200, 1, 60)
+        ]
+      }
+    ]
   }
 };
 

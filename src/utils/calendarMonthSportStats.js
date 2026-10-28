@@ -54,7 +54,48 @@ function buildCalendarRunningByDate(workoutData, garminData) {
       minByDate.set(row.date, (minByDate.get(row.date) || 0) + row.durMin);
     }
   }
-  return { kmByDate, minByDate };
+  return { kmByDate, minByDate, runRows: rows, garminById };
+}
+
+let sharedSportStatsCache = null;
+
+/**
+ * Prépare une seule fois lift + course pour une paire workout/garmin.
+ * Réutilisé par chaque appel mensuel (année calendrier, récap 3 mois, etc.).
+ */
+export function getCalendarSportStatsCache(workoutData, garminData) {
+  if (
+    sharedSportStatsCache &&
+    sharedSportStatsCache.workoutData === workoutData &&
+    sharedSportStatsCache.garminData === garminData
+  ) {
+    return sharedSportStatsCache.value;
+  }
+  const running = buildCalendarRunningByDate(workoutData, garminData);
+  const otherMinByDate = new Map();
+  const trainingDayByDate = new Map();
+  const value = {
+    liftMap: aggregateLiftVolumeKgByDate(workoutData),
+    kmByDate: running.kmByDate,
+    minByDate: running.minByDate,
+    runRows: running.runRows,
+    otherMinutesFor(dateStr) {
+      if (!dateStr) return 0;
+      if (otherMinByDate.has(dateStr)) return otherMinByDate.get(dateStr);
+      const v = computeNonRunningExerciseMinutesForDate(workoutData, garminData, dateStr);
+      otherMinByDate.set(dateStr, v);
+      return v;
+    },
+    isTrainingDay(dateStr) {
+      if (!dateStr) return false;
+      if (trainingDayByDate.has(dateStr)) return trainingDayByDate.get(dateStr);
+      const v = dayCountsAsCalendarTrainingDay(workoutData, dateStr, garminData);
+      trainingDayByDate.set(dateStr, v);
+      return v;
+    }
+  };
+  sharedSportStatsCache = { workoutData, garminData, value };
+  return value;
 }
 
 function runningStatsForDate(kmByDate, minByDate, dateStr) {
@@ -69,14 +110,17 @@ function runningStatsForDate(kmByDate, minByDate, dateStr) {
  * @param {object|null} workoutData
  * @param {object|null} garminData
  * @param {(date: Date) => string} getDateStrFn
+ * @param {ReturnType<typeof getCalendarSportStatsCache>|null} [precomputed]
  */
 export function computeCalendarMonthSportStats(
   monthDays,
   workoutData,
   garminData,
-  getDateStrFn
+  getDateStrFn,
+  precomputed = null
 ) {
-  const liftMap = aggregateLiftVolumeKgByDate(workoutData);
+  const cache = precomputed || getCalendarSportStatsCache(workoutData, garminData);
+  const { liftMap, kmByDate, minByDate, runRows, otherMinutesFor, isTrainingDay } = cache;
   let totalReps = 0;
   let runningKm = 0;
   let runningMinutes = 0;
@@ -94,10 +138,11 @@ export function computeCalendarMonthSportStats(
     monthIndex = currentMonthDays[0].date.getMonth();
   }
 
-  const { kmByDate, minByDate } = buildCalendarRunningByDate(workoutData, garminData);
-
+  const monthDates = new Set();
   currentMonthDays.forEach((day) => {
     const dateStr = getDateStrFn(day.date);
+    if (!dateStr) return;
+    monthDates.add(dateStr);
     const intensity = day.intensity || {};
     totalReps += Number(intensity.reps) || 0;
     totalKg += liftMap.get(dateStr) || 0;
@@ -105,25 +150,19 @@ export function computeCalendarMonthSportStats(
     const runStats = runningStatsForDate(kmByDate, minByDate, dateStr);
     runningKm += runStats.km;
     runningMinutes += runStats.min;
-    otherExerciseMinutes += computeNonRunningExerciseMinutesForDate(workoutData, garminData, dateStr);
+    otherExerciseMinutes += otherMinutesFor(dateStr);
     activeKcal += activeKcalFromGarminDaily(garminData, dateStr);
     totalSteps += stepsForDate(garminData, workoutData, dateStr);
-    if (dayCountsAsCalendarTrainingDay(workoutData, dateStr, garminData)) {
+    if (isTrainingDay(dateStr)) {
       trainingDays += 1;
     }
   });
 
-  const runningSessionCount = (() => {
-    const garminById = buildGarminCardioById(garminData?.activities?.cardio);
-    const stored = workoutData?.enduranceData?.sessions?.running || [];
-    const merged = mergeRunningSessionsWithGarmin(stored, garminById);
-    const filtered = filterRunningSessionsBase(merged, garminById);
-    const rows = buildRunningSessionRows(filtered, garminById);
-    const monthDates = new Set(
-      currentMonthDays.map((day) => getDateStrFn(day.date)).filter(Boolean)
-    );
-    return rows.filter((row) => row?.date && monthDates.has(row.date)).length;
-  })();
+  let runningSessionCount = 0;
+  for (let i = 0; i < runRows.length; i += 1) {
+    const row = runRows[i];
+    if (row?.date && monthDates.has(row.date)) runningSessionCount += 1;
+  }
 
   runningKm = Math.round(runningKm * 10) / 10;
   runningMinutes = roundSportMinutes(runningMinutes);

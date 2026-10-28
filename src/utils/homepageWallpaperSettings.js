@@ -6,10 +6,27 @@ import {
   WALLPAPER_ORDER_RANDOM
 } from './wallpaperPlayback';
 
+/** Filtre d’affichage accueil : n’enlève rien de la collection, masque seulement à la rotation. */
+export const HOME_MEDIA_KINDS_ALL = 'all';
+export const HOME_MEDIA_KINDS_IMAGES = 'images';
+export const HOME_MEDIA_KINDS_VIDEOS = 'videos';
+
+export const HOME_MEDIA_KINDS_OPTIONS = [
+  { value: HOME_MEDIA_KINDS_ALL, label: 'Photos et vidéos' },
+  { value: HOME_MEDIA_KINDS_IMAGES, label: 'Photos uniquement' },
+  { value: HOME_MEDIA_KINDS_VIDEOS, label: 'Vidéos uniquement' },
+];
+
+export function resolveHomeMediaKinds(value) {
+  if (value === HOME_MEDIA_KINDS_IMAGES || value === HOME_MEDIA_KINDS_VIDEOS) return value;
+  return HOME_MEDIA_KINDS_ALL;
+}
+
 export const DEFAULT_HOME_WALLPAPER_PLAYBACK = {
   rotationMs: DEFAULT_WALLPAPER_ROTATION_MS,
   advanceOnClick: true,
-  order: WALLPAPER_ORDER_RANDOM
+  order: WALLPAPER_ORDER_RANDOM,
+  mediaKinds: HOME_MEDIA_KINDS_ALL,
 };
 
 export function normalizeHomeWallpaperPlayback(raw) {
@@ -20,7 +37,8 @@ export function normalizeHomeWallpaperPlayback(raw) {
       src.advanceOnClick === undefined
         ? DEFAULT_HOME_WALLPAPER_PLAYBACK.advanceOnClick
         : resolveWallpaperAdvanceOnClick(src.advanceOnClick),
-    order: resolveWallpaperOrder(src.order)
+    order: resolveWallpaperOrder(src.order),
+    mediaKinds: resolveHomeMediaKinds(src.mediaKinds),
   };
 }
 

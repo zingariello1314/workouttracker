@@ -29,6 +29,7 @@ import {
   subscribeXpAppearance,
   updateXpAppearancePreference
 } from '../../../../utils/xpAppearancePreference';
+import { getSportXpDailyGain } from '../../../../utils/sportXpDailyGain';
 import styles from './SportXPBar.module.css';
 
 function fmt(n, opts) {
@@ -279,6 +280,7 @@ const SportXPBar = ({ previewMode = false, embed = false, forceCollapsed = false
   const t = useTranslation();
   const [open, setOpen] = useState(Boolean(previewMode) && !forceCollapsed);
   const [preference, setPreference] = useState(getXpAppearancePreference);
+  const xpToday = getSportXpDailyGain(totalXP);
 
   useEffect(() => {
     if (forceCollapsed) {
@@ -747,6 +749,16 @@ const SportXPBar = ({ previewMode = false, embed = false, forceCollapsed = false
             <span>XP TOTAL</span>
             <b>{fmt(totalXP)}</b>
           </button>
+
+          <div
+            className={`${styles.tot} ${styles.today}`}
+            title="XP gagnés aujourd’hui (heure locale)"
+            aria-label={`${fmt(xpToday)} XP aujourd’hui`}
+            style={{ pointerEvents: 'none' }}
+          >
+            <span>AUJOURD&apos;HUI</span>
+            <b>+{fmt(xpToday)}</b>
+          </div>
 
           {!forceCollapsed ? (
             <button

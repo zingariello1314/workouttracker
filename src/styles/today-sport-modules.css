@@ -328,6 +328,11 @@
   grid-column: span 3;
 }
 
+.today-sport-shell .today-b-week {
+  grid-column: span 4;
+  min-width: 0;
+}
+
 .today-sport-shell .today-b-load {
   grid-column: span 5;
 }
@@ -881,6 +886,7 @@
   }
 
   .today-sport-shell .today-b-date,
+  .today-sport-shell .today-b-week,
   .today-sport-shell .today-b-load,
   .today-sport-shell .today-b-activity,
   .today-sport-shell .today-b-nutrition {

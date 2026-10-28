@@ -1,0 +1,220 @@
+{
+  "generatedAt": "2026-10-28T04:28:33.718Z",
+  "totals": {
+    "exercises": 542,
+    "manifest": 527,
+    "missingCard": 42,
+    "missingGif": 36,
+    "orphanSample": 0
+  },
+  "zones": [
+    {
+      "zone": "Abdominaux",
+      "total": 76,
+      "withCard": 68,
+      "withGif": 68,
+      "withVideo": 3,
+      "missingCard": [
+        "vacuum allongé",
+        "l-sit parallèles",
+        "human flag tuck",
+        "drapeau humain straddle",
+        "relevé genoux élastique",
+        "crunch au mur",
+        "crunch au mur haltère",
+        "crunch au mur pieds décollés"
+      ],
+      "missingGif": [
+        "vacuum allongé",
+        "l-sit parallèles",
+        "human flag tuck",
+        "drapeau humain straddle",
+        "relevé genoux élastique",
+        "crunch au mur",
+        "crunch au mur haltère",
+        "crunch au mur pieds décollés"
+      ]
+    },
+    {
+      "zone": "Activités Complémentaires",
+      "total": 28,
+      "withCard": 26,
+      "withGif": 28,
+      "withVideo": 0,
+      "missingCard": [
+        "marche sur tapis",
+        "course sur tapis"
+      ],
+      "missingGif": []
+    },
+    {
+      "zone": "Avant-bras",
+      "total": 15,
+      "withCard": 11,
+      "withGif": 11,
+      "withVideo": 0,
+      "missingCard": [
+        "curl poignet excentrique",
+        "flexion poignet excentrique",
+        "extension doigts élastique",
+        "ouverture main élastique"
+      ],
+      "missingGif": [
+        "curl poignet excentrique",
+        "flexion poignet excentrique",
+        "extension doigts élastique",
+        "ouverture main élastique"
+      ]
+    },
+    {
+      "zone": "Biceps",
+      "total": 44,
+      "withCard": 41,
+      "withGif": 41,
+      "withVideo": 7,
+      "missingCard": [
+        "curl marteau incliné",
+        "curl pupitre unilatéral",
+        "curl assis dos calé"
+      ],
+      "missingGif": [
+        "curl marteau incliné",
+        "curl pupitre unilatéral",
+        "curl assis dos calé"
+      ]
+    },
+    {
+      "zone": "Dorsaux",
+      "total": 77,
+      "withCard": 75,
+      "withGif": 75,
+      "withVideo": 19,
+      "missingCard": [
+        "front lever tuck rows",
+        "ice cream makers"
+      ],
+      "missingGif": [
+        "front lever tuck rows",
+        "ice cream makers"
+      ]
+    },
+    {
+      "zone": "Épaules",
+      "total": 76,
+      "withCard": 70,
+      "withGif": 72,
+      "withVideo": 9,
+      "missingCard": [
+        "planche sur coudes",
+        "cable lateral raise unilatéral cheville",
+        "rotation externe élastique",
+        "élévation frontale au disque",
+        "élévation au disque jusqu'au-dessus de la tête",
+        "bent-arm lateral dumbbell raise"
+      ],
+      "missingGif": [
+        "planche sur coudes",
+        "cable lateral raise unilatéral cheville",
+        "rotation externe élastique",
+        "bent-arm lateral dumbbell raise"
+      ]
+    },
+    {
+      "zone": "Fessiers",
+      "total": 27,
+      "withCard": 23,
+      "withGif": 24,
+      "withVideo": 1,
+      "missingCard": [
+        "abduction hanche debout élastique",
+        "kickback fessier à la poulie",
+        "hip thrust pieds au mur",
+        "hip thrust smith"
+      ],
+      "missingGif": [
+        "abduction hanche debout élastique",
+        "hip thrust pieds au mur",
+        "hip thrust smith"
+      ]
+    },
+    {
+      "zone": "Ischio-jambiers",
+      "total": 20,
+      "withCard": 20,
+      "withGif": 20,
+      "withVideo": 2,
+      "missingCard": [],
+      "missingGif": []
+    },
+    {
+      "zone": "Mollets",
+      "total": 18,
+      "withCard": 14,
+      "withGif": 14,
+      "withVideo": 5,
+      "missingCard": [
+        "éversion cheville élastique",
+        "inversion cheville élastique",
+        "équilibre unipodal",
+        "mollets smith sur step"
+      ],
+      "missingGif": [
+        "éversion cheville élastique",
+        "inversion cheville élastique",
+        "équilibre unipodal",
+        "mollets smith sur step"
+      ]
+    },
+    {
+      "zone": "Pectoraux",
+      "total": 63,
+      "withCard": 62,
+      "withGif": 62,
+      "withVideo": 22,
+      "missingCard": [
+        "pompes et extension triceps"
+      ],
+      "missingGif": [
+        "pompes et extension triceps"
+      ]
+    },
+    {
+      "zone": "Quadriceps",
+      "total": 61,
+      "withCard": 55,
+      "withGif": 56,
+      "withVideo": 11,
+      "missingCard": [
+        "step-down contrôlé",
+        "squat décliné rééducation",
+        "adduction hanche élastique",
+        "presse adducteurs abducteurs",
+        "fentes barre",
+        "pistol squat haltère"
+      ],
+      "missingGif": [
+        "step-down contrôlé",
+        "squat décliné rééducation",
+        "adduction hanche élastique",
+        "presse adducteurs abducteurs",
+        "pistol squat haltère"
+      ]
+    },
+    {
+      "zone": "Triceps",
+      "total": 37,
+      "withCard": 35,
+      "withGif": 35,
+      "withVideo": 8,
+      "missingCard": [
+        "extension triceps couché latéral à un haltère",
+        "single-arm dumbbell lying triceps extension"
+      ],
+      "missingGif": [
+        "extension triceps couché latéral à un haltère",
+        "single-arm dumbbell lying triceps extension"
+      ]
+    }
+  ],
+  "orphanGifs": []
+}

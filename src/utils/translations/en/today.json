@@ -20,7 +20,23 @@
     "todayWorkout": "Today’s workout",
     "useDayWorkout": "Show and follow {{day}}’s workout",
     "overrideHint": "You’re viewing {{day}}’s workout. The session will be saved for today.",
-    "overrideHintForDate": "You’re viewing {{day}}’s workout. The session will be saved for {{date}}."
+    "overrideHintForDate": "You’re viewing {{day}}’s workout. The session will be saved for {{date}}.",
+    "combineMode": "Multi-select",
+    "toggleCombineDay": "Include / remove {{day}}",
+    "combineApply": "Use selection",
+    "combineCancel": "Cancel",
+    "combineHint": "{{n}} day(s) selected",
+    "combineApplied": "Combined sessions ({{n}} days)",
+    "dayApplied": "Day session applied",
+    "combineActiveHint": "Combined sessions: {{days}}"
+  },
+  "weekNav": {
+    "aria": "Weekly navigation",
+    "prev": "Previous week",
+    "next": "Next week",
+    "current": "Current week",
+    "backToCurrent": "Back to current week",
+    "programAtWeek": "{{name}} (history view)"
   },
   "challengesSection": {
     "title": "Challenges & complementary routines"

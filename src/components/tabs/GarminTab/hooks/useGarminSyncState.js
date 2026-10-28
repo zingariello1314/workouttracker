@@ -2,11 +2,9 @@
  * Hook d'état pour la synchronisation Garmin.
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 
 import { CACHE_TTL_MS } from '../constants';
-
-const IS_DEV = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 
 const createFrontendCache = () => ({
   data: null,
@@ -20,13 +18,6 @@ export const useGarminSyncState = () => {
   const [loading, setLoading] = useState(false);
   const [baseUrl, setBaseUrl] = useState(null);
   const [lastSourceMeta, setLastSourceMeta] = useState(null);
-
-  useEffect(() => {
-    if (IS_DEV) {
-      // eslint-disable-next-line no-console
-      console.info('[useGarminSyncState] loading =>', loading);
-    }
-  }, [loading]);
 
   const frontendCache = useMemo(() => createFrontendCache(), []);
 

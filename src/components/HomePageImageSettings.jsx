@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { useAppLock } from '../context/AppLockContext';
 import { resolveLockWallpaperUrls } from '../utils/wallpaperTargets';
@@ -11,6 +11,7 @@ import { processImageForStorage } from '../utils/imageFormatOptimizer';
 import {
   getHomepageImageFullSrc,
   getHomepageImageThumbSrc,
+  isHomepageVideo,
   normalizeHomepageImage
 } from '../utils/homepageImagePreferences';
 import {
@@ -24,8 +25,13 @@ import {
   WALLPAPER_ORDER_OPTIONS,
   WALLPAPER_ROTATION_OPTIONS
 } from '../utils/wallpaperPlayback';
+import { HOME_MEDIA_KINDS_OPTIONS } from '../utils/homepageWallpaperSettings';
 import { normalizeLockBackgroundItems } from '../utils/wallpaperTargets';
 import { useHomeWallpaperPlayback } from '../hooks/useHomeWallpaperPlayback';
+import {
+  removeAppStaticBackground,
+  upsertAppStaticBackground
+} from '../utils/appStaticBackgroundPreference';
 import logger from '../utils/logger';
 
 const log = logger.component('HomePageImageSettings');
@@ -68,22 +74,60 @@ const HomePageImageSettings = ({ onClose }) => {
   const lockAdvanceOnClick = resolveLockWallpaperAdvanceOnClick(appLockRecord);
   const lockOrder = resolveLockWallpaperOrder(appLockRecord);
   const [bankImages, setBankImages] = useState([]);
+  const [bankThemes, setBankThemes] = useState([]);
   const [bankQuery, setBankQuery] = useState('');
+  const [bankTheme, setBankTheme] = useState('all');
+  const [bankPreviewId, setBankPreviewId] = useState(null);
+  const [bankAddingTheme, setBankAddingTheme] = useState(false);
+  const [bankVideos, setBankVideos] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     fetch('/wallpaper-bank/manifest.json')
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (!cancelled && Array.isArray(data?.images)) setBankImages(data.images);
+        if (cancelled) return;
+        const images = Array.isArray(data?.images) ? data.images : [];
+        setBankImages(images);
+        const themes = Array.isArray(data?.themes) && data.themes.length
+          ? data.themes
+          : [...new Set(images.map((img) => img.theme).filter(Boolean))].sort((a, b) =>
+              a.localeCompare(b, 'fr')
+            );
+        setBankThemes(themes);
       })
       .catch(() => {
-        if (!cancelled) setBankImages([]);
+        if (!cancelled) {
+          setBankImages([]);
+          setBankThemes([]);
+        }
+      });
+    fetch('/welcome-videos/manifest.json')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.videos)) setBankVideos(data.videos);
+      })
+      .catch(() => {
+        if (!cancelled) setBankVideos([]);
       });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const filteredBankImages = useMemo(() => {
+    const q = bankQuery.trim().toLowerCase();
+    return bankImages.filter((item) => {
+      if (bankTheme !== 'all' && (item.theme || 'Scènes') !== bankTheme) return false;
+      if (!q) return true;
+      return `${item.name || ''} ${item.id} ${item.theme || ''}`.toLowerCase().includes(q);
+    });
+  }, [bankImages, bankQuery, bankTheme]);
+
+  const bankPreviewItem = useMemo(
+    () => bankImages.find((item) => item.id === bankPreviewId) || null,
+    [bankImages, bankPreviewId]
+  );
 
   // Fonction pour nettoyer le localStorage
   const cleanupLocalStorage = () => {
@@ -176,7 +220,8 @@ const HomePageImageSettings = ({ onClose }) => {
     const current = imagesLiveRef.current.map((img, i) => normalizeHomepageImage(img, i));
     const norm = current[index];
     if (!norm) return;
-    current[index] = { ...norm, ...recipe(norm) };
+    const patch = typeof recipe === 'function' ? recipe(norm) : recipe;
+    current[index] = { ...norm, ...patch };
     commitImages(current);
   };
 
@@ -203,27 +248,168 @@ const HomePageImageSettings = ({ onClose }) => {
     await saveImages(updated, { force: true });
   };
 
-  const addBankImage = async (item) => {
+  const addBankImage = async (item, { persist = true } = {}) => {
     const id = `bank:${item.id}`;
     const already = backgroundImages.some((img, i) => normalizeHomepageImage(img, i).id === id);
-    if (already) return;
+    if (already) return null;
+    const entry = {
+      id,
+      full: item.src,
+      thumbnail: item.thumb || item.src,
+      liked: false,
+      hidden: false,
+      useOnHome: false,
+      useOnLock: false,
+      bankId: item.id,
+      theme: item.theme || null,
+    };
+    const updated = [
+      ...backgroundImages.map((img, i) => normalizeHomepageImage(img, i)),
+      entry,
+    ];
+    if (!persist) return updated;
+    try {
+      await persistCollection(updated);
+      return updated;
+    } catch (error) {
+      log.error('Erreur ajout banque de fonds', error);
+      return null;
+    }
+  };
+
+  const encodeWelcomeVideoSrc = (rawSrc) => {
+    const src = String(rawSrc || '');
+    if (!src.startsWith('/welcome-videos/')) return src;
+    return `/welcome-videos/${src
+      .slice('/welcome-videos/'.length)
+      .split('/')
+      .map((part) => {
+        try {
+          return encodeURIComponent(decodeURIComponent(part));
+        } catch {
+          return encodeURIComponent(part);
+        }
+      })
+      .join('/')}`;
+  };
+
+  const findBankVideoIndex = (item) => {
+    const id = `video:${item.id}`;
+    const safeSrc = encodeWelcomeVideoSrc(item.src);
+    return backgroundImages.findIndex((img, i) => {
+      const norm = normalizeHomepageImage(img, i);
+      if (norm.id === id) return true;
+      const full = String(norm.full || '');
+      return full === safeSrc || full === item.src;
+    });
+  };
+
+  const addBankVideo = async (item) => {
+    if (findBankVideoIndex(item) >= 0) return;
+    const safeSrc = encodeWelcomeVideoSrc(item.src);
     const updated = [
       ...backgroundImages.map((img, i) => normalizeHomepageImage(img, i)),
       {
-        id,
-        full: item.src,
-        thumbnail: item.thumb || item.src,
+        id: `video:${item.id}`,
+        full: safeSrc,
+        thumbnail: item.poster || safeSrc,
         liked: false,
         hidden: false,
-        useOnHome: false,
+        useOnHome: true,
         useOnLock: false,
-        bankId: item.id
-      }
+        mediaType: 'video',
+        loop: false,
+        allowSound: false,
+        muted: true,
+        videoId: item.id,
+        name: item.name || item.id,
+      },
     ];
     try {
       await persistCollection(updated);
     } catch (error) {
-      log.error('Erreur ajout banque de fonds', error);
+      log.error('Erreur ajout vidéo banque', error);
+    }
+  };
+
+  const removeBankVideo = async (item) => {
+    const index = findBankVideoIndex(item);
+    if (index < 0) return;
+    try {
+      await removeBackgroundImage(index);
+    } catch (error) {
+      log.error('Erreur retrait vidéo banque', error);
+    }
+  };
+
+  const addBankThemeToCollection = async (themeName) => {
+    if (!themeName || themeName === 'all') return;
+    const toAdd = bankImages.filter((item) => (item.theme || 'Scènes') === themeName);
+    if (!toAdd.length) return;
+    setBankAddingTheme(true);
+    try {
+      const existingIds = new Set(
+        backgroundImages.map((img, i) => normalizeHomepageImage(img, i).id)
+      );
+      const additions = [];
+      for (const item of toAdd) {
+        const id = `bank:${item.id}`;
+        if (existingIds.has(id)) continue;
+        existingIds.add(id);
+        additions.push({
+          id,
+          full: item.src,
+          thumbnail: item.thumb || item.src,
+          liked: false,
+          hidden: false,
+          useOnHome: false,
+          useOnLock: false,
+          bankId: item.id,
+          theme: item.theme || null,
+        });
+      }
+      if (!additions.length) return;
+      const updated = [
+        ...backgroundImages.map((img, i) => normalizeHomepageImage(img, i)),
+        ...additions,
+      ];
+      await persistCollection(updated);
+    } catch (error) {
+      log.error('Erreur ajout thème banque', error);
+    } finally {
+      setBankAddingTheme(false);
+    }
+  };
+
+  const setImagePlacement = (index, placement) => {
+    const useOnHome = placement === 'home' || placement === 'both';
+    const useOnLock = placement === 'lock' || placement === 'both';
+    patchImage(index, { useOnHome, useOnLock, hidden: false });
+  };
+
+  const placementOf = (norm) => {
+    if (norm.useOnHome && norm.useOnLock) return 'both';
+    if (norm.useOnLock) return 'lock';
+    if (norm.useOnHome) return 'home';
+    return 'none';
+  };
+
+  const toggleUseAsAppStatic = (index) => {
+    const norm = normalizeHomepageImage(backgroundImages[index], index);
+    if (isHomepageVideo(norm)) return;
+    const next = !norm.useAsAppStatic;
+    patchImage(index, { useAsAppStatic: next });
+    const src = getHomepageImageFullSrc(norm);
+    const thumb = getHomepageImageThumbSrc(norm);
+    if (next && src) {
+      upsertAppStaticBackground({
+        id: norm.id,
+        name: norm.name || `Fond ${index + 1}`,
+        src,
+        thumb,
+      });
+    } else {
+      removeAppStaticBackground(norm.id);
     }
   };
 
@@ -313,6 +499,10 @@ const HomePageImageSettings = ({ onClose }) => {
 
   const handleHomeOrderChange = (event) => {
     updateHomePlayback({ order: event.target.value });
+  };
+
+  const handleHomeMediaKindsChange = (event) => {
+    updateHomePlayback({ mediaKinds: event.target.value });
   };
 
   const handleHomeAdvanceOnClickChange = (event) => {
@@ -569,65 +759,170 @@ const HomePageImageSettings = ({ onClose }) => {
           <div>
             <h3 className="mb-2 text-lg font-semibold text-red-100">Banque de fonds d&apos;écran</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              {bankImages.length} images disponibles pour tout le monde. Ajoutez celles que vous voulez
-              à votre collection : elles ne sont ni sur l&apos;accueil ni sur le verrouillage tant que
-              vous ne les activez pas.
+              {bankImages.length} images disponibles pour tout le monde, classées par thèmes.
+              Cliquez une miniature pour l&apos;agrandir avant de l&apos;ajouter. Les images ajoutées
+              ne sont ni sur l&apos;accueil ni sur le verrouillage tant que vous ne les activez pas.
             </p>
-            <input
-              type="search"
-              value={bankQuery}
-              onChange={(event) => setBankQuery(event.target.value)}
-              placeholder="Filtrer la banque…"
-              className={`mb-4 w-full max-w-md ${S.input}`}
-              aria-label="Filtrer la banque de fonds"
-            />
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <input
+                type="search"
+                value={bankQuery}
+                onChange={(event) => setBankQuery(event.target.value)}
+                placeholder="Filtrer la banque…"
+                className={`w-full max-w-md ${S.input}`}
+                aria-label="Filtrer la banque de fonds"
+              />
+              {bankTheme !== 'all' ? (
+                <button
+                  type="button"
+                  disabled={bankAddingTheme}
+                  onClick={() => addBankThemeToCollection(bankTheme)}
+                  className={`${S.btnPrimary} disabled:opacity-50`}
+                >
+                  {bankAddingTheme
+                    ? 'Ajout…'
+                    : `Ajouter tout le thème « ${bankTheme} »`}
+                </button>
+              ) : null}
+            </div>
+            <div
+              className="mb-4 flex flex-wrap gap-1.5"
+              role="tablist"
+              aria-label="Thèmes de la banque"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={bankTheme === 'all'}
+                onClick={() => setBankTheme('all')}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                  bankTheme === 'all' ? S.btnSm : S.btnSecondary
+                }`}
+              >
+                Tous ({bankImages.length})
+              </button>
+              {bankThemes.map((theme) => {
+                const count = bankImages.filter((img) => (img.theme || 'Scènes') === theme).length;
+                return (
+                  <button
+                    key={theme}
+                    type="button"
+                    role="tab"
+                    aria-selected={bankTheme === theme}
+                    onClick={() => setBankTheme(theme)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                      bankTheme === theme ? S.btnSm : S.btnSecondary
+                    }`}
+                  >
+                    {theme} ({count})
+                  </button>
+                );
+              })}
+            </div>
             <div className="grid max-h-[28rem] grid-cols-3 gap-3 overflow-y-auto pr-1 md:grid-cols-5">
-              {bankImages
-                .filter((item) => {
-                  const q = bankQuery.trim().toLowerCase();
-                  if (!q) return true;
-                  return `${item.name || ''} ${item.id}`.toLowerCase().includes(q);
-                })
-                .map((item) => {
-                  const id = `bank:${item.id}`;
-                  const added = backgroundImages.some(
-                    (img, i) => normalizeHomepageImage(img, i).id === id
-                  );
-                  return (
-                    <div key={item.id} className="overflow-hidden rounded-lg border border-red-900/40">
+              {filteredBankImages.map((item) => {
+                const id = `bank:${item.id}`;
+                const added = backgroundImages.some(
+                  (img, i) => normalizeHomepageImage(img, i).id === id
+                );
+                return (
+                  <div key={item.id} className="overflow-hidden rounded-lg border border-red-900/40">
+                    <button
+                      type="button"
+                      onClick={() => setBankPreviewId(item.id)}
+                      className="group relative block w-full cursor-zoom-in text-left"
+                      aria-label={`Agrandir ${item.name || item.id}`}
+                    >
                       <img
                         src={item.thumb || item.src}
                         alt={item.name || item.id}
                         loading="lazy"
                         decoding="async"
-                        className="h-24 w-full object-cover"
+                        className="h-24 w-full object-cover transition group-hover:brightness-110"
                       />
-                      <button
-                        type="button"
-                        disabled={added}
-                        onClick={() => addBankImage(item)}
-                        className={`w-full px-1 py-1.5 text-[11px] font-medium ${
-                          added ? 'cursor-default text-zinc-500' : S.btnPrimary
-                        }`}
-                      >
-                        {added ? 'Dans ma collection' : 'Ajouter'}
-                      </button>
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
+                        <ZoomIn className="h-6 w-6 text-white/90 drop-shadow" />
+                      </span>
+                      {item.theme ? (
+                        <span className="absolute left-1 top-1 rounded border border-black/40 bg-black/70 px-1 py-0.5 text-[9px] text-red-100/90">
+                          {item.theme}
+                        </span>
+                      ) : null}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={added}
+                      onClick={() => addBankImage(item)}
+                      className={`w-full px-1 py-1.5 text-[11px] font-medium ${
+                        added ? 'cursor-default text-zinc-500' : S.btnPrimary
+                      }`}
+                    >
+                      {added ? 'Dans ma collection' : 'Ajouter'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {filteredBankImages.length === 0 ? (
+              <p className={`mt-3 text-sm ${S.muted}`}>Aucune image pour ce filtre.</p>
+            ) : null}
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-lg font-semibold text-red-100">Banque de vidéos d&apos;accueil</h3>
+            <p className={`mb-4 text-sm ${S.muted}`}>
+              Déposez des fichiers dans <code className="text-red-200/90">public/welcome-videos</code> puis
+              lancez <code className="text-red-200/90">node scripts/build-welcome-videos.mjs</code>.
+              Ajoutez ensuite chaque vidéo à votre rotation ; boucle et son se règlent par média
+              dans la bibliothèque ci-dessous.
+            </p>
+            {bankVideos.length === 0 ? (
+              <p className={`text-sm ${S.muted}`}>
+                Aucune vidéo pour le moment — le dossier est prêt à recevoir vos fichiers.
+              </p>
+            ) : (
+              <div className="grid max-h-64 grid-cols-2 gap-3 overflow-y-auto pr-1 md:grid-cols-4">
+                {bankVideos.map((item) => {
+                  const added = findBankVideoIndex(item) >= 0;
+                  return (
+                    <div key={item.id} className="overflow-hidden rounded-lg border border-red-900/40">
+                      <div className="flex h-20 items-center justify-center bg-black/60 px-1 text-center text-xs text-red-100/80">
+                        {item.name || item.id}
+                      </div>
+                      {added ? (
+                        <button
+                          type="button"
+                          onClick={() => removeBankVideo(item)}
+                          className="w-full bg-red-950/80 px-1 py-1.5 text-[11px] font-medium text-red-200 hover:bg-red-900/90"
+                        >
+                          Retirer de ma collection
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addBankVideo(item)}
+                          className={`w-full px-1 py-1.5 text-[11px] font-medium ${S.btnPrimary}`}
+                        >
+                          Ajouter
+                        </button>
+                      )}
                     </div>
                   );
                 })}
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Images de fond uniquement - rotation automatique toutes les 2 minutes */}
+          {/* Images / vidéos de fond — rotation */}
           <div>
-            <h3 className="mb-2 text-lg font-semibold text-red-100">Bibliothèque d&apos;images</h3>
+            <h3 className="mb-2 text-lg font-semibold text-red-100">Bibliothèque d&apos;images &amp; vidéos</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
               Votre collection commence vide. Choisissez pour chaque image si elle s&apos;affiche sur l&apos;
               <strong className="text-red-200/90">accueil</strong>, le{' '}
               <strong className="text-red-200/90">verrouillage</strong>, ou les deux.
-              Les flèches changent l&apos;ordre utilisé en mode « dans l&apos;ordre ».
-              Cœur = favori (plus souvent en mode aléatoire). Œil barré = hors rotation
-              (accueil et verrou si l&apos;image y est assignée).
+              Le badge <strong className="text-red-200/90">Fond app</strong> l&apos;ajoute aux fonds
+              statiques (Apparence → filtre Statiques). Les flèches changent l&apos;ordre utilisé en
+              mode « dans l&apos;ordre ». Cœur = favori. Œil barré = hors rotation.
               {effectiveLockCount > 0 ? (
                 <span className="mt-1 block text-emerald-300/90">
                   {effectiveLockCount} image{effectiveLockCount > 1 ? 's' : ''} active{effectiveLockCount > 1 ? 's' : ''} sur le verrouillage.
@@ -666,6 +961,25 @@ const HomePageImageSettings = ({ onClose }) => {
                   </option>
                 ))}
               </select>
+              <label htmlFor="home-media-kinds" className="mb-1 block text-sm font-medium text-red-100">
+                Afficher sur l&apos;accueil
+              </label>
+              <select
+                id="home-media-kinds"
+                value={homePlayback.mediaKinds || 'all'}
+                onChange={handleHomeMediaKindsChange}
+                className={`mb-1 w-full max-w-md ${S.input}`}
+              >
+                {HOME_MEDIA_KINDS_OPTIONS.map((opt) => (
+                  <option key={`home-kinds-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className={`mb-3 max-w-md text-xs ${S.muted}`}>
+                Filtre uniquement la rotation. Ta sélection (photos et vidéos) reste intacte —
+                masquer des médias (œil) ne les retire pas de la bibliothèque.
+              </p>
               <label className="flex cursor-pointer items-start gap-3">
                 <input
                   type="checkbox"
@@ -676,7 +990,7 @@ const HomePageImageSettings = ({ onClose }) => {
                 <span>
                   <span className="block text-sm font-medium text-sky-100">Changer le fond au clic</span>
                   <span className={`mt-1 block text-xs ${S.muted}`}>
-                    Un clic sur la page d&apos;accueil passe à l&apos;image suivante (en plus de la
+                    Un clic sur la page d&apos;accueil passe au média suivant (en plus de la
                     rotation automatique).
                   </span>
                 </span>
@@ -783,6 +1097,7 @@ const HomePageImageSettings = ({ onClose }) => {
                 {backgroundImages.map((image, index) => {
                   const norm = normalizeHomepageImage(image, index);
                   const imageSrc = getHomepageImageThumbSrc(norm);
+                  const isVideo = isHomepageVideo(norm);
 
                   return (
                     <div
@@ -801,17 +1116,60 @@ const HomePageImageSettings = ({ onClose }) => {
                         className="block w-full cursor-zoom-in text-left"
                         aria-label={`Agrandir Fond ${index + 1}`}
                       >
-                        <img
-                          src={imageSrc}
-                          alt={`Fond ${index + 1}`}
-                          className={`h-32 w-full object-cover transition group-hover:brightness-110 ${
-                            norm.hidden ? 'grayscale' : ''
-                          }`}
-                        />
+                        {isVideo ? (
+                          <div
+                            className={`flex h-32 w-full items-center justify-center bg-zinc-950 text-xs text-red-100/80 ${
+                              norm.hidden ? 'grayscale' : ''
+                            }`}
+                          >
+                            Vidéo · {norm.name || norm.id || `#${index + 1}`}
+                          </div>
+                        ) : (
+                          <img
+                            src={imageSrc}
+                            alt={`Fond ${index + 1}`}
+                            className={`h-32 w-full object-cover transition group-hover:brightness-110 ${
+                              norm.hidden ? 'grayscale' : ''
+                            }`}
+                          />
+                        )}
                         <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/25 group-hover:opacity-100">
                           <ZoomIn className="h-8 w-8 text-white/90 drop-shadow" />
                         </span>
                       </button>
+                      {isVideo ? (
+                        <div className="absolute right-2 top-10 flex flex-col gap-1">
+                          <button
+                            type="button"
+                            onClick={() => patchImage(index, { loop: !norm.loop })}
+                            className={`rounded border px-1.5 py-0.5 text-[10px] backdrop-blur-sm ${
+                              norm.loop
+                                ? 'border-emerald-400/60 bg-emerald-950/90 text-emerald-200'
+                                : 'border-red-900/50 bg-black/70 text-red-100/70'
+                            }`}
+                            title="Lire en boucle jusqu’au clic"
+                          >
+                            Boucle
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              patchImage(index, {
+                                allowSound: !norm.allowSound,
+                                muted: norm.allowSound ? true : false,
+                              })
+                            }
+                            className={`rounded border px-1.5 py-0.5 text-[10px] backdrop-blur-sm ${
+                              norm.allowSound
+                                ? 'border-amber-400/60 bg-amber-950/90 text-amber-200'
+                                : 'border-red-900/50 bg-black/70 text-red-100/70'
+                            }`}
+                            title="Autoriser le son (bouton sur l’accueil)"
+                          >
+                            Son
+                          </button>
+                        </div>
+                      ) : null}
 
                       <div className="absolute left-2 top-2 flex gap-1">
                         <button
@@ -850,6 +1208,22 @@ const HomePageImageSettings = ({ onClose }) => {
                       </button>
 
                       <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-1">
+                        <label className="sr-only" htmlFor={`placement-${index}`}>
+                          Emplacement Fond {index + 1}
+                        </label>
+                        <select
+                          id={`placement-${index}`}
+                          value={placementOf(norm)}
+                          onChange={(event) => setImagePlacement(index, event.target.value)}
+                          onClick={(event) => event.stopPropagation()}
+                          title="Où afficher cette bannière"
+                          className="max-w-full rounded border border-red-900/50 bg-black/80 px-1.5 py-0.5 text-[10px] text-red-100 backdrop-blur-sm"
+                        >
+                          <option value="none">Inactif</option>
+                          <option value="home">Accueil</option>
+                          <option value="lock">Verrouillage</option>
+                          <option value="both">Les deux</option>
+                        </select>
                         <button
                           type="button"
                           onClick={() => toggleUseOnHome(index)}
@@ -876,6 +1250,24 @@ const HomePageImageSettings = ({ onClose }) => {
                           <Lock className="h-3 w-3" />
                           Verrou
                         </button>
+                        {!isVideo ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleUseAsAppStatic(index)}
+                            title={
+                              norm.useAsAppStatic
+                                ? 'Retirer des fonds statiques de l’app'
+                                : 'Utiliser comme fond statique dans Apparence'
+                            }
+                            className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm transition ${
+                              norm.useAsAppStatic
+                                ? 'border-emerald-400/60 bg-emerald-950/90 text-emerald-200'
+                                : 'border-red-900/50 bg-black/70 text-red-100/60 hover:text-emerald-200'
+                            }`}
+                          >
+                            Fond app
+                          </button>
+                        ) : null}
                       </div>
 
                       <div className="absolute bottom-10 left-2 flex items-center gap-1">
@@ -1156,7 +1548,7 @@ const HomePageImageSettings = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Aperçu agrandi */}
+      {/* Aperçu agrandi — collection */}
       {previewIndex != null && backgroundImages[previewIndex] && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
@@ -1210,6 +1602,64 @@ const HomePageImageSettings = ({ onClose }) => {
                     : 'Masquer'}
                 </button>
                 <button type="button" onClick={() => setPreviewIndex(null)} className={S.btnPrimary}>
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Aperçu agrandi — banque (avant sélection) */}
+      {bankPreviewItem && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={() => setBankPreviewId(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Aperçu bannière banque"
+        >
+          <div
+            className="relative max-h-[90vh] max-w-5xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={bankPreviewItem.src}
+              alt={bankPreviewItem.name || bankPreviewItem.id}
+              className="max-h-[85vh] w-full rounded-xl border border-red-900/50 object-contain shadow-2xl"
+            />
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-red-100/90">{bankPreviewItem.name || bankPreviewItem.id}</p>
+                {bankPreviewItem.theme ? (
+                  <p className={`text-xs ${S.muted}`}>Thème · {bankPreviewItem.theme}</p>
+                ) : null}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={backgroundImages.some(
+                    (img, i) =>
+                      normalizeHomepageImage(img, i).id === `bank:${bankPreviewItem.id}`
+                  )}
+                  onClick={async () => {
+                    await addBankImage(bankPreviewItem);
+                    setBankPreviewId(null);
+                  }}
+                  className={`${S.btnPrimary} disabled:opacity-50`}
+                >
+                  {backgroundImages.some(
+                    (img, i) =>
+                      normalizeHomepageImage(img, i).id === `bank:${bankPreviewItem.id}`
+                  )
+                    ? 'Déjà dans la collection'
+                    : 'Ajouter à ma collection'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBankPreviewId(null)}
+                  className={S.btnSecondary}
+                >
                   Fermer
                 </button>
               </div>

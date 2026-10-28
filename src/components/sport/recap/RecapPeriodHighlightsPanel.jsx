@@ -30,36 +30,75 @@ function formatYmdFr(ymd) {
   }
 }
 
-function StatTile({ value, label }) {
+function StatTile({ value, label, color }) {
   return (
-    <div className="relative rounded-xl border border-violet-400/35 bg-violet-950/45 px-2 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm sm:py-3">
-      <div className="text-base font-bold tabular-nums text-white sm:text-lg">{value}</div>
-      <div className="mt-0.5 text-[10px] font-medium leading-tight text-violet-200/75">{label}</div>
+    <div className="kk" style={{ '--c': color }}>
+      <i>{label}</i>
+      <b>{value}</b>
     </div>
+  );
+}
+
+function DayDetail({ day, onClose }) {
+  return (
+    <article className="dy-open">
+      <header>
+        <div>
+          <i>{day.now ? `${day.label} · aujourd'hui` : day.label}</i>
+          <b>{formatYmdFr(day.ymd)}</b>
+        </div>
+        <strong>{day.reps > 0 ? `${day.reps.toLocaleString('fr-FR')} reps` : 'Aucune séance'}</strong>
+        <button type="button" onClick={onClose}>
+          Fermer
+        </button>
+      </header>
+      {day.items?.length ? (
+        <ul>
+          {day.items.map((item) => (
+            <li key={item.id}>
+              <span>{item.name || 'Mouvement'}</span>
+              <b>{item.reps.toLocaleString('fr-FR')}</b>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>Rien de coché ce jour.</p>
+      )}
+    </article>
   );
 }
 
 function SubHeading({ children }) {
   return (
-    <h3 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-violet-200/95">
-      <span className="h-1 w-1 rounded-full bg-violet-400" aria-hidden />
-      {children}
-    </h3>
+    <h3 className="rb-subh">{children}</h3>
   );
+}
+
+const HEADER_METRIC_KEYS = ['totalReps', 'trainingDays', 'totalMinutes', 'totalKg', 'activeKcal'];
+
+function weekDensity(count) {
+  if (count <= 8) return 'd1';
+  if (count <= 16) return 'd2';
+  if (count <= 45) return 'd3';
+  return 'd4';
 }
 
 export default function RecapPeriodHighlightsPanel({
   period,
   periodWindow,
   garminData = null,
-  recapState = null
+  recapState = null,
+  part = 'head',
+  analytics: analyticsProp = null
 }) {
   const t = useTranslation();
   const { getCurrentData, data, getExerciseNameById } = useWorkout();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
+  const [picked, setPicked] = useState(null);
 
   const analytics = useMemo(() => {
-    if (!open) return null;
+    if (analyticsProp) return analyticsProp;
+    if (part === 'head' && !open) return null;
     const snap = getCurrentData();
     if (!periodWindow?.start || !periodWindow?.end) return null;
     return buildRecapPeriodCalendarAnalytics({
@@ -70,7 +109,18 @@ export default function RecapPeriodHighlightsPanel({
       getExerciseNameById,
       recapState
     });
-  }, [open, data, getCurrentData, garminData, period, periodWindow, recapState, getExerciseNameById]);
+  }, [
+    analyticsProp,
+    open,
+    part,
+    data,
+    getCurrentData,
+    garminData,
+    period,
+    periodWindow,
+    recapState,
+    getExerciseNameById
+  ]);
 
   const periodStats = analytics?.periodStats;
   const bestMonthsByMetric = analytics?.bestMonthsByMetric;
@@ -78,212 +128,185 @@ export default function RecapPeriodHighlightsPanel({
   const streakRange = analytics?.streakRange;
   const topMuscleGroups = analytics?.topMuscleGroups || [];
   const running = analytics?.running;
+  const weekStrip = analytics?.weekStrip || [];
 
   const periodLabel = t(`recap.period.${period}`, period);
   const windowStart = analytics?.window?.start || periodWindow?.start;
   const windowEnd = analytics?.window?.end || periodWindow?.end;
+  const tailMetricKeys = RECAP_CALENDAR_SPORT_METRIC_KEYS.filter(
+    (metric) => !HEADER_METRIC_KEYS.includes(metric)
+  );
 
-  return (
-    <section
-      className={`relative mb-2 overflow-hidden rounded-2xl border border-violet-500/55 bg-gradient-to-br from-violet-950/90 via-[#120a1c] to-black shadow-[0_24px_64px_rgba(124,58,237,0.22),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-violet-400/25 ${
-        open ? 'px-4 py-5 sm:px-6 sm:py-6' : 'px-4 py-3 sm:px-5 sm:py-3.5'
-      }`}
-    >
-      <div
-        className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-fuchsia-500/10 blur-3xl"
-        aria-hidden
-      />
-
-      <header className={`relative ${open ? 'mb-5 border-b border-violet-500/25 pb-4' : ''}`}>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className="flex w-full items-start gap-3 rounded-xl text-left transition-colors hover:bg-violet-500/10"
-        >
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/40 bg-violet-500/20 text-violet-100">
-            <Sparkles size={18} aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-violet-100 sm:text-base">
-              {t('recap.analyse.periodHighlights.title', 'Récap sur la période')}
-            </h2>
-            <p className="mt-1 text-[11px] leading-snug text-violet-200/70">
-              {periodLabel}
-              {windowStart && windowEnd
-                ? ` · ${formatYmdFr(windowStart)} → ${formatYmdFr(windowEnd)}`
-                : null}
-            </p>
-          </div>
-          {open ? (
-            <ChevronUp className="mt-1.5 h-5 w-5 shrink-0 text-violet-200/80" aria-hidden />
-          ) : (
-            <ChevronDown className="mt-1.5 h-5 w-5 shrink-0 text-violet-200/80" aria-hidden />
-          )}
-        </button>
-      </header>
-
-      {open && periodStats ? (
-      <div className="relative space-y-6">
-        <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-          {RECAP_CALENDAR_SPORT_METRIC_KEYS.map((metric) => (
+  if (part === 'tail') {
+    if (!periodStats) return null;
+    return (
+      <section id="stats-periode" className="rec-more">
+        <div className="sh">
+          <h2>{t('recap.analyse.periodStats', 'Statistiques de la période')}</h2>
+        </div>
+        <div className="kr">
+          {tailMetricKeys.map((metric, index) => (
             <StatTile
               key={metric}
+              color={['var(--a5)', 'var(--a2)', 'var(--a3)', 'var(--a1)'][index % 4]}
               value={formatRecapCalendarMetricValue(metric, periodStats[metric])}
               label={t(METRIC_LABEL_KEYS[metric])}
             />
           ))}
         </div>
-
-        <div className="rounded-xl border border-violet-500/20 bg-black/35 px-3 py-3 sm:px-4">
+        <div className="rb-block">
           <SubHeading>{t('recap.analyse.bestMonths', 'Meilleurs mois (sur la période)')}</SubHeading>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="rb-rows">
             {RECAP_CALENDAR_SPORT_METRIC_KEYS.map((metric) => {
               const best = bestMonthsByMetric[metric];
               if (!best) return null;
               return (
-                <li
-                  key={metric}
-                  className="rounded-lg border border-violet-500/20 bg-violet-950/30 px-3 py-2 text-[11px]"
-                >
-                  <span className="text-violet-300/60">{t(METRIC_LABEL_KEYS[metric])}</span>
-                  <span className="mt-0.5 block font-semibold text-white">
+                <li key={metric}>
+                  <span>{t(METRIC_LABEL_KEYS[metric])}</span>
+                  <b>
                     {formatRecapCalendarMetricValue(metric, best.value)}
-                    <span className="font-normal text-violet-200/65"> · {best.monthLabel}</span>
-                  </span>
+                    <span> · {best.monthLabel}</span>
+                  </b>
                 </li>
               );
             })}
           </ul>
         </div>
-
         {topExercises.length > 0 ? (
-          <div className="rounded-xl border border-violet-500/20 bg-black/35 px-3 py-3 sm:px-4">
-            <SubHeading>
-              {t('recap.analyse.topExercises', 'Exercices les plus travaillés (reps)')}
-            </SubHeading>
-            <ol className="space-y-2 text-[11px] text-slate-100">
+          <div className="rb-block">
+            <SubHeading>{t('recap.analyse.topExercises', 'Exercices les plus travaillés (reps)')}</SubHeading>
+            <ol className="rb-rows">
               {topExercises.map((ex, i) => (
-                <li
-                  key={String(ex.id)}
-                  className="flex justify-between gap-3 rounded-lg bg-violet-950/25 px-2.5 py-1.5"
-                >
-                  <span className="min-w-0 truncate">
-                    <span className="font-semibold text-violet-200/90">{i + 1}.</span>{' '}
-                    {ex.name || t('recap.analyse.unnamedExercise', 'Mouvement non identifié')}
+                <li key={String(ex.id)}>
+                  <span>
+                    {i + 1}. {ex.name || t('recap.analyse.unnamedExercise', 'Mouvement non identifié')}
                   </span>
-                  <span className="shrink-0 tabular-nums font-bold text-violet-100">
-                    {ex.reps.toLocaleString('fr-FR')} reps
-                  </span>
+                  <b>{ex.reps.toLocaleString('fr-FR')} reps</b>
                 </li>
               ))}
             </ol>
           </div>
         ) : null}
-
         {streakRange?.length > 0 ? (
-          <div className="rounded-xl border border-emerald-400/35 bg-emerald-950/25 px-3 py-2.5 text-[11px] text-emerald-50/95">
-            <span className="font-semibold">
+          <div className="rb-note">
+            <b>
               {t('recap.analyse.bestStreak', 'Meilleure série')} : {streakRange.length} j.
-            </span>
+            </b>
             {streakRange.startDate && streakRange.endDate ? (
-              <span className="text-emerald-200/80">
+              <span>
                 {' '}
                 · {formatYmdFr(streakRange.startDate)} → {formatYmdFr(streakRange.endDate)}
               </span>
             ) : null}
           </div>
         ) : null}
-
         {topMuscleGroups.length > 0 ? (
           <div>
             <SubHeading>{t('recap.analyse.topMuscles', 'Zones les plus sollicitées')}</SubHeading>
-            <ul className="flex flex-wrap gap-2">
+            <ul className="rb-pills">
               {topMuscleGroups.map(({ group, repShare, displayScore }) => (
-                <li
-                  key={group}
-                  className="rounded-full border border-violet-400/35 bg-violet-500/15 px-3 py-1 text-[10px] font-medium text-violet-50"
-                >
+                <li key={group}>
                   {t(`recap.muscleGroup.${group}`, group)}
-                  {repShare > 0 ? (
-                    <span className="ml-1 tabular-nums text-violet-200/90">~{repShare} reps</span>
-                  ) : displayScore > 0 ? (
-                    <span className="ml-1 tabular-nums text-violet-200/90">
-                      {Math.round(displayScore)}
-                    </span>
-                  ) : null}
+                  {repShare > 0 ? <span>~{repShare} reps</span> : displayScore > 0 ? <span>{Math.round(displayScore)}</span> : null}
                 </li>
               ))}
             </ul>
           </div>
         ) : null}
-
         {running?.hasData ? (
-          <div className="space-y-3 border-t border-violet-500/20 pt-4">
+          <div className="rb-block">
             <SubHeading>{t('recap.analyse.cardioBlock', 'Course & cardio')}</SubHeading>
-
             {running.bestSessions?.length > 0 ? (
               <div>
-                <p className="mb-1.5 text-[10px] text-violet-300/50">
-                  {t('recap.analyse.bestRuns', 'Meilleures sorties (distance)')}
-                </p>
-                <ul className="space-y-1 text-[11px]">
+                <p className="rb-kicker2">{t('recap.analyse.bestRuns', 'Meilleures sorties (distance)')}</p>
+                <ul className="rb-rows">
                   {running.bestSessions.map((s) => (
-                    <li key={`${s.date}-${s.km}`} className="flex justify-between gap-2 text-slate-200">
+                    <li key={`${s.date}-${s.km}`}>
                       <span>
                         {s.km} km · {formatYmdFr(s.date)}
                       </span>
-                      {s.pace ? <span className="text-violet-300/50">{s.pace}</span> : null}
+                      {s.pace ? <b>{s.pace}</b> : null}
                     </li>
                   ))}
                 </ul>
               </div>
             ) : null}
-
-            {running.kindDistribution?.pctKm?.endurance != null &&
-            (running.kindDistribution.kmByKind?.endurance ?? 0) +
-              (running.kindDistribution.kmByKind?.speed ?? 0) +
-              (running.kindDistribution.kmByKind?.interval ?? 0) >
-              0 ? (
-              <div>
-                <p className="mb-1.5 text-[10px] text-violet-300/50">
-                  {t('recap.analyse.runMix', 'Répartition des km par type')}
-                </p>
-                <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-                  {[
-                    ['endurance', t('recap.analyse.runEndurance', 'Endurance')],
-                    ['speed', t('recap.analyse.runSpeed', 'Vitesse')],
-                    ['interval', t('recap.analyse.runInterval', 'Fractionné')]
-                  ].map(([key, label]) => (
-                    <div
-                      key={key}
-                      className="rounded-lg border border-sky-700/40 bg-sky-950/30 px-2 py-1.5"
-                    >
-                      <div className="font-bold tabular-nums text-white">
-                        {running.kindDistribution.pctKm[key]} %
-                      </div>
-                      <div className="text-sky-300/70">{label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {running.highlights?.bestDay?.km > 0 ? (
-              <p className="text-[11px] text-violet-200/55">
-                {t('recap.analyse.bestRunDay', 'Record jour')} : {running.highlights.bestDay.km} km ·{' '}
-                {formatYmdFr(running.highlights.bestDay.date)}
-              </p>
-            ) : null}
           </div>
         ) : null}
+      </section>
+    );
+  }
+
+  return (
+    <section id="recap" className={`rec ${open ? 'is-open' : ''}`}>
+      <header>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="rec-sum"
+        >
+          <span className="min-w-0 flex-1">
+            <small>
+              <Sparkles size={14} aria-hidden />
+              {t('recap.nav.analyse', 'Analyse')}
+            </small>
+            <h2>{t('recap.analyse.periodHighlights.title', 'Récap sur la période')}</h2>
+            <div className="dt">
+              {periodLabel}
+              {windowStart && windowEnd
+                ? ` · ${formatYmdFr(windowStart)} → ${formatYmdFr(windowEnd)}`
+                : null}
+            </div>
+          </span>
+          <span className="chev" aria-hidden>
+            {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </span>
+        </button>
+      </header>
+
+      {open && periodStats ? (
+      <>
+      <div className="rec-body">
+        {weekStrip.length > 0 ? (
+          <>
+            <div className={`wk ${weekDensity(weekStrip.length)}`}>
+              {weekStrip.map((day) => (
+                <button
+                  key={day.ymd}
+                  type="button"
+                  className={`dy${day.on ? ' on' : ''}${day.now ? ' now' : ''}${picked === day.ymd ? ' pick' : ''}`}
+                  aria-pressed={picked === day.ymd}
+                  onClick={() => setPicked((current) => (current === day.ymd ? null : day.ymd))}
+                >
+                  <i>{day.label}</i>
+                  <b>{day.day}</b>
+                  <span>{day.reps > 0 ? day.reps.toLocaleString('fr-FR') : '—'}</span>
+                </button>
+              ))}
+            </div>
+            {weekStrip.some((day) => day.ymd === picked) ? (
+              <DayDetail
+                day={weekStrip.find((day) => day.ymd === picked)}
+                onClose={() => setPicked(null)}
+              />
+            ) : null}
+          </>
+        ) : null}
+        <div className="kr">
+          {HEADER_METRIC_KEYS.map((metric, index) => (
+            <StatTile
+              key={metric}
+              color={['var(--d)', 'var(--a1)', 'var(--a2)', 'var(--a3)', 'var(--a4)', 'var(--a5)'][index % 6]}
+              value={formatRecapCalendarMetricValue(metric, periodStats[metric])}
+              label={t(METRIC_LABEL_KEYS[metric])}
+            />
+          ))}
+        </div>
       </div>
+      </>
       ) : open ? (
-        <p className="relative mt-1 text-[11px] text-violet-200/65">
+        <p className="emp">
           {t('recap.analyse.periodHighlights.empty', 'Pas assez de données sur cette période.')}
         </p>
       ) : null}

@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
  * Charge les signaux nutrition sur la même fenêtre 28 j que le Récap (locale).
  * @param {{ enabled?: boolean }} opts
  */
+let cachedNutritionPartial = null;
+
 export function useRecapCrossCoachNutrition(opts = {}) {
   const { enabled = true } = opts;
   const { currentUser } = useAuth();
@@ -20,9 +22,13 @@ export function useRecapCrossCoachNutrition(opts = {}) {
     return { startYmd, endYmd };
   }, []);
 
-  const [partial, setPartial] = useState(() => ({
-    status: enabled ? 'loading' : 'skipped'
-  }));
+  const [partial, setPartial] = useState(() => {
+    const rangeKey = `${range.startYmd}|${range.endYmd}|${userId || ''}`;
+    if (cachedNutritionPartial?.status === 'ready' && cachedNutritionPartial.rangeKey === rangeKey) {
+      return cachedNutritionPartial;
+    }
+    return { status: enabled ? 'loading' : 'skipped' };
+  });
 
   const partialRef = useRef(partial);
   partialRef.current = partial;
@@ -107,7 +113,7 @@ export function useRecapCrossCoachNutrition(opts = {}) {
             ? complianceScores.reduce((a, b) => a + b, 0) / complianceScores.length
             : null;
 
-        setPartial({
+        const next = {
           status: 'ready',
           rangeKey,
           daysWithLoggedMeals28,
@@ -119,7 +125,11 @@ export function useRecapCrossCoachNutrition(opts = {}) {
           calorieDeltaStdApprox:
             calorieDeltaStdApprox != null ? Math.round(calorieDeltaStdApprox * 10) / 10 : null,
           programsOwnedCount: Array.isArray(allPrograms) ? allPrograms.length : 0
-        });
+        };
+        if (!cancelled) {
+          cachedNutritionPartial = next;
+          setPartial(next);
+        }
       } catch {
         if (!cancelled) {
           setPartial({

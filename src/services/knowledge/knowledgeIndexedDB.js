@@ -256,6 +256,7 @@ export async function listKnowledgeVideosLocal({
   let rows = await getAll(STORE_VIDEOS);
   rows = rows.filter(
     (v) =>
+      !v?.userHidden &&
       filterByCategory(v, categoryId) &&
       applyIncludeExcludeCategories(v, includeCategoryIds, excludeCategoryIds) &&
       applyHiddenFilter(v, categoryId ? null : hidden) &&
@@ -289,6 +290,10 @@ export async function getKnowledgeVideoThumbnailUrlLocal(videoId) {
  * @returns {Promise<{ playUrl: string }>}
  */
 export async function getKnowledgeVideoPlayUrlLocal(videoId) {
+  const meta = await getKnowledgeVideoLocal(videoId);
+  if (meta?.nativeSrc && typeof meta.nativeSrc === 'string') {
+    return { playUrl: meta.nativeSrc };
+  }
   const blob = await getKnowledgeVideoBlobLocal(videoId);
   if (!blob) throw new Error('Vidéo introuvable');
   return { playUrl: URL.createObjectURL(blob) };

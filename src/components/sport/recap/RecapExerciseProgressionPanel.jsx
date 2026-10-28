@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Search, TrendingDown, TrendingUp, Minus, ChevronRight } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, ChevronRight } from 'lucide-react';
 import DenseDailyLineChart from '../charts/DenseDailyLineChart';
 import {
   collectDistinctExercisesInWindow,
@@ -123,21 +123,16 @@ export default function RecapExerciseProgressionPanel({
   if (!exercises.length) return null;
 
   return (
-    <section
-      ref={containerRef}
-      className="rounded-xl border border-[#0F4C5C]/55 bg-gradient-to-br from-slate-950/80 to-black overflow-hidden"
-    >
-      <div className="border-b border-[#0F4C5C]/35 px-4 py-3">
-        <h3 className="text-sm font-bold text-white">Progression par exercice</h3>
-        <p className="mt-0.5 text-[11px] text-slate-400 leading-relaxed">
+    <section ref={containerRef} className="rb-prog">
+      <div className="sh">
+        <h2>Progression par exercice</h2>
+      </div>
+      <div className="pnl">
+        <p className="sbt">
           Recherchez un exercice réalisé sur la période{periodLabel ? ` (${periodLabel})` : ''} — reps,
           charge et interprétation.
         </p>
-      </div>
-
-      <div className="px-4 py-3 space-y-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <label className="sf">
           <input
             type="search"
             value={query}
@@ -147,14 +142,14 @@ export default function RecapExerciseProgressionPanel({
             }}
             onFocus={() => setListOpen(true)}
             placeholder="Chercher un exercice…"
-            className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black/60 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-teal-500/50 focus:outline-none"
+            className="w-full"
             aria-label="Rechercher un exercice"
             aria-expanded={listOpen}
             aria-autocomplete="list"
           />
           {listOpen && filtered.length > 0 ? (
             <ul
-              className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-[#0F4C5C]/55 bg-slate-950 shadow-xl"
+              className="suggest"
               role="listbox"
             >
               {filtered.map((ex) => (
@@ -179,10 +174,10 @@ export default function RecapExerciseProgressionPanel({
               ))}
             </ul>
           ) : null}
-        </div>
+        </label>
 
         {!selectedExercise ? (
-          <p className="rounded-lg border border-dashed border-[#0F4C5C]/35 px-3 py-6 text-center text-xs text-slate-500">
+          <p className="hint">
             {exercises.length} exercice{exercises.length > 1 ? 's' : ''} enregistré
             {exercises.length > 1 ? 's' : ''} — sélectionnez-en un pour voir la courbe et l&apos;analyse.
           </p>
