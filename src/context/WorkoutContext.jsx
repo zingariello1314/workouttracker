@@ -305,8 +305,28 @@ const WorkoutProvider = ({ children }) => {
 
   // ✅ PHASE 4 : openContextDB, saveContextToDB, loadContext, autoSaveContext sont maintenant dans useWorkoutContextStorage
 
+  // Ref peuplée après getTodayWorkoutWrapper (évite la dépendance circulaire).
+  const getTodayWorkoutForFreezeRef = useRef(null);
+  const activeProgramIdRef = useRef(null);
+  activeProgramIdRef.current = activeProgram?.id || null;
+
   // Hooks personnalisés pour la logique et les statistiques
-  const workoutLogic = useWorkoutLogic(data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData);
+  const workoutLogic = useWorkoutLogic(
+    data,
+    updateData,
+    getCurrentData,
+    updateTempExerciseData,
+    updateTempStretchData,
+    {
+      getLiveExercisesForDate: (date) => {
+        const fn = getTodayWorkoutForFreezeRef.current;
+        if (typeof fn !== 'function') return [];
+        const w = fn(date, false);
+        return w?.exercices || w?.exercises || [];
+      },
+      getActiveProgramId: () => activeProgramIdRef.current
+    }
+  );
   // CORRECTION: Utiliser toujours les données réelles (data) pour les statistiques et badges
   // Les données temporaires (tempData) ne doivent être utilisées que pour l'édition en cours
   // const workoutStats = useWorkoutStats(); // Commenté temporairement pour éviter l'erreur circulaire
@@ -749,6 +769,8 @@ const WorkoutProvider = ({ children }) => {
       weekVariant: getAutoWeekVariant(requestedDate)
     };
   }, [activeProgram, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, currentDate, getCurrentData]);
+
+  getTodayWorkoutForFreezeRef.current = getTodayWorkoutWrapper;
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,
   // addProgressPhoto, updateProgressPhoto, deleteProgressPhoto sont maintenant dans useWorkoutProgress

@@ -3,13 +3,39 @@ import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 import { calculateAutoReps } from '../utils/exerciseCalculations';
 import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../utils/accessControl';
+import { ensureDayPlanSnapshot } from '../utils/calendarDayPlanSnapshot';
 
-export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData) => {
+/**
+ * @param {object} [freezeOpts]
+ * @param {(date: Date) => object[]} [freezeOpts.getLiveExercisesForDate]
+ * @param {() => string|null} [freezeOpts.getActiveProgramId]
+ */
+export const useWorkoutLogic = (
+  data,
+  updateData,
+  getCurrentData,
+  updateTempExerciseData,
+  updateTempStretchData,
+  freezeOpts = null
+) => {
   // Utiliser getCurrentData si disponible, sinon data
   const currentData = getCurrentData ? getCurrentData() : data;
 
   const { currentUser } = useAuth();
   const isAdmin = isAdminUser(currentUser);
+
+  const freezeDayPlan = (payload, date) => {
+    if (!freezeOpts?.getLiveExercisesForDate || !date) return payload;
+    try {
+      const dateStr = getDateStr(date);
+      const live = freezeOpts.getLiveExercisesForDate(date) || [];
+      return ensureDayPlanSnapshot(payload, dateStr, live, {
+        programId: freezeOpts.getActiveProgramId?.() || null
+      });
+    } catch {
+      return payload;
+    }
+  };
 
   const getDayName = (date) => {
     const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -75,17 +101,20 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     
     // Si on décoche, on supprime les reps
     if (isCurrentlyChecked) {
-      const newData = {
-        ...currentData,
-        checkedExercises: {
-          ...currentData.checkedExercises,
-          [key]: false
+      const newData = freezeDayPlan(
+        {
+          ...currentData,
+          checkedExercises: {
+            ...currentData.checkedExercises,
+            [key]: false
+          },
+          reps: {
+            ...currentData.reps,
+            [key]: undefined
+          }
         },
-        reps: {
-          ...currentData.reps,
-          [key]: undefined
-        }
-      };
+        date
+      );
       updateTempExerciseData(newData);
       return;
     }
@@ -94,30 +123,36 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     if (autoReps) {
       const exerciseKey = `${dateStr}_${exerciseId}`;
       if (!currentData.reps[exerciseKey]) {
-        const newData = {
-          ...currentData,
-          checkedExercises: {
-            ...currentData.checkedExercises,
-            [key]: true
+        const newData = freezeDayPlan(
+          {
+            ...currentData,
+            checkedExercises: {
+              ...currentData.checkedExercises,
+              [key]: true
+            },
+            reps: {
+              ...currentData.reps,
+              [key]: autoReps.toString()
+            }
           },
-          reps: {
-            ...currentData.reps,
-            [key]: autoReps.toString()
-          }
-        };
+          date
+        );
         updateTempExerciseData(newData);
         return;
       }
     }
     
     // Comportement normal : juste cocher/décocher
-    const newData = {
-      ...currentData,
-      checkedExercises: {
-        ...currentData.checkedExercises,
-        [key]: !isCurrentlyChecked
-      }
-    };
+    const newData = freezeDayPlan(
+      {
+        ...currentData,
+        checkedExercises: {
+          ...currentData.checkedExercises,
+          [key]: !isCurrentlyChecked
+        }
+      },
+      date
+    );
     updateTempExerciseData(newData);
   };
 
@@ -151,13 +186,16 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
         return;
       }
       
-      const newData = {
-        ...currentData,
-        reps: {
-          ...currentData.reps,
-          [key]: cleanReps
-        }
-      };
+      const newData = freezeDayPlan(
+        {
+          ...currentData,
+          reps: {
+            ...currentData.reps,
+            [key]: cleanReps
+          }
+        },
+        date
+      );
       
       updateTempExerciseData(newData);
     } catch (error) {

@@ -239,6 +239,8 @@ const INITIAL_WORKOUT_DATA = {
   /** Swap hebdo du jour de repos : { [programId]: { [weekStartDate]: { fromDay, toDay, updatedAt } } } */
   restDaySwaps: {},
   calendarMonthPlanSnapshots: {},
+  /** Instantanés figés du plan d’exercices par jour (YYYY-MM-DD). */
+  calendarDayPlanSnapshots: {},
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
 };
 
@@ -608,6 +610,10 @@ export const useWorkoutData = (options = {}) => {
       calendarMonthPlanSnapshots:
         migratedData.calendarMonthPlanSnapshots && typeof migratedData.calendarMonthPlanSnapshots === 'object'
           ? { ...migratedData.calendarMonthPlanSnapshots }
+          : {},
+      calendarDayPlanSnapshots:
+        migratedData.calendarDayPlanSnapshots && typeof migratedData.calendarDayPlanSnapshots === 'object'
+          ? { ...migratedData.calendarDayPlanSnapshots }
           : {},
       enduranceData: migratedData.enduranceData || result.enduranceData || {
         sessions: {
@@ -1057,6 +1063,10 @@ export const useWorkoutData = (options = {}) => {
         calendarMonthPlanSnapshots:
           newData && newData.calendarMonthPlanSnapshots && typeof newData.calendarMonthPlanSnapshots === 'object'
             ? { ...newData.calendarMonthPlanSnapshots }
+            : {},
+        calendarDayPlanSnapshots:
+          newData && newData.calendarDayPlanSnapshots && typeof newData.calendarDayPlanSnapshots === 'object'
+            ? { ...newData.calendarDayPlanSnapshots }
             : {},
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: (() => {

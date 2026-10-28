@@ -63,8 +63,8 @@ function plannedCatalogOnDate(dateStr, catalogKey, getExerciseNameById, ctx) {
     dateStr,
     getTodayWorkout: ctx.getTodayWorkout,
     activeProgram: ctx.activeProgram,
-    isAdmin: ctx.isAdmin,
-    isAuthenticated: ctx.isAuthenticated
+    workoutData: ctx.snapshot || ctx.workoutData || null,
+    getExerciseNameById
   });
   const targetExId = parseExerciseIdFromCatalogKey(catalogKey);
   return planned.some((ex) => {

@@ -29,9 +29,17 @@ function visible(candidate) {
 }
 
 function frDate(ymd) {
-  const [y, m, d] = String(ymd || '').split('-');
+  const [y, m, d] = String(ymd || '')
+    .split('-')
+    .map(Number);
   if (!y || !m || !d) return '';
-  return `${d}/${m}/${y}`;
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 }
 
 function dayGap(start, end) {

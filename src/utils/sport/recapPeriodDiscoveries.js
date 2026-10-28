@@ -71,6 +71,12 @@ import {
   publishWindowSleepFacts,
   summarizeRecentNights
 } from './recapSleepCorrelation';
+import {
+  buildPeriodActivityContext,
+  filterDiscoveriesByPeriodScope,
+  filterRunDaysToWindow,
+  withDiscoveryScope
+} from './recapDiscoveryPeriodScope';
 
 export const PERIOD_QUESTIONS = {
   today: "Qu'est-ce qui caractérise précisément cette séance par rapport à ce que je fais habituellement ?",
@@ -387,7 +393,7 @@ function scoreOf({ importance, reliability, novelty, fit }) {
 
 function discovery(partial) {
   const score = partial.score != null ? partial.score : scoreOf(partial.weights || {});
-  return {
+  return withDiscoveryScope({
     id: partial.id || partial.kind,
     kind: partial.kind,
     nature: partial.nature,
@@ -397,8 +403,9 @@ function discovery(partial) {
     body: partial.body,
     evidence: partial.evidence || '',
     relevance: Math.min(0.995, 0.88 + score / 900),
-    metrics: partial.metrics || {}
-  };
+    metrics: partial.metrics || {},
+    ...(partial.scope ? { scope: partial.scope } : {})
+  });
 }
 
 function emptyMeasure(window) {
@@ -1154,11 +1161,11 @@ function detectDiscoveries(cmp, extras = {}) {
     const backNow = p.byMuscle[MuscleGroups.BACK]?.reps || 0;
     const ratioBit =
       pushNow >= 80 && backNow > 0 && pushNow > backNow * 1.6
-        ? ` La poussée identifiée compte ${fmtInt(pushNow)} reps contre ${fmtInt(backNow)} au dos, environ ${(pushNow / backNow).toFixed(1).replace('.', ',')} pour 1.`
+        ? ` Les mouvements de poussée (pectoraux, épaules, triceps) totalisent ${fmtInt(pushNow)} reps, contre ${fmtInt(backNow)} pour le dos : le haut du corps est clairement plus exposé en poussée.`
         : '';
     const missingPull =
       pushNow > backNow * 2
-        ? ` Pour revenir vers 2 pour 1 dans cette fenêtre, il manquerait environ ${fmtInt(Math.round(pushNow / 2 - backNow))} reps de dos.`
+        ? ` Pour se rapprocher d’un équilibre plus proche d’une poussée pour deux tirages dans cette fenêtre, il manquerait environ ${fmtInt(Math.round(pushNow / 2 - backNow))} reps de dos.`
         : '';
     const indirect =
       top[0].group === MuscleGroups.SHOULDERS &&
@@ -1313,14 +1320,16 @@ function detectDiscoveries(cmp, extras = {}) {
             ? 'Ton tirage reste bien présent malgré cette dominante poussée'
             : `L'exposition poussée ${v.ofPeriod} reste nettement supérieure au tirage`,
         body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} totalise environ ${fmtInt(pullNow)} reps de dos contre ${fmtInt(p.chestTricepsReps || pushNow)} reps pectoraux + triceps${
-          pushNow !== (p.chestTricepsReps || 0) ? ` (poussée identifiée ${fmtInt(pushNow)})` : ''
-        }, ce qui donne une exposition poussée nettement supérieure à l'exposition tirage.${
+          pushNow !== (p.chestTricepsReps || 0)
+            ? ` (et ${fmtInt(pushNow)} reps si l’on compte aussi les épaules de poussée)`
+            : ''
+        }. Le haut du corps reçoit donc nettement plus de travail en poussée qu’en tirage.${
           (isToday || isWeek) && ofMonth != null && ofMonth <= 100 && monthPull >= 80
             ? ` Avec ${fmtInt(pullNow)} reps dos, tu réalises ${v.now} environ ${fmtPct(ofMonth)} du volume de dos des 30 derniers jours.`
             : isLongVoice(v) && monthShareOfWindow != null && monthPull >= 80 && pullNow > monthPull * 1.15
               ? ` Les 30 derniers jours portent ${fmtPct(monthShareOfWindow)} du dos de cette fenêtre (${fmtInt(monthPull)} sur ${fmtInt(pullNow)}), pas l'inverse.`
               : ''
-        } Cette asymétrie caractérise le stimulus dominant reçu par le haut du corps.`,
+        } Ce n’est pas un jugement d’équilibre ideal : c’est le stimulus dominant réellement reçu.`,
         evidence: `dos ${fmtInt(pullNow)} · pecs+triceps ${fmtInt(p.chestTricepsReps || 0)}`,
         weights: { importance: 0.86, reliability: 0.88, novelty: 0.84, fit: 0.95 },
         metrics: { pullNow, pushNow, ofMonth }
@@ -3042,6 +3051,10 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     comparisons.voice?.key === 'today'
       ? end
       : comparisons.period?.peakDay?.date || end;
+  // Point 22 : runDays limités à la fenêtre pour les natures « période »
+  // (ex. sleep_cardio) — pas tout l’historique Garmin.
+  const allRunDays = collectRunDays(opts.garminData);
+  const windowRunDays = filterRunDaysToWindow(allRunDays, opts.window);
   const extras = {
     baselines: buildExerciseBaselines({
       snapshot: opts.snapshot,
@@ -3054,7 +3067,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     restAssoc: computeRestPerformanceAssociation(catalog),
     features: opts.features || null,
     sleepCandidates: publishSleepCandidates(catalog, {
-      runDays: collectRunDays(opts.garminData),
+      runDays: windowRunDays,
       snapshot: opts.snapshot
     }),
     catalog,
@@ -3077,7 +3090,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     })
   };
   const sleepRaw = buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog });
-  const all = [
+  const rawAll = [
     ...detectDiscoveries(comparisons, extras),
     ...rewriteSleepDiscoveries(sleepRaw, allNights),
     ...buildThreadDiscoveries({
@@ -3091,6 +3104,19 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
     })
   ];
+  const period = comparisons.period || {};
+  const activityCtx = buildPeriodActivityContext({
+    window: opts.window,
+    runningKm: period.runningKm,
+    runningMinutes: period.runningMinutes,
+    runDaysInWindow: windowRunDays.length,
+    strengthReps: period.totalReps,
+    trainingDays: period.trainingDays || trainedInWindow.length,
+    nightsInWindow: allNights.length,
+    sleepPairs: catalogPairs.length
+  });
+  const scoped = filterDiscoveriesByPeriodScope(rawAll, activityCtx);
+  const all = scoped.kept;
   const traced = selectPeriodDiscoveriesWithTrace(
     all,
     opts.insightHistory || null,
@@ -3104,7 +3130,10 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     windowSpanDays: comparisons.period?.spanDays
   });
   const selected = refillAfterGate(validated, traced.dropped, voiceKey);
-  const dropped = traced.dropped;
+  const dropped = [
+    ...scoped.dropped.map((d) => ({ ...d.discovery, reason: d.reason })),
+    ...traced.dropped
+  ];
   const preferPeriodNow = selected.some((d) => d.nature === 'now');
   const sleepDetected = all.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);
   const sleepSelected = selected.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);
@@ -3122,6 +3151,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       garminNightDays: allNights.length,
       journeyNightDays: journeyNights.length,
       sleepPairs: catalogPairs.length,
+      runDaysInWindow: windowRunDays.length,
       sleepCandidateTypes: (extras.sleepCandidates || []).map((c) => c.type),
       sleepDetected,
       sleepSelected,

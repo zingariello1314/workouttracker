@@ -42,9 +42,17 @@ function formatClockFr(time) {
 }
 
 function formatDayFr(ymd) {
-  const [y, m, d] = String(ymd || '').split('-');
+  const [y, m, d] = String(ymd || '')
+    .split('-')
+    .map(Number);
   if (!y || !m || !d) return String(ymd || '');
-  return `${d}/${m}/${y}`;
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return String(ymd || '');
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 }
 
 function round1(n) {
@@ -224,7 +232,7 @@ function buildNowCard(rows, judgments) {
             : ''
         }`
       : '';
-  const body = `${single ? `Tu as noté ${single.reps} reps à ${formatClockFr(single.time)}.` : `${rows.length} mini-séries hors planning, ${reps} reps, sont entrées dans le journal de la fenêtre.${cluster}`} ${zoneSentence(rows, judgments)} ${roleUse(mode, band?.band)}`;
+  const body = `${single ? `Tu as noté ${single.reps} reps à ${formatClockFr(single.time)}.` : `${rows.length} passages hors planning, ${reps} reps, sont entrés dans le journal de la fenêtre.${cluster}`} ${zoneSentence(rows, judgments)} ${roleUse(mode, band?.band)}`;
   return discovery({
     kind: 'disc_gtg_unplanned_now',
     nature: 'now',
@@ -418,7 +426,7 @@ function buildJourneyCard(snapshot, history, config, end) {
     title = `Le repère de ${lead.label.toLowerCase()} a ${lead.change.word} depuis le début du Grease the Groove`;
     fact = `Il est passé de ${lead.early.reps} reps le ${formatDayFr(lead.early.date)} à ${lead.late.reps} le ${formatDayFr(lead.late.date)}.`;
   } else if (lead.change.word === 'doublé') {
-    title = `Les mini-séries de ${lead.label.toLowerCase()} ont à peu près doublé depuis le début`;
+    title = `Les passages hors planning de ${lead.label.toLowerCase()} ont à peu près doublé depuis le début`;
     fact = `Au début, environ ${round1(lead.early.reps)} mini-série(s) par jour actif. Sur la période récente, environ ${round1(lead.late.reps)}.`;
   } else {
     title = `Le rythme des ${lead.label.toLowerCase()} a ${lead.change.word} depuis le début du Grease the Groove`;

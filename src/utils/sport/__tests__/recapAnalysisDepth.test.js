@@ -168,7 +168,7 @@ describe('dossiers de fenêtre', () => {
       catalog
     });
     const bodies = cards.map((c) => c.body).join('\n');
-    expect(bodies).toMatch(/29\/09\/2026/);
+    expect(bodies).toMatch(/29 septembre 2026/);
     expect(bodies).toMatch(/436/);
     expect(bodies).not.toMatch(/aujourd'hui \(436/i);
     expect(bodies).not.toMatch(/pic confirmé/);

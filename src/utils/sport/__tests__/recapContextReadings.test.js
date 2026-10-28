@@ -86,7 +86,7 @@ describe('calendrier et pas', () => {
       end: '2026-09-30',
       thisPeriod: 'ces 7 jours'
     });
-    expect(card.body).toMatch(/29\/09/);
+    expect(card.body).toMatch(/29 septembre 2026/);
     expect(card.body).toMatch(/sans séance/);
     expect(card.body).toMatch(/500/);
   });

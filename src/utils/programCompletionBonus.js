@@ -86,6 +86,8 @@ export function buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx = {
       dateStr,
       getTodayWorkout,
       activeProgram,
+      workoutData,
+      getExerciseNameById,
       isAdmin,
       isAuthenticated
     }).forEach((ex) =>

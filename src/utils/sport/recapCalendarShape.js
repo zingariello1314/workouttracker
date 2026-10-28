@@ -42,7 +42,7 @@ export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod 
   const trained = dates.filter((date) => repsOf(date) > 0);
   if (trained.length < 2) return null;
   const habit = median(trained.map(repsOf));
-  const withYear = String(start).slice(0, 4) !== String(end).slice(0, 4) || dates.length > 45;
+  const withYear = true;
 
   const runs = [];
   let cursor = null;

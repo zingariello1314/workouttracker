@@ -1,11 +1,13 @@
 /**
  * Alignement calendrier ↔ programme actif (même logique IDs / noms que l’onglet Aujourd’hui).
+ * Les jours avec perfs / snapshot utilisent l’historique figé, pas le programme live.
  * @module calendarProgramExercises
  */
 
 import { workoutProgram } from '../data/workoutProgram';
 import { convertToStableNumericId } from '../context/WorkoutContext/utils';
 import { filterExercisesForSessionDate } from './programExerciseScheduling';
+import { resolveExercisesForCalendarDate } from './calendarDayPlanSnapshot';
 
 export function makeUniqueNumericId(baseId, usedIds) {
   let candidate = baseId;
@@ -157,9 +159,9 @@ export function buildDefaultWorkoutVariants(dayName) {
 }
 
 /**
- * Exercices prévus pour une date : programme actif uniquement (via getTodayWorkout).
+ * Liste live depuis getTodayWorkout / programme actif (sans historique).
  */
-export function getPlannedExercisesForCalendarDate({
+export function getLivePlannedExercisesForCalendarDate({
   date,
   dayName,
   dateStr,
@@ -189,4 +191,48 @@ export function getPlannedExercisesForCalendarDate({
   }
 
   return [];
+}
+
+/**
+ * Exercices pour une date : snapshot / reconstruct / live.
+ * @returns {object[]} liste affichable
+ */
+export function getPlannedExercisesForCalendarDate({
+  date,
+  dayName,
+  dateStr,
+  getTodayWorkout,
+  activeProgram,
+  workoutData = null,
+  getExerciseNameById = null
+}) {
+  const live = getLivePlannedExercisesForCalendarDate({
+    date,
+    dayName,
+    dateStr,
+    getTodayWorkout,
+    activeProgram
+  });
+
+  const resolved = resolveExercisesForCalendarDate({
+    dateStr,
+    workoutData,
+    liveExercises: live,
+    getExerciseNameById
+  });
+
+  return resolved.exercises;
+}
+
+/**
+ * Variante riche pour persistance lazy (calendrier / détail jour).
+ */
+export function resolvePlannedExercisesForCalendarDate(opts) {
+  const live = getLivePlannedExercisesForCalendarDate(opts);
+  return resolveExercisesForCalendarDate({
+    dateStr: opts.dateStr,
+    workoutData: opts.workoutData,
+    liveExercises: live,
+    getExerciseNameById: opts.getExerciseNameById
+  });
 }

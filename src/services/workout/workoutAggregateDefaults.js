@@ -55,6 +55,8 @@ export function createEmptyWorkoutAggregate() {
     restDaySwaps: {},
     /** Snapshots figés repos planifiés par mois (YYYY-MM). */
     calendarMonthPlanSnapshots: {},
+    /** Instantanés figés du plan d’exercices par jour (YYYY-MM-DD). */
+    calendarDayPlanSnapshots: {},
     garminActivityDateOverrides: {},
     enduranceData: {
       sessions: {

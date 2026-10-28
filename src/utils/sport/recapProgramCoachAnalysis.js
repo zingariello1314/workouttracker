@@ -353,7 +353,14 @@ function buildExerciseProgressionCandidates(exId, sessions, getExerciseNameById)
       text:
         gain === 1
           ? `${name} : nouveau record à ${latest} reps (+1 vs max précédent ${prevMax}) — micro-progression à consolider.`
-          : `${name} : record à ${latest} reps (+${gain} vs ${prevMax}) le ${sessions[sessions.length - 1].date.slice(8, 10)}/${sessions[sessions.length - 1].date.slice(5, 7)} — progresse sans viser l’échec la séance suivante.`
+          : `${name} : record à ${latest} reps (+${gain} vs ${prevMax}) le ${(() => {
+              const ymd = sessions[sessions.length - 1].date;
+              const [y, m, d] = String(ymd).split('-').map(Number);
+              const date = new Date(y, m - 1, d);
+              return Number.isNaN(date.getTime())
+                ? ymd
+                : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            })()} — progresse sans viser l’échec la séance suivante.`
     });
   } else if (values.length >= 2 && latest === prevMax - 1 && prevMax >= 3) {
     out.push({

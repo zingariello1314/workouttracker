@@ -4,6 +4,7 @@ import RecapAnalyseDetails from './RecapAnalyseDetails';
 import { useTranslation } from '../../../../utils/translations';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { buildRecapPeriodCalendarAnalytics } from '../../../../utils/sport/recapCalendarPeriodAnalytics';
+import { segmentRecapProseValues } from '../../../../utils/sport/recapProseMarks';
 
 const FAMILIES = {
   short: { id: 'a', cls: 'a' },
@@ -26,16 +27,15 @@ function asCard(item) {
 }
 
 function markValues(text) {
-  const raw = String(text || '');
-  if (!raw) return null;
-  const parts = raw.split(/(\d[\d\s.,]*\s?(?:%|km|reps|kcal|min|h)?)/gi);
+  const parts = segmentRecapProseValues(text);
+  if (!parts.length) return null;
   return parts.map((part, index) =>
-    index % 2 === 1 ? (
+    part.mark ? (
       <em key={index} className="v">
-        {part}
+        {part.text}
       </em>
     ) : (
-      part
+      part.text
     )
   );
 }
@@ -179,7 +179,7 @@ export default function RecapAnalyseView({
               {leadFigure(card) ? <div className="n">{leadFigure(card)}</div> : null}
               {card.title ? <h4>{markValues(card.title)}</h4> : null}
               <p className="whitespace-pre-line">{markValues(card.body || card.text)}</p>
-              {card.evidence ? <div className="meta">{card.evidence}</div> : null}
+              {card.evidence ? <div className="meta">{markValues(card.evidence)}</div> : null}
               {card.confidence ? <div className="meta">{card.confidence}</div> : null}
             </article>
           ))}

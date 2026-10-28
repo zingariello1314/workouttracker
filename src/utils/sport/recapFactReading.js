@@ -88,7 +88,18 @@ export function writeExerciseEvent({
     ? ` Le même jour, ${companions
         .map((other) => `${other.reps} répétitions de ${String(other.name).toLowerCase()}`)
         .join(' et ')} portent sur le même muscle principal${
-        companions[0]?.date ? ` (le ${companions[0].date.split('-').reverse().join('/')})` : ''
+        companions[0]?.date
+          ? (() => {
+              const [y, m, d] = String(companions[0].date).split('-').map(Number);
+              const date = new Date(y, m - 1, d);
+              if (Number.isNaN(date.getTime())) return '';
+              return ` (le ${date.toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })})`;
+            })()
+          : ''
       }. Si la séance suivante baisse sur l'un, regarde d'abord la fatigue de l'autre.`
     : '';
   const pair = peer

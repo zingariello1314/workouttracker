@@ -8,10 +8,16 @@ import {
 } from '../exerciseKeyGenerator';
 import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from '../sessionCalendarDate';
 
-export function formatDayFr(ymd, withYear = false) {
+export function formatDayFr(ymd, withYear = true) {
   if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
-  const [y, m, d] = ymd.split('-');
-  return withYear ? `${d}/${m}/${y}` : `${d}/${m}`;
+  const [y, m, d] = ymd.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    ...(withYear ? { year: 'numeric' } : {})
+  });
 }
 
 export function daysBetweenYmd(fromYmd, toYmd) {

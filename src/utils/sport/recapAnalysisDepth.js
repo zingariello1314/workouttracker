@@ -173,11 +173,75 @@ function repertoireIdea(dossier) {
   };
 }
 
+function pushPullIdea(dossier) {
+  const o = dossier.observed || {};
+  const push = Number(o.pushReps);
+  const pull = Number(o.pullReps);
+  if (!Number.isFinite(push) || !Number.isFinite(pull) || push + pull < 120) return null;
+  if (push < 40 || pull < 0) return null;
+  const ratio = pull > 0 ? push / pull : null;
+  if (ratio == null || !(ratio >= 1.55 || ratio <= 0.7)) return null;
+  const label = dossier.windowLabel || 'Cette fenêtre';
+  const pushHeavy = ratio >= 1.55;
+  const meaning = pushHeavy
+    ? `${label} exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage.`
+    : `${label} exposent surtout le haut du corps en tirage (dos), pas en poussée.`;
+  const numbers = pushHeavy
+    ? `Tu cumules ${fmtInt(push)} répétitions de poussée contre ${fmtInt(pull)} de tirage`
+    : `Tu cumules ${fmtInt(pull)} répétitions de tirage contre ${fmtInt(push)} de poussée`;
+  const ratioBit =
+    ratio >= 1.55
+      ? `, soit environ ${ratio.toFixed(1).replace('.', ',')} répétitions de poussée pour 1 de tirage`
+      : `, soit environ ${(1 / ratio).toFixed(1).replace('.', ',')} répétitions de tirage pour 1 de poussée`;
+  return {
+    role: dossier.sense === 'transformation' ? 'evolution' : dossier.sense === 'relation' ? 'reading' : 'fact',
+    analysisType: 'comparison',
+    title: pushHeavy
+      ? 'Le haut du corps travaille surtout en poussée'
+      : 'Le haut du corps travaille surtout en tirage',
+    body: `${meaning} ${numbers}${ratioBit}. Le ratio vient en second : c’est la répartition du volume qui décrit la fenêtre.`,
+    factId: `pushPull|${dossier.voice || ''}|${pushHeavy ? 'push' : 'pull'}`,
+    metrics: { pushReps: push, pullReps: pull, ratio: Math.round(ratio * 10) / 10 }
+  };
+}
+
+function compositionIdea(dossier) {
+  const families = dossier.observed?.families;
+  if (!Array.isArray(families) || families.length < 2) return null;
+  const total = Number(dossier.observed?.reps);
+  const lead = families[0];
+  const second = families[1];
+  if (!lead?.label || !hasNum(lead.reps) || !hasNum(total) || total < 80) return null;
+  const share = (Number(lead.reps) / total) * 100;
+  if (share < 18) return null;
+  const label = dossier.windowLabel || 'Cette fenêtre';
+  const secondBit =
+    second?.label && hasNum(second.reps)
+      ? ` Derrière, ${second.label} pèsent ${fmtInt(second.reps)} répétitions.`
+      : '';
+  return {
+    role: 'fact',
+    analysisType: 'anomaly',
+    title: `${capFirst(lead.label)} portent une part nette de ${String(label).toLowerCase()}`,
+    body: `${fmtInt(lead.reps)} des ${fmtInt(total)} répétitions concernent ${lead.label}, soit ${fmtPct(share)}.${secondBit} Ce chiffre décrit où va le volume de ${String(label).toLowerCase()}.`,
+    factId: `composition|${String(lead.label).toLowerCase()}|${dossier.voice || ''}`,
+    metrics: { leadLabel: lead.label, leadReps: lead.reps, share }
+  };
+}
+
+function capFirst(s) {
+  const t = String(s || '').trim();
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 function ideaFor(dossier) {
   if (dossier.thread === 'concentration') return concentrationIdea(dossier);
   if (dossier.thread === 'rhythm') return rhythmIdea(dossier);
   if (dossier.thread === 'continuity') return continuityIdea(dossier);
   if (dossier.thread === 'repertoire') return repertoireIdea(dossier);
+  if (dossier.thread === 'pushPull') return pushPullIdea(dossier);
+  if (dossier.thread === 'composition') return compositionIdea(dossier);
   return null;
 }
 

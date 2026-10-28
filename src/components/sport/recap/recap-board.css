@@ -1307,12 +1307,11 @@
 
 .recap-board .k .v {
   font-style: normal;
-  font-weight: 650;
+  font-weight: 700;
   color: var(--a);
-  background: color-mix(in srgb, var(--a) 13%, transparent);
-  padding: 0 6px;
+  background: none;
+  padding: 0;
   white-space: nowrap;
-  border-bottom: 1px solid color-mix(in srgb, var(--a) 55%, transparent);
 }
 
 .recap-board .k .meta {
@@ -3160,13 +3159,12 @@
   white-space: nowrap;
 }
 .recap-board .rb-analyse .v {
-  font: 650 0.95em var(--sa);
+  font: 700 0.95em var(--sa);
   font-style: normal;
   color: var(--a, var(--d));
-  background: color-mix(in srgb, var(--a, var(--d)) 13%, transparent);
-  padding: 0 6px;
+  background: none;
+  padding: 0;
   white-space: nowrap;
-  border-bottom: 1px solid color-mix(in srgb, var(--a, var(--d)) 55%, transparent);
 }
 .recap-board .rb-analyse .badge {
   font: 700 12px var(--lb) !important;
@@ -4233,7 +4231,9 @@
 .recap-board .rb-analyse .rc p .v {
   font-style: normal;
   font-weight: 700;
-  color: var(--tx);
+  color: var(--a, var(--d));
+  background: none;
+  padding: 0;
 }
 .recap-board .rb-analyse .q {
   font: 700 12.5px var(--lb) !important;

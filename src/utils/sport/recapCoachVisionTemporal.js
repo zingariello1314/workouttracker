@@ -240,10 +240,20 @@ function buildPeriodBlockLabel(startYmd, endYmd) {
   const y1 = startYmd.slice(0, 4);
   const y2 = endYmd.slice(0, 4);
   if (startYmd.slice(5) === '01-01' && endYmd.slice(5) === '12-31' && y1 === y2) return y1;
-  if (startYmd.slice(0, 4) === endYmd.slice(0, 4)) {
-    return `${startYmd.slice(8, 10)}/${startYmd.slice(5, 7)} – ${endYmd.slice(8, 10)}/${endYmd.slice(5, 7)} ${y1}`;
+  const fmt = (ymd, withYear) => {
+    const [y, m, d] = String(ymd).split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    if (Number.isNaN(date.getTime())) return ymd;
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      ...(withYear ? { year: 'numeric' } : {})
+    });
+  };
+  if (y1 === y2) {
+    return `${fmt(startYmd, false)} – ${fmt(endYmd, false)} ${y1}`;
   }
-  return `${startYmd.slice(8, 10)}/${startYmd.slice(5, 7)}/${y1} – ${endYmd.slice(8, 10)}/${endYmd.slice(5, 7)}/${y2}`;
+  return `${fmt(startYmd, true)} – ${fmt(endYmd, true)}`;
 }
 
 function buildYearBlockStats(snapshot, year, endYmd, ctx, garminData, windowStart) {

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useWorkout } from '../../../context/WorkoutContext';
 import { buildRecapBenchmarkInsights } from '../../../utils/sport/recapBenchmarkInsights';
+import { segmentRecapProseValues } from '../../../utils/sport/recapProseMarks';
 import { RecapSection } from './components/RecapUiBlocks';
 import RecapBenchmarkInsightDetailModal from './RecapBenchmarkInsightDetailModal';
 
@@ -61,29 +62,34 @@ function figureTone(text) {
   return '';
 }
 
+function appendProseMarks(out, text, keyRef) {
+  segmentRecapProseValues(text).forEach((part) => {
+    if (part.mark) out.push(<em className="v" key={keyRef.i++}>{part.text}</em>);
+    else out.push(part.text);
+  });
+}
+
 function RichLine({ text }) {
   const src = String(text || '');
-  const re = /(«[^»]+»|\b(?:novice|débutant|debutant|intermédiaire|intermediaire|confirmé|confirme|avancé|avance|élite|elite|moyen)\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|[+-]?\d(?:[\d\s]|[.,]\d){0,12}(?:\s?(?:%|reps?|kg|km|min|s|kcal|t)\b)?|\d+\s?[×x]\s?\d+)/gi;
+  const re = /(«[^»]+»|\b(?:novice|débutant|debutant|intermédiaire|intermediaire|confirmé|confirme|avancé|avance|élite|elite|moyen)\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|\d+\s?[×x]\s?\d+)/gi;
   const out = [];
   let last = 0;
-  let key = 0;
+  const keyRef = { i: 0 };
   for (const match of src.matchAll(re)) {
     const token = match[0];
     const index = match.index ?? 0;
     if (!token) continue;
-    if (index > last) out.push(src.slice(last, index));
+    if (index > last) appendProseMarks(out, src.slice(last, index), keyRef);
     if (token.startsWith('«') && token.endsWith('»')) {
-      out.push(<em className="q" key={key++}>{token.slice(1, -1)}</em>);
+      out.push(<em className="q" key={keyRef.i++}>{token.slice(1, -1)}</em>);
     } else if (/^(novice|débutant|debutant|intermédiaire|intermediaire|confirmé|confirme|avancé|avance|élite|elite|moyen)$/i.test(token)) {
-      out.push(<em className="q" key={key++}>{token}</em>);
-    } else if (/^\d{4}$/.test(token.trim()) || /^\d{7,}$/.test(token.replace(/\s/g, '')) || /\d[.,]\d{3,}/.test(token)) {
-      out.push(token);
+      out.push(<em className="q" key={keyRef.i++}>{token}</em>);
     } else {
-      out.push(<em className="v" key={key++}>{token}</em>);
+      out.push(<em className="v" key={keyRef.i++}>{token}</em>);
     }
     last = index + token.length;
   }
-  if (last < src.length) out.push(src.slice(last));
+  if (last < src.length) appendProseMarks(out, src.slice(last), keyRef);
   return out;
 }
 

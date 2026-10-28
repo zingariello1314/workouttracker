@@ -167,8 +167,8 @@ describe('lectures GTG hors planning', () => {
     const journey = cards.find((card) => card.kind === 'disc_gtg_unplanned_progress');
     expect(journey).toBeTruthy();
     expect(journey.title.toLowerCase()).toMatch(/doubl/);
-    expect(journey.body).toMatch(/01\/08\/2026/);
-    expect(journey.body).toMatch(/10\/09\/2026/);
+    expect(journey.body).toMatch(/1 août 2026/);
+    expect(journey.body).toMatch(/10 septembre 2026/);
     expect(journey.body).toMatch(/23 h|après 21 h/);
     expect(journey.metrics.ratio).toBe(2);
   });

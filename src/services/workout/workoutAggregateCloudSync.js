@@ -205,6 +205,10 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
       L.calendarMonthPlanSnapshots,
       C.calendarMonthPlanSnapshots
     ),
+    calendarDayPlanSnapshots: mergeShallowRecordMaps(
+      L.calendarDayPlanSnapshots,
+      C.calendarDayPlanSnapshots
+    ),
     circuitProgress: mergeShallowRecordMaps(L.circuitProgress, C.circuitProgress),
     lastSaved: C.lastSaved || L.lastSaved,
     dataVersion: C.dataVersion || L.dataVersion || '1.0'

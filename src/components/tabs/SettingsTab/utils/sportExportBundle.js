@@ -547,6 +547,7 @@ export const WORKOUT_MAP_MERGE_FIELDS = [
   'exerciseSetLogs',
   'exerciseMarkedWeighted',
   'calendarMonthPlanSnapshots',
+  'calendarDayPlanSnapshots',
   'garminActivityDateOverrides'
 ];
 

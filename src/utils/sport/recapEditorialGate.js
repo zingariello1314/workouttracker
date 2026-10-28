@@ -77,10 +77,24 @@ function dropReason(card, voiceKey) {
   if (/une seule nuit ne suffit|observation\s*:/i.test(text) && !/nuits/i.test(text)) return 'one-night';
   if (/les familles identifiées portent/i.test(text)) return 'family-list';
   if (/^la poussée compte/i.test(String(card.title || '')) && !/nuit/i.test(text)) return 'push-pull-bare';
+  {
+    const bodyOnly = String(card?.body || '');
+    if (
+      /poussée identifiée/i.test(bodyOnly) &&
+      !/poussée\s+identifiée[^.]{0,80}(pectoraux|épaules|triceps|haut du corps)/i.test(bodyOnly) &&
+      !/(pectoraux|épaules|triceps|haut du corps)[^.]{0,80}poussée\s+identifiée/i.test(bodyOnly)
+    ) {
+      return 'push-jargon';
+    }
+  }
   if (/meilleure série/i.test(text) && !/avant|précéd|était à|puis/i.test(text)) return 'series-without-before';
   if (/pic relativisé/i.test(text) && !/au-dessus|en dessous|journées de renforcement/i.test(text)) return 'peak-label';
   if (kind === 'disc_volume_shape' && (voiceKey === 'week' || voiceKey === 'today')) return 'bare-portrait';
-  if (kind === 'disc_ratio_structure' || kind === 'disc_push_pull') return 'bare-portrait';
+  if (kind === 'disc_ratio_structure') return 'bare-portrait';
+  // disc_push_pull nu (ratio sans signification) — les fils writeThreadCard passent
+  if (kind === 'disc_push_pull' && !/haut du corps|stimulus dominant|travail en poussée|travail en tirage/i.test(text)) {
+    return 'bare-portrait';
+  }
   if (kind === 'disc_exercise_base' || kind === 'disc_stimulus_mix' || kind === 'disc_no_running') return 'inventory';
   if (kind === 'disc_sleep_quarter' || kind === 'disc_sleep_family') return 'same-sleep-relation';
   if (kind === 'disc_ms_event_combo' && /reprise et niveau/i.test(text)) return 'duplicate-return';
@@ -89,7 +103,14 @@ function dropReason(card, voiceKey) {
     const vs = card.metrics?.vs30 ?? card.metrics?.vs7;
     if (vs == null || Math.abs(Number(vs)) < CLOSE_PCT) return 'close-habit';
   }
-  if (/^disc_th_(series|pushPull|composition|sleepPlacement)_/.test(kind)) return 'thread-stat';
+  // Anciens dumps stats de fils — laisser passer pushPull/composition enrichis
+  if (/^disc_th_(series|sleepPlacement)_/.test(kind)) return 'thread-stat';
+  if (/^disc_th_composition_/.test(kind) && /familles identifiées|portent \d+/i.test(text) && text.length < 120) {
+    return 'thread-stat';
+  }
+  if (/^disc_th_pushPull_/.test(kind) && /ratio\s*[: ]|push\s*\/\s*pull/i.test(text) && !/haut du corps|signifie|expose/i.test(text)) {
+    return 'thread-stat';
+  }
   return '';
 }
 
@@ -145,6 +166,24 @@ function rewrite(card, voiceKey) {
       .replace(/pic relativisé\.?/gi, '')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  // Point 23 — jargon → constat utile
+  body = body
+    .replace(/poussée identifiée/gi, 'mouvements de poussée (pectoraux, épaules, triceps)')
+    .replace(/exposition poussée nettement supérieure à l'exposition tirage/gi, 'plus de travail en poussée qu’en tirage')
+    .replace(/Répartition identifiée\s*:/gi, 'Répartition :')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (kind === 'disc_push_pull' || /^disc_th_pushPull_/.test(kind)) {
+    if (!/haut du corps|stimulus|expose|travail en/i.test(body) && /reps/i.test(body)) {
+      body = `${body} Cela décrit où va le volume du haut du corps, pas un objectif d’équilibre fixe.`;
+    }
+  }
+
+  if (kind === 'disc_muscle_now' && /%/.test(body) && !/composition|décrit/i.test(body)) {
+    body = `${body} Ce pourcentage dit où va le volume, pas quel groupe « devrait » mener.`;
   }
 
   title = title.replace(/\.$/, '').trim();

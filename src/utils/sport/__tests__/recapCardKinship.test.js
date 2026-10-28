@@ -100,8 +100,8 @@ describe('parenté des cartes', () => {
       window: { start: '2026-04-01', end: '2026-09-30' },
       metricDates: ['2026-07-02', '2026-09-19']
     });
-    expect(blob(kept[0])).toMatch(/02\/07\/2026/);
-    expect(blob(kept[0])).toMatch(/19\/09\/2026/);
+    expect(blob(kept[0])).toMatch(/2 juillet 2026/);
+    expect(blob(kept[0])).toMatch(/19 septembre 2026/);
     expect(blob(kept[0])).not.toMatch(/ces six mois/i);
   });
 });

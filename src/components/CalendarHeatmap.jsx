@@ -194,6 +194,10 @@ import {
   buildWorkoutVariantsForProgramDay,
   getPlannedExercisesForCalendarDate
 } from '../utils/calendarProgramExercises';
+import {
+  ensureDayPlanSnapshot,
+  ensureReconstructedDayPlanSnapshot
+} from '../utils/calendarDayPlanSnapshot';
 import { calendarHeatmapCompositeBackground } from '../utils/calendarHeatmapTint';
 import {
   calculateCurrentTrainingStreak,
@@ -758,6 +762,19 @@ const CalendarHeatmap = ({
   // ✅ NOUVEAU : Recalculer allData quand dataUpdateTrigger change pour avoir les données les plus récentes
   const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData, data]);
 
+  // Persistance lazy d’un snapshot reconstruit quand on ouvre un jour passé avec perfs.
+  useEffect(() => {
+    if (variant !== 'sport' || !selectedDate?.date || typeof updateData !== 'function') return;
+    const dateStr = getDateStr(selectedDate.date);
+    const current = typeof getCurrentData === 'function' ? getCurrentData() : allData;
+    if (!current) return;
+    const next = ensureReconstructedDayPlanSnapshot(current, dateStr, { getExerciseNameById });
+    if (next === current || next?.calendarDayPlanSnapshots === current.calendarDayPlanSnapshots) {
+      return;
+    }
+    updateData(next, { strict: true, sessionDay: dateStr }).catch(() => {});
+  }, [variant, selectedDate?.date, updateData, getCurrentData, getExerciseNameById, allData]);
+
   const [paintReady, setPaintReady] = useState(false);
   useEffect(() => {
     let raf2 = 0;
@@ -1315,37 +1332,42 @@ const CalendarHeatmap = ({
         : null;
     const isPlannedRestDay = variant === 'sport' && !!effectiveRestDay && dayName === effectiveRestDay;
     
-    // Programme actif uniquement (aligné sur Aujourd’hui — pas de fusion de tous les programmes).
+    // Snapshot / reconstruct / live — ne jamais réécrire un jour passé avec le programme actuel.
     let allExercisesForDate = getPlannedExercisesForCalendarDate({
       date,
       dayName,
       dateStr,
       getTodayWorkout,
       activeProgram,
-      isAdmin,
-      isAuthenticated
+      workoutData: currentData,
+      getExerciseNameById
     });
-    const plannedIds = new Set(allExercisesForDate.map(ex => ex.id));
-    
-    // ✅ Inclure les exercices enregistrés pour cette date mais d'un autre jour (ex. entraînement du lundi fait le vendredi)
+    const plannedIds = new Set(
+      allExercisesForDate.map((ex) => String(ex.id ?? ex.storageId ?? ''))
+    );
+
+    // Orphelins : clés date_* absentes du plan résolu (séance d’un autre jour, ajouts exceptionnels).
     const prefix = `${dateStr}_`;
     const reps = currentData?.reps || {};
     const checked = currentData?.checkedExercises || {};
-    [...Object.keys(reps), ...Object.keys(checked)].forEach(key => {
+    [...Object.keys(reps), ...Object.keys(checked)].forEach((key) => {
       if (!key.startsWith(prefix)) return;
       const rest = key.slice(prefix.length);
       const match = rest.match(/^(\d+)(?:_semaineA|_semaineB)?$/);
       if (match) {
         const id = parseInt(match[1], 10);
-        if (!plannedIds.has(id)) {
-          plannedIds.add(id);
-          allExercisesForDate = [...allExercisesForDate, {
-            id,
-            name: getExerciseNameById ? getExerciseNameById(id) : `Exercice ${id}`,
-            series: '',
-            programName: 'Séance enregistrée',
-            programId: 'recorded'
-          }];
+        if (!plannedIds.has(String(id))) {
+          plannedIds.add(String(id));
+          allExercisesForDate = [
+            ...allExercisesForDate,
+            {
+              id,
+              name: getExerciseNameById ? getExerciseNameById(id) : `Exercice ${id}`,
+              series: '',
+              programName: 'Séance enregistrée',
+              programId: 'recorded'
+            }
+          ];
         }
       }
     });
@@ -4496,7 +4518,18 @@ const CalendarHeatmap = ({
                 exerciseMarkedWeighted: updatedMarkedWeighted
               };
 
-              let payloadWithSetLogs = payload;
+              // Fige le plan du jour à la 1re sauvegarde (ne réécrit pas un snapshot existant).
+              const frozen = ensureDayPlanSnapshot(
+                payload,
+                saveDateStr,
+                currentWorkout?.exercices || [],
+                {
+                  programId: selectedProgramId || activeProgram?.id || null,
+                  variant: effectiveVariant || null
+                }
+              );
+
+              let payloadWithSetLogs = frozen;
               savedKeys.forEach((key) => {
                 const exerciseIdPart = key.replace(`${saveDateStr}_`, '').replace(/_semaine[AB]$/, '');
                 const exercise = currentWorkout.exercices.find(

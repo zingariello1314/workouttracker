@@ -78,8 +78,14 @@ function hashSig(str) {
 
 function formatFrDate(ymd) {
   if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd || '';
-  const [y, m, d] = ymd.split('-');
-  return `${d}/${m}/${y.slice(2)}`;
+  const [y, m, d] = ymd.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return ymd;
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 }
 
 function median(nums) {
