@@ -57,6 +57,17 @@ vitest : recapAnalyticalFindings, recapAnalysisGoldenPack,
 → verts
 ```
 
+## Correctifs sélection (général, post-revue live 30 j.)
+
+Pas des rustines sur 14 cartes : règles transversales.
+
+- Plafond sommeil 1/angle + budget total ≤2 (≤1 today).
+- Rivaux élargis : assoc sommeil, rythme, GTG now/role (cross-nature).
+- RPE sommeil : min n plus haut, mois seulement, paradoxe explicite, poids baissés.
+- Titres sleep « robuste » assouplis ; prescription « reps manquantes » → constat.
+- Jalons cumul/sessions : franchissement récent sur 7/30 j. ; pénalité parcours long.
+- Boost `disc_*` réduit pour sleep ; filet adaptive insights.
+
 ## Encore superficiel si données présentes (prochain)
 
 - C3 séances strictement comparables (sets structurés) au-delà du proxy momentum.

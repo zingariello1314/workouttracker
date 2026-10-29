@@ -1107,6 +1107,15 @@ export const useWorkoutData = (options = {}) => {
 
       throw new Error('WORKOUT_DB_UNAVAILABLE');
     } catch (error) {
+      // Timeout fréquent quand une écriture éphémère croise une migration / fermeture
+      // de WorkoutTrackerDB : les données restent en mémoire + backups ; le prochain
+      // cycle autosave réessaiera. Ne pas remonter comme erreur fatale non catchée.
+      if (error?.message === 'IDB_OPERATION_TIMEOUT') {
+        console.warn(
+          '⏱️ saveToDB: timeout IndexedDB — réessai au prochain cycle (données en mémoire)'
+        );
+        return;
+      }
       console.error('❌ Erreur dans saveToDB:', error);
       throw error;
     }

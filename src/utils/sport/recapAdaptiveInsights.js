@@ -58,7 +58,7 @@ import {
 } from './insightNoveltyStore';
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
-import { claimFromCandidate } from './recapNarrativeClaims';
+import { claimFromCandidate, kindFromNarrativeCandidate } from './recapNarrativeClaims';
 import { structuredBestSetReps } from './exercisePerformanceUnit';
 import { mergeGarminDataForRecap } from './recapGarminMerge';
 import { periodVoice } from './recapPeriodDiscoveries';
@@ -1380,7 +1380,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     getExerciseNameById = null,
     profileQuestionnaireRaw = null,
     activeProgram = null,
-    programs = null
+    programs = null,
+    /** Si true : n’écrit pas l’historique d’insights et attache `diagnostic`. */
+    collectDiagnostic = false
   } = opts;
 
   const gtgEnd = window?.end || DateHelper.getTodayLocal();
@@ -1439,10 +1441,28 @@ export function buildAdaptiveRecapInsights(opts = {}) {
   // Sur 30 j. / 7 j. : pénaliser les lectures « année » qui polluent la fenêtre courte.
   if (monthOrShorter) {
     candidates = candidates.map((c) => {
+      const kind = c.interpretation?.context?.kind || kindFromNarrativeCandidate(c) || '';
       const blob = `${c.text || ''} ${c.interpretation?.context?.title || ''} ${c.interpretation?.context?.body || ''}`;
-      if (/cette année|l['’]année suivie|enregistrées cette année|totalise \d[\d\s]* répétitions en \d+ jours/i.test(blob)) {
-        return { ...c, weight: (c.weight || 0) - 48 };
+      let weight = c.weight || 0;
+      if (
+        /cette année|l['’]année suivie|enregistrées cette année|totalise \d[\d\s]* répétitions en \d+ jours/i.test(
+          blob
+        )
+      ) {
+        weight -= 48;
       }
+      // Jalons de parcours (cumul vie / 200+ j.) : pas prioritaires sur 7–30 j.
+      if (
+        /disc_ms_cumul|disc_ms_sessions|disc_ms_km|disc_ms_hours/.test(String(kind)) ||
+        /\d{2,3}\s*jours|depuis (ta|la) première|cumulées depuis/i.test(blob)
+      ) {
+        weight -= 28;
+      }
+      // Associations sommeil à faible n : déjà filtrées à la source ; filet de sécurité.
+      if (/disc_sleep_rpe|disc_sleep_intensity/.test(String(kind))) {
+        weight -= 22;
+      }
+      if (weight !== (c.weight || 0)) return { ...c, weight };
       return c;
     });
   }
@@ -1540,7 +1560,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
   }
 
   const prevSig = loadLastInsightSignature();
-  if (prevSig !== signature && allPicked.length > 0) {
+  if (!collectDiagnostic && prevSig !== signature && allPicked.length > 0) {
     const nextHistory = recordShownInsights(
       insightHistory,
       allPicked.map((c) => ({
@@ -1553,7 +1573,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     saveLastInsightSignature(signature);
   }
 
-  return {
+  const result = {
     insights: {
       shortTerm: pickedShort.map(toInsightCard),
       mediumTerm: pickedMedium.map(toInsightCard),
@@ -1585,4 +1605,78 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     starvedFamilies,
     rescuedFamilies
   };
+
+  if (collectDiagnostic) {
+    result.diagnostic = {
+      voiceKey,
+      caps,
+      spanDays,
+      candidateStages: {
+        produced: weightedCandidates,
+        afterDedup: distinctCandidates,
+        deduped: dedupedRows,
+        insufficient: insufficientRows,
+        valid: validCandidates,
+        rankedOut: rankedOutRows,
+        shown: allPicked
+      },
+      pipelineSteps: [
+        {
+          id: 'composed',
+          label: 'Pipeline composé (state, discoveries, essays)',
+          module: 'recapInterpretationPipeline',
+          executed: true,
+          outCount: (composed.candidates || []).length,
+          detail: {
+            discoveriesAll: (composed.periodDiscoveries?.all || []).length,
+            discoveriesSelected: (composed.periodDiscoveries?.selected || []).length,
+            discoveriesDropped: (composed.periodDiscoveries?.dropped || []).length,
+            essays: (composed.interpretations || []).length
+          }
+        },
+        {
+          id: 'span_stories',
+          label: 'Span stories',
+          module: 'recapAdaptiveInsights',
+          executed: true,
+          outCount: (spanStories || []).length
+        },
+        {
+          id: 'weight_novelty',
+          label: 'Pondération novelty / nature / familles',
+          module: 'insightNoveltyEngine + recapSelectionDiagnostics',
+          executed: true,
+          inCount: candidates.length,
+          outCount: weightedCandidates.length
+        },
+        {
+          id: 'dedup',
+          label: 'Déduplication kinship',
+          module: 'recapCardKinship',
+          executed: true,
+          inCount: weightedCandidates.length,
+          outCount: distinctCandidates.length
+        },
+        {
+          id: 'validate',
+          label: 'Validation insights',
+          module: 'recapInsightValidate',
+          executed: true,
+          inCount: distinctCandidates.length,
+          outCount: validCandidates.length
+        },
+        {
+          id: 'select',
+          label: 'Sélection colonnes + rescue familles',
+          module: 'selectNarrativeColumns',
+          executed: true,
+          inCount: validCandidates.length,
+          outCount: allPicked.length,
+          detail: { rescuedFamilies, starvedFamilies }
+        }
+      ]
+    };
+  }
+
+  return result;
 }

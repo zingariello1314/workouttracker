@@ -20,6 +20,45 @@ const recordBelongsToUser = (record, userId) => {
   return uid === userId || uid == null || uid === '';
 };
 
+/** Connexion fermée / en fermeture (souvent après upgrade WorkoutTrackerDB). */
+export const isQuietQuestIdbClosingError = (error) => {
+  if (!error) return false;
+  if (error.name === 'InvalidStateError') return true;
+  return /connection is closing|database connection is closing/i.test(
+    String(error.message || error)
+  );
+};
+
+/**
+ * Teste si une connexion IDB peut encore ouvrir une transaction.
+ * Évite InvalidStateError au moment du save (visibility / beforeunload).
+ */
+export const isQuietQuestDbWritable = (db) => {
+  if (!db || typeof db.transaction !== 'function') return false;
+  try {
+    const names = db.objectStoreNames;
+    if (!names || names.length === 0) return false;
+    const storeName = names.contains(STORE_QUESTS) ? STORE_QUESTS : names[0];
+    const tx = db.transaction([storeName], 'readonly');
+    try {
+      tx.abort();
+    } catch {
+      // ignore
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const softFailClosingSave = (label, error) => {
+  if (isQuietQuestIdbClosingError(error)) {
+    console.warn(`[quietQuestIndexedDB] ${label}: connexion fermée, reportée au prochain cycle`);
+    return true;
+  }
+  return false;
+};
+
 /**
  * Charge toutes les quêtes depuis IndexedDB
  */
@@ -48,6 +87,10 @@ export const loadQuestsFromIndexedDB = async (db, userId = 'main') => {
  */
 export const saveQuestsToIndexedDB = async (db, quests, userId = 'main') => {
   if (!db || !Array.isArray(quests)) return;
+  if (!isQuietQuestDbWritable(db)) {
+    console.warn('[quietQuestIndexedDB] saveQuests ignorée: connexion non writable');
+    return;
+  }
   try {
     const transaction = db.transaction([STORE_QUESTS], 'readwrite');
     const store = transaction.objectStore(STORE_QUESTS);
@@ -78,6 +121,7 @@ export const saveQuestsToIndexedDB = async (db, quests, userId = 'main') => {
       transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
+    if (softFailClosingSave('saveQuests', error)) return;
     console.error('[quietQuestIndexedDB] Erreur saveQuests:', error);
     throw error;
   }
@@ -111,6 +155,10 @@ export const loadValidationsFromIndexedDB = async (db, userId = 'main') => {
  */
 export const saveValidationsToIndexedDB = async (db, validations, userId = 'main') => {
   if (!db || !Array.isArray(validations)) return;
+  if (!isQuietQuestDbWritable(db)) {
+    console.warn('[quietQuestIndexedDB] saveValidations ignorée: connexion non writable');
+    return;
+  }
   try {
     const transaction = db.transaction([STORE_VALIDATIONS], 'readwrite');
     const store = transaction.objectStore(STORE_VALIDATIONS);
@@ -141,6 +189,7 @@ export const saveValidationsToIndexedDB = async (db, validations, userId = 'main
       transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
+    if (softFailClosingSave('saveValidations', error)) return;
     console.error('[quietQuestIndexedDB] Erreur saveValidations:', error);
     throw error;
   }
@@ -179,6 +228,10 @@ export const loadUserDataFromIndexedDB = async (db, userId = 'main') => {
  */
 export const saveUserDataToIndexedDB = async (db, userData, userId = 'main') => {
   if (!db || !userData) return;
+  if (!isQuietQuestDbWritable(db)) {
+    console.warn('[quietQuestIndexedDB] saveUserData ignorée: connexion non writable');
+    return;
+  }
   try {
     const transaction = db.transaction([STORE_USER_DATA], 'readwrite');
     const store = transaction.objectStore(STORE_USER_DATA);
@@ -189,6 +242,7 @@ export const saveUserDataToIndexedDB = async (db, userData, userId = 'main') => 
       transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
+    if (softFailClosingSave('saveUserData', error)) return;
     console.error('[quietQuestIndexedDB] Erreur saveUserData:', error);
     throw error;
   }
@@ -227,6 +281,10 @@ export const saveDailyPerformancesToIndexedDB = async (
   userId = 'main'
 ) => {
   if (!db || !Array.isArray(performances)) return;
+  if (!isQuietQuestDbWritable(db)) {
+    console.warn('[quietQuestIndexedDB] saveDailyPerformances ignorée: connexion non writable');
+    return;
+  }
   try {
     const transaction = db.transaction([STORE_DAILY_PERFORMANCES], 'readwrite');
     const store = transaction.objectStore(STORE_DAILY_PERFORMANCES);
@@ -257,6 +315,7 @@ export const saveDailyPerformancesToIndexedDB = async (
       transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
+    if (softFailClosingSave('saveDailyPerformances', error)) return;
     console.error('[quietQuestIndexedDB] Erreur saveDailyPerformances:', error);
     throw error;
   }
@@ -294,6 +353,10 @@ export const loadAppStateFromIndexedDB = async (db, userId = 'main') => {
  */
 export const saveAppStateToIndexedDB = async (db, appState, userId = 'main') => {
   if (!db || !appState) return;
+  if (!isQuietQuestDbWritable(db)) {
+    console.warn('[quietQuestIndexedDB] saveAppState ignorée: connexion non writable');
+    return;
+  }
   try {
     const transaction = db.transaction([STORE_APP_STATE], 'readwrite');
     const store = transaction.objectStore(STORE_APP_STATE);
@@ -304,6 +367,7 @@ export const saveAppStateToIndexedDB = async (db, appState, userId = 'main') => 
       transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
+    if (softFailClosingSave('saveAppState', error)) return;
     console.error('[quietQuestIndexedDB] Erreur saveAppState:', error);
     throw error;
   }

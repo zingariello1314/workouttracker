@@ -160,20 +160,39 @@ export default function RecapAnalyseDetails({
   return (
     <>
       {showInterpretationDebug ? (
-        <RecapTrainingStateDebugPanel
-          trainingState={assessment?.trainingState}
-          priorState={assessment?.priorState}
-          stateTransitions={assessment?.stateTransitions}
-          trainingEvents={assessment?.trainingEvents}
-          performanceRobustness={assessment?.performanceRobustness}
-          populationComparisons={assessment?.populationComparisons}
-          composedInterpretations={assessment?.composedInterpretations}
-          athleteIdentity={assessment?.athleteIdentity}
-          athleteJourney={assessment?.athleteJourney}
-          phenomena={assessment?.phenomena}
-          periodDiscoveries={assessment?.periodDiscoveries}
-          insightSignature={assessment?.insightSignature}
-        />
+        <>
+          <RecapTrainingStateDebugPanel
+            trainingState={assessment?.trainingState}
+            priorState={assessment?.priorState}
+            stateTransitions={assessment?.stateTransitions}
+            trainingEvents={assessment?.trainingEvents}
+            performanceRobustness={assessment?.performanceRobustness}
+            populationComparisons={assessment?.populationComparisons}
+            composedInterpretations={assessment?.composedInterpretations}
+            athleteIdentity={assessment?.athleteIdentity}
+            athleteJourney={assessment?.athleteJourney}
+            phenomena={assessment?.phenomena}
+            periodDiscoveries={assessment?.periodDiscoveries}
+            insightSignature={assessment?.insightSignature}
+          />
+          <div style={{ margin: '8px 0 16px' }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('dev-analysis-engine')}
+              style={{
+                background: '#0f172a',
+                color: '#7dd3fc',
+                border: '1px solid #0369a1',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
+                cursor: 'pointer'
+              }}
+            >
+              Ouvrir la console diagnostic moteur d’analyse
+            </button>
+          </div>
+        </>
       ) : null}
 
       <div id="reperes">

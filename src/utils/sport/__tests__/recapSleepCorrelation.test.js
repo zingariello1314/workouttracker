@@ -292,20 +292,33 @@ describe('recapSleepCorrelation', () => {
     expect(perf.volumeDominates).toBe(true);
   });
 
-  it('publie l’effort perçu seulement s’il y a des notes, sinon silence', () => {
+  it('publie l’effort perçu seulement s’il y a assez de notes (pas 3 vs 3)', () => {
+    const thinCatalog = [];
+    const thinDiffs = [];
+    for (let i = 0; i < 3; i += 1) {
+      thinCatalog.push(sess(`2026-01-0${i + 1}`, 300, 7.8));
+      thinDiffs.push({ date: `2026-01-0${i + 1}`, difficulty: 2.2 });
+    }
+    for (let i = 0; i < 3; i += 1) {
+      thinCatalog.push(sess(`2026-01-1${i + 1}`, 220, 6.4));
+      thinDiffs.push({ date: `2026-01-1${i + 1}`, difficulty: 4.1 });
+    }
+    expect(sleepPerceivedEffort(pairSessionsWithNights(thinCatalog), thinDiffs)).toBeNull();
+
     const catalog = [];
     const diffs = [];
-    for (let i = 0; i < 4; i += 1) {
-      catalog.push(sess(`2026-01-0${i + 1}`, 300, 7.8));
-      diffs.push({ date: `2026-01-0${i + 1}`, difficulty: 2.2 });
+    for (let i = 0; i < 5; i += 1) {
+      catalog.push(sess(`2026-01-${String(i + 1).padStart(2, '0')}`, 300, 7.8));
+      diffs.push({ date: `2026-01-${String(i + 1).padStart(2, '0')}`, difficulty: 2.2 });
     }
-    for (let i = 0; i < 4; i += 1) {
-      catalog.push(sess(`2026-01-1${i + 1}`, 220, 6.4));
-      diffs.push({ date: `2026-01-1${i + 1}`, difficulty: 4.1 });
+    for (let i = 0; i < 5; i += 1) {
+      catalog.push(sess(`2026-01-${String(i + 11).padStart(2, '0')}`, 220, 6.4));
+      diffs.push({ date: `2026-01-${String(i + 11).padStart(2, '0')}`, difficulty: 4.1 });
     }
     const rpe = sleepPerceivedEffort(pairSessionsWithNights(catalog), diffs);
     expect(rpe).toBeTruthy();
     expect(rpe.lowDiff).toBeGreaterThan(rpe.highDiff);
+    expect(rpe.harderAfterShort).toBe(true);
     expect(sleepPerceivedEffort(pairSessionsWithNights(catalog), [])).toBeNull();
   });
 });

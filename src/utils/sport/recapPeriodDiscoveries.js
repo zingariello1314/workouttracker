@@ -28,7 +28,12 @@ import { resolveExerciseNameForRecap } from './recapStrengthPeriodStats';
 import { formatRateFr } from './athleteTrainingIdentity';
 import { formatDayFr, daysBetweenYmd } from './recapTrainingTimeline';
 import { themeCountBeforeLocalDay } from './insightNoveltyStore';
-import { comparableWeeklyRates, SIGNAL_FAMILY_CAPS, signalFamilyOfKind } from './recapInsightNature';
+import {
+  comparableWeeklyRates,
+  SIGNAL_FAMILY_CAPS,
+  TOTAL_SLEEP_BUDGET,
+  signalFamilyOfKind
+} from './recapInsightNature';
 import { buildSleepRhythmDiscoveries } from './sleepRhythmAnalysis';
 import { buildThreadDiscoveries, rewriteSleepDiscoveries } from './recapAnalysisProofs';
 import { applyEditorialGate } from './recapEditorialGate';
@@ -1165,7 +1170,7 @@ function detectDiscoveries(cmp, extras = {}) {
         : '';
     const missingPull =
       pushNow > backNow * 2
-        ? ` Pour se rapprocher d’un équilibre plus proche d’une poussée pour deux tirages dans cette fenêtre, il manquerait environ ${fmtInt(Math.round(pushNow / 2 - backNow))} reps de dos.`
+        ? ` À volume de poussée égal, le dos reste nettement derrière dans cette fenêtre (écart ~${fmtInt(Math.round(pushNow / 2 - backNow))} reps) — constat de répartition, pas un quota à rattraper.`
         : '';
     const indirect =
       top[0].group === MuscleGroups.SHOULDERS &&
@@ -1877,10 +1882,18 @@ function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_sleep_month',
         nature: 'trajectory',
         family: 'sleep_month',
-        title: 'Ton mois révèle un lien beaucoup plus robuste entre sommeil et volume',
-        body: `${header}${concBit}${perNight} La durée du sommeil explique davantage le volume que le nombre de séances : celles suivant plus de 7 h 30 totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} après une nuit courte (écart ${fmtInt(vol75.delta)}). Une part importante du volume mensuel est donc concentrée derrière un nombre relativement limité de nuits bien récupérées.`,
+        title:
+          (vol75.highN || 0) + (vol75.lowN || 0) >= 16
+            ? 'Sur le mois, le volume se sépare nettement selon le sommeil précédent'
+            : 'Sur le mois, volume et sommeil précédent se séparent — avec un échantillon encore limité',
+        body: `${header}${concBit}${perNight} Les séances suivant plus de 7 h 30 totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} après une nuit courte (écart ${fmtInt(vol75.delta)}, ${vol75.highN} et ${vol75.lowN} séances). Ce n'est pas une preuve que le sommeil provoque le volume : c'est une co-variation observée sur la fenêtre.`,
         evidence: `${fmtInt(p.totalReps)} reps · ≥ 7 h 30 ${fmtInt(vol75.highVol)} · < 7 h 30 ${fmtInt(vol75.lowVol)}`,
-        weights: { importance: 0.94, reliability: 0.9, novelty: 0.92, fit: 0.98 },
+        weights: {
+          importance: 0.86,
+          reliability: (vol75.highN || 0) + (vol75.lowN || 0) >= 16 ? 0.86 : 0.72,
+          novelty: 0.84,
+          fit: 0.9
+        },
         metrics: { ...vol75, conc }
       })
     );
@@ -2160,16 +2173,27 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (rpeSleep && (isToday || isWeek || isMonth)) {
+  // RPE sommeil : plages courtes exclues (sticky + n fragile). Mois seulement, et prudente si paradoxe.
+  if (rpeSleep && isMonth && !isToday && !isWeek) {
+    const paradoxBit = rpeSleep.paradoxical
+      ? ` Ici les notes sont plus élevées après les nuits plus longues : ça peut refléter une charge plus ambitieuse quand tu es frais, pas seulement une récupération « plus dure ».`
+      : ` L'effort perçu n'est pas un RPE laboratoire : c'est ta propre échelle, et elle sépare deux régimes de récupération sur cet échantillon.`;
     out.push(
       discovery({
         kind: 'disc_sleep_rpe',
         nature: 'trajectory',
         family: 'sleep_rpe',
-        title: 'Tes notes de difficulté bougent avec le sommeil précédent',
-        body: `Après une nuit sous 7 h, tu notes tes séances à ${fmt1(rpeSleep.lowDiff)} / 5 de difficulté, contre ${fmt1(rpeSleep.highDiff)} / 5 après au moins 7 h 30 (${rpeSleep.lowN} et ${rpeSleep.highN} séances notées). L'effort perçu n'est pas un RPE laboratoire : c'est ta propre échelle, et elle sépare deux régimes de récupération.`,
+        title: rpeSleep.paradoxical
+          ? 'Tes notes de difficulté et le sommeil précédent ne vont pas dans le sens attendu'
+          : 'Tes notes de difficulté bougent avec le sommeil précédent',
+        body: `Après une nuit sous 7 h, tu notes tes séances à ${fmt1(rpeSleep.lowDiff)} / 5 de difficulté, contre ${fmt1(rpeSleep.highDiff)} / 5 après au moins 7 h 30 (${rpeSleep.lowN} et ${rpeSleep.highN} séances notées).${paradoxBit}`,
         evidence: `${fmt1(rpeSleep.lowDiff)} vs ${fmt1(rpeSleep.highDiff)} / 5`,
-        weights: { importance: 0.9, reliability: 0.78, novelty: 0.96, fit: 0.9 },
+        weights: {
+          importance: rpeSleep.paradoxical ? 0.62 : 0.72,
+          reliability: rpeSleep.confidence === 'high' ? 0.8 : 0.68,
+          novelty: 0.78,
+          fit: 0.75
+        },
         metrics: rpeSleep
       })
     );
@@ -2727,7 +2751,6 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_volume',
       'disc_sleep_perf',
       'disc_sleep_load',
-      'disc_sleep_rpe',
       'disc_sleep_intensity',
       'disc_sleep_efficiency',
       'disc_sleep_family',
@@ -2750,34 +2773,33 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     ]
   },
   week: {
-    now: ['disc_gtg_unplanned_now', 'disc_pending_session', 'disc_sleep_week', 'disc_volume_shape', 'disc_sleep_deep', 'disc_sleep_night', 'disc_peak_day', 'disc_density'],
+    now: ['disc_gtg_unplanned_now', 'disc_pending_session', 'disc_volume_shape', 'disc_peak_day', 'disc_density', 'disc_sleep_week', 'disc_sleep_night'],
     trajectory: [
       'disc_gtg_unplanned_role',
       'disc_pending_context',
+      'disc_muscle_share_shift',
+      'disc_exercise_base',
+      'disc_push_pull',
+      'disc_structural_memory',
+      'disc_stimulus_mix',
       'disc_sleep_volume',
       'disc_sleep_perf',
       'disc_sleep_architecture',
       'disc_sleep_load',
       'disc_sleep_cardio',
       'disc_sleep_intensity',
-      'disc_sleep_rpe',
       'disc_sleep_efficiency',
       'disc_sleep_family',
-      'disc_muscle_share_shift',
-      'disc_sleep_assoc',
-      'disc_exercise_base',
-      'disc_push_pull',
-      'disc_structural_memory',
-      'disc_stimulus_mix'
+      'disc_sleep_assoc'
     ],
     journey: [
       'disc_gtg_unplanned_progress',
-      'disc_sleep_freq',
-      'disc_sleep_zones',
       'disc_anchor',
       'disc_kcal_profile',
       'disc_repertoire',
       'disc_best_month',
+      'disc_sleep_freq',
+      'disc_sleep_zones',
       'disc_sleep_quarter',
       'disc_sleep_j2',
       'disc_sleep_delayed'
@@ -2787,6 +2809,10 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_density', 'disc_muscle_now'],
     trajectory: [
       'disc_gtg_unplanned_role',
+      'disc_muscle_share_shift',
+      'disc_family_fade',
+      'disc_cardio_strength',
+      'disc_stimulus_mix',
       'disc_sleep_month',
       'disc_sleep_perf',
       'disc_sleep_load',
@@ -2795,13 +2821,9 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_rpe',
       'disc_sleep_efficiency',
       'disc_sleep_family',
-      'disc_muscle_share_shift',
-      'disc_family_fade',
-      'disc_cardio_strength',
-      'disc_sleep_architecture',
-      'disc_stimulus_mix'
+      'disc_sleep_architecture'
     ],
-    journey: ['disc_gtg_unplanned_progress', 'disc_sleep_zones', 'disc_sleep_j2', 'disc_best_month', 'disc_exercise_progress', 'disc_quarter_profile']
+    journey: ['disc_gtg_unplanned_progress', 'disc_best_month', 'disc_exercise_progress', 'disc_quarter_profile', 'disc_sleep_zones', 'disc_sleep_j2']
   },
   long: {
     now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_muscle_now', 'disc_density'],
@@ -2840,16 +2862,67 @@ const DISCOVERY_RIVALS = [
   ['disc_exercise_share', 'disc_repertoire'],
   ['disc_family_fade', 'disc_emergence'],
   ['disc_muscle_share_shift', 'disc_muscle_reorient'],
-  ['disc_sleep_volume', 'disc_sleep_assoc', 'disc_sleep_combo', 'disc_sleep_month', 'disc_sleep_perf'],
-  ['disc_sleep_zones', 'disc_sleep_quarter'],
-  ['disc_sleep_intensity', 'disc_sleep_rpe'],
-  // Placement / horaire : une seule lecture rythme par nature (évite obs + habit quasi doublons).
-  ['disc_sleep_rhythm_obs', 'disc_sleep_rhythm_habit']
+  // Une seule association sommeil×charge (volume / mois / perf / RPE / intensité…).
+  [
+    'disc_sleep_volume',
+    'disc_sleep_assoc',
+    'disc_sleep_combo',
+    'disc_sleep_month',
+    'disc_sleep_perf',
+    'disc_sleep_week',
+    'disc_sleep_intensity',
+    'disc_sleep_rpe',
+    'disc_sleep_load',
+    'disc_sleep_cardio'
+  ],
+  ['disc_sleep_zones', 'disc_sleep_quarter', 'disc_sleep_freq', 'disc_sleep_j2', 'disc_sleep_delayed'],
+  // Placement / horaire : une seule lecture rythme (toutes natures).
+  [
+    'disc_sleep_rhythm_obs',
+    'disc_sleep_rhythm_habit',
+    'disc_sleep_regularity',
+    'disc_sleep_drift',
+    'disc_sleep_weekend',
+    'disc_sleep_reference',
+    'disc_sleep_night',
+    'disc_sleep_deep'
+  ],
+  // GTG hors planning : une carte « rôle/continuité » suffit (progress peut coexister).
+  ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role']
+];
+
+/** Rivals appliqués sur usedKind global (pas seulement la même nature). */
+const CROSS_NATURE_RIVALS = [
+  [
+    'disc_sleep_rhythm_obs',
+    'disc_sleep_rhythm_habit',
+    'disc_sleep_regularity',
+    'disc_sleep_drift',
+    'disc_sleep_weekend',
+    'disc_sleep_reference'
+  ],
+  [
+    'disc_sleep_volume',
+    'disc_sleep_assoc',
+    'disc_sleep_combo',
+    'disc_sleep_month',
+    'disc_sleep_perf',
+    'disc_sleep_week',
+    'disc_sleep_rpe',
+    'disc_sleep_intensity'
+  ],
+  ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role']
 ];
 
 function rivalBlocked(kind, usedKinds) {
   return DISCOVERY_RIVALS.some(
     (group) => group.includes(kind) && group.some((k) => k !== kind && usedKinds.has(k))
+  );
+}
+
+function crossNatureRivalBlocked(kind, usedKindsGlobal) {
+  return CROSS_NATURE_RIVALS.some(
+    (group) => group.includes(kind) && group.some((k) => k !== kind && usedKindsGlobal.has(k))
   );
 }
 
@@ -2905,6 +2978,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   };
   const priority = PERIOD_DISCOVERY_PRIORITY[voiceKey] || PERIOD_DISCOVERY_PRIORITY.week;
   const famCaps = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
+  const sleepBudget = TOTAL_SLEEP_BUDGET[voiceKey] ?? TOTAL_SLEEP_BUDGET.week;
+  let sleepTaken = 0;
 
   const canTake = (d) => {
     const nature = d.nature || 'trajectory';
@@ -2912,6 +2987,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     if (usedIdentity.has(discoveryIdentity(d))) return false;
     if (!d.metrics?.exerciseId && usedKind.has(d.kind)) return false;
     if (rivalBlocked(d.kind, usedKindByNature[nature])) return false;
+    if (crossNatureRivalBlocked(d.kind, usedKind)) return false;
     const seenFamily = usedFamilyByNature[nature].get(d.family) || 0;
     if (d.family && seenFamily >= 2 && (d.score || 0) < 86) return false;
     return true;
@@ -2923,6 +2999,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     const sig = signalFamilyOfKind(d.kind);
     const cap = famCaps[nature]?.[sig] ?? 0;
     if ((familyCount[nature]?.[sig] || 0) >= cap) return false;
+    if (sig === 'sleep' && sleepTaken >= sleepBudget) return false;
     if (!canTake(d)) return false;
     byAngle[nature].push(d);
     usedKind.add(d.kind);
@@ -2932,6 +3009,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       usedFamilyByNature[nature].set(d.family, (usedFamilyByNature[nature].get(d.family) || 0) + 1);
     }
     familyCount[nature][sig] += 1;
+    if (sig === 'sleep') sleepTaken += 1;
     return true;
   };
 

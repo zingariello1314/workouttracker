@@ -25,35 +25,45 @@ export const NATURE_TO_HORIZON = {
 /**
  * Plafonds par famille de signal (sport / sommeil / jalon).
  * Un maximum, jamais un plancher : slot vide si le signal n'est pas publiable.
+ * Sommeil volontairement bas : 2/angle saturait le pack (rythme + assoc + RPE).
  */
-const COLUMN_TARGET = { sport: 8, sleep: 2, milestone: 1 };
+const SPORT_HEAVY = { sport: 8, sleep: 1, milestone: 1 };
 
 export const SIGNAL_FAMILY_CAPS = {
   today: {
-    now: { ...COLUMN_TARGET },
-    trajectory: { ...COLUMN_TARGET },
-    journey: { ...COLUMN_TARGET }
+    now: { ...SPORT_HEAVY },
+    trajectory: { sport: 8, sleep: 1, milestone: 0 },
+    journey: { sport: 8, sleep: 0, milestone: 1 }
   },
   week: {
-    now: { ...COLUMN_TARGET },
-    trajectory: { ...COLUMN_TARGET },
-    journey: { ...COLUMN_TARGET }
+    now: { ...SPORT_HEAVY },
+    trajectory: { ...SPORT_HEAVY },
+    journey: { ...SPORT_HEAVY }
   },
   month: {
-    now: { ...COLUMN_TARGET },
-    trajectory: { ...COLUMN_TARGET },
-    journey: { ...COLUMN_TARGET }
+    now: { ...SPORT_HEAVY },
+    trajectory: { ...SPORT_HEAVY },
+    journey: { ...SPORT_HEAVY }
   },
   long: {
-    now: { ...COLUMN_TARGET },
-    trajectory: { ...COLUMN_TARGET },
-    journey: { ...COLUMN_TARGET }
+    now: { ...SPORT_HEAVY },
+    trajectory: { ...SPORT_HEAVY },
+    journey: { ...SPORT_HEAVY }
   },
   year: {
-    now: { ...COLUMN_TARGET },
-    trajectory: { ...COLUMN_TARGET },
-    journey: { ...COLUMN_TARGET }
+    now: { ...SPORT_HEAVY },
+    trajectory: { ...SPORT_HEAVY },
+    journey: { ...SPORT_HEAVY }
   }
+};
+
+/** Budget sommeil total (toutes natures) — empêche 1+1+1 = 3 cartes sleep. */
+export const TOTAL_SLEEP_BUDGET = {
+  today: 1,
+  week: 2,
+  month: 2,
+  long: 2,
+  year: 2
 };
 
 export function signalFamilyOfKind(kind) {
@@ -366,6 +376,10 @@ export function natureSelectionBoost(candidate, phenomena) {
   if (kind === 'situation') w -= 40;
   if (String(kind || '').startsWith('disc_ms_')) w += 10;
   if (String(kind || '').startsWith('disc_')) w += 16;
+  // Les disc_sleep_* ne doivent pas bénéficier du même boost que les discoveries sport.
+  if (String(kind || '').startsWith('disc_sleep_')) w -= 14;
+  if (kind === 'disc_sleep_rpe' || kind === 'disc_sleep_intensity') w -= 8;
+  if (kind === 'disc_ms_cumul' || kind === 'disc_ms_sessions' || kind === 'disc_ms_km') w -= 6;
   return w;
 }
 

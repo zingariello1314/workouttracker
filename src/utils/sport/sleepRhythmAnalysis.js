@@ -276,12 +276,16 @@ function rhythmFact(profile) {
     profile.duration?.median != null
       ? `, pour une durée autour de ${formatClockFr(profile.duration.median).replace(/^0 h /, '')}`
       : '';
+  const consequenceLate =
+    profile.reference === 'tres_tardif' || profile.reference === 'plus_tardif'
+      ? ' Pour lire tes séances du lendemain, ce placement compte autant que la durée : une nuit « longue » mais très tardive ne se compare pas à une nuit plus précoce de même durée.'
+      : ' Ce placement sert de référence : une séance « après une bonne nuit » n’a de sens que si le coucher reste dans cette bande.';
   if (level >= 3) {
     return card(
       'disc_sleep_rhythm_habit',
       'now',
       'sleep_rhythm',
-      `Rythme habituel récent : ${placement}${mid}${durationBit}. La durée et le placement sont deux lectures distinctes : une nuit longue peut rester très tardive.${extra}${atypicalBit}`.replace(/\s+/g, ' ').trim(),
+      `Rythme habituel récent : ${placement}${mid}${durationBit}. La durée et le placement sont deux lectures distinctes : une nuit longue peut rester très tardive.${extra}${atypicalBit}${consequenceLate}`.replace(/\s+/g, ' ').trim(),
       `${n} nuits · ${profile.spanDays} j`,
       band,
       78
@@ -296,7 +300,7 @@ function rhythmFact(profile) {
       'disc_sleep_rhythm_obs',
       'now',
       'sleep_rhythm',
-      `Actuellement, tes nuits se placent ainsi : ${placement}${mid}.${spread} ${extra}`.replace(/\s+/g, ' ').trim(),
+      `Actuellement, tes nuits se placent ainsi : ${placement}${mid}.${spread} ${extra} Tant que ce placement n'est pas stabilisé, comparer deux séances « après sommeil » reste fragile.`.replace(/\s+/g, ' ').trim(),
       `${n} nuits · ${profile.spanDays} j`,
       band,
       74
@@ -324,7 +328,7 @@ function regularityCard(profile) {
       'disc_sleep_regularity',
       'now',
       'sleep_regularity',
-      `Régularité : tes couchers restent groupés, avec un écart typique d'environ ${Math.round(iqrMin)} min. L'heure de début de nuit varie peu ; cela ne dit pas, à soi seul, si ce placement est tôt ou tard.`,
+      `Régularité : tes couchers restent groupés, avec un écart typique d'environ ${Math.round(iqrMin)} min. L'heure de début de nuit varie peu ; cela ne dit pas, à soi seul, si ce placement est tôt ou tard. Conséquence pour l'analyse : tu peux comparer des séances à conditions de récupération plus homogènes — la dispersion d'horaire n'est pas le facteur qui brouille le plus.`,
       `IQR coucher ${Math.round(iqrMin)} min`,
       { sleepClockBand: profile.sleepClockBand, axis: 'bed' },
       72
@@ -335,7 +339,7 @@ function regularityCard(profile) {
       'disc_sleep_regularity',
       'now',
       'sleep_regularity',
-      `Tes heures de coucher restent dispersées, avec un écart typique d'environ ${Math.round(iqrMin)} min. Le rythme ne se résume donc pas à une heure habituelle unique : l'heure à laquelle la nuit commence change fortement d'un jour à l'autre. Le placement, tôt ou tard, est une autre question.`,
+      `Tes heures de coucher restent dispersées, avec un écart typique d'environ ${Math.round(iqrMin)} min. Le rythme ne se résume donc pas à une heure habituelle unique : l'heure à laquelle la nuit commence change fortement d'un jour à l'autre. Conséquence : une baisse de perf un jour donné peut venir autant d'un coucher décalé que d'une séance plus dure — sans aligner les horaires, les corrélations sommeil×volume restent fragiles.`,
       `IQR coucher ${Math.round(iqrMin)} min`,
       { sleepClockBand: profile.sleepClockBand, axis: 'bed' },
       72

@@ -737,6 +737,7 @@ export function meanDifficultyByDate(snapshot) {
 
 /**
  * Effort perçu (difficulté 1–5) après nuit longue vs courte. Silence s'il n'y a pas de notes.
+ * Seuil volontairement plus haut que d'autres sleep-assoc : 3+3 notes ≠ association affichable.
  */
 export function sleepPerceivedEffort(pairs, difficulties, { longCut = 7.5, shortCut = 7 } = {}) {
   const byDate = new Map((difficulties || []).map((r) => [r.date, r.difficulty]));
@@ -747,9 +748,18 @@ export function sleepPerceivedEffort(pairs, difficulties, { longCut = 7.5, short
   const low = rows.filter((r) => r.hours < shortCut);
   const highD = mean(high.map((r) => r.difficulty));
   const lowD = mean(low.map((r) => r.difficulty));
-  if (!publishable(high.length, low.length, lowD - highD, highD, { minEach: 3, minPct: 8, minAbs: 0.35 })) {
+  // minEach 5 + total ≥ 10 : évite les cartes « 3 vs 3 » sticky sur toutes les plages.
+  if (
+    !publishable(high.length, low.length, lowD - highD, highD, {
+      minEach: 5,
+      minPct: 10,
+      minAbs: 0.45
+    })
+  ) {
     return null;
   }
+  if (high.length + low.length < 10) return null;
+  const harderAfterShort = lowD > highD;
   return {
     type: 'sleep_rpe',
     highN: high.length,
@@ -757,7 +767,10 @@ export function sleepPerceivedEffort(pairs, difficulties, { longCut = 7.5, short
     highDiff: round1(highD),
     lowDiff: round1(lowD),
     delta: round1(lowD - highD),
-    confidence: high.length + low.length >= 8 ? 'high' : 'medium'
+    harderAfterShort,
+    /** Sens paradoxal : notes plus dures après nuits longues → confondant charge possible */
+    paradoxical: !harderAfterShort,
+    confidence: high.length + low.length >= 14 ? 'high' : 'medium'
   };
 }
 
@@ -769,9 +782,11 @@ export function publishSleepCandidates(catalog, opts = {}) {
   if (pairs.length < 8) return [];
   const recent14 = pairs.length > 14 ? pairs.slice(-14) : null;
   return [
-    sleepVolumeByThreshold(pairs, 7.5, { ...opts, sample: 'all' }),
-    recent14 ? sleepVolumeByThreshold(recent14, 7.5, { ...opts, minEach: 3, sample: 'recent14' }) : null,
-    sleepVolumeByThreshold(pairs, 8, { ...opts, minEach: 3, sample: 'all' }),
+    sleepVolumeByThreshold(pairs, 7.5, { ...opts, sample: 'all', minEach: opts.minEach ?? 4 }),
+    recent14
+      ? sleepVolumeByThreshold(recent14, 7.5, { ...opts, minEach: Math.max(4, opts.minEach ?? 4), sample: 'recent14' })
+      : null,
+    sleepVolumeByThreshold(pairs, 8, { ...opts, minEach: Math.max(4, opts.minEach ?? 4), sample: 'all' }),
     sleepDurationZones(pairs, opts),
     sleepHighLowSeparation(pairs),
     sleepArchitectureByVolume(pairs),

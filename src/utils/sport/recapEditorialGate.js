@@ -53,10 +53,21 @@ function factKey(card) {
   if (stamped) return stamped;
   const kind = card?.kind || '';
   const text = blob(card).toLowerCase();
-  if (/disc_sleep_assoc|disc_sleep_quarter|disc_sleep_intensity/.test(kind) || /journées les plus denses|autour de 7 h 30/.test(text)) {
+  if (
+    /disc_sleep_assoc|disc_sleep_quarter|disc_sleep_intensity|disc_sleep_volume|disc_sleep_month|disc_sleep_rpe|disc_sleep_perf|disc_sleep_week|disc_sleep_combo|disc_sleep_load/.test(
+      kind
+    ) ||
+    /journées les plus denses|autour de 7 h 30|lien .* sommeil|notes de difficulté/.test(text)
+  ) {
     return 'sleep|volume|association';
   }
   if (kind === 'disc_sleep_family') return 'sleep|volume|association';
+  if (/disc_sleep_rhythm|disc_sleep_regularity|disc_sleep_drift|disc_sleep_weekend|disc_sleep_reference|disc_sleep_night|disc_sleep_deep/.test(kind)) {
+    return 'sleep|rhythm|placement';
+  }
+  if (/disc_gtg_unplanned_now|disc_gtg_unplanned_role/.test(kind)) {
+    return 'gtg|unplanned|continuity';
+  }
   if (kind === 'disc_ms_return' || kind === 'disc_ms_event_combo' || /tu reprends|reprise et niveau/.test(text)) {
     const name = (card.title || '').replace(/^tu reprends\s+/i, '').replace(/\s+après[\s\S]*$/i, '').trim().toLowerCase();
     return `return|${name || kind}`;

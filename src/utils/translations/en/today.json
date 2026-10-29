@@ -7,7 +7,8 @@
     "discardPrompt": "You have unsaved changes. Discard them and continue?",
     "prevDay": "Previous day",
     "nextDay": "Next day",
-    "nextDisabled": "You can’t go beyond today"
+    "nextDisabled": "You can’t go beyond today",
+    "backToToday": "Back to today"
   },
   "workout": {
     "trainingMode": "Training mode:",
@@ -217,11 +218,15 @@
   "gtg": {
     "scheduleTitle": "Grease the Groove — daily schedule",
     "scheduleHint": "Check each mini-set when done (easy, no grinding). Reps feed Today’s log and Recap.",
-    "noSlots": "No slots planned — set up GTG in the Challenges tab."
+    "noSlots": "No slots planned — set up GTG in the Challenges tab.",
+    "empty": "Grease the Groove isn’t set up yet. Pick exercises, time slots and reps in Challenges to show the schedule here.",
+    "setup": "Set up Grease the Groove"
   },
   "pushupChallenge": {
     "title": "Push-up challenges — today",
     "hint": "Log your session (editable sets × reps). You can train on a rest day and realign the rhythm.",
+    "empty": "No push-up challenge is set up. Create one in Challenges to see today’s target, sets and session here.",
+    "setup": "Set up push-up challenge",
     "save": "Save session",
     "weeklyProgress": "Week: {{done}} / {{target}} validated session(s)",
     "offScheduleBadge": "Off schedule",

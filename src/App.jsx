@@ -49,6 +49,7 @@ const CoachDashboard = lazy(() => import('./components/tabs/nutrition/components
 const ExerciseVariations = lazy(() => import('./components/ExerciseVariations/ExerciseVariations'));
 const AdvancedStats = lazy(() => import('./components/AdvancedStats'));
 const SessionFeedback = lazy(() => import('./components/SessionFeedback'));
+const AnalysisEngineConsole = lazy(() => import('./components/dev/AnalysisEngineConsole'));
 import SidebarPremium from './components/sidebar/SidebarPremium';
 import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
@@ -212,6 +213,8 @@ const WorkoutTrackerContent = () => {
     'code-calendar': '-620px',
     'code-journal': '-620px',
     'code-stats': '-620px',
+    // Console diagnostic : moins remontée que le défaut (-730) pour rester sous Header+Navigation
+    'dev-analysis-engine': '-480px',
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
@@ -403,6 +406,9 @@ const WorkoutTrackerContent = () => {
         return <CodeTab />;
       case 'settings':
         return <SettingsTab />;
+      case 'dev-analysis-engine':
+        // Console diagnostic moteur d’analyse — DEV ou admin uniquement (gating dans le composant).
+        return <AnalysisEngineConsole />;
       case 'pricing':
         // Pricing est géré directement dans le JSX principal pour affichage plein écran
         return null;

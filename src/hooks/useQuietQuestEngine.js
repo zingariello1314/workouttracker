@@ -11,6 +11,8 @@ import {
   saveDailyPerformancesToIndexedDB,
   loadAppStateFromIndexedDB,
   saveAppStateToIndexedDB,
+  isQuietQuestDbWritable,
+  isQuietQuestIdbClosingError,
 } from '../utils/quietQuestIndexedDB';
 import { emitSidebarEvent, SIDEBAR_EVENTS, sidebarEvents } from '../utils/sidebarEvents';
 import { useAuth } from '../context/AuthContext';
@@ -258,40 +260,63 @@ function useQuietQuestEngineImpl() {
       saveUserDataTimerRef.current = null;
     }
     
-    if (!dbRef.current && storageModeRef.current === 'indexeddb') {
-      const db = await openQuietQuestDB();
-      if (db) dbRef.current = db;
-    }
-    
-    const db = dbRef.current;
     const currentQuests = allQuestsRef.current;
     const currentUserData = userDataRef.current;
     const currentValidations = validationsRef.current;
     const currentDaily = dailyPerformancesRef.current;
-    
+
+    // localStorage d'abord (sync, survit aux courses IndexedDB / pagehide)
     try {
-      // Double sauvegarde : IndexedDB + localStorage
-      if (db && storageModeRef.current === 'indexeddb') {
-        try {
-          const uid = userIdRef.current;
-          await saveQuestsToIndexedDB(db, currentQuests, uid);
-          await saveUserDataToIndexedDB(db, currentUserData, uid);
-          await saveValidationsToIndexedDB(db, currentValidations, uid);
-          await saveDailyPerformancesToIndexedDB(db, currentDaily, uid);
-        } catch (error) {
-          console.error('[useQuietQuestEngine] Erreur sauvegarde IndexedDB (beforeunload):', error);
-        }
-      }
-      
       const keys = storageKeysRef.current;
       saveToStorage(keys.quests, currentQuests);
       saveToStorage(keys.userData, currentUserData);
       saveToStorage(keys.validations, currentValidations);
       saveToStorage(keys.dailyPerformances, currentDaily);
-      
+    } catch (error) {
+      console.warn('[useQuietQuestEngine] localStorage flush:', error?.message || error);
+    }
+
+    if (storageModeRef.current !== 'indexeddb') {
+      qqLog.debug('Sauvegarde immédiate complétée (localStorage)');
+      return;
+    }
+
+    try {
+      let db = dbRef.current;
+      if (!isQuietQuestDbWritable(db)) {
+        dbRef.current = null;
+        db = await openQuietQuestDB();
+        if (db) {
+          dbRef.current = db;
+          try {
+            const prevClose = db.onclose;
+            db.onclose = (event) => {
+              if (dbRef.current === db) dbRef.current = null;
+              if (typeof prevClose === 'function') prevClose.call(db, event);
+            };
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      if (!db) return;
+
+      const uid = userIdRef.current;
+      await saveQuestsToIndexedDB(db, currentQuests, uid);
+      await saveUserDataToIndexedDB(db, currentUserData, uid);
+      await saveValidationsToIndexedDB(db, currentValidations, uid);
+      await saveDailyPerformancesToIndexedDB(db, currentDaily, uid);
       qqLog.debug('Sauvegarde immédiate complétée');
     } catch (error) {
-      console.error('[useQuietQuestEngine] ❌ Erreur sauvegarde immédiate:', error);
+      if (isQuietQuestIdbClosingError(error)) {
+        dbRef.current = null;
+        console.warn(
+          '[useQuietQuestEngine] IndexedDB fermée pendant flush — données déjà en localStorage'
+        );
+        return;
+      }
+      console.warn('[useQuietQuestEngine] Sauvegarde IndexedDB (flush):', error?.message || error);
     }
   }, []);
 
@@ -602,11 +627,15 @@ function useQuietQuestEngineImpl() {
       
       if (storageModeRef.current === 'indexeddb' && dbRef.current) {
         try {
-          await saveQuestsToIndexedDB(dbRef.current, currentQuests, userId);
-          // Double sauvegarde : toujours sauvegarder dans localStorage aussi
+          if (!isQuietQuestDbWritable(dbRef.current)) {
+            dbRef.current = null;
+          } else {
+            await saveQuestsToIndexedDB(dbRef.current, currentQuests, userId);
+          }
           saveToStorage(storageKeys.quests, currentQuests);
         } catch (error) {
-          console.error('[useQuietQuestEngine] Erreur sauvegarde quêtes IndexedDB:', error);
+          if (isQuietQuestIdbClosingError(error)) dbRef.current = null;
+          else console.warn('[useQuietQuestEngine] sauvegarde quêtes IndexedDB:', error?.message || error);
           saveToStorage(storageKeys.quests, currentQuests);
         }
       } else {
@@ -635,11 +664,15 @@ function useQuietQuestEngineImpl() {
     saveValidationsTimerRef.current = setTimeout(async () => {
       if (storageModeRef.current === 'indexeddb' && dbRef.current) {
         try {
-          await saveValidationsToIndexedDB(dbRef.current, limited, userId);
-          // Double sauvegarde : toujours sauvegarder dans localStorage aussi
+          if (!isQuietQuestDbWritable(dbRef.current)) {
+            dbRef.current = null;
+          } else {
+            await saveValidationsToIndexedDB(dbRef.current, limited, userId);
+          }
           saveToStorage(storageKeys.validations, limited);
         } catch (error) {
-          console.error('[useQuietQuestEngine] Erreur sauvegarde validations IndexedDB:', error);
+          if (isQuietQuestIdbClosingError(error)) dbRef.current = null;
+          else console.warn('[useQuietQuestEngine] sauvegarde validations IndexedDB:', error?.message || error);
           saveToStorage(storageKeys.validations, limited);
         }
       } else {
@@ -668,11 +701,15 @@ function useQuietQuestEngineImpl() {
     saveDailyPerformancesTimerRef.current = setTimeout(async () => {
       if (storageModeRef.current === 'indexeddb' && dbRef.current) {
         try {
-          await saveDailyPerformancesToIndexedDB(dbRef.current, limited, userId);
-          // Double sauvegarde : toujours sauvegarder dans localStorage aussi
+          if (!isQuietQuestDbWritable(dbRef.current)) {
+            dbRef.current = null;
+          } else {
+            await saveDailyPerformancesToIndexedDB(dbRef.current, limited, userId);
+          }
           saveToStorage(storageKeys.dailyPerformances, limited);
         } catch (error) {
-          console.error('[useQuietQuestEngine] Erreur sauvegarde dailyPerformances IndexedDB:', error);
+          if (isQuietQuestIdbClosingError(error)) dbRef.current = null;
+          else console.warn('[useQuietQuestEngine] sauvegarde dailyPerformances IndexedDB:', error?.message || error);
           saveToStorage(storageKeys.dailyPerformances, limited);
         }
       } else {
@@ -696,11 +733,15 @@ function useQuietQuestEngineImpl() {
     saveUserDataTimerRef.current = setTimeout(async () => {
       if (storageModeRef.current === 'indexeddb' && dbRef.current) {
         try {
-          await saveUserDataToIndexedDB(dbRef.current, userData, userId);
-          // Double sauvegarde : toujours sauvegarder dans localStorage aussi
+          if (!isQuietQuestDbWritable(dbRef.current)) {
+            dbRef.current = null;
+          } else {
+            await saveUserDataToIndexedDB(dbRef.current, userData, userId);
+          }
           saveToStorage(storageKeys.userData, userData);
         } catch (error) {
-          console.error('[useQuietQuestEngine] Erreur sauvegarde userData IndexedDB:', error);
+          if (isQuietQuestIdbClosingError(error)) dbRef.current = null;
+          else console.warn('[useQuietQuestEngine] sauvegarde userData IndexedDB:', error?.message || error);
           saveToStorage(storageKeys.userData, userData);
         }
       } else {

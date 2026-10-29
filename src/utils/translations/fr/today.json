@@ -7,7 +7,8 @@
     "discardPrompt": "Des modifications non enregistrées seront perdues. Continuer ?",
     "prevDay": "Jour précédent",
     "nextDay": "Jour suivant",
-    "nextDisabled": "Impossible d’aller au-delà d’aujourd’hui"
+    "nextDisabled": "Impossible d’aller au-delà d’aujourd’hui",
+    "backToToday": "Revenir à aujourd'hui"
   },
   "workout": {
     "trainingMode": "Mode d'entraînement:",
@@ -220,11 +221,15 @@
   "gtg": {
     "scheduleTitle": "Grease the Groove — emploi du temps",
     "scheduleHint": "Coche chaque mini-série une fois faite (facile, sans forcer). Les reps alimentent le journal du jour et le Récap.",
-    "noSlots": "Aucun créneau prévu — configure GTG dans l’onglet Défis."
+    "noSlots": "Aucun créneau prévu — configure GTG dans l’onglet Défis.",
+    "empty": "Le Grease the Groove n’est pas encore paramétré. Choisis les exercices, les créneaux et les reps dans Défis pour afficher l’emploi du temps ici.",
+    "setup": "Paramétrer le Grease the Groove"
   },
   "pushupChallenge": {
     "title": "Défis pompes — aujourd’hui",
     "hint": "Enregistre ta séance (séries × reps modifiables). Tu peux aussi t’entraîner un jour « repos » et recaler le rythme.",
+    "empty": "Aucun défi pompes n’est paramétré. Crée-le dans Défis pour retrouver ici l’objectif, les séries et la séance du jour.",
+    "setup": "Paramétrer le défi pompes",
     "save": "Enregistrer la séance",
     "weeklyProgress": "Semaine : {{done}} / {{target}} séance(s) validée(s)",
     "offScheduleBadge": "Hors planning",

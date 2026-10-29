@@ -550,25 +550,44 @@ describe('recapPeriodDiscoveries', () => {
       { kind: 'disc_sleep_volume', nature: 'trajectory', family: 'sleep_volume', score: 84 },
       { kind: 'disc_cardio_strength', nature: 'trajectory', family: 'cardio_strength', score: 83 }
     ];
-    expect(observationCaps('long', many).journey).toBe(10);
+    // sport 8 + sleep 1 = 9 (plafond sommeil resserré)
+    expect(observationCaps('long', many).journey).toBe(9);
     const long = selectPeriodDiscoveries(many, null, 'long');
-    expect(long.filter((d) => d.nature === 'journey').map((d) => d.kind)).toEqual([
-      'disc_sleep_quarter',
-      'disc_best_month',
-      'disc_sleep_freq',
-      'disc_kcal_profile'
-    ]);
-    expect(observationCaps('today', many).trajectory).toBe(10);
+    const journeyKinds = long.filter((d) => d.nature === 'journey').map((d) => d.kind);
+    // sleep_quarter et sleep_freq sont rivaux : une seule assoc long-terme sommeil
+    expect(journeyKinds).toContain('disc_best_month');
+    expect(journeyKinds).toContain('disc_kcal_profile');
+    expect(journeyKinds.filter((k) => String(k).startsWith('disc_sleep_')).length).toBeLessThanOrEqual(1);
+    expect(observationCaps('today', many).trajectory).toBe(9);
   });
 
-  it('traite 1 an comme une voix distincte, avec le même plafond de dix lectures par colonne', () => {
+  it('traite 1 an comme une voix distincte, avec plafond sommeil resserré', () => {
     expect(periodVoice('1y', 365).key).toBe('year');
     expect(periodVoice('1y', 365).thisPeriod).toMatch(/année/);
     expect(PERIOD_QUESTIONS['1y']).toMatch(/année/);
     expect(periodVoice('3m', 92).key).toBe('long');
-    expect(observationCaps('year').journey).toBe(10);
-    expect(observationCaps('week').journey).toBe(10);
-    expect(observationCaps('year').trajectory).toBe(10);
+    expect(observationCaps('year').journey).toBe(9);
+    expect(observationCaps('week').journey).toBe(9);
+    expect(observationCaps('year').trajectory).toBe(9);
+  });
+
+  it('plafonne le sommeil globalement (budget) et dédoublonne les associations', () => {
+    const pack = [
+      { kind: 'disc_sleep_rhythm_habit', nature: 'now', family: 'sleep_rhythm', score: 92 },
+      { kind: 'disc_sleep_regularity', nature: 'trajectory', family: 'sleep_reg', score: 90 },
+      { kind: 'disc_sleep_volume', nature: 'trajectory', family: 'sleep_volume', score: 88 },
+      { kind: 'disc_sleep_rpe', nature: 'trajectory', family: 'sleep_rpe', score: 95 },
+      { kind: 'disc_sleep_month', nature: 'trajectory', family: 'sleep_month', score: 91 },
+      { kind: 'disc_muscle_now', nature: 'now', family: 'muscle_now', score: 80 },
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume', score: 78 }
+    ];
+    const selected = selectPeriodDiscoveries(pack, null, 'month');
+    const sleep = selected.filter((d) => String(d.kind).startsWith('disc_sleep_'));
+    expect(sleep.length).toBeLessThanOrEqual(2);
+    const assoc = sleep.filter((d) =>
+      /volume|rpe|month|assoc|perf|intensity/.test(d.kind)
+    );
+    expect(assoc.length).toBeLessThanOrEqual(1);
   });
 
   it('quand aujourd’hui est à 0 reps, décrit une séance en attente plutôt qu’une contraction', () => {
@@ -618,8 +637,10 @@ describe('recapPeriodDiscoveries', () => {
     const week = selectPeriodDiscoveries(fake, null, 'week');
     const now = week.filter((d) => d.nature === 'now');
     expect(now.some((d) => d.kind === 'disc_volume_shape')).toBe(true);
-    expect(now.some((d) => d.kind === 'disc_sleep_week')).toBe(true);
-    expect(now.some((d) => d.kind === 'disc_sleep_deep')).toBe(true);
+    // sleep_week (assoc) et sleep_deep (rythme) : au plus une carte sommeil now
+    const sleepNow = now.filter((d) => String(d.kind).startsWith('disc_sleep_'));
+    expect(sleepNow.length).toBe(1);
+    expect(sleepNow[0].kind).toBe('disc_sleep_week');
     expect(now.some((d) => d.kind === 'disc_ms_pr')).toBe(true);
     const withPush = selectPeriodDiscoveries(
       [...fake, { kind: 'disc_push_pull', nature: 'trajectory', family: 'push_pull', score: 88 }],

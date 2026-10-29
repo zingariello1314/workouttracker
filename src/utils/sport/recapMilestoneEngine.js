@@ -678,7 +678,12 @@ export function detectRecapMilestones({
     sessCount += 1;
     REP_CUMUL_THRESHOLDS.forEach((th) => {
       if (seenCumul.has(th) || cumul < th || cumul - (s.totalReps || 0) >= th) return;
-      if (!eligible(s.date, window, voiceKey)) return;
+      // Sur 7/30 j. : seulement si le franchissement est récent (évite un jalon « vie » sticky).
+      const cumulRecent =
+        voiceKey === 'today' || voiceKey === 'week' || voiceKey === 'month'
+          ? { firstAbsolute: true }
+          : {};
+      if (!eligible(s.date, window, voiceKey, cumulRecent)) return;
       seenCumul.add(th);
       out.push(
         row({
@@ -696,13 +701,17 @@ export function detectRecapMilestones({
           }),
           body: cumulReading(sessions.slice(0, sessCount), th),
           evidence: `${fmtInt(cumul)} reps · ${fmtInt(sessCount)} séances`,
-          importance: th >= 10000 ? 0.97 : 0.9
+          importance: th >= 10000 ? 0.92 : 0.84
         })
       );
     });
     SESSION_THRESHOLDS.forEach((th) => {
       if (seenSess.has(th) || sessCount !== th) return;
-      if (!eligible(s.date, window, voiceKey)) return;
+      const sessRecent =
+        voiceKey === 'today' || voiceKey === 'week' || voiceKey === 'month'
+          ? { firstAbsolute: true }
+          : {};
+      if (!eligible(s.date, window, voiceKey, sessRecent)) return;
       seenSess.add(th);
       out.push(
         row({
