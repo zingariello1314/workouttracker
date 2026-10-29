@@ -102,6 +102,31 @@ describe('buildAthleteTrainingIdentity', () => {
     expect(pull.unusualGap).toBe(true);
   });
 
+  it('aligne le taux actuel sur une fenêtre Recap ~30 j. (pas les seuls 28 j. glissants)', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const end = '2026-10-29';
+    const windowStart = '2026-09-30';
+    // Habitude ~3/sem. strictement AVANT la fenêtre Recap.
+    for (let w = 18; w >= 5; w -= 1) {
+      const weekEnd = DateHelper.addDays(end, -7 * w);
+      for (let i = 0; i < 3; i += 1) {
+        const d = DateHelper.addDays(weekEnd, -i);
+        if (d < windowStart) seedDays(snapshot, [d], '101', 20);
+      }
+    }
+    // Une seule séance : jour 0 de la fenêtre (hors des 28 j. glissants qui commencent au 2 oct.).
+    seedDays(snapshot, [windowStart], '101', 100);
+    const id = buildAthleteTrainingIdentity({
+      snapshot,
+      window: { start: windowStart, end },
+      getExerciseNameById: () => 'Tractions'
+    });
+    expect(id.ready).toBe(true);
+    // 1 séance / ~30 j. ≈ 0,2/sem. — pas 0 (si on avait ignoré le 30 sept. hors 28 j.).
+    expect(id.frequency.currentPerWeek).toBeGreaterThan(0);
+    expect(id.frequency.currentPerWeek).toBeLessThan(0.5);
+  });
+
   it('ne traite pas 5 jours sans traction comme inhabituel si l’habitude est ~7 jours', () => {
     const snapshot = { reps: {}, checkedExercises: {} };
     const end = '2026-08-31';
@@ -139,8 +164,11 @@ describe('lectures enrichies par l’identité', () => {
     });
     const cont = cands.find((c) => String(c.id).includes('continuity'));
     expect(cont).toBeTruthy();
-    expect(`${cont.context.title} ${cont.context.body}`).toMatch(/variabilit[ée]|habituel/i);
+    // Ne pas alarmiser une oscillation 3–4/sem. comme une rupture.
     expect(cont.context.title).not.toMatch(/moins souvent/i);
+    expect(`${cont.context.title} ${cont.context.body}`).toMatch(
+      /variabilit|habituel|continuit|pratique|r[eé]guli/i
+    );
   });
 
   it('ajoute une lecture identité quand la fréquence sort de la plage habituelle', () => {

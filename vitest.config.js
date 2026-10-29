@@ -11,6 +11,8 @@ export default defineConfig({
       ...configDefaults.exclude,
       'tests/e2e/**',
       'tests/performance/**',
+      'dist/**',
+      'dist-release/**',
     ],
     setupFiles: ['./src/test/setup.js'],
     environmentOptions: {

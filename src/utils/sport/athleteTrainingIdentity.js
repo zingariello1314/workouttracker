@@ -224,7 +224,20 @@ export function buildAthleteTrainingIdentity(opts = {}) {
   const last28start = DateHelper.addDays(end, -27);
   const days7 = trainingDays.filter((d) => d >= last7start).length;
   const days28 = trainingDays.filter((d) => d >= last28start).length;
-  const currentPerWeek = round1(days28 / 4);
+  // Fenêtre Recap ~mensuelle : « actuel » = taux sur cette fenêtre (sinon une séance
+  // en J0 d'un 30 j. tombe hors des 28 j. glissants et le texte affiche 0 à tort).
+  // Fenêtres longues (3 m / 1 an) : on garde le 28 j. glissant comme « actuel ».
+  let focusStart = last28start;
+  let focusSpanDays = 28;
+  if (window?.start && /^\d{4}-\d{2}-\d{2}$/.test(window.start) && window.start <= end) {
+    const span = (daysBetweenYmd(window.start, end) ?? 27) + 1;
+    if (span >= 21 && span <= 45) {
+      focusStart = window.start;
+      focusSpanDays = span;
+    }
+  }
+  const daysFocus = trainingDays.filter((d) => d >= focusStart && d <= end).length;
+  const currentPerWeek = round1((daysFocus / focusSpanDays) * 7);
   const current7PerWeek = days7;
   const zScore = round1((currentPerWeek - mean) / Math.max(std, 0.35));
   const status = classifyFrequencyStatus(

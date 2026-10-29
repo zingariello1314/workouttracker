@@ -2617,6 +2617,7 @@ function appendMilestoneDiscoveries(out, extras, v) {
         metrics: {
           type: m.type,
           date: m.date,
+          threshold: m.threshold != null ? m.threshold : undefined,
           exerciseId: m.exerciseId || undefined,
           factId: m.exerciseId ? `ms|${m.kind}|${m.exerciseId}` : undefined,
           name: m.title
@@ -2841,7 +2842,9 @@ const DISCOVERY_RIVALS = [
   ['disc_muscle_share_shift', 'disc_muscle_reorient'],
   ['disc_sleep_volume', 'disc_sleep_assoc', 'disc_sleep_combo', 'disc_sleep_month', 'disc_sleep_perf'],
   ['disc_sleep_zones', 'disc_sleep_quarter'],
-  ['disc_sleep_intensity', 'disc_sleep_rpe']
+  ['disc_sleep_intensity', 'disc_sleep_rpe'],
+  // Placement / horaire : une seule lecture rythme par nature (évite obs + habit quasi doublons).
+  ['disc_sleep_rhythm_obs', 'disc_sleep_rhythm_habit']
 ];
 
 function rivalBlocked(kind, usedKinds) {

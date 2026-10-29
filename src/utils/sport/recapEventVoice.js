@@ -1,7 +1,8 @@
 /**
- * Voix temporelle des jalons / cartes Analyse :
- * « Tu viens de… » seulement si l'événement est vraiment aujourd'hui ;
- * sinon ancre sur la date réelle (hier / il y a N jours / le DATE).
+ * Voix temporelle des jalons / cartes Analyse.
+ * « Tu viens de… » seulement le jour même (garde-fou).
+ * Ensuite : hier / N jours / N semaines / date ancrée — selon le délai réel,
+ * pas selon la longueur de la fenêtre consultée.
  */
 
 import DateHelper from '../dateHelper';
@@ -12,7 +13,7 @@ export function resolveVoiceRefYmd(refYmd) {
 }
 
 /**
- * @returns {{ kind: 'today'|'yesterday'|'days'|'dated'|'undated', ago: number|null, prefix: string, presentPerfect: boolean }}
+ * @returns {{ kind: 'today'|'yesterday'|'days'|'weeks'|'dated'|'undated', ago: number|null, prefix: string, presentPerfect: boolean }}
  */
 export function voicePastEvent(eventYmd, refYmd) {
   const ref = resolveVoiceRefYmd(refYmd);
@@ -34,6 +35,15 @@ export function voicePastEvent(eventYmd, refYmd) {
       kind: 'days',
       ago,
       prefix: `Il y a ${ago} jours, `,
+      presentPerfect: false
+    };
+  }
+  if (ago <= 27) {
+    const weeks = Math.max(1, Math.round(ago / 7));
+    return {
+      kind: 'weeks',
+      ago,
+      prefix: weeks === 1 ? 'Il y a une semaine, ' : `Il y a ${weeks} semaines, `,
       presentPerfect: false
     };
   }

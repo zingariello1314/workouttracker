@@ -86,6 +86,32 @@ describe('parenté des cartes', () => {
     expect(text).not.toMatch(/la plus sensible/);
   });
 
+  it('déduplique un cumul 25k même si les titres divergent', () => {
+    const body =
+      "Tu viens de dépasser 25 000 répétitions cumulées depuis ta première saisie, le 12 mars 2025, il y a 596 jours. Elles ont été réalisées en 120 séances, soit une moyenne de 208 reps par séance. Ça représente environ 2,1 séances par semaine sur cette durée.";
+    const kept = keepDistinctProofCards(
+      [
+        card({
+          horizon: 'long',
+          kind: 'disc_ms_cumul',
+          title: 'Tu viens de dépasser 25 000 répétitions cumulées',
+          body,
+          nature: 'journey'
+        }),
+        card({
+          horizon: 'medium',
+          kind: 'disc_ms_cumul',
+          title: 'Le 12 octobre 2026, tu as dépassé 25 000 répétitions cumulées',
+          body,
+          nature: 'trajectory'
+        })
+      ],
+      { period: '30d', window: { end: '2026-10-29' } }
+    );
+    expect(kept).toHaveLength(1);
+    expect(kept[0].noveltyKey).toBe('cumul_reps:25000');
+  });
+
   it('nomme la fenêtre Garmin réelle sur 6 mois', () => {
     const kept = keepDistinctProofCards([
       card({

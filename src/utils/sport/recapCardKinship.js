@@ -2,7 +2,10 @@
  * Parenté des cartes, avant la sélection des colonnes.
  * Aucune métrique, aucun seuil, aucun fil.
  * Une même preuve ne sort qu'une fois. Deux comparaisons chiffrées restent deux preuves.
+ * noveltyKey / corps identique (titres différents) → un seul survivant.
  */
+
+import { noveltyKeyFromCandidate } from './recapNarrativeClaims';
 
 const PARASITE = [
   /~[+-]/,
@@ -183,6 +186,13 @@ function annotateShortCoverage(row, { period, window, metricDates }) {
   return { ...row, body, title: row.title };
 }
 
+function preferHorizon(a, b) {
+  const rank = (h) => (h === 'short' ? 0 : h === 'medium' ? 1 : 2);
+  const byHorizon = rank(a.horizon) - rank(b.horizon);
+  if (byHorizon) return byHorizon;
+  return b.blob.length - a.blob.length;
+}
+
 export function keepDistinctProofCards(candidates, opts = {}) {
   const rows = (candidates || []).map((candidate) => {
     const view = visible(candidate);
@@ -195,25 +205,44 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     const family = fp ? `volume_${opts.period || 'window'}_${opts.window?.end || ''}` : '';
     const next = withText(candidate, noted.title, noted.body);
     if (family) next.evidenceFamilyId = family;
-    return { candidate: next, title: noted.title, body: noted.body, horizon: view.horizon, fp, blob: `${noted.title}\n${noted.body}` };
+    const noveltyKey = noveltyKeyFromCandidate(next);
+    if (noveltyKey) next.noveltyKey = noveltyKey;
+    return {
+      candidate: next,
+      title: noted.title,
+      body: noted.body,
+      horizon: view.horizon,
+      fp,
+      noveltyKey,
+      blob: `${noted.title}\n${noted.body}`
+    };
   }).filter(Boolean);
 
   const drop = new Set();
+
+  const noveltyGroups = new Map();
+  rows.forEach((row, index) => {
+    row.index = index;
+    if (!row.noveltyKey) return;
+    if (!noveltyGroups.has(row.noveltyKey)) noveltyGroups.set(row.noveltyKey, []);
+    noveltyGroups.get(row.noveltyKey).push(row);
+  });
+  noveltyGroups.forEach((group) => {
+    if (group.length < 2) return;
+    const ranked = [...group].sort(preferHorizon);
+    ranked.slice(1).forEach((row) => drop.add(row.index));
+  });
+
   const groups = new Map();
   rows.forEach((row, index) => {
     row.index = index;
-    if (!row.fp) return;
+    if (!row.fp || drop.has(row.index)) return;
     if (!groups.has(row.fp)) groups.set(row.fp, []);
     groups.get(row.fp).push(row);
   });
 
   groups.forEach((group) => {
-    const ranked = [...group].sort((a, b) => {
-      const rank = (h) => (h === 'short' ? 0 : h === 'medium' ? 1 : 2);
-      const byHorizon = rank(a.horizon) - rank(b.horizon);
-      if (byHorizon) return byHorizon;
-      return b.blob.length - a.blob.length;
-    });
+    const ranked = [...group].sort(preferHorizon);
     const keeper = ranked[0];
     let mediumKept = false;
     let longKept = false;
@@ -241,6 +270,19 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     const key = row.blob.toLowerCase().replace(/\s+/g, ' ').trim();
     if (seen.has(key)) drop.add(row.index);
     else seen.add(key);
+  });
+
+  // Même corps, titres différents (ex. doublon cumul 25k) → une seule carte.
+  const seenBody = new Set();
+  rows.forEach((row) => {
+    if (drop.has(row.index)) return;
+    const bodyKey = String(row.body || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (bodyKey.length < 64) return;
+    if (seenBody.has(bodyKey)) drop.add(row.index);
+    else seenBody.add(bodyKey);
   });
 
   const survivors = rows.filter((row) => !drop.has(row.index));

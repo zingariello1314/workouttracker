@@ -687,6 +687,7 @@ export function detectRecapMilestones({
           family: 'ms_threshold',
           type: 'CUMUL_REPS',
           date: s.date,
+          threshold: th,
           title: phraseTuViensDe({
             eventYmd: s.date,
             refYmd: DateHelper.getTodayLocal(),
@@ -710,6 +711,7 @@ export function detectRecapMilestones({
           family: 'ms_threshold',
           type: 'CUMUL_SESSIONS',
           date: s.date,
+          threshold: th,
           title: `${fmtInt(th)}e séance enregistrée`,
           body: `${fmtInt(th)}e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé ${fmtInt(cumul)} répétitions pour y parvenir, soit environ ${fmtInt(cumul / th)} reps par séance.`,
           evidence: `${fmtInt(th)} séances · ${fmtInt(cumul)} reps`,

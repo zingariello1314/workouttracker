@@ -1036,11 +1036,17 @@ export function buildHorizonEssayCandidates(opts = {}) {
       .slice(0, 2)
       .map((q) => identityGapParagraph(q).trim())
       .filter(Boolean);
+    // Afficher le taux de la fenêtre Recap quand il est disponible (évite « à 0 »
+    // quand une séance en début de 30 j. sortait des 28 j. glissants identité).
+    const shownCurrent =
+      currRate != null && Number.isFinite(currRate)
+        ? currRate
+        : identity.frequency.currentPerWeek;
     medium(
       'identity',
       'Ce rythme n’est plus le tien : il sort de ta variabilité habituelle',
-      `Sur ${identity.weeksUsed} semaines de pratique lisible, tu t'entraînes d'habitude autour de ${formatRateFr(identity.frequency.meanPerWeek)} séances par semaine (souvent ${identityBandPhrase(identity)}). C'est une habitude observée, pas un rythme optimal. La période actuelle est à ${formatRateFr(identity.frequency.currentPerWeek)} — en dehors de cette plage, pas seulement en dessous du mois d'avant.${qBits.length ? ` ${qBits.join(' ')}` : ''} Si ça se recale d'ici deux ou trois semaines, ce n'était qu'un creux. Si ${formatRateFr(identity.frequency.currentPerWeek)}/sem. s'installe, c'est un autre profil de pratique.`,
-      `habitude ${formatRateFr(identity.frequency.meanPerWeek)} · actuel ${formatRateFr(identity.frequency.currentPerWeek)} · ${identity.weeksUsed} sem.`,
+      `Sur ${identity.weeksUsed} semaines de pratique lisible, tu t'entraînes d'habitude autour de ${formatRateFr(identity.frequency.meanPerWeek)} séances par semaine (souvent ${identityBandPhrase(identity)}). C'est une habitude observée, pas un rythme optimal. La période actuelle est à ${formatRateFr(shownCurrent)} — en dehors de cette plage, pas seulement en dessous du mois d'avant.${qBits.length ? ` ${qBits.join(' ')}` : ''} Si ça se recale d'ici deux ou trois semaines, ce n'était qu'un creux. Si ${formatRateFr(shownCurrent)}/sem. s'installe, c'est un autre profil de pratique.`,
+      `habitude ${formatRateFr(identity.frequency.meanPerWeek)} · actuel ${formatRateFr(shownCurrent)} · ${identity.weeksUsed} sem.`,
       0.93
     );
   }

@@ -37,7 +37,7 @@ describe('recapEventVoice', () => {
     expect(out.startsWith('Il y a 5 jours, tu as enregistré')).toBe(true);
   });
 
-  it('ancre une date longue hors de la semaine', () => {
+  it('utilise les semaines entre 7 et 27 jours', () => {
     const out = phraseTuViensDe({
       eventYmd: '2026-10-12',
       refYmd: ref,
@@ -45,7 +45,20 @@ describe('recapEventVoice', () => {
       simpleCore: 'enregistré ta première séance depuis 77 jours sur X.'
     });
     expect(out.includes('Tu viens')).toBe(false);
+    expect(out.startsWith('Il y a 2 semaines, tu as enregistré')).toBe(true);
+    expect(voicePastEvent('2026-10-12', ref).kind).toBe('weeks');
+  });
+
+  it('ancre une date au-delà de 27 jours', () => {
+    const out = phraseTuViensDe({
+      eventYmd: '2026-09-20',
+      refYmd: ref,
+      perfectCore: "d'enregistrer ta première séance depuis 77 jours sur X.",
+      simpleCore: 'enregistré ta première séance depuis 77 jours sur X.'
+    });
+    expect(out.includes('Tu viens')).toBe(false);
     expect(out.startsWith('Le ')).toBe(true);
     expect(out.includes('tu as enregistré')).toBe(true);
+    expect(voicePastEvent('2026-09-20', ref).kind).toBe('dated');
   });
 });

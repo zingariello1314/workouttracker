@@ -40,13 +40,56 @@ function markValues(text) {
   );
 }
 
+/** Badge depuis le kind — le blob texte est un filet de secours (évite GTG → Sommeil via « récup »). */
 function motifClass(card, fallback) {
-  const blob = `${card.kind || ''} ${card.title || ''} ${card.body || card.text || ''}`.toLowerCase();
-  if (/sommeil|sleep|nuit|récup|recup/.test(blob)) return 's';
-  if (/rythme|cadence|fréquence|frequence|par jour|par séance|par seance/.test(blob)) return 'r';
-  if (/répertoire|repertoire|variété|variete|mouvement/.test(blob)) return 'm';
+  const kind = String(card.kind || '').toLowerCase();
+  if (kind.includes('sleep') || kind.includes('sommeil')) return 's';
+  if (kind.includes('gtg')) return 'a';
+  if (
+    kind.includes('repertoire') ||
+    kind.includes('emergence') ||
+    kind.includes('span_new') ||
+    kind.includes('first_exercise')
+  ) {
+    return 'm';
+  }
+  if (
+    kind.includes('ms_return') ||
+    kind.includes('ms_pr') ||
+    kind.includes('progress') ||
+    kind.includes('journey_pr') ||
+    kind.includes('journey_progress')
+  ) {
+    return 'p';
+  }
+  if (
+    kind.includes('rhythm') ||
+    kind.includes('regular') ||
+    kind.includes('continuity') ||
+    kind.includes('freq')
+  ) {
+    return 'r';
+  }
+  if (kind.includes('pending') || kind.includes('absence') || kind.includes('alert')) return 'al';
+  if (
+    kind.includes('ms_cumul') ||
+    kind.includes('ms_sessions') ||
+    kind.includes('volume') ||
+    kind.includes('density') ||
+    kind.includes('peak')
+  ) {
+    return 'a';
+  }
+
+  const blob = `${card.title || ''} ${card.body || card.text || ''}`.toLowerCase();
+  if (/sommeil|sleep|\bnuit\b/.test(blob)) return 's';
+  if (/rythme|cadence|fréquence|frequence/.test(blob)) return 'r';
+  if (/répertoire|repertoire|variété|variete/.test(blob)) return 'm';
   if (/progress|hausse|baisse| vs /.test(blob)) return 'p';
-  if (/alerte|attention|manque|incomplet/.test(blob)) return 'al';
+  // « manquerait » (hypothèse d’équilibre) ≠ alerte — éviter le faux positif.
+  if (/\balerte\b|\battention\b|\bincomplet/.test(blob) || /\bmanque de\b|\bil manque\b/.test(blob)) {
+    return 'al';
+  }
   return fallback;
 }
 

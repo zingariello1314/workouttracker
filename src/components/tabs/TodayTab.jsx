@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef, startTransition, memo } from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useSessionDraftVersion, useExerciseUiVersion, useSessionCommitDirty, useSessionCommitEpoch, getSessionCommitDirty } from '../../context/WorkoutContext/sessionDraftStore';
 import { startTodayCheckMeasure, scheduleTodayCheckIdle, yieldToNextPaint } from '../../utils/todayCheckMeasure';
@@ -48,7 +48,8 @@ import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../
 import { todayExerciseVisualGroup, todayFocusTags, uniqueTodayExerciseGroups } from './TodayTab/utils/todayExerciseVisualGroup';
 import PushupChallengeTodayPanel from './TodayTab/components/PushupChallengeTodayPanel.jsx';
 import GtgTodaySchedulePanel from './TodayTab/components/GtgTodaySchedulePanel.jsx';
-import TodayWeekNavBar from './TodayTab/components/TodayWeekNavBar.jsx';
+import SemaineModule from './TodayTab/components/SemaineModule.jsx';
+import { buildSemaineModuleSessions } from '../../utils/sport/buildSemaineModuleSessions';
 import {
   getExerciseWeightUiMode,
   exerciseShowsWeightField
@@ -66,12 +67,7 @@ import {
   sessionPerceivedToPayload
 } from '../../utils/exerciseSessionPerceivedModel';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
-import {
-  computeWeeklyWeighInReminder,
-  weighInReminderMessageFr,
-  weighInReminderTitleFr
-} from '../../utils/bodyTracking/weeklyWeighInReminder';
-import ImpedanceQuickCapture from './nutrition/components/ImpedanceQuickCapture';
+import PeseeDuJour from './TodayTab/components/PeseeDuJour.jsx';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
 import {
@@ -1461,20 +1457,38 @@ const TodayTab = () => {
     await updateData(next);
   }, [getCurrentData, dateStr, updateData]);
 
-  const weighInReminder = useMemo(() => {
+  const showPeseeDuJour = useMemo(() => {
+    const prefs = data?.bodyTrackingPrefs || {};
+    const perWeek = Number(prefs.weighInsPerWeek);
+    const hasRegime = Boolean(prefs.weighInAnchorDate && perWeek > 0);
+    const legacyDay = prefs.weeklyWeighInDay;
+    const hasLegacy = legacyDay != null && legacyDay !== '' && Number.isFinite(Number(legacyDay));
+    return hasRegime || hasLegacy;
+  }, [data?.bodyTrackingPrefs]);
+
+  const peseeEntries = useMemo(() => {
     const entries = getCurrentData()?.progressEntries || data?.progressEntries || [];
-    return computeWeeklyWeighInReminder({
-      prefs: data?.bodyTrackingPrefs,
-      weeklyWeighInDay: data?.bodyTrackingPrefs?.weeklyWeighInDay,
-      viewDate: currentDate,
-      progressEntries: entries
-    });
-  }, [
-    data?.bodyTrackingPrefs,
-    currentDate,
-    getCurrentData,
-    data?.progressEntries
-  ]);
+    const map = {};
+    for (const e of entries) {
+      if (!e || e.type !== 'impedance' || e.weight == null) continue;
+      const ymd = String(e.date || '').slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) continue;
+      const kg = Number(e.weight);
+      if (!Number.isFinite(kg)) continue;
+      const prev = map[ymd];
+      if (!prev || String(e.date).localeCompare(String(prev._date || '')) >= 0) {
+        map[ymd] = {
+          kg,
+          cond: e.weighCondition || '',
+          _date: e.date
+        };
+      }
+    }
+    for (const ymd of Object.keys(map)) {
+      delete map[ymd]._date;
+    }
+    return map;
+  }, [getCurrentData, data?.progressEntries]);
 
   const lastImpedanceEntry = useMemo(() => {
     const entries = getCurrentData()?.progressEntries || data?.progressEntries || [];
@@ -1484,6 +1498,102 @@ const TodayTab = () => {
         .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null
     );
   }, [getCurrentData, data?.progressEntries]);
+
+  const peseeProfile = useMemo(
+    () => ({
+      taille: lastImpedanceEntry?.heightCm ?? '',
+      age: lastImpedanceEntry?.chronologicalAge ?? '',
+      fat: lastImpedanceEntry?.bodyFatPercentage ?? ''
+    }),
+    [lastImpedanceEntry]
+  );
+
+  const handlePeseeSave = useCallback(
+    async ({ date, kg, cond, taille, age, fat }) => {
+      const heightCm = String(taille ?? '').trim();
+      const chronologicalAge = String(age ?? '').trim();
+      if (!heightCm || !chronologicalAge) {
+        throw new Error('Renseigne taille et âge (Plus de détails) pour enregistrer la mesure.');
+      }
+      const entry = {
+        type: 'impedance',
+        date,
+        weight: kg,
+        heightCm: parseFloat(heightCm),
+        chronologicalAge: Math.round(parseFloat(chronologicalAge)),
+        notes: 'Saisie depuis Aujourd’hui (pesée du jour)',
+        weighCondition: cond || '',
+        timestamp: new Date(`${date}T12:00:00`).getTime()
+      };
+      const fatStr = String(fat ?? '').trim();
+      if (fatStr !== '') {
+        entry.bodyFatPercentage = parseFloat(fatStr);
+      }
+      await addProgressEntry(entry);
+      showSuccess('Pesée enregistrée');
+    },
+    [addProgressEntry, showSuccess]
+  );
+
+  const semaineBundle = useMemo(() => {
+    const current = getCurrentData() || data || {};
+    return buildSemaineModuleSessions({
+      today: new Date(),
+      weeksBack: 52,
+      getTodayWorkout,
+      data: current,
+      isGymMode,
+      getEffectiveRestDayForDate,
+      activeProgram
+    });
+  }, [
+    getCurrentData,
+    data,
+    getTodayWorkout,
+    isGymMode,
+    getEffectiveRestDayForDate,
+    activeProgram,
+    data?.checkedExercises,
+    data?.reps,
+    data?.dailyVariations,
+    data?.exerciseWeights
+  ]);
+
+  const handleSemaineSelectDate = useCallback(
+    (next) => {
+      discardExerciseChanges();
+      changeSessionCalendarDate(next);
+    },
+    [discardExerciseChanges, changeSessionCalendarDate]
+  );
+
+  const handleSaveProgramNote = useCallback(
+    async (mondayKey, note) => {
+      const current = getCurrentData() || data || {};
+      const prev = { ...(current.weekProgramNotes || {}) };
+      if (note == null || String(note).trim() === '') delete prev[mondayKey];
+      else prev[mondayKey] = String(note).trim();
+      await updateData({ ...current, weekProgramNotes: prev });
+      showSuccess(note ? 'Note de programme enregistrée' : 'Note de programme retirée');
+    },
+    [getCurrentData, data, updateData, showSuccess]
+  );
+
+  const semaineModuleEl = (
+    <SemaineModule
+      today={new Date()}
+      selectedDate={currentDate}
+      onSelectDate={handleSemaineSelectDate}
+      onBeforeNavigate={confirmLeaveDayWithUnsavedDraft}
+      sessions={semaineBundle.sessions}
+      weighIns={peseeEntries}
+      programNotes={data?.weekProgramNotes || {}}
+      onSaveProgramNote={handleSaveProgramNote}
+      plannedPerWeek={semaineBundle.plannedPerWeek}
+      restDays={semaineBundle.restDays}
+      weeksBack={52}
+    />
+  );
 
   // Calculer la variante de semaine automatique (toujours basée sur la date)
   const currentWeekVariant = getAutoWeekVariant(currentDate);
@@ -1798,7 +1908,7 @@ const TodayTab = () => {
     return (
       <div className="today-sport-shell max-w-[1240px] mx-auto px-4 py-6 space-y-6">
         {sportSessionDateNavRow}
-        <TodayWeekNavBar onBeforeNavigate={confirmLeaveDayWithUnsavedDraft} />
+        {semaineModuleEl}
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -2052,7 +2162,7 @@ const TodayTab = () => {
 
       <div className="today-bento">
       {sportSessionDateNavRow}
-      <TodayWeekNavBar onBeforeNavigate={confirmLeaveDayWithUnsavedDraft} />
+      {semaineModuleEl}
 
       {workout?.exercices?.length > 0 && (
         <div className="today-b-load rounded-xl border-2 border-[#0F5C45]/45 bg-black px-5 py-4">
@@ -2114,69 +2224,29 @@ const TodayTab = () => {
       )}
       </div>
 
-      {/* Rappel pesée hebdomadaire (jour configuré dans Impédancemètre) */}
-      {weighInReminder.show ? (
-        <div className="mb-3 rounded-xl border-2 border-amber-500/50 bg-amber-950/40 p-4">
-          <div className="flex items-start gap-3">
-            <Scale className="mt-0.5 h-8 w-8 shrink-0 text-amber-300" />
-            <div className="min-w-0 flex-1">
-              <div className="text-base font-semibold text-amber-100">
-                {weighInReminderTitleFr(weighInReminder)}
-              </div>
-              <p className="mt-1 text-sm text-amber-200/85">{weighInReminderMessageFr(weighInReminder)}</p>
-              {weighInReminder.weekStartYmd && weighInReminder.perWeek > 0 ? (
-                <p className="mt-1 text-xs text-amber-300/70">
-                  Semaine du{' '}
-                  {new Date(`${weighInReminder.weekStartYmd}T12:00:00`).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'long'
-                  })}
-                  {weighInReminder.weekEndYmd
-                    ? ` au ${new Date(`${weighInReminder.weekEndYmd}T12:00:00`).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long'
-                      })}`
-                    : ''}{' '}
-                  · {weighInReminder.doneThisWeek}/{weighInReminder.perWeek} pesée
-                  {weighInReminder.perWeek > 1 ? 's' : ''}
-                </p>
-              ) : weighInReminder.dueDateYmd ? (
-                <p className="mt-1 text-xs text-amber-300/70">
-                  Jour de pesée prévu :{' '}
-                  {new Date(`${weighInReminder.dueDateYmd}T12:00:00`).toLocaleDateString('fr-FR', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long'
-                  })}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="mt-4">
-            <ImpedanceQuickCapture
-              addProgressEntry={addProgressEntry}
-              entryDate={dateStr}
-              lastEntry={lastImpedanceEntry}
-              notes="Saisie depuis Aujourd’hui (rappel pesée)"
-              title="Enregistrer la pesée maintenant"
-              hint="Poids, taille et âge suffisent. Le formulaire complet reste dans Suivi corporel → Impédancemètre."
-              onSuccess={() => showSuccess('Mesure impédance enregistrée')}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                try {
-                  sessionStorage.setItem(PENDING_PROGRESS_SECTION_KEY, 'impedance');
-                } catch {
-                  /* ignore */
-                }
-                setActiveTab?.('progress');
-              }}
-              className="mt-2 text-xs text-amber-200/80 underline"
-            >
-              Ouvrir le formulaire complet (toutes les lignes de l’impédancemètre)
-            </button>
-          </div>
+      {/* Module pesée du jour (régime configuré dans Impédancemètre) */}
+      {showPeseeDuJour ? (
+        <div className="mb-3">
+          <PeseeDuJour
+            entries={peseeEntries}
+            profile={peseeProfile}
+            today={currentDate}
+            onSave={handlePeseeSave}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                sessionStorage.setItem(PENDING_PROGRESS_SECTION_KEY, 'impedance');
+              } catch {
+                /* ignore */
+              }
+              setActiveTab?.('progress');
+            }}
+            className="mt-2 text-xs text-[#4a9eff] underline"
+          >
+            Ouvrir le formulaire complet (toutes les lignes de l’impédancemètre)
+          </button>
         </div>
       ) : null}
 

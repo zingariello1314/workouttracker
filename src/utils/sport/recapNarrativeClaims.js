@@ -101,7 +101,9 @@ const CLAIM_TABLE = {
   disc_th_series_journey: { topic: 'exercice.serie', sense: 'transformation' },
   disc_th_continuity_now: { topic: 'fenetre.continuite', sense: 'fact' },
   disc_th_continuity_trajectory: { topic: 'fenetre.continuite', sense: 'relation' },
-  disc_th_continuity_journey: { topic: 'fenetre.continuite', sense: 'transformation' }
+  disc_th_continuity_journey: { topic: 'fenetre.continuite', sense: 'transformation' },
+  disc_ms_cumul: { topic: 'volume.cumul', sense: 'fact' },
+  disc_ms_sessions: { topic: 'volume.sessions', sense: 'fact' }
 };
 
 const SLEEP_DOSE = new Set([
@@ -255,6 +257,14 @@ export function stateKeyFromMetrics(topic, metrics) {
   const m = metrics || {};
   const topicStr = String(topic || '');
   if (m.consolidated === true && topicStr.startsWith('exercice.')) return 'consolide';
+  if (topicStr === 'volume.cumul') {
+    const th = Number(m.threshold);
+    if (Number.isFinite(th) && th > 0) return `seuil-${th}`;
+  }
+  if (topicStr === 'volume.sessions') {
+    const th = Number(m.threshold);
+    if (Number.isFinite(th) && th > 0) return `seuil-${th}`;
+  }
   if (topicStr.startsWith('sommeil.') && m.sleepClockBand != null) {
     return `horloge-${m.sleepClockBand}`;
   }
@@ -287,11 +297,49 @@ export function stateKeyFromMetrics(topic, metrics) {
   return 'present';
 }
 
+function canonicalKind(kind) {
+  const raw = String(kind || '');
+  if (!raw) return '';
+  // ids essays : disc_ms_cumul ou disc_ms_cumul.<stamp>
+  const base = raw.split('.')[0];
+  return base || raw;
+}
+
+function parseCumulThresholdFromText(candidate) {
+  const ctx = candidate?.interpretation?.context || candidate?.context || {};
+  const blob = `${ctx.title || ''} ${ctx.body || candidate?.text || ''}`;
+  const m = blob.match(/(\d[\d\s\u00a0]*)\s*répétitions cumulées/i);
+  if (!m) return null;
+  const n = Number(String(m[1]).replace(/[\s\u00a0]/g, ''));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 /**
- * @returns {{ topic: string|null, sense: string, stateKey: string }}
+ * Clé anti-doublon factuelle (indépendante du titre / horizon).
+ * null = pas de contrainte novelty forcée.
+ */
+export function noveltyKeyFromCandidate(candidate) {
+  const kind = canonicalKind(kindFromNarrativeCandidate(candidate));
+  const metrics = metricsOf(candidate);
+  if (kind === 'disc_ms_cumul') {
+    const th = Number(metrics.threshold);
+    if (Number.isFinite(th) && th > 0) return `cumul_reps:${th}`;
+    const parsed = parseCumulThresholdFromText(candidate);
+    if (parsed) return `cumul_reps:${parsed}`;
+  }
+  if (kind === 'disc_ms_sessions') {
+    const th = Number(metrics.threshold);
+    if (Number.isFinite(th) && th > 0) return `sessions_count:${th}`;
+  }
+  return null;
+}
+
+/**
+ * @returns {{ topic: string|null, sense: string, stateKey: string, noveltyKey: string|null }}
  */
 export function claimFromCandidate(candidate) {
-  const kind = kindFromNarrativeCandidate(candidate);
+  const kindRaw = kindFromNarrativeCandidate(candidate);
+  const kind = canonicalKind(kindRaw);
   const metrics = metricsOf(candidate);
   const row = CLAIM_TABLE[kind];
   let topic = null;
@@ -323,7 +371,8 @@ export function claimFromCandidate(candidate) {
   return {
     topic,
     sense,
-    stateKey: stateKeyFromMetrics(topic, metrics)
+    stateKey: stateKeyFromMetrics(topic, metrics),
+    noveltyKey: noveltyKeyFromCandidate(candidate)
   };
 }
 

@@ -1212,13 +1212,24 @@ function columnBaseScore(candidate, horizonState, richPool) {
 
 function claimBlocks(candidate, registry) {
   const claim = claimFromCandidate(candidate);
+  // noveltyKey (ex. cumul_reps:25000) : dédup exacte du fait, sans collapser d'autres seuils.
+  if (claim.noveltyKey) {
+    return registry.some((row) => row.noveltyKey === claim.noveltyKey);
+  }
   if (!claim.topic) return false;
   return registry.some((row) => row.topic === claim.topic && row.sense === claim.sense);
 }
 
 function rememberClaim(candidate, registry) {
   const claim = claimFromCandidate(candidate);
-  if (claim.topic) registry.push({ topic: claim.topic, sense: claim.sense });
+  if (claim.topic || claim.noveltyKey) {
+    registry.push({
+      topic: claim.topic,
+      sense: claim.sense,
+      stateKey: claim.stateKey,
+      noveltyKey: claim.noveltyKey || null
+    });
+  }
 }
 
 /**
@@ -1410,11 +1421,22 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     garminData: mergedGarmin
   });
   const longPeriod = period === '30d' || period === '3m' || period === '6m' || period === '1y' || period === '2y' || period === 'all';
+  const monthOrShorter = period === 'today' || period === '7d' || period === '30d';
   let candidates = [...spanStories, ...(composed.candidates || [])];
   if (longPeriod) {
     candidates = candidates.map((c) => {
       if (String(c.id || '').includes('.span_')) return { ...c, weight: Math.max(c.weight || 0, 97) };
       if (/cette semaine/i.test(String(c.text || ''))) return { ...c, weight: (c.weight || 0) - 55 };
+      return c;
+    });
+  }
+  // Sur 30 j. / 7 j. : pénaliser les lectures « année » qui polluent la fenêtre courte.
+  if (monthOrShorter) {
+    candidates = candidates.map((c) => {
+      const blob = `${c.text || ''} ${c.interpretation?.context?.title || ''} ${c.interpretation?.context?.body || ''}`;
+      if (/cette année|l['’]année suivie|enregistrées cette année|totalise \d[\d\s]* répétitions en \d+ jours/i.test(blob)) {
+        return { ...c, weight: (c.weight || 0) - 48 };
+      }
       return c;
     });
   }
