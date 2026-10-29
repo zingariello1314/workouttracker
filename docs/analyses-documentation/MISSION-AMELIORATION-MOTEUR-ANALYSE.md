@@ -1,10 +1,14 @@
 # Mission autonome — amélioration du moteur d’analyse Momentum Sport
 
-**Rôle de ce document :** consigne de travail / fil rouge opérationnel pour l’agent (autonomie maximale, validations humaines seulement sur arbitrages métier ou risques irréversibles).
+> **Statut :** fil rouge **antérieur** (secondaire). Le document lead est désormais  
+> [MISSION-MAJEURE-MOTEUR-ANALYSE-APPROFONDI.md](./MISSION-MAJEURE-MOTEUR-ANALYSE-APPROFONDI.md).  
+> Conserver ce fichier pour le contexte des correctifs déjà engagés ; **ne plus le traiter comme consigne principale**.
+
+**Rôle historique :** consigne de travail / fil rouge opérationnel (autonomie, validations humaines limitées).
 
 **Compléments :** [AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md](./AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md) · [ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md](./ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md)
 
-**Session de validation live :** une instance Momentum avec données réelles peut tourner sur `http://localhost:3001/` — s’en servir pour observer l’évolution des analyses avant/après, sans dépendre d’un avis humain à chaque itération.
+**Session de validation live :** `http://localhost:3001/` — Sport → Recap → Analysis.
 
 ---
 

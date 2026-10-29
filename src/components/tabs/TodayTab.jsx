@@ -1580,19 +1580,21 @@ const TodayTab = () => {
   );
 
   const semaineModuleEl = (
-    <SemaineModule
-      today={new Date()}
-      selectedDate={currentDate}
-      onSelectDate={handleSemaineSelectDate}
-      onBeforeNavigate={confirmLeaveDayWithUnsavedDraft}
-      sessions={semaineBundle.sessions}
-      weighIns={peseeEntries}
-      programNotes={data?.weekProgramNotes || {}}
-      onSaveProgramNote={handleSaveProgramNote}
-      plannedPerWeek={semaineBundle.plannedPerWeek}
-      restDays={semaineBundle.restDays}
-      weeksBack={52}
-    />
+    <div className="today-b-week min-w-0">
+      <SemaineModule
+        today={new Date()}
+        selectedDate={currentDate}
+        onSelectDate={handleSemaineSelectDate}
+        onBeforeNavigate={confirmLeaveDayWithUnsavedDraft}
+        sessions={semaineBundle.sessions}
+        weighIns={peseeEntries}
+        programNotes={data?.weekProgramNotes || {}}
+        onSaveProgramNote={handleSaveProgramNote}
+        plannedPerWeek={semaineBundle.plannedPerWeek}
+        restDays={semaineBundle.restDays}
+        weeksBack={52}
+      />
+    </div>
   );
 
   // Calculer la variante de semaine automatique (toujours basée sur la date)
@@ -1907,8 +1909,13 @@ const TodayTab = () => {
     
     return (
       <div className="today-sport-shell max-w-[1240px] mx-auto px-4 py-6 space-y-6">
-        {sportSessionDateNavRow}
-        {semaineModuleEl}
+        <div className="today-bento">
+          {semaineModuleEl}
+          {sportSessionDateNavRow}
+          <div className="today-b-activity">
+            {hasNoActivity ? <DayJustificationButton date={currentDate} /> : null}
+          </div>
+        </div>
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -1916,11 +1923,7 @@ const TodayTab = () => {
             <p>{t('today.restDay.message')}</p>
           </div>
         </div>
-        
-        {/* ✅ NOUVEAU : Bouton/Badge de justification si jour sans activité */}
-        {hasNoActivity && (
-          <DayJustificationButton date={currentDate} />
-        )}
+
         
         {/* Section des défis actifs, même si jour de repos */}
         {activeChallenges.length > 0 && (
@@ -2161,8 +2164,8 @@ const TodayTab = () => {
       </div>
 
       <div className="today-bento">
-      {sportSessionDateNavRow}
       {semaineModuleEl}
+      {sportSessionDateNavRow}
 
       {workout?.exercices?.length > 0 && (
         <div className="today-b-load rounded-xl border-2 border-[#0F5C45]/45 bg-black px-5 py-4">

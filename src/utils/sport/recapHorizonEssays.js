@@ -37,6 +37,103 @@ import {
   rewardToneForKind
 } from './recapInsightNature';
 import { buildPeriodDiscoveryBundle } from './recapPeriodDiscoveries';
+import {
+  buildVolumeDecompFinding,
+  buildAdherenceDowFinding,
+  buildBodyWeightParallelFinding,
+  buildGtgRepereCoevoFinding,
+  findingDepthLevel,
+  proseFromFinding
+} from './recapAnalyticalFindings';
+import { iterateProgramExercises } from './recapMovementClassification';
+import { inferMuscleGroupsForExercise } from './recapMuscleInference';
+import { computeWeightWindowMetrics } from './recapEnrichmentMetrics';
+import {
+  normalizeGtgData,
+  collectGtgMiniSetHistory,
+  getGtgExerciseLabel
+} from '../../services/endurance/gtgService';
+import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
+
+const DOW_SHORT_TO_FR = {
+  Dim: 'dimanche',
+  Lun: 'lundi',
+  Mar: 'mardi',
+  Mer: 'mercredi',
+  Jeu: 'jeudi',
+  Ven: 'vendredi',
+  Sam: 'samedi'
+};
+
+const MUSCLE_FR = {
+  chest: 'pectoraux',
+  back: 'dos',
+  shoulders: 'épaules',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  core: 'abdos',
+  quads: 'quadriceps',
+  hamstrings: 'ischios',
+  glutes: 'fessiers',
+  calves: 'mollets',
+  forearms: 'avant-bras',
+  neck: 'cou',
+  adductors: 'adducteurs',
+  legs: 'jambes',
+  full_body: 'corps entier'
+};
+
+function muscleLabelsForProgramDay(activeProgram, dayLabelShort) {
+  if (!activeProgram?.schedule || !dayLabelShort) return [];
+  const fr = DOW_SHORT_TO_FR[dayLabelShort] || String(dayLabelShort).toLowerCase();
+  const counts = {};
+  iterateProgramExercises(activeProgram, (ex, dayName) => {
+    if (String(dayName || '').toLowerCase() !== fr) return;
+    inferMuscleGroupsForExercise({
+      id: ex?.id,
+      name: ex?.name,
+      nom: ex?.name,
+      exerciseBankKey: ex?.exerciseBankKey
+    }).forEach((g) => {
+      counts[g] = (counts[g] || 0) + 1;
+    });
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([g]) => MUSCLE_FR[g] || g);
+}
+
+function maxRepsAroundWindow(snapshot, exerciseId, window) {
+  const rows = (snapshot?.exerciseMaxHistory || []).filter(
+    (r) => String(r?.exerciseId) === String(exerciseId) && Number(r?.reps) > 0
+  );
+  if (!rows.length || !window?.end) return { before: null, after: null, touched: false };
+  const start = window.start || window.end;
+  const inWin = rows.filter((r) => {
+    const d = String(r.date || r.recordedAt || '').slice(0, 10);
+    return d >= start && d <= window.end;
+  });
+  const beforeRows = rows.filter((r) => {
+    const d = String(r.date || r.recordedAt || '').slice(0, 10);
+    return d < start;
+  });
+  const before = beforeRows.length
+    ? Math.max(...beforeRows.map((r) => Number(r.reps) || 0))
+    : null;
+  const after = inWin.length
+    ? Math.max(...inWin.map((r) => Number(r.reps) || 0))
+    : before;
+  return {
+    before,
+    after: after != null ? after : before,
+    touched: inWin.length > 0
+  };
+}
+
+function findingDepthOk(finding) {
+  return findingDepthLevel(finding) >= 2;
+}
 
 function sampleDays(window) {
   if (!window?.end) return 30;
@@ -554,8 +651,31 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   if (!skipGenericNow && (d7 != null || d28 != null) && !skipKind('volume_traj')) {
+    const decomp = buildVolumeDecompFinding({
+      window,
+      currentReps: current.totalReps,
+      previousReps: habit.totalReps,
+      currentSessions: current.sessions,
+      previousSessions: habit.sessions,
+      currentLen: wins.currentLen,
+      previousLen: wins.habitLen,
+      goal,
+      perfMomentumPct: mom
+    });
+    let title = 'Les répétitions du mois et celles de la semaine ne racontent pas la même chose';
     let body;
-    if (d28 != null && d28 < -12 && d7 != null && d7 > 4) {
+    let extraMetrics = {};
+    if (decomp && findingDepthOk(decomp)) {
+      const driverFr =
+        decomp.metrics.driver === 'frequency'
+          ? 'surtout la fréquence'
+          : decomp.metrics.driver === 'dose'
+            ? 'surtout la dose par séance'
+            : 'fréquence et dose ensemble';
+      title = `Le volume bouge via ${driverFr}`;
+      body = proseFromFinding(decomp);
+      extraMetrics = { ...decomp.metrics, findingId: decomp.id, analyticDepth: findingDepthOk(decomp) };
+    } else if (d28 != null && d28 < -12 && d7 != null && d7 > 4) {
       body = `Sur un mois comparable, tu as coché ${pctPhrase(d28)} de répétitions que le mois d'avant. Les 7 derniers jours repartent pourtant (${pctPhrase(d7)}). Le mois reste creux, mais la contraction ne s'accélère plus.`;
     } else if (d28 != null && d28 < -12 && d7 != null && d7 < -8) {
       body = `Les répétitions suivies sont en retrait sur le mois (${pctPhrase(d28)}) et les 7 derniers jours ne corrigent pas encore (${pctPhrase(d7)}). La baisse se prolonge encore sur la semaine récente.`;
@@ -566,13 +686,115 @@ export function buildHorizonEssayCandidates(opts = {}) {
     }
     short(
       'volume_traj',
-      'Les répétitions du mois et celles de la semaine ne racontent pas la même chose',
+      title,
       body,
       [d28 != null ? `28 j. ${d28 > 0 ? '+' : ''}${Math.round(d28)} %` : null, d7 != null ? `7 j. ${d7 > 0 ? '+' : ''}${Math.round(d7)} %` : null]
         .filter(Boolean)
         .join(' · '),
-      0.96
+      0.96,
+      { metrics: extraMetrics }
     );
+  }
+
+  if (!skipGenericNow && !skipKind('adherence_dow') && enrichment?.dayOfWeek?.length) {
+    const trainedDow = enrichment.dayOfWeek.filter(
+      (d) => (d.plannedDays || 0) > 0 && d.avgCompletionPct != null
+    );
+    const best = [...trainedDow].sort((a, b) => b.avgCompletionPct - a.avgCompletionPct)[0];
+    const worst = [...trainedDow].sort((a, b) => a.avgCompletionPct - b.avgCompletionPct)[0];
+    const dowFinding = buildAdherenceDowFinding({
+      window,
+      dayOfWeek: enrichment.dayOfWeek,
+      leastCheckedNames: least,
+      weakDayMuscleLabels: worst ? muscleLabelsForProgramDay(activeProgram, worst.label) : [],
+      strongDayMuscleLabels: best ? muscleLabelsForProgramDay(activeProgram, best.label) : [],
+      goal
+    });
+    if (dowFinding && findingDepthOk(dowFinding)) {
+      short(
+        'adherence_dow',
+        `${dowFinding.metrics.bestLabel} tient mieux que ${dowFinding.metrics.worstLabel}`,
+        proseFromFinding(dowFinding),
+        `${dowFinding.metrics.bestLabel} ~${Math.round(dowFinding.metrics.bestPct)} % · ${dowFinding.metrics.worstLabel} ~${Math.round(dowFinding.metrics.worstPct)} %`,
+        0.93,
+        { metrics: { ...dowFinding.metrics, findingId: dowFinding.id } }
+      );
+    }
+  }
+
+  if (!skipGenericNow && !skipKind('body_weight_parallel') && period !== 'today') {
+    const weightM = computeWeightWindowMetrics(snapshot, window);
+    const answers = normalizeProfileQuestionnaire(profileQuestionnaireRaw)?.answers || {};
+    const heightCm = Number(answers?.vitalsSelfReport?.heightCm ?? answers?.heightCm);
+    const heightM = Number.isFinite(heightCm) && heightCm > 100 ? heightCm / 100 : null;
+    const nPts = (weightM?.series || []).filter((p) => p.value > 0).length;
+    const bodyFinding = buildBodyWeightParallelFinding({
+      window,
+      startKg: weightM?.startKg,
+      endKg: weightM?.endKg,
+      deltaKg: weightM?.deltaKg,
+      nWeightPoints: Math.max(nPts, weightM?.startKg != null && weightM?.endKg != null ? 2 : 0),
+      volumeDeltaPct: d28 ?? d7,
+      sessionsCurrent: current.sessions,
+      heightM
+    });
+    if (bodyFinding && findingDepthOk(bodyFinding)) {
+      medium(
+        'body_weight_parallel',
+        'Le poids a bougé en parallèle de ton activité',
+        proseFromFinding(bodyFinding),
+        `${bodyFinding.metrics.startKg} → ${bodyFinding.metrics.endKg} kg`,
+        0.82,
+        { metrics: { ...bodyFinding.metrics, findingId: bodyFinding.id } }
+      );
+    }
+  }
+
+  if (!skipGenericNow && !skipKind('gtg_repere_coevo') && snapshot?.enduranceData?.gtg && window?.start && window?.end) {
+    const qq = normalizeProfileQuestionnaire(profileQuestionnaireRaw);
+    const ctx = { workoutData: snapshot, profileQuestionnaire: qq };
+    const gtg = normalizeGtgData(snapshot.enduranceData.gtg);
+    const history = collectGtgMiniSetHistory(gtg, window.start, window.end, ctx).filter((r) => r.adHoc);
+    if (history.length >= 2) {
+      const byEx = new Map();
+      history.forEach((row) => {
+        const prev = byEx.get(row.exerciseId) || { days: new Set(), reps: 0 };
+        prev.days.add(row.dateStr);
+        prev.reps += row.reps || 0;
+        byEx.set(row.exerciseId, prev);
+      });
+      let leadId = null;
+      let lead = null;
+      byEx.forEach((v, id) => {
+        if (!lead || v.days.size > lead.days.size || (v.days.size === lead.days.size && v.reps > lead.reps)) {
+          leadId = id;
+          lead = v;
+        }
+      });
+      if (leadId && lead) {
+        const label = getGtgExerciseLabel(leadId, gtg.config, ctx);
+        const maxPair = maxRepsAroundWindow(snapshot, leadId, window);
+        const gtgFinding = buildGtgRepereCoevoFinding({
+          window,
+          exerciseLabel: label,
+          adHocDays: lead.days.size,
+          adHocReps: lead.reps,
+          maxBefore: maxPair.before,
+          maxAfter: maxPair.after,
+          maxTouched: maxPair.touched
+        });
+        if (gtgFinding && findingDepthOk(gtgFinding)) {
+          medium(
+            'gtg_repere_coevo',
+            `GTG hors planning et repère ${label}`,
+            proseFromFinding(gtgFinding),
+            `${lead.days.size} j. · ~${Math.round(lead.reps)} reps`,
+            0.88,
+            { metrics: { ...gtgFinding.metrics, findingId: gtgFinding.id } }
+          );
+        }
+      }
+    }
   }
 
   if (programPct != null && !skipGenericNow && !(preferPeriodNow && period === 'today')) {

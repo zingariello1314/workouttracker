@@ -36,6 +36,12 @@ import {
 } from './recapInsightHelpers';
 import { buildComposedInterpretationPipeline } from './recapInterpretationPipeline';
 import { keepDistinctProofCards } from './recapCardKinship';
+import {
+  buildSelectionDiagnostics,
+  familiesStarvedDespiteProduction,
+  boostUnderrepresentedFamilies,
+  rescueStarvedFamilySlots
+} from './recapSelectionDiagnostics';
 import { filterValidInsights } from './recapInsightValidate';
 import { semanticGroupFromCandidateId } from './insightSemanticThemes';
 import {
@@ -1460,9 +1466,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     hashSig(JSON.stringify(candidates.map((c) => `${c.id}:${c.weight}`).slice(0, 12)))
   ].join('|');
 
-  const weightedCandidates = applyNatureWeights(
-    applyNoveltyWeights(candidates, insightHistory),
-    composed.phenomena
+  const weightedCandidates = boostUnderrepresentedFamilies(
+    applyNatureWeights(applyNoveltyWeights(candidates, insightHistory), composed.phenomena),
+    { prefer: ['adherence', 'body', 'gtg', 'volume'] }
   );
 
   let spanDays = 7;
@@ -1479,21 +1485,59 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     window,
     metricDates: Object.keys(mergedGarmin?.dailyMetrics || {})
   });
+  const afterDedupIds = new Set(distinctCandidates.map((c) => c.id));
+  const dedupedRows = weightedCandidates.filter((c) => !afterDedupIds.has(c.id));
   // Spec #24 Lot A — filtre dur avant sélection (rejeté = masqué)
   const validCandidates = filterValidInsights(distinctCandidates, {
     voiceKey,
     period,
     windowSpanDays: spanDays
   });
+  const validIds = new Set(validCandidates.map((c) => c.id));
+  const insufficientRows = distinctCandidates.filter((c) => !validIds.has(c.id));
   const caps = columnCapsForCandidates(validCandidates, {
     voiceKey,
     detectedKinds: (composed.periodDiscoveries?.all || []).map((d) => d.kind)
   });
-  const pickedColumns = selectNarrativeColumns(validCandidates, caps, signature);
-  const pickedShort = pickedColumns.short;
-  const pickedMedium = pickedColumns.medium;
-  const pickedLong = pickedColumns.long;
-  const allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
+  let pickedColumns = selectNarrativeColumns(validCandidates, caps, signature);
+  let pickedShort = pickedColumns.short;
+  let pickedMedium = pickedColumns.medium;
+  let pickedLong = pickedColumns.long;
+  let allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
+  let shownIds = new Set(allPicked.map((c) => c.id));
+  let rankedOutRows = validCandidates.filter((c) => !shownIds.has(c.id));
+  let selectionDiagnostics = buildSelectionDiagnostics({
+    produced: weightedCandidates,
+    insufficient: insufficientRows,
+    deduped: dedupedRows,
+    rankedOut: rankedOutRows,
+    shown: allPicked
+  });
+  let starvedFamilies = familiesStarvedDespiteProduction(selectionDiagnostics);
+  let rescuedFamilies = [];
+  if (starvedFamilies.length) {
+    const rescued = rescueStarvedFamilySlots(
+      pickedColumns,
+      validCandidates,
+      caps,
+      selectionDiagnostics
+    );
+    pickedShort = rescued.short;
+    pickedMedium = rescued.medium;
+    pickedLong = rescued.long;
+    allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
+    shownIds = new Set(allPicked.map((c) => c.id));
+    rankedOutRows = validCandidates.filter((c) => !shownIds.has(c.id));
+    selectionDiagnostics = buildSelectionDiagnostics({
+      produced: weightedCandidates,
+      insufficient: insufficientRows,
+      deduped: dedupedRows,
+      rankedOut: rankedOutRows,
+      shown: allPicked
+    });
+    starvedFamilies = familiesStarvedDespiteProduction(selectionDiagnostics);
+    rescuedFamilies = rescued.rescued || [];
+  }
 
   const prevSig = loadLastInsightSignature();
   if (prevSig !== signature && allPicked.length > 0) {
@@ -1536,6 +1580,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     athleteIdentity: composed.athleteIdentity,
     athleteJourney: composed.athleteJourney,
     phenomena: composed.phenomena,
-    periodDiscoveries: composed.periodDiscoveries
+    periodDiscoveries: composed.periodDiscoveries,
+    selectionDiagnostics,
+    starvedFamilies,
+    rescuedFamilies
   };
 }

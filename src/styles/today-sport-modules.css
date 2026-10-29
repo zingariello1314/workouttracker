@@ -123,6 +123,7 @@
   border-width: 1px !important;
   border-style: solid !important;
   box-shadow: none !important;
+  border-radius: var(--today-radius) !important;
 }
 
 .today-sport-shell .today-hero {
@@ -281,11 +282,13 @@
 
 .today-sport-shell .today-b-activity {
   min-height: 100%;
+  overflow: hidden;
 }
 
 .today-sport-shell .today-activity-card {
   height: 100%;
   min-height: 108px;
+  border-radius: var(--today-radius) !important;
 }
 
 .today-sport-shell .today-hero-tags {
@@ -328,9 +331,18 @@
   grid-column: span 3;
 }
 
+/* Semaine : pleine largeur au-dessus de date / charge / activité */
 .today-sport-shell .today-b-week {
-  grid-column: span 4;
+  grid-column: 1 / -1;
   min-width: 0;
+  overflow: hidden;
+}
+
+/* Évite double bordure / coins carrés : le wrapper bento porte le radius */
+.today-sport-shell .today-b-week .wk {
+  border: none;
+  background: transparent;
+  border-radius: 0;
 }
 
 .today-sport-shell .today-b-load {

@@ -1,5 +1,12 @@
 # MISSION MAJEURE — TRANSFORMER LE MOTEUR D'ANALYSE DE MOMENTUM SPORT EN UN SYSTÈME D'ANALYSE SPORTIVE APPROFONDI, TRANSVERSAL ET INTELLIGENT
 
+> **Document lead (oct. 2026).** Ce fichier **prend désormais le relais** comme consigne principale pour l’évolution du moteur d’analyse.  
+> Les documents antérieurs restent des **références** (audit, architecture cible, mission courte) : ils n’annulent pas cette mission et ne la remplacent pas. En cas de conflit d’instructions, **celui-ci prime**.  
+> Compléments utiles : [AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md](./AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md) · [ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md](./ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md) · [MISSION-AMELIORATION-MOTEUR-ANALYSE.md](./MISSION-AMELIORATION-MOTEUR-ANALYSE.md) (fil rouge antérieur, désormais secondaire).  
+> Validation live : session navigateur Momentum (`localhost:3001`) — Sport → Recap → Analysis.
+
+---
+
 ## 1. Objectif général
 
 Tu dois faire évoluer le moteur d'analyse de Momentum Sport pour qu'il soit capable d'exploiter réellement l'ensemble des données disponibles dans l'application, de rapprocher les informations pertinentes, de détecter des relations, de construire des interprétations solides et de produire des conclusions concrètes, personnalisées et utiles à l'utilisateur.

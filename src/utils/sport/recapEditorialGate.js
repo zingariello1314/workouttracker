@@ -71,9 +71,21 @@ function factKey(card) {
   return '';
 }
 
+/** Phrases qui décrivent une tâche du moteur au lieu d'un résultat (mission §2 / R3). */
+const DEFERRED_REASONING = [
+  /Momentum doit rapprocher/i,
+  /il faudra examiner/i,
+  /il faut également examiner/i,
+  /pour comprendre[\s\S]{0,40}doit/i,
+  /pour savoir si[\s\S]{0,80}il faut/i,
+  /la suite permettra de distinguer/i,
+  /si le volume baisse ensuite, il faudra/i
+];
+
 function dropReason(card, voiceKey) {
   const kind = card?.kind || '';
   const text = blob(card);
+  if (DEFERRED_REASONING.some((re) => re.test(text))) return 'deferred-reasoning';
   if (/une seule nuit ne suffit|observation\s*:/i.test(text) && !/nuits/i.test(text)) return 'one-night';
   if (/les familles identifiées portent/i.test(text)) return 'family-list';
   if (/^la poussée compte/i.test(String(card.title || '')) && !/nuit/i.test(text)) return 'push-pull-bare';

@@ -101,6 +101,9 @@ export function columnCapsForCandidates(candidates = [], opts = {}) {
 export const KIND_NATURE = {
   continuity: 'now',
   volume_traj: 'now',
+  adherence_dow: 'now',
+  body_weight_parallel: 'trajectory',
+  gtg_repere_coevo: 'trajectory',
   absence: 'now',
   performance: 'now',
   unknown_fatigue: 'now',

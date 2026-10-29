@@ -53,11 +53,11 @@ function prevEntry(entries, d) {
 function Sparkline({ entries, sel }) {
   const N = 14;
   const W = 640;
-  const H = 118;
-  const pl = 10;
-  const pr = 42;
-  const pt = 12;
-  const pb = 22;
+  const H = 110;
+  const pl = 8;
+  const pr = 36;
+  const pt = 10;
+  const pb = 18;
   const days = [];
   const raw = [];
   const avg = [];
@@ -72,83 +72,78 @@ function Sparkline({ entries, sel }) {
   const vals = [...raw, ...avg].filter((x) => x != null);
   if (!vals.length) return null;
 
-  let lo = Math.min(...vals);
-  let hi = Math.max(...vals);
-  const pad = Math.max(0.4, (hi - lo) * 0.18);
-  lo -= pad;
-  hi += pad;
-  if (hi - lo < 1.2) {
+  // Échelle comme la maquette : crans 0,5 kg + marge 0,25
+  let lo = Math.floor(Math.min(...vals) * 2) / 2 - 0.25;
+  let hi = Math.ceil(Math.max(...vals) * 2) / 2 + 0.25;
+  if (hi - lo < 1) {
     const mid = (hi + lo) / 2;
-    lo = mid - 0.6;
-    hi = mid + 0.6;
+    lo = mid - 0.5;
+    hi = mid + 0.5;
   }
 
   const X = (i) => pl + ((W - pl - pr) * i) / (N - 1);
   const Y = (v) => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo));
 
-  /** Chemin qui suit l’index du jour (pas de diagonale en filtrant les trous). */
-  const seriesPath = (arr) => {
+  // Moyenne : un point par jour (trous = rupture de trait)
+  const avgPath = (() => {
     let d = '';
-    let penDown = false;
-    for (let i = 0; i < arr.length; i++) {
-      const v = arr[i];
-      if (v == null || !Number.isFinite(v)) {
-        penDown = false;
+    let pen = false;
+    for (let i = 0; i < avg.length; i++) {
+      const v = avg[i];
+      if (v == null) {
+        pen = false;
         continue;
       }
-      const cmd = penDown ? 'L' : 'M';
-      d += `${cmd}${X(i).toFixed(1)} ${Y(v).toFixed(1)} `;
-      penDown = true;
+      d += `${pen ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)} `;
+      pen = true;
     }
     return d.trim();
-  };
+  })();
 
-  /** Pesées : ligne en pointillés qui relie les points (comme la maquette). */
-  const rawDots = [];
+  // Pesées : points + trait pointillé qui les relie (comme l’exemple)
+  const rawPts = [];
   for (let i = 0; i < raw.length; i++) {
-    if (raw[i] != null) rawDots.push({ i, v: raw[i], x: X(i), y: Y(raw[i]) });
+    if (raw[i] != null) rawPts.push([X(i), Y(raw[i])]);
   }
-  const rawBridge =
-    rawDots.length >= 2
-      ? rawDots.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+  const rawPath =
+    rawPts.length >= 2
+      ? rawPts.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(' ')
       : '';
 
-  const avgPath = seriesPath(avg);
   let lastAvg = null;
   for (let i = avg.length - 1; i >= 0; i--) {
     if (avg[i] != null) {
-      lastAvg = { x: X(i), y: Y(avg[i]) };
+      lastAvg = [X(i), Y(avg[i])];
       break;
     }
   }
 
-  const mid = (lo + hi) / 2;
-  const grid = [lo + (hi - lo) * 0.12, mid, hi - (hi - lo) * 0.12];
+  const grid = [lo + 0.25, (lo + hi) / 2, hi - 0.25];
 
   return (
     <svg
       className="ps-spark"
       viewBox={`0 0 ${W} ${H}`}
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label="Courbe du poids sur 14 jours avec moyenne glissante"
     >
       {grid.map((g) => (
         <g key={g}>
           <line className="ps-grid" x1={pl} x2={W - pr} y1={Y(g)} y2={Y(g)} />
-          <text x={W - pr + 6} y={Y(g) + 3.5}>
+          <text x={W - pr + 6} y={Y(g) + 3}>
             {fmt(g)}
           </text>
         </g>
       ))}
-      {rawBridge ? <path className="ps-raw" d={rawBridge} /> : null}
-      {rawDots.map((p) => (
-        <circle key={`pt-${p.i}`} className="ps-pt" cx={p.x} cy={p.y} r="2.8" />
+      {rawPath ? <path className="ps-raw" d={rawPath} /> : null}
+      {rawPts.map((p, i) => (
+        <circle key={i} className="ps-pt" cx={p[0]} cy={p[1]} r="2.6" />
       ))}
       {avgPath ? <path className="ps-avg" d={avgPath} /> : null}
-      {lastAvg ? <circle className="ps-end" cx={lastAvg.x} cy={lastAvg.y} r="4.5" /> : null}
+      {lastAvg ? <circle className="ps-end" cx={lastAvg[0]} cy={lastAvg[1]} r="4.5" /> : null}
       {[0, N - 1].map((i) => (
-        <text key={`x-${i}`} x={X(i)} y={H - 4} textAnchor={i ? 'end' : 'start'}>
+        <text key={i} x={X(i)} y={H - 3} textAnchor={i ? 'end' : 'start'}>
           {days[i].getDate()} {MS[days[i].getMonth()]}
         </text>
       ))}

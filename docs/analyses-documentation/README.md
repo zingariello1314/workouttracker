@@ -1,13 +1,24 @@
 # Analyses — documentation de référence
 
-Dossier de travail pour faire avancer le moteur d’analyses Recap (toutes plages horaires).
+Dossier de travail pour le moteur d’analyses Recap (toutes plages horaires).
+
+## Document lead (à suivre en priorité)
 
 | Document | Rôle |
 | --- | --- |
-| [MISSION-AMELIORATION-MOTEUR-ANALYSE.md](./MISSION-AMELIORATION-MOTEUR-ANALYSE.md) | **Fil rouge opérationnel** : mission autonome (audit → référence → correctifs → profondeur → compte rendu). L’agent avance sans validations intermédiaires sauf arbitrage métier / risque irréversible. Validation live possible via session navigateur `localhost:3001`. |
-| [AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md](./AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md) | Audit code-first (oct. 2026) : architecture actuelle, limites, 14 cartes 30 j. comme cas d’étude, options, questions ouvertes |
-| [ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md](./ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md) | Architecture cible : grille de qualité, modèle claims/indicateurs, temporalité flexible, traçabilité des calculs, croisements, sélection par utilité, mapping composants, plan par phases |
+| **[MISSION-MAJEURE-MOTEUR-ANALYSE-APPROFONDI.md](./MISSION-MAJEURE-MOTEUR-ANALYSE-APPROFONDI.md)** | **Lead.** Mission majeure : moteur d’analyse approfondi, transversal et intelligent (raisonnement d’abord). **Prime** en cas de conflit. |
+| **[PLAN-MISSION-MAJEURE-MOTEUR-ANALYSE.md](./PLAN-MISSION-MAJEURE-MOTEUR-ANALYSE.md)** | **Plan d’exécution béton** (exigences R1–R4 : Finding≠profondeur, inventaire corrélations, golden analytique, diagnostic sélection). |
+| [INVENTAIRE-CORRELATIONS-ANALYSES.md](./INVENTAIRE-CORRELATIONS-ANALYSES.md) | Matrice des relations données (dispo réelle, méthodes, priorités P0–P2). |
+| [COMPTE-RENDU-MISSION-MAJEURE-ANALYSES.md](./COMPTE-RENDU-MISSION-MAJEURE-ANALYSES.md) | Avant/après profondeur + statut livraison R1–R4. |
 
-**Ordre de lecture :** mission (comment travailler) → audit (état des lieux) → architecture cible (cadre de conception) → implémentation par étapes.
+## Références (secondaires)
 
-Les documents de conception n’ont pas modifié le code applicatif ; l’implémentation suit la mission.
+| Document | Rôle |
+| --- | --- |
+| [MISSION-AMELIORATION-MOTEUR-ANALYSE.md](./MISSION-AMELIORATION-MOTEUR-ANALYSE.md) | Fil rouge **antérieur** (quick wins). Historique seulement — plus directeur. |
+| [AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md](./AUDIT-STRATEGIQUE-MOTEUR-ANALYSE.md) | Audit code-first, limites, cas 14 cartes |
+| [ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md](./ARCHITECTURE-CIBLE-MOTEUR-ANALYSE.md) | Cadre de conception (subordonné à la mission + au plan) |
+
+**Ordre :** mission majeure → **plan** → audit/archi si besoin → implémentation phase par phase.
+
+**Validation live :** `localhost:3001` — Sport → Recap → Analysis.
