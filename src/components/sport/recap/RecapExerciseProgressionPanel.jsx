@@ -9,41 +9,11 @@ import {
 } from '../../../utils/sport/recapExerciseProgressionAnalysis';
 
 const STATUS_STYLES = {
-  rising: {
-    icon: TrendingUp,
-    border: 'border-emerald-500/40',
-    bg: 'bg-emerald-950/30',
-    text: 'text-emerald-200',
-    badge: 'bg-emerald-500/20 text-emerald-100'
-  },
-  regression: {
-    icon: TrendingDown,
-    border: 'border-rose-500/40',
-    bg: 'bg-rose-950/25',
-    text: 'text-rose-200',
-    badge: 'bg-rose-500/20 text-rose-100'
-  },
-  stall: {
-    icon: Minus,
-    border: 'border-amber-500/40',
-    bg: 'bg-amber-950/25',
-    text: 'text-amber-200',
-    badge: 'bg-amber-500/20 text-amber-100'
-  },
-  single: {
-    icon: Minus,
-    border: 'border-slate-500/40',
-    bg: 'bg-slate-950/30',
-    text: 'text-slate-300',
-    badge: 'bg-slate-500/20 text-slate-200'
-  },
-  insufficient: {
-    icon: Minus,
-    border: 'border-slate-500/40',
-    bg: 'bg-slate-950/30',
-    text: 'text-slate-400',
-    badge: 'bg-slate-500/20 text-slate-300'
-  }
+  rising: { icon: TrendingUp, tone: 'ok' },
+  regression: { icon: TrendingDown, tone: 'bad' },
+  stall: { icon: Minus, tone: 'warn' },
+  single: { icon: Minus, tone: 'dim' },
+  insufficient: { icon: Minus, tone: 'dim' }
 };
 
 function formatSessionLine(session, profile) {
@@ -194,9 +164,7 @@ export default function RecapExerciseProgressionPanel({
                 </p>
               </div>
               {analysis.headline ? (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusStyle.badge}`}
-                >
+                <span className={`rb-chip ${statusStyle.tone}`}>
                   <StatusIcon size={12} />
                   {analysis.headline}
                 </span>
@@ -204,31 +172,26 @@ export default function RecapExerciseProgressionPanel({
             </div>
 
             {analysis.setHabits?.metrics?.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="rb-chip-row">
                 {analysis.setHabits.profileLabel ? (
-                  <span className="rounded-full border border-teal-500/35 bg-teal-950/40 px-2 py-0.5 text-[10px] font-medium text-teal-100">
-                    {analysis.setHabits.profileLabel}
-                  </span>
+                  <span className="rb-chip ok">{analysis.setHabits.profileLabel}</span>
                 ) : null}
                 {analysis.setHabits.metrics.map((m) => (
-                  <span
-                    key={m.key}
-                    className="rounded-full border border-[#0F4C5C]/45 bg-black/50 px-2 py-0.5 text-[10px] text-slate-300"
-                  >
-                    {m.label} : <span className="font-medium text-slate-100">{m.value}</span>
+                  <span key={m.key} className="rb-chip dim">
+                    {m.label} : <b>{m.value}</b>
                   </span>
                 ))}
               </div>
             ) : null}
 
             {analysis.detail ? (
-              <div className={`rounded-lg border px-3 py-2.5 text-xs leading-relaxed ${statusStyle.border} ${statusStyle.bg} ${statusStyle.text}`}>
+              <div className={`rb-note ${statusStyle.tone}`}>
                 {analysis.detail}
                 {analysis.bullets?.length > 0 ? (
-                  <ul className="mt-2 space-y-0.5 text-[11px] opacity-90">
+                  <ul className="rb-note-list">
                     {analysis.bullets.map((b) => (
-                      <li key={b} className="flex gap-1.5">
-                        <ChevronRight size={12} className="mt-0.5 shrink-0 opacity-60" />
+                      <li key={b}>
+                        <ChevronRight size={12} aria-hidden />
                         <span>{b}</span>
                       </li>
                     ))}
@@ -258,24 +221,20 @@ export default function RecapExerciseProgressionPanel({
               />
             ) : null}
 
-            <div className="rounded-lg border border-[#0F4C5C]/40 bg-black/50">
-              <div className="border-b border-[#0F4C5C]/30 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                Historique séances
-              </div>
-              <ul className="max-h-44 divide-y divide-[#0F4C5C]/20 overflow-y-auto text-[11px]">
+            <div className="rb-hist">
+              <div className="rb-hist-h">Historique séances</div>
+              <ul className="rb-hist-list">
                 {[...history].reverse().map((s) => {
                   const profile = analysis.setHabits?.sessionProfiles?.find(
                     (p) => p.storageKey === s.storageKey
                   );
                   return (
-                    <li key={s.storageKey} className="flex items-center justify-between gap-2 px-3 py-2">
-                      <span className="shrink-0 tabular-nums text-slate-400">{s.dateYmd}</span>
-                      <div className="flex min-w-0 flex-col items-end gap-0.5">
-                        <span className="truncate text-right font-medium text-teal-100">
-                          {formatSessionLine(s, profile)}
-                        </span>
+                    <li key={s.storageKey}>
+                      <span className="rb-hist-d">{s.dateYmd}</span>
+                      <div className="rb-hist-v">
+                        <span>{formatSessionLine(s, profile)}</span>
                         {profile?.isEstimated && profile.inferenceLabel ? (
-                          <span className="text-[9px] text-amber-400/90">{profile.inferenceLabel}</span>
+                          <em>{profile.inferenceLabel}</em>
                         ) : null}
                       </div>
                     </li>

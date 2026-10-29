@@ -63,7 +63,7 @@ export default function RecapGradesView({ paneActive = true }) {
   const next = grades?.nextGateProgress;
 
   return (
-    <div className="space-y-6">
+    <div className="rb-grades">
       <section id="recap-grades-section" className="scroll-mt-28">
         <p className="sub">
           {t('recap.grades.title', 'Grades & progression')}
@@ -79,16 +79,11 @@ export default function RecapGradesView({ paneActive = true }) {
                 'Grades par mouvement (Bois → Platine) selon ton pic du jour, ton volume total et ton profil physique.'
               )}
         </p>
-        <div className="rb-gtabs mt-3 flex flex-wrap gap-2">
+        <div className="rb-gtabs">
           <button
             type="button"
             onClick={() => setGradesSubTab('sport')}
             aria-pressed={gradesSubTab === 'sport'}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              gradesSubTab === 'sport'
-                ? 'bg-[#0F4C5C] text-white'
-                : 'border border-[#0F4C5C]/45 text-slate-400 hover:text-white'
-            }`}
           >
             {t('recap.grades.subTabSport', 'Grades Sport (XP)')}
           </button>
@@ -96,11 +91,6 @@ export default function RecapGradesView({ paneActive = true }) {
             type="button"
             onClick={() => setGradesSubTab('exercises')}
             aria-pressed={gradesSubTab === 'exercises'}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              gradesSubTab === 'exercises'
-                ? 'bg-[#0F4C5C] text-white'
-                : 'border border-[#0F4C5C]/45 text-slate-400 hover:text-white'
-            }`}
           >
             {t('recap.grades.subTabExercises', 'Grades exercices')}
           </button>
@@ -121,7 +111,7 @@ export default function RecapGradesView({ paneActive = true }) {
         />
         </div>
       ) : gradesDataPending ? (
-        <div className="animate-pulse space-y-4 rounded-xl border border-[#0F4C5C]/40 bg-black p-6 h-64" />
+        <div className="rb-skel" aria-hidden />
       ) : selectedGradeId ? (
         <SportGradeDetailPage
           gradeId={selectedGradeId}

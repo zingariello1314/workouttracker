@@ -6,6 +6,8 @@
  */
 
 import { daysBetweenYmd, formatDayFr, isRunningLikeName } from './recapTrainingTimeline';
+import DateHelper from '../dateHelper';
+import { phraseTuViensDe } from './recapEventVoice';
 import { addCalendarDays } from './garminRunningPeriodStats';
 import { aggregateGtgRepsByDate } from '../../services/endurance/gtgService';
 import { familyOfExercise, tallyStimulus } from './recapStimulusCatalog';
@@ -210,9 +212,21 @@ function cumulReading(done, threshold) {
   const days = first && last ? daysBetweenYmd(first.date, last.date) : null;
   const perWeek = days > 0 ? (count / days) * 7 : null;
   const mean = Math.round(threshold / count);
-  const lead = `Tu viens de dépasser ${fmtInt(threshold)} répétitions cumulées depuis ta première saisie${
+  const refYmd = DateHelper.getTodayLocal();
+  const crossYmd = last?.date || first?.date;
+  const leadCorePerfect = `de dépasser ${fmtInt(threshold)} répétitions cumulées depuis ta première saisie${
     first?.date ? `, le ${formatDayFr(first.date, true)}` : ''
-  }${days != null ? `, il y a ${fmtInt(days)} jours` : ''}. Elles ont été réalisées en ${fmtInt(count)} séances, soit une moyenne de ${fmtInt(mean)} reps par séance.`;
+  }${days != null ? `, il y a ${fmtInt(days)} jours` : ''}.`;
+  const leadCoreSimple = `dépassé ${fmtInt(threshold)} répétitions cumulées depuis ta première saisie${
+    first?.date ? `, le ${formatDayFr(first.date, true)}` : ''
+  }${days != null ? `, soit ${fmtInt(days)} jours de parcours` : ''}.`;
+  const leadHead = phraseTuViensDe({
+    eventYmd: crossYmd,
+    refYmd,
+    perfectCore: leadCorePerfect,
+    simpleCore: leadCoreSimple
+  });
+  const lead = `${leadHead} Elles ont été réalisées en ${fmtInt(count)} séances, soit une moyenne de ${fmtInt(mean)} reps par séance.`;
   const rate =
     perWeek != null
       ? ` Ça représente environ ${perWeek.toFixed(1).replace('.', ',')} séance${perWeek >= 2 ? 's' : ''} par semaine sur cette durée.`
@@ -456,9 +470,12 @@ export function detectRecapMilestones({
           type: 'RUN_RETURN',
           date: last.date,
           title: `Tu reprends la course après ${fmtInt(gap)} jours`,
-          body: `Tu viens de reprendre la course après ${fmtInt(gap)} jours sans sortie enregistrée${
-            cls ? ` (${cls.label} absence)` : ''
-          }.${
+          body: `${phraseTuViensDe({
+            eventYmd: last.date,
+            refYmd: DateHelper.getTodayLocal(),
+            perfectCore: `de reprendre la course après ${fmtInt(gap)} jours sans sortie enregistrée`,
+            simpleCore: `repris la course après ${fmtInt(gap)} jours sans sortie enregistrée`
+          })}${cls ? ` (${cls.label} absence)` : ''}.${
             ratio != null && ratio >= 2.5
               ? ` Cette absence représente plus de ${fmt1(ratio)} fois ton intervalle habituel entre deux courses.`
               : ''
@@ -541,7 +558,12 @@ export function detectRecapMilestones({
       type: 'EXERCISE_FIRST_RETURN',
       date: last.date,
       title: `Tu reprends ${last.name} après ${fmtInt(gap)} jours d'absence`,
-      body: `Tu viens d'enregistrer ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.${
+      body: `${phraseTuViensDe({
+        eventYmd: last.date,
+        refYmd: DateHelper.getTodayLocal(),
+        perfectCore: `d'enregistrer ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.`,
+        simpleCore: `enregistré ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.`
+      })}${
         ratio != null && ratio >= 2.5
           ? ` L'écart dépasse ${fmt1(ratio)} fois ton intervalle habituel.`
           : ''
@@ -665,7 +687,12 @@ export function detectRecapMilestones({
           family: 'ms_threshold',
           type: 'CUMUL_REPS',
           date: s.date,
-          title: `Tu viens de dépasser ${fmtInt(th)} répétitions cumulées`,
+          title: phraseTuViensDe({
+            eventYmd: s.date,
+            refYmd: DateHelper.getTodayLocal(),
+            perfectCore: `de dépasser ${fmtInt(th)} répétitions cumulées`,
+            simpleCore: `dépassé ${fmtInt(th)} répétitions cumulées`
+          }),
           body: cumulReading(sessions.slice(0, sessCount), th),
           evidence: `${fmtInt(cumul)} reps · ${fmtInt(sessCount)} séances`,
           importance: th >= 10000 ? 0.97 : 0.9
@@ -708,7 +735,12 @@ export function detectRecapMilestones({
           type: 'CUMUL_KM',
           date: r.date,
           title: `${fmtInt(th)} km cumulés en course`,
-          body: `Tu viens de franchir ${fmtInt(th)} km cumulés en course. Le jalon se lit avec tes ${runs.filter((x) => x.date <= r.date).length} sorties enregistrées, pas seulement le dernier GPS.`,
+          body: `${phraseTuViensDe({
+            eventYmd: r.date,
+            refYmd: DateHelper.getTodayLocal(),
+            perfectCore: `de franchir ${fmtInt(th)} km cumulés en course.`,
+            simpleCore: `franchi ${fmtInt(th)} km cumulés en course.`
+          })} Le jalon se lit avec tes ${runs.filter((x) => x.date <= r.date).length} sorties enregistrées, pas seulement le dernier GPS.`,
           evidence: `${fmt1(runCumul)} km`,
           importance: 0.9
         })
@@ -736,7 +768,12 @@ export function detectRecapMilestones({
           type: 'CUMUL_HOURS',
           date: s.date,
           title: `${fmtInt(th)} heures d'entraînement cumulées`,
-          body: `Tu viens de franchir ${fmtInt(th)} heures d'entraînement enregistrées. Ce n'est pas seulement plus de répétitions : c'est du temps réellement passé à t'entraîner, cumulé séance après séance.`,
+          body: `${phraseTuViensDe({
+            eventYmd: s.date,
+            refYmd: DateHelper.getTodayLocal(),
+            perfectCore: `de franchir ${fmtInt(th)} heures d'entraînement enregistrées.`,
+            simpleCore: `franchi ${fmtInt(th)} heures d'entraînement enregistrées.`
+          })} Ce n'est pas seulement plus de répétitions : c'est du temps réellement passé à t'entraîner, cumulé séance après séance.`,
           evidence: `${fmt1(hours)} h · ${fmtInt(hourSess)} séances`,
           importance: th >= 100 ? 0.95 : 0.88
         })
@@ -988,7 +1025,12 @@ function pushGoalMilestones(out, { sessions, window, voiceKey, profileQuestionna
             type: 'GOAL_REACHED',
             date: reach.date,
             title: `Objectif atteint : ${goal.label}`,
-            body: `Tu viens d'atteindre ${fmtInt(reach.reps)} ${name}, l'objectif de ${goal.label} que tu t'étais fixé. Ce n'est plus une projection : c'est un palier franchi, le ${formatDayFr(reach.date, true)}.`,
+            body: `${phraseTuViensDe({
+              eventYmd: reach.date,
+              refYmd: DateHelper.getTodayLocal(),
+              perfectCore: `d'atteindre ${fmtInt(reach.reps)} ${name}, l'objectif de ${goal.label} que tu t'étais fixé.`,
+              simpleCore: `atteint ${fmtInt(reach.reps)} ${name}, l'objectif de ${goal.label} que tu t'étais fixé.`
+            })} Ce n'est plus une projection : c'est un palier franchi, le ${formatDayFr(reach.date, true)}.`,
             evidence: `${fmtInt(reach.reps)} reps · objectif ${fmtInt(goal.target)}`,
             importance: 0.97
           })
@@ -1533,7 +1575,12 @@ function pushRunGoalMilestones(out, { runs, window, voiceKey, profileQuestionnai
       type: 'RUN_GOAL_REACHED',
       date: hit.date,
       title: `Objectif atteint : ${spec.label}`,
-      body: `Tu viens de réaliser ${fmt1(hit.km)} km${pace ? ` à ${pace}` : ''}, l'objectif de ${spec.label} que tu t'étais fixé. Cette sortie devient la première référence de cette distance, le ${formatDayFr(hit.date, true)}.`,
+      body: `${phraseTuViensDe({
+        eventYmd: hit.date,
+        refYmd: DateHelper.getTodayLocal(),
+        perfectCore: `de réaliser ${fmt1(hit.km)} km${pace ? ` à ${pace}` : ''}, l'objectif de ${spec.label} que tu t'étais fixé.`,
+        simpleCore: `réalisé ${fmt1(hit.km)} km${pace ? ` à ${pace}` : ''}, l'objectif de ${spec.label} que tu t'étais fixé.`
+      })} Cette sortie devient la première référence de cette distance, le ${formatDayFr(hit.date, true)}.`,
       evidence: `${fmt1(hit.km)} km${pace ? ` · ${pace}` : ''}`,
       importance: 0.96
     })

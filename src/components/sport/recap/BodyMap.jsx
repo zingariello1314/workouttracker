@@ -153,13 +153,9 @@ const BodyMap = ({
       }
     >
       <div
-        className={`relative w-full rounded-xl overflow-hidden border shadow-inner touch-manipulation ${
+        className={`rb-bmap relative w-full overflow-hidden touch-manipulation ${
           explorerFillHeight ? 'flex-1 min-h-[280px]' : ''
-        } ${
-          pickMode
-            ? 'border-slate-700/50 cursor-default bg-[#060708]'
-            : 'border-slate-600/60 cursor-grab active:cursor-grabbing bg-slate-950/80'
-        }`}
+        } ${pickMode ? 'is-pick' : 'is-orbit'}`}
         style={explorerFillHeight ? undefined : { height: canvasHeight }}
       >
         {showCompactPresets ? (
@@ -169,11 +165,7 @@ const BodyMap = ({
                 key={key}
                 type="button"
                 onClick={() => setPreset(key)}
-                className={`rounded-md px-2 py-1 text-[10px] font-medium border backdrop-blur-sm ${
-                  activePreset === key
-                    ? 'border-cyan-500/70 bg-black/80 text-cyan-100'
-                    : 'border-slate-600/50 bg-black/55 text-slate-400 hover:text-slate-200'
-                }`}
+                className={`rb-bmap-preset ${activePreset === key ? 'on' : ''}`}
               >
                 {PICK_PRESET_SHORT[key] || key}
               </button>
@@ -205,8 +197,8 @@ const BodyMap = ({
 
         {((pickMode && hoverOverlayLabel) || (showHoverOverlay && hoverOverlayLabel)) ? (
           <div className="absolute bottom-3 left-1/2 z-10 max-w-[92%] -translate-x-1/2 pointer-events-none">
-            <div className="rounded-lg border border-teal-500/40 bg-black/90 px-4 py-2 text-center text-xs text-slate-100 shadow-lg">
-              <span className="font-semibold text-teal-100">{hoverOverlayLabel}</span>
+            <div className="rb-bmap-tip">
+              <span className="font-semibold">{hoverOverlayLabel}</span>
               {pickMode ? (
                 <span className="text-slate-400"> — {t('anatomy.clickToOpen', 'cliquer pour ouvrir')}</span>
               ) : hoverOverlayHint ? (
@@ -224,11 +216,7 @@ const BodyMap = ({
               key={key}
               type="button"
               onClick={() => setPreset(key)}
-              className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium transition ${
-                activePreset === key
-                  ? 'border-sky-500/80 bg-sky-950/70 text-sky-100'
-                  : 'border-slate-600/70 bg-slate-900/60 text-slate-400 hover:border-slate-500 hover:text-slate-200'
-              }`}
+              className={`rb-bmap-preset ${activePreset === key ? 'on' : ''}`}
             >
               {t(`recap.bodyView.${key}`)}
             </button>

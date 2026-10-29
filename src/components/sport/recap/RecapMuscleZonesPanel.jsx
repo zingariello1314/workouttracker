@@ -133,11 +133,8 @@ function ZoneRow({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-slate-100">{label}</p>
             <div className="mt-1.5 flex items-center gap-2">
-              <div className="h-1.5 flex-1 max-w-[120px] rounded-full bg-black overflow-hidden ring-1 ring-[#0F4C5C]/45">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${pct}%`, backgroundColor: color }}
-                />
+              <div className="gz flex-1 max-w-[120px]" style={{ '--a': color }}>
+                <i style={{ '--w': `${pct}%`, '--c': color }} />
               </div>
               <span className="text-xs font-bold tabular-nums text-sky-300">
                 {showCardioMinutesAsPrimary
@@ -146,10 +143,7 @@ function ZoneRow({
                     ? vol
                     : '—'}
               </span>
-              <span
-                className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-slate-400"
-                title={t(`recap.zones.recovery.${band}`)}
-              >
+              <span className="zs shrink-0" title={t(`recap.zones.recovery.${band}`)}>
                 {t(`recap.zones.recovery.${band}`)}
               </span>
             </div>

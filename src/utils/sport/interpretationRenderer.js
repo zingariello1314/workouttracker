@@ -2,6 +2,9 @@
  * Rendu texte des InterpretationCandidate (couche finale).
  */
 
+import DateHelper from '../dateHelper';
+import { phraseTuViensDe } from './recapEventVoice';
+
 /**
  * @typedef {import('./trainingRelationEngine.js').InterpretationCandidate} InterpretationCandidate
  * @typedef {import('./userTrainingState.js').UserTrainingState} UserTrainingState
@@ -159,8 +162,15 @@ export function renderInterpretationText(c, state = null) {
 
     case 'pr_under_fatigue': {
       const ex = c.context?.exerciseName || 'un exercice clé';
+      const eventYmd = c.context?.date || c.context?.ymd || c.date || null;
+      const lead = phraseTuViensDe({
+        eventYmd,
+        refYmd: DateHelper.getTodayLocal(),
+        perfectCore: `de battre un record sur ${ex}`,
+        simpleCore: `battu un record sur ${ex}`
+      });
       return [
-        `Tu viens de battre un record sur ${ex}`,
+        lead,
         diff ? ` (${diff} de difficulté perçue récemment)` : ' malgré une fatigue montante',
         ' — performance intéressante, mais ce n\'est peut‑être pas le moment d\'augmenter encore le volume.',
         goalBit,

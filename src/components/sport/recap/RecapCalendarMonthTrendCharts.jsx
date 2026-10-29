@@ -31,8 +31,7 @@ const TREND_METRICS = [
 
 const METRIC_COLORS = ['#ffb938', '#a98bff', '#2dd4b5', '#ff7a5c', '#5cc3ff', '#f26fb5'];
 
-const chartCardClass =
-  'rounded-xl border border-[#0F4C5C]/45 bg-gradient-to-b from-slate-950/70 to-black p-3';
+const chartCardClass = 'rb-cc';
 
 export default function RecapCalendarMonthTrendCharts({
   period,

@@ -107,9 +107,8 @@ const RecapDailyTrendChartsBlock = ({
 
   const { runPoints, repsPoints, volPts, repPtsAligned, stepsPoints, weightPoints } = chartModel;
 
-  const padClass = compact ? 'p-3' : 'p-4';
-  const chartCardClass =
-    'rounded-xl border border-[#0F4C5C]/45 bg-gradient-to-b from-slate-950/70 to-black p-3 shadow-[inset_0_0_24px_rgba(15,76,92,0.12)]';
+  const padClass = compact ? 'rb-tend-pad-sm' : 'rb-tend-pad';
+  const chartCardClass = 'rb-cc';
   const h = chartHeight ?? (compact ? 160 : 200);
   const isGrid = layout === 'grid';
 
@@ -184,7 +183,7 @@ const RecapDailyTrendChartsBlock = ({
   );
 
   return (
-    <section className={`rounded-xl border-2 border-[#0F4C5C]/70 bg-black ${padClass} space-y-4`}>
+    <section className={`rb-tend-block ${padClass}`}>
       {!compact ? (
         <div className="sh">
           <h2>Tendances quotidiennes</h2>

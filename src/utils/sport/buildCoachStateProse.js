@@ -3,6 +3,8 @@
  */
 
 import { renderInterpretationText } from './interpretationRenderer';
+import { phraseTuViensDe } from './recapEventVoice';
+import DateHelper from '../dateHelper';
 
 /**
  * @param {object} opts
@@ -23,7 +25,13 @@ export function buildCoachStateProse(opts = {}) {
     let prose = top.text.trim();
     const pr = trainingEvents?.events?.find((e) => e.type === 'pr_reps');
     if (pr && !prose.includes(pr.exerciseName || '')) {
-      prose += ` Tu viens aussi d'aligner un record sur ${pr.exerciseName} (${pr.value} reps).`;
+      const bit = phraseTuViensDe({
+        eventYmd: pr.date || pr.ymd || null,
+        refYmd: DateHelper.getTodayLocal(),
+        perfectCore: `aussi d'aligner un record sur ${pr.exerciseName} (${pr.value} reps).`,
+        simpleCore: `aussi aligné un record sur ${pr.exerciseName} (${pr.value} reps).`
+      });
+      prose += ` ${bit}`;
     }
     if (stateTransitions?.[0]?.narrative && !prose.includes(stateTransitions[0].narrative.slice(0, 20))) {
       prose += ` ${stateTransitions[0].narrative}.`;

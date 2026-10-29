@@ -28,7 +28,7 @@ const PAGE_LINKS = {
   [RECAP_VIEW_IDS.SNAPSHOT]: [
     ['#sn-ind', 'Indicateurs'],
     ['#sn-stat', 'Statut'],
-    ['#sn-def', 'Défis'],
+    ['#sn-def', 'Période'],
     ['#sn-quiz', 'Quiz profil'],
     ['#sn-zones', 'Zones']
   ],
@@ -93,11 +93,11 @@ const VIEW_ICONS = {
   [RECAP_VIEW_IDS.SESSIONS]: Footprints
 };
 
-function scoreDotClass(level) {
-  if (level >= 75) return 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]';
-  if (level >= 55) return 'bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.5)]';
-  if (level >= 28) return 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
-  return 'bg-slate-400';
+function scoreDotTone(level) {
+  if (level >= 75) return 'ok';
+  if (level >= 55) return 'mid';
+  if (level >= 28) return 'warn';
+  return 'dim';
 }
 
 /**
@@ -169,7 +169,7 @@ export default function RecapShellLayout({
         <div className="rb-tools">
           {showTopMetrics && scoreLevel != null ? (
             <div className="rb-lvl" title={t('recap.assessment.scoreHint')}>
-              <span className={`h-2 w-2 shrink-0 rounded-full ${scoreDotClass(scoreLevel)}`} aria-hidden />
+              <i className={`rb-dot ${scoreDotTone(scoreLevel)}`} aria-hidden />
               <b>{scoreLevel}</b>
               {scoreTier ? <span>{scoreTier}</span> : null}
             </div>
@@ -252,9 +252,7 @@ export default function RecapShellLayout({
               key={item.id}
               type="button"
               onClick={() => onViewChange(item.id)}
-              className={`flex flex-1 cursor-pointer flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] ${
-                active ? 'text-emerald-300' : 'text-slate-500'
-              }`}
+              aria-current={active ? 'page' : undefined}
             >
               <Icon size={18} />
               <span>{t(item.labelKey, item.defaultLabel)}</span>

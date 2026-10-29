@@ -8,8 +8,7 @@ import {
 } from '../../../utils/sport/enduranceDailyAggregates';
 import { buildDenseDailyPoints } from '../../../utils/sport/dailyDenseTimeSeries';
 
-const chartCardClass =
-  'rounded-xl border border-[#0F4C5C]/45 bg-gradient-to-b from-slate-950/70 to-black p-3 shadow-[inset_0_0_24px_rgba(15,76,92,0.12)]';
+const chartCardClass = 'rb-cc';
 
 /**
  * Graphiques additionnels alimentés par le bundle d'enrichissement Récap.
@@ -123,7 +122,7 @@ export default function RecapExtendedTrendCharts({
       ) : null}
 
       {hasEndurance ? (
-        <div className="rounded-xl border border-[#0F4C5C]/70 bg-black p-4 space-y-3">
+        <div className="rb-tend-block rb-tend-pad space-y-3">
           <h2 className="text-sm font-semibold text-teal-100">Endurance complémentaire</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className={chartCardClass}>
