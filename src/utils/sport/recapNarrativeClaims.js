@@ -143,6 +143,7 @@ const COMPARISON_KEYS = [
 export function kindFromNarrativeCandidate(candidate) {
   const ctxKind = candidate?.interpretation?.context?.kind;
   if (ctxKind) return String(ctxKind);
+  if (candidate?.kind) return String(candidate.kind);
   const id = String(candidate?.id || '');
   if (id.startsWith('relation.reading.')) {
     return id.split('.').slice(3).join('.');
