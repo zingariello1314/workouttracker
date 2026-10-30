@@ -6,6 +6,7 @@
  */
 
 import { SENSE_NATURE, threadKind, THREADS } from './recapAnalysisThreads';
+import { userFacingExerciseLabel } from './recapStrengthPeriodStats';
 
 function fmtInt(n) {
   const v = Math.round(Number(n));
@@ -160,16 +161,19 @@ function repertoireIdea(dossier) {
   if (!exit || !hasNum(exit.reps)) return null;
   // B15 — une fenêtre d'un jour ne peut pas « quitter le répertoire »
   if (dossier.voice === 'today') return null;
+  const label = userFacingExerciseLabel(exit.name);
+  // Sans vrai libellé : ne pas publier « Exercice 1596… » (rejeté + illisible)
+  if (label === 'un mouvement') return null;
   return {
     role: 'evolution',
     analysisType: 'evolution',
-    title: `${exit.name} a quitté cette fenêtre`,
-    body: `${exit.name} comptait ${fmtInt(exit.reps)} répétitions sur la période précédente et tombe à zéro ici. Le mouvement disparaît du journal sur cette fenêtre. ${
+    title: `${label} a quitté cette fenêtre`,
+    body: `${label} comptait ${fmtInt(exit.reps)} répétitions sur la période précédente et tombe à zéro ici. Le mouvement disparaît du journal sur cette fenêtre. ${
       dossier.voice === 'week'
         ? `Sur une fenêtre courte, la capacité spécifique tient encore. Le reprendre plus bas que ${fmtInt(exit.reps)} montre si le geste revient.`
         : `Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas sur la fenêtre suivante, c'est un changement de répertoire.`
     }`,
-    factId: `exit|${String(exit.name).toLowerCase()}|${dossier.voice || ''}`
+    factId: `exit|${String(label).toLowerCase()}|${dossier.voice || ''}`
   };
 }
 

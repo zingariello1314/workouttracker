@@ -24,7 +24,10 @@ import {
 import {
   endurancePushupsAlreadyInWorkoutTotals
 } from '../../services/endurance/pushupEnduranceWorkoutKeys';
-import { resolveExerciseNameForRecap } from './recapStrengthPeriodStats';
+import {
+  resolveExerciseNameForRecap,
+  userFacingExerciseLabel
+} from './recapStrengthPeriodStats';
 import { formatRateFr } from './athleteTrainingIdentity';
 import { formatDayFr, daysBetweenYmd } from './recapTrainingTimeline';
 import { themeCountBeforeLocalDay } from './insightNoveltyStore';
@@ -39,7 +42,8 @@ import { buildThreadDiscoveries, rewriteSleepDiscoveries } from './recapAnalysis
 import { applyEditorialGate } from './recapEditorialGate';
 import {
   assertWindowMeasureConsistency,
-  filterValidInsights
+  filterValidInsights,
+  insightRejectReason
 } from './recapInsightValidate';
 import { createSetShiftReader } from './recapSetShift';
 import { describeCalendarShape } from './recapCalendarShape';
@@ -47,6 +51,7 @@ import { describeStepReadings } from './recapStepReading';
 import { describeRestDay } from './recapRestDayReading';
 import { primaryGroup, sameDayCompanions, writeExerciseEvent } from './recapFactReading';
 import { buildGtgUnplannedDiscoveries } from './recapGtgUnplannedReading';
+import { buildProgramAdherenceDiscoveries } from './recapProgramAdherenceDiscoveries';
 import {
   buildExerciseTrajectory,
   renderExerciseTrajectoryCopy,
@@ -581,7 +586,7 @@ export function measureRecapWindow({
   const exercises = [...byExercise.values()]
     .map((e) => ({
       id: e.id,
-      name: e.name || `Exercice ${e.id}`,
+      name: userFacingExerciseLabel(e.name || resolveExerciseNameForRecap(e.id, getExerciseNameById), e.id),
       reps: e.reps,
       days: e.dates.size
     }))
@@ -2678,10 +2683,12 @@ function detectDiscoveries(cmp, extras = {}) {
             }.`
           : '';
       const installBit =
-        traj.installation?.kind === 'installed' || traj.installation?.kind === 'installing'
+        traj.installation?.kind === 'installed' ||
+        traj.installation?.kind === 'installing' ||
+        traj.installation?.kind === 'repeated'
           ? ` ${structLead.name} apparaît sur ${traj.installation.sessionsInWindow} séances${
               traj.installation.spanDays != null ? ` en ${traj.installation.spanDays} jours` : ''
-            }.`
+            }${traj.installation.kind === 'repeated' ? ' (répétition, pas encore installation durable)' : ''}.`
           : '';
       const shapeBit =
         traj.shape?.kind === 'steady_rise' || traj.shape?.kind === 'rise_phases'
@@ -3076,7 +3083,12 @@ function periodTraceMetrics(periodObj, extra = {}) {
   };
 }
 
-function memoryFactor(history, kind, now = Date.now()) {
+/**
+ * Mémoire de kind : évite de resservir le même constat.
+ * Les trajectoires riches (preuves séances/sets/témoins) ne doivent pas
+ * être éliminées du pack uniquement parce que le kind a déjà été vu.
+ */
+function memoryFactor(history, kind, now = Date.now(), discovery = null) {
   if (!history?.entries?.length) return 1;
   const n =
     themeCountBeforeLocalDay(history, `short.${kind}`, now) +
@@ -3097,6 +3109,13 @@ function memoryFactor(history, kind, now = Date.now()) {
   if (kind === 'disc_ms_weight' && n >= 1) return 0.18;
   if (kind.startsWith('disc_ms_first') && n >= 1) return 0.12;
   if (kind.startsWith('disc_ms_') && n >= 2) return 0.22;
+  // Trajectoire étayée : pénalité douce (conserve le passage du seuil 36)
+  if (discovery?.metrics?.trajectoryOk) {
+    if (n >= 3) return 0.72;
+    if (n >= 2) return 0.8;
+    if (n === 1) return 0.9;
+    return 1;
+  }
   if (n >= 2) return 0.42;
   if (n === 1) return 0.6;
   return 1;
@@ -3139,6 +3158,14 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     trajectory: [
       'disc_gtg_unplanned_role',
       'disc_pending_context',
+      'disc_plan_data_insufficient',
+      'disc_plan_follow_rate',
+      'disc_plan_recurring_skip',
+      'disc_freq_progress_low',
+      'disc_freq_high_no_progress',
+      'disc_freq_progress_high',
+      'disc_freq_decline_low_exposure',
+      'disc_offplan_pattern',
       'disc_muscle_share_shift',
       'disc_exercise_base',
       'disc_push_pull',
@@ -3171,6 +3198,14 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_density', 'disc_muscle_now'],
     trajectory: [
       'disc_gtg_unplanned_role',
+      'disc_plan_data_insufficient',
+      'disc_plan_follow_rate',
+      'disc_plan_recurring_skip',
+      'disc_freq_progress_low',
+      'disc_freq_high_no_progress',
+      'disc_freq_progress_high',
+      'disc_freq_decline_low_exposure',
+      'disc_offplan_pattern',
       'disc_muscle_share_shift',
       'disc_family_fade',
       'disc_cardio_strength',
@@ -3258,7 +3293,9 @@ const DISCOVERY_RIVALS = [
     'disc_sleep_deep'
   ],
   // GTG hors planning : une carte « rôle/continuité » suffit (progress peut coexister).
-  ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role']
+  ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role'],
+  // Adhérence : taux vs constat d’insuffisance (mutuellement exclusifs en pratique).
+  ['disc_plan_follow_rate', 'disc_plan_data_insufficient']
 ];
 
 /** Rivals appliqués sur usedKind global (pas seulement la même nature). */
@@ -3302,19 +3339,26 @@ function discoveryIdentity(d) {
   return exerciseId ? `${d.kind}:${exerciseId}` : d.kind;
 }
 
-/** Valeur informative réelle — sert à départager doublons et portraits vs trajectoires. */
+/**
+ * Valeur informative réelle — départage doublons et portraits vs trajectoires.
+ * Utilise rawScore (avant mémoire) si fourni, pour ne pas écraser une analyse riche.
+ */
 export function discoveryInformativeValue(d) {
-  let v = Number(d?.score) || 0;
+  const baseScore = Number(d?.rawScore != null ? d.rawScore : d?.score) || 0;
+  let v = baseScore;
   const m = d?.metrics || {};
   if (m.trajectoryOk) {
     v += 6 + Math.min(10, Number(m.trajectoryRichness) || 0);
     if (m.trajectorySetAvailable) v += 4;
+    if (m.trajectorySetGranularity === 'partial') v += 1; // honnêteté de granularité
     if (m.trajectoryPeers && m.trajectoryPeers !== 'insufficient') v += 4;
     if (m.trajectoryImplicationRule) v += 3;
+    if (m.temporalScope?.interpretingWithHistory) v += 2;
     if (
       m.trajectoryPrimaryStory === 'net_decline' ||
       m.trajectoryPrimaryStory === 'partial_recovery' ||
-      m.trajectoryPrimaryStory === 'net_rise'
+      m.trajectoryPrimaryStory === 'net_rise' ||
+      m.trajectoryPrimaryStory === 'recovered'
     ) {
       v += 3;
     }
@@ -3363,8 +3407,9 @@ function inferDropReason(d, selected, famCaps, meta = {}) {
 export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = null, voiceKey = 'week') {
   const displaceLog = [];
   const scored = (discoveries || []).map((d) => {
-    const base = Math.round((d.score || 0) * memoryFactor(insightHistory, d.kind));
-    const withBase = { ...d, score: base };
+    const rawScore = Number(d.score) || 0;
+    const base = Math.round(rawScore * memoryFactor(insightHistory, d.kind, Date.now(), d));
+    const withBase = { ...d, rawScore, score: base };
     const info = discoveryInformativeValue(withBase);
     return { ...withBase, informativeValue: info, score: base };
   });
@@ -3417,14 +3462,21 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
 
   const canTake = (d) => {
     const nature = d.nature || 'trajectory';
-    if ((d.score || 0) < 36) return { ok: false, reason: 'score' };
+    const info = d.informativeValue || 0;
+    // Seuil score : une trajectoire riche (valeur informative élevée) ne doit pas
+    // être éliminée uniquement par la mémoire de kind qui écrase le score affiché.
+    const scoreOk =
+      (d.score || 0) >= 36 ||
+      (Boolean(d.metrics?.trajectoryOk) && info >= 85) ||
+      ((Number(d.rawScore) || 0) >= 55 && info >= 90);
+    if (!scoreOk) return { ok: false, reason: 'score' };
     if (usedIdentity.has(discoveryIdentity(d))) return { ok: false, reason: 'identity' };
     if (!d.metrics?.exerciseId && usedKind.has(d.kind)) return { ok: false, reason: 'kind' };
 
     const rivalHit = findRivalInSelected(d.kind, flatSelected());
     if (rivalHit) {
       const { rival } = rivalHit;
-      const gain = (d.informativeValue || 0) - (rival.informativeValue || 0);
+      const gain = info - (rival.informativeValue || 0);
       // Remplacer seulement si clairement plus informatif (évite flip-flop)
       if (gain >= 5) {
         return { ok: true, displace: rival, reason: 'outranked_by_richer' };
@@ -3437,7 +3489,10 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     }
 
     const seenFamily = usedFamilyByNature[nature].get(d.family) || 0;
-    if (d.family && seenFamily >= 2 && (d.score || 0) < 86) return { ok: false, reason: 'family' };
+    // Famille déjà peuplée : laisser passer une trajectoire nettement plus informative
+    if (d.family && seenFamily >= 2 && (d.score || 0) < 86 && info < 95) {
+      return { ok: false, reason: 'family' };
+    }
     return { ok: true };
   };
 
@@ -3640,6 +3695,22 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     })
   };
   const sleepRaw = buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog });
+  const programAdherenceRaw = buildProgramAdherenceDiscoveries({
+    snapshot: opts.snapshot,
+    window: opts.window,
+    getExerciseNameById: opts.getExerciseNameById || null
+  }).map((card) =>
+    discovery({
+      kind: card.kind,
+      nature: card.nature,
+      family: card.family,
+      title: card.title,
+      body: card.body,
+      evidence: card.evidence,
+      weights: card.weights,
+      metrics: card.metrics
+    })
+  );
   const rawAll = [
     ...detectDiscoveries(comparisons, extras),
     ...rewriteSleepDiscoveries(sleepRaw, allNights),
@@ -3652,7 +3723,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       snapshot: opts.snapshot,
       window: opts.window,
       profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
-    })
+    }),
+    ...programAdherenceRaw
   ];
   const period = comparisons.period || {};
   const activityCtx = buildPeriodActivityContext({
@@ -3679,10 +3751,34 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     period: comparisons.periodId,
     windowSpanDays: comparisons.period?.spanDays
   });
-  const selected = refillAfterGate(validated, traced.dropped, voiceKey);
+  const validatedIds = new Set(validated.map((d) => discoveryIdentity(d)));
+  const gatedIds = new Set(gated.map((d) => discoveryIdentity(d)));
+  const removedAfterSelect = traced.selected
+    .filter((d) => !validatedIds.has(discoveryIdentity(d)))
+    .map((d) => {
+      const stillAfterEditorial = gatedIds.has(discoveryIdentity(d));
+      const reject =
+        stillAfterEditorial
+          ? insightRejectReason(d, {
+              voiceKey,
+              period: comparisons.periodId,
+              windowSpanDays: comparisons.period?.spanDays
+            })
+          : '';
+      return {
+        ...d,
+        reason: stillAfterEditorial
+          ? reject
+            ? `insight_validation:${reject}`
+            : 'insight_validation'
+          : 'editorial_gate'
+      };
+    });
+  const selected = refillAfterGate(validated, [...traced.dropped, ...removedAfterSelect], voiceKey);
   const dropped = [
     ...scoped.dropped.map((d) => ({ ...d.discovery, reason: d.reason })),
-    ...traced.dropped
+    ...traced.dropped,
+    ...removedAfterSelect
   ];
   const preferPeriodNow = selected.some((d) => d.nature === 'now');
   const sleepDetected = all.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);

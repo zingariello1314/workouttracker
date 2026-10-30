@@ -71,15 +71,23 @@ export default function GradeArtCardOffer() {
     }
   }, [meritedId, username, isLoading, ensureGradeArtDefault]);
 
-  const dismiss = (apply) => {
+  const dismiss = async (apply) => {
+    if (!offerGradeId || busy) return;
+    if (!apply) {
+      const store = readOfferStore(username);
+      store[offerGradeId] = true;
+      writeOfferStore(username, store);
+      setOfferGradeId(null);
+      return;
+    }
+    setBusy(true);
+    const result = await selectGradeArt(offerGradeId);
+    setBusy(false);
+    if (!result?.success) return;
     const store = readOfferStore(username);
     store[offerGradeId] = true;
     writeOfferStore(username, store);
     setOfferGradeId(null);
-    if (apply && offerGradeId) {
-      setBusy(true);
-      selectGradeArt(offerGradeId).finally(() => setBusy(false));
-    }
   };
 
   if (!offerGradeId) return null;

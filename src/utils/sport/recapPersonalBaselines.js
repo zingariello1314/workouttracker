@@ -112,11 +112,24 @@ export function baselineTraceMetrics(baseline, extra = {}) {
     exerciseId: baseline.id != null ? String(baseline.id) : extra.exerciseId,
     name: baseline.name || extra.name,
     sessionCount: baseline.sessions ?? null,
+    /** Moyenne des 5 premières séances lifetime — ≠ moyenne fenêtre */
     historicalMean: baseline.historicalMean ?? null,
+    lifetimeFirstMean: baseline.historicalMean ?? null,
+    /** Moyenne des 5 dernières séances lifetime (dernière comprise) — ≠ meanPerSession fenêtre */
     currentMean: baseline.currentMean ?? null,
+    lifetimeRecentInclLast: baseline.currentMean ?? null,
+    /** Moyenne des 5 séances avant la dernière — exclut volontairement la dernière saisie */
     recentMean: baseline.recentMean ?? null,
+    lifetimeRecentExclLast: baseline.recentMean ?? null,
+    /** (currentMean − historicalMean) / historicalMean — pas un jugement de reprise sur la dernière séance */
     vsInitialPct: baseline.vsInitialPct ?? null,
     vsHabitPct: baseline.vsHabitPct ?? null,
+    meanDefinitions: {
+      historicalMean: 'mean(first 5 lifetime sessions)',
+      currentMean: 'mean(last 5 lifetime sessions, including last)',
+      recentMean: 'mean(up to 5 sessions before last)',
+      vsInitialPct: '(currentMean - historicalMean) / historicalMean'
+    },
     last: baseline.last || null,
     bestDate: baseline.bestDate || null,
     dates: baseline.dates || [],

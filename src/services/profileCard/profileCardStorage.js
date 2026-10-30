@@ -11,6 +11,15 @@ import {
 } from './profileCardDbGateway.js';
 import { sportGradeArtUrl, hasSportGradeArt } from '../xp/sportGradeCatalog.js';
 
+export const PROFILE_CARD_UPDATED_EVENT = 'momentum:profile-card-updated';
+
+function notifyProfileCardUpdated(username) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent(PROFILE_CARD_UPDATED_EVENT, { detail: { username: username || '' } })
+  );
+}
+
 export function isProfileCardImageUrl(url) {
   if (!url || url === '/logo.png') return false;
   if (url.startsWith('data:image/') && url.length > 50) return true;
@@ -87,6 +96,7 @@ export const saveProfileData = async (username, profileData) => {
     });
 
     db.close();
+    notifyProfileCardUpdated(username);
   } catch (error) {
     console.error('[ProfileCardStorage] Erreur lors de la sauvegarde:', error);
     throw error;
@@ -637,6 +647,7 @@ export const rotateToNextImage = async (username, type) => {
     const existingData = await getProfileData(username) || {};
     
     if (type === 'cardIcon') {
+      if (existingData.cardIconMode === 'grade') return existingData.activeCardIconIndex ?? 0;
       const cardIcons = existingData.cardIcons || [];
       if (cardIcons.length === 0) return 0;
       

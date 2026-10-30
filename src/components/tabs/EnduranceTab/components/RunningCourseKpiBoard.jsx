@@ -57,7 +57,16 @@ export default function RunningCourseKpiBoard({
       </div>
       <div>
         <span className="lab">Meilleure allure</span>
-        <b className="num">{records.bestPace ? formatPaceMinPerKm(records.bestPace.pace) : '—'}</b>
+        <b className="num" style={{ whiteSpace: 'nowrap' }}>
+          {records.bestPace ? (
+            <>
+              {formatPaceMinPerKm(records.bestPace.pace).replace(/\s*\/km$/, '')}
+              <i style={{ marginLeft: 2 }}>/km</i>
+            </>
+          ) : (
+            '—'
+          )}
+        </b>
         <div className="s">
           {records.bestPace
             ? `${formatDate(records.bestPace.session.date)} · ${

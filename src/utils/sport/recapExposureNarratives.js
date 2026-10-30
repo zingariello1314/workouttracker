@@ -121,7 +121,7 @@ function exerciseName(exId, getExerciseNameById) {
       return String(label).trim();
     }
   }
-  return `Exercice ${exId}`;
+  return 'un mouvement';
 }
 
 /**

@@ -30,6 +30,9 @@ import {
 import { mergeGtgData } from '../../../../services/endurance/gtgDataMerge';
 import { mergeWorkoutTableLists } from '../../../../services/workout/workoutAggregateDefaults';
 import { importBudgetData } from '../../../../utils/budgetExportImport';
+import { importQuietQuestData } from '../../../../utils/quietQuestExportImport';
+import { importApprentissageData } from '../../../../utils/apprentissageExportImport';
+import { importFinanceData } from '../../../../utils/financeExportImport';
 import { importNutritionBackup } from '../utils/importNutritionBackup';
 import { restoreSportLocalSnapshot } from '../utils/sportLocalSnapshot';
 import { withIdbOperationTimeout } from '../../../../utils/sessionSaveTimeout';
@@ -53,6 +56,25 @@ function queuePreImportBackupDiskWrite() {
       console.warn('[Settings] Backup pré-import non conservé sur disque:', err);
     }
   }, 0);
+}
+
+/** Ramène un export « tout le site » au format Sport, avec les livres et le budget rattachés. */
+function unwrapSiteExport(parsed) {
+  if (!parsed || parsed.exportType !== 'Site Complete' || !parsed.sections?.sport) {
+    return { payload: parsed, siteSections: null };
+  }
+  const sport = parsed.sections.sport;
+  const data = { ...(sport.data || {}) };
+  if (parsed.sections.books) data.booksData = parsed.sections.books;
+  if (parsed.sections.budget) data.budgetData = parsed.sections.budget;
+  return {
+    payload: { ...sport, data },
+    siteSections: {
+      quietQuest: parsed.sections.quietQuest || null,
+      apprentissage: parsed.sections.apprentissage || null,
+      finance: parsed.sections.finance || null
+    }
+  };
 }
 
 /**
@@ -221,8 +243,11 @@ export const useAllDataExportImport = (
       }
       
       let parsedData;
+      let siteSections = null;
       try {
-        parsedData = JSON.parse(importData);
+        const unwrapped = unwrapSiteExport(JSON.parse(importData));
+        parsedData = unwrapped.payload;
+        siteSections = unwrapped.siteSections;
       } catch (parseError) {
         setAllDataImportStatus('error');
         console.error('Erreur de parsing JSON:', parseError);
@@ -238,7 +263,8 @@ export const useAllDataExportImport = (
           warnings: validation.warnings,
           errors: validation.errors,
           isExportFormat: !!parsedData.data || !!parsedData.metadata,
-          booksPreview: null
+          booksPreview: null,
+          siteSections
         });
         setShowAllDataImportPreview(true);
         setAllDataImportStatus('preview');
@@ -282,7 +308,8 @@ export const useAllDataExportImport = (
         warnings: combinedWarnings,
         errors: validation.errors,
         isExportFormat: !!parsedData.data || !!parsedData.metadata,
-        booksPreview
+        booksPreview,
+        siteSections
       });
       
       setShowAllDataImportPreview(true);
@@ -598,6 +625,7 @@ export const useAllDataExportImport = (
         allDataPreviewData?.rawExport?.sportLocalSnapshot
         || allDataPreviewData?.rawExport?.data?.sportLocalSnapshot;
       const booksPreview = allDataPreviewData?.booksPreview;
+      const siteSections = allDataPreviewData?.siteSections;
 
       await Promise.all([
         (async () => {
@@ -671,6 +699,33 @@ export const useAllDataExportImport = (
             }
           } catch (booksError) {
             console.error('Erreur lors de la sauvegarde des Livres en IndexedDB:', booksError);
+          }
+        })(),
+        (async () => {
+          if (!siteSections?.quietQuest) return;
+          try {
+            await importQuietQuestData(siteSections.quietQuest, { mode: 'replace', createBackup: false });
+          } catch (questErr) {
+            console.warn('[Settings] Import QuietQuest ignoré:', questErr);
+          }
+        })(),
+        (async () => {
+          if (!siteSections?.apprentissage) return;
+          try {
+            await importApprentissageData(siteSections.apprentissage, {
+              mode: 'replace',
+              createBackup: false
+            });
+          } catch (learnErr) {
+            console.warn('[Settings] Import Apprentissage ignoré:', learnErr);
+          }
+        })(),
+        (async () => {
+          if (!siteSections?.finance) return;
+          try {
+            await importFinanceData(siteSections.finance, { overwrite: true });
+          } catch (financeErr) {
+            console.warn('[Settings] Import Finance ignoré:', financeErr);
           }
         })()
       ]);

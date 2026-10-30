@@ -1068,10 +1068,21 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  // ——— PARCOURS : depuis la première saisie, pas first vs last sur 90 j. ———
+  // ——— PARCOURS : depuis la première saisie (lifetime), complément de la trajectoire de fenêtre ———
+  // disc_exercise_progress (fenêtre, shape/sets/témoins) et journey_progress (référence fiable → habituel)
+  // sont complémentaires : on ne masque plus l'un dès que l'autre est sélectionné.
   const progressRows = journey?.narratives?.progress || [];
-  if (progressRows.length && !selectedKinds.has('disc_exercise_progress')) {
+  if (progressRows.length) {
+    const progressDiscSelected = selectedDisc.filter((d) => d.kind === 'disc_exercise_progress');
+    const progressDiscIds = new Set(
+      progressDiscSelected.map((d) => String(d.metrics?.exerciseId || '')).filter(Boolean)
+    );
+    // Si une trajectoire fenêtre couvre déjà l'exercice, on garde le parcours lifetime
+    // (autre échelle temporelle). On n'émet rien seulement si le parcours est vide.
     const lead = progressRows[0];
+    const windowAlsoCoversLead =
+      progressDiscIds.size > 0 &&
+      (progressDiscIds.has(String(lead.exerciseId || '')) || progressDiscSelected.length > 0);
     const title =
       progressRows.length === 1
         ? `Depuis ta première référence, ${lead.name} ${
@@ -1097,9 +1108,12 @@ export function buildHorizonEssayCandidates(opts = {}) {
         lead.robustnessKind === 'LEVEL_ESTABLISHED'
           ? ' Ce niveau est assez répété pour servir de référence personnelle, pas d’un pic isolé.'
           : '';
+      const windowBit = windowAlsoCoversLead
+        ? ' Ce parcours lifetime complète la trajectoire récente du même mouvement : ici la référence fiable → niveau habituel, pas le détail de la fenêtre.'
+        : '';
       body = `Depuis ${refLabel}, ton niveau habituel sur ${lead.name} est autour de ${habitN} reps (${
         lead.pctFromReliable >= 0 ? '+' : ''
-      }${Math.round(lead.pctFromReliable)} %).${prBit}${cons}${milestonePhrase(lead)}${
+      }${Math.round(lead.pctFromReliable)} %).${prBit}${cons}${milestonePhrase(lead)}${windowBit}${
         journey.tenureDays >= 45 && journey.startYmd
           ? ` Premier entraînement enregistré : ${formatDayFr(journey.startYmd, true)} (${journey.tenureDays} j., ${journey.trainingDays} jours entraînés).`
           : ''
@@ -1123,7 +1137,10 @@ export function buildHorizonEssayCandidates(opts = {}) {
               ? `Aujourd'hui n'est pas encore une séance : le parcours se lit sur tes ${d30m.trainingDays} jours entraînés sur 30, pas sur un zéro du matin.`
               : `${periodM.trainingDays} jour${periodM.trainingDays > 1 ? 's' : ''} ${period === '7d' ? 'cette semaine' : period === 'today' ? "aujourd'hui" : 'sur la période'} ${periodM.trainingDays > 1 ? "s'inscrivent" : "s'inscrit"} dans tes ${d30m.trainingDays} jours entraînés sur 30.`}`
           : '';
-      body = `${bits.join('. ')}. Le record indique le plafond ; le niveau habituel, ce que tu sais reproduire.${tenureBit}${anchorBit}`;
+      const windowBit = windowAlsoCoversLead
+        ? ' Lecture lifetime (référence → habituel), distincte des trajectoires de fenêtre déjà retenues.'
+        : '';
+      body = `${bits.join('. ')}. Le record indique le plafond ; le niveau habituel, ce que tu sais reproduire.${tenureBit}${anchorBit}${windowBit}`;
     }
     const jConf = confidenceFromSample(lead.sessions, lead.spanDays || 90);
     long(
@@ -1133,8 +1150,18 @@ export function buildHorizonEssayCandidates(opts = {}) {
       progressRows
         .map((e) => `${e.name} ${e.firstReliable.reps}→${Math.round(e.habitual.median)}`)
         .join(' · '),
-      0.94,
-      { showConfidence: true, confidenceLabel: jConf.label, sampleDays: lead.spanDays }
+      windowAlsoCoversLead ? 0.88 : 0.94,
+      {
+        showConfidence: true,
+        confidenceLabel: jConf.label,
+        sampleDays: lead.spanDays,
+        metrics: {
+          temporalScope: 'lifetime',
+          complementaryToWindowProgress: windowAlsoCoversLead,
+          exerciseId: lead.exerciseId || null,
+          pctFromReliable: lead.pctFromReliable
+        }
+      }
     );
   }
 

@@ -36,9 +36,10 @@ function exerciseName(id, getExerciseNameById) {
   const n = parseInt(String(id), 10);
   if (typeof getExerciseNameById === 'function') {
     const label = Number.isFinite(n) ? getExerciseNameById(n) : getExerciseNameById(id);
-    if (label?.trim()) return label.trim();
+    const cleaned = String(label || '').trim();
+    if (cleaned && !/^Exercice\s+\d+$/i.test(cleaned) && !/^#\d+$/.test(cleaned)) return cleaned;
   }
-  return `Exercice ${id}`;
+  return 'un mouvement';
 }
 
 /**

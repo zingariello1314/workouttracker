@@ -24,6 +24,18 @@ export const SEMANTIC_INSIGHT_GROUPS = {
     'program_gap_mixed',
     'exercise_specific_abandonment'
   ],
+  reading_program_adherence: [
+    'disc_plan_follow_rate',
+    'disc_plan_data_insufficient',
+    'disc_plan_recurring_skip',
+    'disc_offplan_pattern'
+  ],
+  reading_program_freq_progress: [
+    'disc_freq_progress_high',
+    'disc_freq_progress_low',
+    'disc_freq_high_no_progress',
+    'disc_freq_decline_low_exposure'
+  ],
   structure: ['structural_imbalance', 'push_pull_stimulus'],
   contradiction: ['contradiction_sleep_perf'],
   exposure: ['exposure_rhythm'],

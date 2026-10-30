@@ -15,7 +15,8 @@ import {
   optimizeImage,
   getRotationSettings,
   saveRotationSettings,
-  rotateToNextImage
+  rotateToNextImage,
+  PROFILE_CARD_UPDATED_EVENT
 } from '../services/profileCard/profileCardStorage';
 import { readProfileCardWarm, rememberProfileCardWarm } from '../services/profileCard/profileCardWarmCache';
 import logger from '../utils/logger';
@@ -122,6 +123,16 @@ export const useProfileCard = (username = 'guest') => {
   useEffect(() => {
     loadProfileData();
   }, [loadProfileData]);
+
+  useEffect(() => {
+    const onUpdated = (event) => {
+      const name = event?.detail?.username;
+      if (name && name !== username) return;
+      loadProfileData();
+    };
+    window.addEventListener(PROFILE_CARD_UPDATED_EVENT, onUpdated);
+    return () => window.removeEventListener(PROFILE_CARD_UPDATED_EVENT, onUpdated);
+  }, [username, loadProfileData]);
 
   /**
    * Ajoute un nouvel avatar à la galerie
@@ -326,7 +337,7 @@ export const useProfileCard = (username = 'guest') => {
         ((isSubTab && rotationSettings.cardIcon.changeOnSubTabSwitch) || 
          (!isSubTab && rotationSettings.cardIcon.changeOnTabSwitch));
       
-      if (shouldRotate && profileData.cardIcons.length > 1) {
+      if (shouldRotate && profileData.cardIcons.length > 1 && profileData.cardIconMode !== 'grade') {
         profileCardHookLog.debug('[useProfileCard] Rotation cardIcon au changement d\'onglet');
         rotateNext('cardIcon');
       }
@@ -368,7 +379,7 @@ export const useProfileCard = (username = 'guest') => {
     if (!rotationSettings.cardIcon.rotationEnabled) return;
     if (rotationSettings.cardIcon.rotationMode === 'none') return;
     if (rotationSettings.cardIcon.rotationMode === 'tab-change') return;
-    if (profileData.cardIcons.length <= 1) return;
+    if (profileData.cardIcons.length <= 1 || profileData.cardIconMode === 'grade') return;
 
     profileCardHookLog.debug(`[useProfileCard] Démarrage timer cardIcon (${rotationSettings.cardIcon.timerInterval}s)`);
     
@@ -383,7 +394,7 @@ export const useProfileCard = (username = 'guest') => {
         cardIconTimerRef.current = null;
       }
     };
-  }, [rotationSettings.cardIcon, profileData.cardIcons.length, rotateNext]);
+  }, [rotationSettings.cardIcon, profileData.cardIcons.length, profileData.cardIconMode, rotateNext]);
 
   /**
    * Timer de rotation pour les avatars

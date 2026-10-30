@@ -60,6 +60,14 @@ const CLAIM_TABLE = {
   disc_exercise_base: { topic: 'exercice', sense: 'relation', subject: 'exercise' },
   span_exercise_return: { topic: 'exercice', sense: 'relation', subject: 'exercise' },
   disc_exercise_progress: { topic: 'exercice', sense: 'transformation', subject: 'exercise' },
+  disc_plan_follow_rate: { topic: 'programme.adherence', sense: 'relation', subject: 'program' },
+  disc_plan_data_insufficient: { topic: 'programme.adherence', sense: 'fact', subject: 'program' },
+  disc_plan_recurring_skip: { topic: 'programme.adherence', sense: 'relation', subject: 'exercise' },
+  disc_offplan_pattern: { topic: 'programme.adherence', sense: 'relation', subject: 'program' },
+  disc_freq_progress_high: { topic: 'programme.freq_progress', sense: 'relation', subject: 'exercise' },
+  disc_freq_progress_low: { topic: 'programme.freq_progress', sense: 'relation', subject: 'exercise' },
+  disc_freq_high_no_progress: { topic: 'programme.freq_progress', sense: 'relation', subject: 'exercise' },
+  disc_freq_decline_low_exposure: { topic: 'programme.freq_progress', sense: 'relation', subject: 'exercise' },
   journey_progress: { topic: 'exercice', sense: 'transformation', subject: 'exercise' },
   journey_pr_vs_level: { topic: 'exercice', sense: 'transformation', subject: 'exercise' },
   disc_ms_pr_consolidated: { topic: 'exercice', sense: 'transformation', subject: 'exercise' },
@@ -366,6 +374,17 @@ export function claimFromCandidate(candidate) {
 
   if (sense !== NARRATIVE_SENSE.FACT && row?.sense !== 'cost' && snapshotWithoutComparison(metrics)) {
     sense = NARRATIVE_SENSE.FACT;
+  }
+
+  // Fenêtre (shape/sets) ≠ parcours lifetime : même exercice, claims distincts.
+  if (kind === 'disc_exercise_progress') {
+    topic = topic
+      ? String(topic).replace(/^exercice\./, 'exercice.fenetre.')
+      : 'exercice.fenetre';
+  } else if (kind === 'journey_progress') {
+    topic = topic
+      ? String(topic).replace(/^exercice\./, 'exercice.parcours.')
+      : 'exercice.parcours';
   }
 
   return {

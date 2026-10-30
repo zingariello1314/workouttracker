@@ -212,8 +212,28 @@ describe('buildExerciseTrajectory — installation / historique', () => {
       mode: 'emergence'
     });
     expect(trajectory.installation.firstEver).toBe(true);
-    expect(['installing', 'installed', 'first_cluster']).toContain(trajectory.installation.kind);
+    expect(['installing', 'installed', 'installing_irregular']).toContain(trajectory.installation.kind);
     expect(trajectory.installation.sessionsInWindow).toBe(4);
+  });
+
+  it('deux séances espacées = repeated, pas installing', () => {
+    const sessions = [
+      { date: '2026-10-17', total: 36, sets: [12, 12, 12] },
+      { date: '2026-10-24', total: 36, sets: [12, 12, 12] }
+    ];
+    const trajectory = buildExerciseTrajectory({
+      snapshot: snapFromSessions(33, sessions),
+      exerciseId: 33,
+      exerciseName: 'Curl assis dos calé',
+      window: WINDOW,
+      mode: 'emergence'
+    });
+    expect(trajectory.installation.kind).toBe('repeated');
+    expect(trajectory.installation.stage).toBe('repetition');
+    const copy = renderExerciseTrajectoryCopy(trajectory);
+    expect(copy.title).not.toMatch(/s'install/i);
+    expect(copy.title).toMatch(/repris|répét/i);
+    expect(copy.body).toMatch(/pas encore une installation durable/i);
   });
 
   it('une seule séance → first_session, pas « s’installe »', () => {
@@ -531,5 +551,353 @@ describe('conclusions — baisses, reprises, outliers, sets, témoins', () => {
     });
     expect(trajectory.setMechanism.available).toBe(false);
     expect(trajectory.findings.limits.some((l) => l.id === 'no_set_detail')).toBe(true);
+  });
+});
+
+describe('P0 — pompes déclinées / références / témoins / séries', () => {
+  const DECLINE_SESSIONS = [
+    { date: '2026-09-07', total: 36, sets: [12, 12, 12] },
+    { date: '2026-09-14', total: 36, sets: [12, 12, 12] },
+    { date: '2026-10-01', total: 10 },
+    { date: '2026-10-03', total: 10 },
+    { date: '2026-10-14', total: 10 },
+    { date: '2026-10-15', total: 10 },
+    { date: '2026-10-19', total: 30 },
+    { date: '2026-10-26', total: 36, sets: [12, 12, 12] }
+  ];
+  const DECLINE_WINDOW = { start: '2026-10-01', end: '2026-10-30' };
+
+  it('moyenne fenêtre ≠ confondue avec lastPerformance ; reprise jugée sur la dernière séance', () => {
+    const trajectory = buildExerciseTrajectory({
+      snapshot: snapFromSessions(104, DECLINE_SESSIONS),
+      exerciseId: 104,
+      exerciseName: 'Pompes déclinées',
+      window: DECLINE_WINDOW,
+      mode: 'progress'
+    });
+    expect(trajectory.volume.meanPerSession).toBeCloseTo(17.7, 1);
+    expect(trajectory.volume.windowSessionCount).toBe(6);
+    expect(trajectory.shape.referenceLevels.lastPerformance).toBe(36);
+    expect(trajectory.shape.referenceLevels.trough).toBe(10);
+    expect(trajectory.shape.primaryStory).toBe('recovered');
+    expect(trajectory.temporalScope.interpretingWithHistory).toBe(true);
+    expect(trajectory.temporalScope.contextSessionCountBeforeWindow).toBe(2);
+
+    const copy = renderExerciseTrajectoryCopy(trajectory);
+    expect(copy.body).toMatch(/dernière séance.*36|revenue à ≈36/i);
+    expect(copy.body).toMatch(/moyenne des dernières séances/i);
+    expect(copy.body).not.toMatch(/revenu vers ≈25\.3/);
+  });
+
+  it('séries : pas de chevauchement before/after ; granularité partielle signalée', () => {
+    const trajectory = buildExerciseTrajectory({
+      snapshot: snapFromSessions(104, DECLINE_SESSIONS),
+      exerciseId: 104,
+      exerciseName: 'Pompes déclinées',
+      window: DECLINE_WINDOW,
+      mode: 'progress'
+    });
+    expect(trajectory.setMechanism.granularity).toBe('partial');
+    expect(trajectory.setMechanism.totalsOnlySessions).toBeGreaterThanOrEqual(4);
+    const beforeDates = new Set((trajectory.setMechanism.before?.sample || []).map((s) => s.date));
+    const afterDates = (trajectory.setMechanism.after?.sample || []).map((s) => s.date);
+    afterDates.forEach((d) => expect(beforeDates.has(d)).toBe(false));
+    expect(trajectory.findings.limits.some((l) => l.id === 'partial_set_detail')).toBe(true);
+    expect(trajectory.setMechanism.detail).toMatch(/total de répétitions|structure de séries/i);
+  });
+
+  it('dédupe les témoins qui partagent le même libellé entre eux', () => {
+    const checkedExercises = {};
+    const reps = {};
+    const put = (id, list) => {
+      list.forEach((s) => {
+        const key = `${s.date}_${id}`;
+        checkedExercises[key] = true;
+        reps[key] = String(s.total);
+      });
+    };
+    // Sujet : pompes inclinées en baisse
+    put(900, [40, 30, 20, 15, 12].map((total, i) => ({ date: ymd(i * 5), total })));
+    // Deux témoins même nom « Pompes déclinées », ids distincts
+    put(104, [36, 36, 36, 36, 36].map((total, i) => ({ date: ymd(i * 5), total })));
+    put(202, [40, 40, 40].map((total, i) => ({ date: ymd(i * 7), total })));
+    const getName = (id) =>
+      ({ 900: 'Pompes inclinées', 104: 'Pompes déclinées', 202: 'Pompes déclinées' }[id] || `Exercice ${id}`);
+    const trajectory = buildExerciseTrajectory({
+      snapshot: { checkedExercises, reps },
+      exerciseId: 900,
+      exerciseName: 'Pompes inclinées',
+      window: { start: ymd(0), end: ymd(20) },
+      getExerciseNameById: getName,
+      mode: 'progress'
+    });
+    const declinedPeers = (trajectory.peers.items || []).filter((p) => p.name === 'Pompes déclinées');
+    expect(declinedPeers.length).toBeLessThanOrEqual(1);
+    expect(trajectory.peers.skippedSameLabel?.some((p) => p.reason === 'duplicate_peer_display_name')).toBe(true);
+  });
+
+  it('exclut le témoin homonyme (même nom, autre id)', () => {
+    const checkedExercises = {};
+    const reps = {};
+    const exerciseSetLogs = {};
+    const put = (id, list) => {
+      list.forEach((s) => {
+        const key = `${s.date}_${id}`;
+        checkedExercises[key] = true;
+        reps[key] = String(s.total);
+        if (s.sets) exerciseSetLogs[key] = { sets: s.sets.map((r) => ({ reps: r })) };
+      });
+    };
+    put(104, DECLINE_SESSIONS);
+    // Homonyme : même libellé, autre id — ne doit PAS servir de témoin
+    put(
+      202,
+      [
+        { date: '2026-10-05', total: 40 },
+        { date: '2026-10-12', total: 40 },
+        { date: '2026-10-19', total: 40 }
+      ]
+    );
+    put(
+      466,
+      [
+        { date: '2026-10-04', total: 48 },
+        { date: '2026-10-11', total: 48 },
+        { date: '2026-10-18', total: 48 }
+      ]
+    );
+    const getName = (id) =>
+      ({
+        104: 'Pompes déclinées',
+        202: 'Pompes déclinées',
+        466: 'Développé couché incliné aux haltères'
+      }[id] || `Exercice ${id}`);
+
+    const trajectory = buildExerciseTrajectory({
+      snapshot: { checkedExercises, reps, exerciseSetLogs },
+      exerciseId: 104,
+      exerciseName: 'Pompes déclinées',
+      window: DECLINE_WINDOW,
+      getExerciseNameById: getName,
+      mode: 'progress'
+    });
+
+    expect(trajectory.peers.skippedSameLabel?.some((p) => String(p.exerciseId) === '202')).toBe(true);
+    expect((trajectory.peers.items || []).every((p) => String(p.exerciseId) !== '202')).toBe(true);
+    expect((trajectory.peers.items || []).every((p) => p.name !== 'Pompes déclinées' || String(p.exerciseId) === '104')).toBe(
+      true
+    );
+    if (trajectory.peers.available) {
+      expect(trajectory.peers.verdict).not.toBe('localized_rise');
+      expect(['localized_recovery', 'localized', 'mixed', 'shared', 'insufficient']).toContain(
+        trajectory.peers.verdict
+      );
+    }
+    const copy = renderExerciseTrajectoryCopy(trajectory);
+    // Ne doit plus citer « Pompes déclinées (autour de 40 » comme témoin
+    expect(copy.body).not.toMatch(/Pompes déclinées \(autour de 40/);
+  });
+});
+
+describe('cas limites — installation / séries / reprise isolée', () => {
+  it('une seule séance → first_session', () => {
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(201, [{ date: '2026-10-10', total: 30, sets: [10, 10, 10] }]),
+      exerciseId: 201,
+      exerciseName: 'Curl',
+      window: WINDOW,
+      mode: 'emergence'
+    });
+    expect(t.installation.kind).toBe('first_session');
+    expect(t.installation.stage == null || t.installation.stage === 'appearance' || !t.installation.stage).toBeTruthy();
+  });
+
+  it('deux séances espacées de moins de 7 jours → first_cluster (pas repeated)', () => {
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(202, [
+        { date: '2026-10-10', total: 36, sets: [12, 12, 12] },
+        { date: '2026-10-14', total: 36, sets: [12, 12, 12] }
+      ]),
+      exerciseId: 202,
+      exerciseName: 'Curl',
+      window: WINDOW,
+      mode: 'emergence'
+    });
+    expect(t.installation.kind).toBe('first_cluster');
+    expect(t.installation.kind).not.toBe('repeated');
+    expect(t.installation.kind).not.toBe('installing');
+  });
+
+  it('deux séances espacées ≥7 jours → repeated uniquement', () => {
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(203, [
+        { date: '2026-10-10', total: 36, sets: [12, 12, 12] },
+        { date: '2026-10-17', total: 36, sets: [12, 12, 12] }
+      ]),
+      exerciseId: 203,
+      exerciseName: 'Curl',
+      window: WINDOW,
+      mode: 'emergence'
+    });
+    expect(t.installation.kind).toBe('repeated');
+    expect(['installing', 'installed']).not.toContain(t.installation.kind);
+  });
+
+  it('trois séances sur fenêtre courte (≥7j, <14j) → installing', () => {
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(204, [
+        { date: '2026-10-10', total: 36, sets: [12, 12, 12] },
+        { date: '2026-10-14', total: 36, sets: [12, 12, 12] },
+        { date: '2026-10-18', total: 36, sets: [12, 12, 12] }
+      ]),
+      exerciseId: 204,
+      exerciseName: 'Curl',
+      window: WINDOW,
+      mode: 'emergence'
+    });
+    expect(t.installation.kind).toBe('installing');
+    expect(t.installation.kind).not.toBe('repeated');
+    expect(t.installation.kind).not.toBe('installed');
+  });
+
+  it('trois séances sur ≥14 jours → installed (volume stable)', () => {
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(205, [
+        { date: '2026-10-02', total: 36, sets: [12, 12, 12] },
+        { date: '2026-10-12', total: 36, sets: [12, 12, 12] },
+        { date: '2026-10-22', total: 36, sets: [12, 12, 12] }
+      ]),
+      exerciseId: 205,
+      exerciseName: 'Curl',
+      window: WINDOW,
+      mode: 'emergence'
+    });
+    expect(t.installation.kind).toBe('installed');
+  });
+
+  it('historique incomplet : pas de séries → granularity totals_only', () => {
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(206, [
+        { date: ymd(0), total: 36 },
+        { date: ymd(7), total: 30 },
+        { date: ymd(14), total: 24 },
+        { date: ymd(21), total: 20 }
+      ]),
+      exerciseId: 206,
+      exerciseName: 'Pompes',
+      window: { start: ymd(0), end: ymd(21) },
+      mode: 'progress'
+    });
+    expect(t.setMechanism.available).toBe(false);
+    expect(t.setMechanism.granularity).toBe('totals_only');
+  });
+
+  it('séries seulement avant le creux : pas d’affirmation de stabilité sur toute la trajectoire', () => {
+    const sessions = [
+      { date: ymd(0), total: 36, sets: [12, 12, 12] },
+      { date: ymd(5), total: 36, sets: [12, 12, 12] },
+      { date: ymd(10), total: 10 },
+      { date: ymd(15), total: 10 },
+      { date: ymd(20), total: 34 }
+    ];
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(207, sessions),
+      exerciseId: 207,
+      exerciseName: 'Pompes déclinées',
+      window: { start: ymd(0), end: ymd(20) },
+      mode: 'progress'
+    });
+    // Pas de séries après le creux → comparaison before/after creux impossible ou partielle
+    if (t.setMechanism.available) {
+      expect(['partial', 'full']).toContain(t.setMechanism.granularity);
+    } else {
+      expect(t.setMechanism.granularity).toMatch(/partial|totals_only/);
+    }
+    const copy = renderExerciseTrajectoryCopy(t);
+    expect(copy.body).not.toMatch(/format de séries reste du même ordre(?!.*total)/i);
+  });
+
+  it('dernière perf isolée haute : recovered n’efface pas le fait que lateMean mélange le creux', () => {
+    const sessions = [
+      { date: ymd(0), total: 36 },
+      { date: ymd(5), total: 36 },
+      { date: ymd(10), total: 10 },
+      { date: ymd(15), total: 10 },
+      { date: ymd(20), total: 36 }
+    ];
+    const t = buildExerciseTrajectory({
+      snapshot: snapFromSessions(208, sessions),
+      exerciseId: 208,
+      exerciseName: 'Pompes',
+      window: { start: ymd(0), end: ymd(20) },
+      mode: 'progress'
+    });
+    if (t.shape.primaryStory === 'recovered') {
+      expect(t.shape.lastPerformance).toBe(36);
+      expect(t.shape.lateMean).toBeLessThan(t.shape.lastPerformance);
+      const copy = renderExerciseTrajectoryCopy(t);
+      expect(copy.body).toMatch(/dernière séance|revenue à/i);
+      expect(copy.body).toMatch(/n’est pas le niveau final|pas le niveau final/i);
+    }
+  });
+
+  it('repeated / installing / installed sont mutuellement exclusifs sur les fixtures', () => {
+    const kinds = ['repeated', 'installing', 'installed', 'first_session', 'first_cluster'];
+    const samples = [
+      buildExerciseTrajectory({
+        snapshot: snapFromSessions(210, [{ date: '2026-10-10', total: 20 }]),
+        exerciseId: 210,
+        exerciseName: 'A',
+        window: WINDOW,
+        mode: 'emergence'
+      }),
+      buildExerciseTrajectory({
+        snapshot: snapFromSessions(211, [
+          { date: '2026-10-10', total: 20 },
+          { date: '2026-10-12', total: 20 }
+        ]),
+        exerciseId: 211,
+        exerciseName: 'B',
+        window: WINDOW,
+        mode: 'emergence'
+      }),
+      buildExerciseTrajectory({
+        snapshot: snapFromSessions(212, [
+          { date: '2026-10-10', total: 20 },
+          { date: '2026-10-17', total: 20 }
+        ]),
+        exerciseId: 212,
+        exerciseName: 'C',
+        window: WINDOW,
+        mode: 'emergence'
+      }),
+      buildExerciseTrajectory({
+        snapshot: snapFromSessions(213, [
+          { date: '2026-10-10', total: 20 },
+          { date: '2026-10-14', total: 20 },
+          { date: '2026-10-18', total: 20 }
+        ]),
+        exerciseId: 213,
+        exerciseName: 'D',
+        window: WINDOW,
+        mode: 'emergence'
+      }),
+      buildExerciseTrajectory({
+        snapshot: snapFromSessions(214, [
+          { date: '2026-10-02', total: 20 },
+          { date: '2026-10-12', total: 20 },
+          { date: '2026-10-22', total: 20 }
+        ]),
+        exerciseId: 214,
+        exerciseName: 'E',
+        window: WINDOW,
+        mode: 'emergence'
+      })
+    ];
+    const got = samples.map((t) => t.installation.kind);
+    expect(got).toEqual(['first_session', 'first_cluster', 'repeated', 'installing', 'installed']);
+    // aucun chevauchement : chaque kind une seule fois
+    expect(new Set(got).size).toBe(got.length);
+    got.forEach((k) => expect(kinds).toContain(k));
   });
 });

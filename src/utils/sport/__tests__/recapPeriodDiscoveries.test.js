@@ -10,6 +10,7 @@ import {
   selectPeriodDiscoveriesWithTrace,
   discoveryInformativeValue
 } from '../recapPeriodDiscoveries';
+import { insightRejectReason } from '../recapInsightValidate';
 import { computeRecapMuscleState } from '../recapMuscleLoadEngine';
 import { buildHorizonEssayCandidates } from '../recapHorizonEssays';
 import { renderInterpretationText } from '../interpretationRenderer';
@@ -698,6 +699,199 @@ describe('recapPeriodDiscoveries', () => {
         (d) => d.reason === 'story_duplicate_composition' || d.reason === 'outranked_by_richer' || d.reason === 'rival'
       )
     ).toBe(true);
+  });
+
+  it('ne laisse pas la mémoire de kind éliminer une trajectoire riche (score écrasé)', () => {
+    const dayStart = Date.now() - 3 * 86400000;
+    const history = {
+      version: 1,
+      entries: [
+        {
+          id: 'relation.reading.long.disc_exercise_progress.a',
+          theme: 'long.disc_exercise_progress',
+          seenAt: dayStart - 86400000,
+          count: 1
+        },
+        {
+          id: 'relation.reading.long.disc_exercise_progress.b',
+          theme: 'long.disc_exercise_progress',
+          seenAt: dayStart - 2 * 86400000,
+          count: 1
+        }
+      ]
+    };
+    const pack = [
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume_shape', score: 70 },
+      {
+        kind: 'disc_exercise_progress',
+        nature: 'journey',
+        family: 'exercise_progress',
+        score: 63,
+        metrics: {
+          exerciseId: '60',
+          name: 'Pompes déclinées',
+          trajectoryOk: true,
+          trajectoryRichness: 8,
+          trajectorySetAvailable: true,
+          trajectoryPeers: 'localized',
+          trajectoryImplicationRule: 'stabilize_at_recent_level_when_localized_decline',
+          trajectoryPrimaryStory: 'recovered',
+          temporalScope: { interpretingWithHistory: true }
+        }
+      },
+      {
+        kind: 'disc_kcal_profile',
+        nature: 'journey',
+        family: 'kcal_profile',
+        score: 72
+      }
+    ];
+    const traced = selectPeriodDiscoveriesWithTrace(pack, history, 'month');
+    const progress = traced.selected.find((d) => d.kind === 'disc_exercise_progress');
+    expect(progress).toBeTruthy();
+    expect(progress.informativeValue).toBeGreaterThanOrEqual(85);
+    expect(progress.rawScore).toBe(63);
+    // Mémoire douce : score affiché reste au-dessus du seuil classique
+    expect(progress.score).toBeGreaterThanOrEqual(36);
+  });
+
+  it('laisse coexister deux trajectoires d’exercices distincts (complémentarité)', () => {
+    const pack = [
+      {
+        kind: 'disc_exercise_progress',
+        nature: 'journey',
+        family: 'exercise_progress',
+        score: 70,
+        metrics: {
+          exerciseId: '60',
+          trajectoryOk: true,
+          trajectoryRichness: 7,
+          trajectorySetAvailable: true,
+          trajectoryPeers: 'localized',
+          trajectoryPrimaryStory: 'recovered'
+        }
+      },
+      {
+        kind: 'disc_exercise_progress',
+        nature: 'journey',
+        family: 'exercise_progress',
+        score: 68,
+        metrics: {
+          exerciseId: '70',
+          trajectoryOk: true,
+          trajectoryRichness: 6,
+          trajectorySetAvailable: true,
+          trajectoryPeers: 'insufficient',
+          trajectoryPrimaryStory: 'net_rise'
+        }
+      },
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume_shape', score: 65 }
+    ];
+    const traced = selectPeriodDiscoveriesWithTrace(pack, null, 'month');
+    const progresses = traced.selected.filter((d) => d.kind === 'disc_exercise_progress');
+    expect(progresses).toHaveLength(2);
+    expect(new Set(progresses.map((d) => d.metrics.exerciseId)).size).toBe(2);
+  });
+
+  it('ne laisse pas une carte générique à score élevé écarter une trajectoire précise', () => {
+    const pack = [
+      {
+        kind: 'disc_kcal_profile',
+        nature: 'journey',
+        family: 'kcal_profile',
+        score: 92
+      },
+      {
+        kind: 'disc_best_month',
+        nature: 'journey',
+        family: 'best_month',
+        score: 90
+      },
+      {
+        kind: 'disc_exercise_progress',
+        nature: 'journey',
+        family: 'exercise_progress',
+        score: 58,
+        metrics: {
+          exerciseId: '60',
+          trajectoryOk: true,
+          trajectoryRichness: 9,
+          trajectorySetAvailable: true,
+          trajectoryPeers: 'localized',
+          trajectoryImplicationRule: 'stabilize_at_recent_level_when_localized_decline',
+          trajectoryPrimaryStory: 'partial_recovery',
+          temporalScope: { interpretingWithHistory: true }
+        }
+      }
+    ];
+    const traced = selectPeriodDiscoveriesWithTrace(pack, null, 'month');
+    expect(traced.selected.some((d) => d.kind === 'disc_exercise_progress')).toBe(true);
+    expect(traced.selected.some((d) => d.kind === 'disc_kcal_profile')).toBe(true);
+    const progress = traced.selected.find((d) => d.kind === 'disc_exercise_progress');
+    // Valeur informative enrichie (trajectoire) même si le score brut est plus bas
+    expect(progress.informativeValue).toBeGreaterThan(progress.score);
+    expect(progress.informativeValue).toBeGreaterThanOrEqual(85);
+    const droppedProgress = traced.dropped.find((d) => d.kind === 'disc_exercise_progress');
+    expect(droppedProgress).toBeFalsy();
+  });
+
+  it('ne rejette pas une trajectoire riche à cause d’un id témoin dans le texte', () => {
+    const clean = {
+      kind: 'disc_exercise_progress',
+      title: 'Pompes déclinées : recul puis retour au niveau de départ',
+      body: 'La trajectoire porte surtout sur cet exercice, tandis que Développé couché incliné aux haltères (autour de 48 répétitions par séance) reste stable.',
+      metrics: { trajectoryOk: true, exerciseId: '104' }
+    };
+    const dirty = {
+      ...clean,
+      body: '… tandis que Développé couché incliné aux haltères [id 466084426] (autour de 48 répétitions par séance) reste stable.'
+    };
+    expect(insightRejectReason(dirty, { voiceKey: 'month' })).toBe('raw_exercise_id');
+    expect(insightRejectReason(clean, { voiceKey: 'month' })).toBe('');
+  });
+
+  it('ne rejette pas une découverte valide dont les metrics portent un id long', () => {
+    const card = {
+      kind: 'disc_exercise_progress',
+      title: 'Curl assis : niveau plus haut qu’au début',
+      body: 'Sur les séances récentes, le niveau habituel monte franchement.',
+      evidence: 'arc 6 · net_rise',
+      metrics: { exerciseId: '466084426', trajectoryOk: true, peerIds: ['1596646078'] }
+    };
+    expect(insightRejectReason(card, { voiceKey: 'month' })).toBe('');
+  });
+
+  it('n’accorde pas un monopole à disc_exercise_progress face aux autres familles', () => {
+    const pack = [
+      {
+        kind: 'disc_exercise_progress',
+        nature: 'journey',
+        family: 'exercise_progress',
+        score: 88,
+        metrics: {
+          exerciseId: '60',
+          trajectoryOk: true,
+          trajectoryRichness: 9,
+          trajectorySetAvailable: true,
+          trajectoryPeers: 'localized',
+          trajectoryPrimaryStory: 'recovered'
+        }
+      },
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume_shape', score: 80 },
+      { kind: 'disc_sleep_rhythm_habit', nature: 'now', family: 'sleep_rhythm', score: 86 },
+      { kind: 'disc_muscle_now', nature: 'now', family: 'muscle_now', score: 78 },
+      { kind: 'disc_push_pull', nature: 'trajectory', family: 'push_pull', score: 82 },
+      { kind: 'disc_ms_pr', nature: 'now', family: 'ms_pr', score: 80 }
+    ];
+    const selected = selectPeriodDiscoveries(pack, null, 'month');
+    expect(selected.some((d) => d.kind === 'disc_exercise_progress')).toBe(true);
+    expect(selected.some((d) => d.kind === 'disc_volume_shape')).toBe(true);
+    expect(selected.some((d) => String(d.kind).startsWith('disc_sleep_'))).toBe(true);
+    expect(selected.some((d) => d.kind === 'disc_ms_pr')).toBe(true);
+    // composition : une seule carte, pas évincée systématiquement par progress
+    expect(
+      selected.filter((d) => ['disc_muscle_now', 'disc_push_pull'].includes(d.kind)).length
+    ).toBe(1);
   });
 
   it('avec 12 paires séance×nuit, publie au moins une découverte sommeil retenue aujourd’hui et en 7 j.', () => {

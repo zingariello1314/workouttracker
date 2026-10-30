@@ -56,6 +56,23 @@ function maxRecordedWeightKgInWindow(allData, window) {
   return max;
 }
 
+/**
+ * Libellé utilisateur : jamais d’identifiant technique (#123, « Exercice 1596… », digits seuls).
+ * Les ids restent dans metrics / identity — pas dans title/body.
+ */
+export function userFacingExerciseLabel(name, _exerciseId = null) {
+  const cleaned = String(name || '').trim();
+  if (
+    !cleaned ||
+    /^Exercice\s+\d+$/i.test(cleaned) ||
+    /^#\d+$/.test(cleaned) ||
+    /^\d{6,}$/.test(cleaned)
+  ) {
+    return 'un mouvement';
+  }
+  return cleaned;
+}
+
 export const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
   const idStr = String(exerciseId || '').trim();
   if (!idStr) return '';
@@ -87,6 +104,11 @@ export const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => 
   }
 
   return '';
+};
+
+/** Résolution + garde-fou prose (remplace les `|| \`Exercice ${id}\``). */
+export function resolveUserFacingExerciseName(exerciseId, getExerciseNameById) {
+  return userFacingExerciseLabel(resolveExerciseNameForRecap(exerciseId, getExerciseNameById), exerciseId);
 };
 
 function minDateFromStrengthSources(grouped, allData) {
@@ -229,7 +251,10 @@ export function buildRecapStrengthCompareModel(
     const fromRanked = exercisesRanked.find((x) => String(x.id) === String(exId));
     liftVolumeByExercise.push({
       id: exId,
-      name: fromRanked?.name || resolveExerciseNameForRecap(exId, getExerciseNameById) || `Exercice ${exId}`,
+      name: userFacingExerciseLabel(
+        fromRanked?.name || resolveExerciseNameForRecap(exId, getExerciseNameById),
+        exId
+      ),
       reps: fromRanked?.reps ?? 0,
       volumeKg
     });
@@ -241,7 +266,7 @@ export function buildRecapStrengthCompareModel(
     const exLike =
       id === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID || id === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID
         ? { name: 'Pompes (endurance)' }
-        : { name: name || `Exercice ${id}` };
+        : { name: name || 'un mouvement' };
     const groups = inferMuscleGroupsForExercise(exLike);
     const n = Math.max(1, groups.length);
     const share = reps / n;

@@ -377,7 +377,7 @@ export function computeRecapMuscleState(
         if (!exerciseAccByGroup[g]) exerciseAccByGroup[g] = new Map();
         const prev = exerciseAccByGroup[g].get(idStr) || {
           id: idStr,
-          name: name || `#${idStr}`,
+          name: name || 'un mouvement',
           repsShare: 0,
           isIso
         };

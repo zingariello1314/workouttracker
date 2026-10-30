@@ -31,7 +31,7 @@ const BooksExportImport = ({
               <li>• Suivi des sessions de lecture (durée, pages lues, notes)</li>
               <li>• Stockage des couvertures et PDFs dans IndexedDB</li>
               <li>• Export/Import au format JSON versionné</li>
-              <li>• Intégration avec l'export global de l'application</li>
+              <li>• Intégration avec l&apos;export de tout le site</li>
             </ul>
           </div>
 

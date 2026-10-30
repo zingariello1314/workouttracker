@@ -37,6 +37,7 @@ export const ExportSection = ({
   const t = useTranslation();
   const {
     exportStatus,
+    siteExportStatus,
     garminExportStatus,
     nutritionExportStatus,
     booksExportStatus,
@@ -44,6 +45,7 @@ export const ExportSection = ({
     apprentissageExportStatus,
     exportBodyTrackingData,
     exportAllData,
+    exportSiteData,
     handleExportGarminData,
     handleExportNutritionData,
     handleExportBooksData,
@@ -64,8 +66,18 @@ export const ExportSection = ({
       <CardContent>
         <div className="space-y-4">
           <p className={`${S.body}`}>
-            Exportez toutes vos données d'entraînement au format JSON pour créer une sauvegarde complète.
+            L&apos;export Sport couvre l&apos;entraînement, Garmin et la nutrition. L&apos;export du site ajoute les livres, le budget, les quêtes, l&apos;apprentissage et la finance.
           </p>
+
+          <button
+            type="button"
+            onClick={exportSiteData}
+            disabled={siteExportStatus === 'loading' || exportStatus === 'loading'}
+            className={`${S.btnPrimary} w-full`}
+          >
+            <Download className="w-4 h-4" />
+            {siteExportStatus === 'loading' ? 'Export du site en cours...' : 'Export de tout le site'}
+          </button>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Colonne Sport */}
@@ -87,7 +99,7 @@ export const ExportSection = ({
                 <button
                   type="button"
                   onClick={exportAllData}
-                  disabled={exportStatus === 'loading'}
+                  disabled={exportStatus === 'loading' || siteExportStatus === 'loading'}
                   className={`${S.btnPrimary} w-full`}
                 >
                   <Download className="w-4 h-4" />
@@ -236,7 +248,21 @@ export const ExportSection = ({
             {exportStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Export réussi ! Le fichier a été téléchargé.
+                Export Sport réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {siteExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export du site réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {siteExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l&apos;export du site
               </div>
             )}
 

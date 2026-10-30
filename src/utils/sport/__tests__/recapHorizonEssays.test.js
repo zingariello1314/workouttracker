@@ -296,6 +296,45 @@ describe('lectures de coach', () => {
     expect(cands.some((c) => c.id.includes('continuity_level'))).toBe(false);
   });
 
+  it('émet journey_progress même si disc_exercise_progress est déjà sélectionné', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const add = (date, reps) => {
+      snapshot.reps[`${date}_101`] = reps;
+      snapshot.checkedExercises[`${date}_101`] = true;
+    };
+    add('2026-03-01', 20);
+    [5, 5, 6, 7, 8, 8, 8, 9].forEach((reps, i) => {
+      add(DateHelper.addDays('2026-03-08', i * 7), reps);
+    });
+    const cands = buildHorizonEssayCandidates({
+      snapshot,
+      window: { start: '2026-08-01', end: '2026-08-31' },
+      period: '30d',
+      getExerciseNameById: () => 'Tractions pronation',
+      periodDiscoveries: {
+        selected: [
+          {
+            kind: 'disc_exercise_progress',
+            nature: 'journey',
+            family: 'exercise_progress',
+            score: 70,
+            metrics: {
+              exerciseId: '101',
+              name: 'Tractions pronation',
+              trajectoryOk: true,
+              trajectoryPrimaryStory: 'recovered'
+            }
+          }
+        ],
+        preferPeriodNow: false
+      }
+    });
+    const journey = cands.find((c) => c.id.includes('journey_progress'));
+    expect(journey).toBeTruthy();
+    expect(blob(journey)).toMatch(/lifetime|référence fiable|première saisie/i);
+    expect(journey.metrics?.complementaryToWindowProgress).toBe(true);
+  });
+
   it('ne raconte pas une contraction quand aujourd’hui n’a pas encore de séance', () => {
     const snapshot = { reps: {}, checkedExercises: {} };
     const add = (date, reps) => {

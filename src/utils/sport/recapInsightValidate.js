@@ -12,6 +12,10 @@ const PACE_RE =
 const PLUS_DAYS_TITLE_RE = /plus de jours actifs|comptent plus de jours/i;
 const LEFT_WINDOW_RE = /a quitt[ée] cette fenêtre|dispara[iî]t du journal/i;
 
+/**
+ * Texte utilisateur uniquement — metrics / ids techniques hors prose ne doivent
+ * jamais déclencher raw_exercise_id (une découverte valide peut porter exerciseId en metrics).
+ */
 function blob(card) {
   if (!card) return '';
   if (typeof card === 'string') return card;

@@ -30,8 +30,10 @@ import {
   exportQuietQuestData 
 } from '../../../../utils/quietQuestExportImport';
 import { 
-  exportApprentissageData 
+  exportApprentissageData,
+  prepareApprentissageExportData
 } from '../../../../utils/apprentissageExportImport';
+import { prepareFinanceExportData } from '../../../../utils/financeExportImport';
 import { 
   compressGarminExport 
 } from '../../GarminTab/utils/jsonCompression';
@@ -51,6 +53,33 @@ import {
   buildGarminExportSummary
 } from '../utils/garminExportSummary';
 
+function downloadJsonFile(filename, payload) {
+  const jsonString = JSON.stringify(payload);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function loadBooksForExport() {
+  try {
+    const indexedBooks = await getAllBooksFromIndexedDB();
+    if (Array.isArray(indexedBooks) && indexedBooks.length > 0) return indexedBooks;
+  } catch {
+    /* repli localStorage */
+  }
+  try {
+    return loadBooksFromLocalStorage() || [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Hook pour gérer tous les exports
  * 
@@ -69,6 +98,7 @@ export const useSettingsExport = (
 ) => {
   // États pour chaque type d'export
   const [exportStatus, setExportStatus] = useState(null);
+  const [siteExportStatus, setSiteExportStatus] = useState(null);
   const [garminExportStatus, setGarminExportStatus] = useState(null);
   const [nutritionExportStatus, setNutritionExportStatus] = useState(null);
   const [booksExportStatus, setBooksExportStatus] = useState(null);
@@ -110,11 +140,8 @@ export const useSettingsExport = (
     }
   }, [data, loadFromDB]);
 
-  // Export toutes les données (complet)
-  const exportAllData = useCallback(async () => {
-    try {
-      setExportStatus('loading');
-
+  // Export sport : entraînement, Garmin, nutrition. Pas les livres ni le budget.
+  const collectSportComplete = useCallback(async () => {
       try {
         await flushAllAppPersistence();
       } catch (flushErr) {
@@ -154,24 +181,6 @@ export const useSettingsExport = (
         console.warn('⚠️ Erreur récupération données Nutrition pour export global:', error);
       }
       
-      // Récupérer données Livres
-      let booksForExport = [];
-      try {
-        const indexedBooks = await getAllBooksFromIndexedDB();
-        if (Array.isArray(indexedBooks) && indexedBooks.length > 0) {
-          booksForExport = indexedBooks;
-        } else {
-          booksForExport = loadBooksFromLocalStorage();
-        }
-      } catch {
-        booksForExport = loadBooksFromLocalStorage();
-      }
-
-      const booksExport = prepareBooksExportData(booksForExport, {
-        includeSessions: true,
-        includeMetadata: true
-      });
-
       const exportObject = {
         version: '2.0',
         exportDate: new Date().toISOString(),
@@ -237,13 +246,6 @@ export const useSettingsExport = (
                 activeProgram: nutritionData.programs?.find((p) => p.isActive)?.name || null
               }
             : null,
-          booksSummary: {
-            totalBooks: booksExport.metadata?.totalBooks || 0,
-            totalSessions: booksExport.metadata?.totalSessions || 0,
-            statuses: booksExport.metadata?.statuses || { 'in-progress': 0, completed: 0 },
-            dateRange: booksExport.metadata?.dateRange || { earliest: null, latest: null },
-            estimatedSizeKB: booksExport.metadata?.estimatedSizeKB || 0
-          },
           garminSummary: garminData ? buildGarminExportSummary(garminData) : null,
           nutritionWarning
         }
@@ -257,29 +259,14 @@ export const useSettingsExport = (
         exportObject.data.nutritionData = nutritionData;
       }
 
-      exportObject.data.booksData = booksExport;
-      
-      // Ajouter Budget si disponible
-      try {
-        const budgetExport = await prepareBudgetExportData({
-          includeHistory: true,
-          includeMetadata: true,
-          includeCalculations: false
-        });
-        exportObject.data.budgetData = budgetExport;
-        exportObject.metadata.budgetSummary = {
-          categories: budgetExport.summary?.categories?.total || 0,
-          depenses: budgetExport.summary?.depenses?.total || 0,
-          depensesPlanifiees: budgetExport.summary?.depensesPlanifiees?.total || 0,
-          chargesFixes: budgetExport.summary?.chargesFixes?.total || 0,
-          estimatedSizeKB: budgetExport.metadata?.estimatedSizeKB || 0
-        };
-      } catch (budgetError) {
-        console.warn('⚠️ Erreur récupération données Budget pour export global:', budgetError);
-      }
+      return exportObject;
+  }, [data, loadFromDB, exportNutritionData, exportGarminData, storageKey, currentUser, liveProgramContext]);
 
-      // Télécharger
-      const jsonString = JSON.stringify(exportObject, null, 2);
+  const exportAllData = useCallback(async () => {
+    try {
+      setExportStatus('loading');
+      const exportObject = await collectSportComplete();
+      const jsonString = JSON.stringify(exportObject);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -289,7 +276,6 @@ export const useSettingsExport = (
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
       setExportStatus('success');
       setTimeout(() => setExportStatus(null), 3000);
     } catch (error) {
@@ -297,7 +283,68 @@ export const useSettingsExport = (
       setExportStatus('error');
       setTimeout(() => setExportStatus(null), 3000);
     }
-  }, [data, loadFromDB, exportNutritionData, exportGarminData, storageKey, currentUser, liveProgramContext]);
+  }, [collectSportComplete]);
+
+  const exportSiteData = useCallback(async () => {
+    try {
+      setSiteExportStatus('loading');
+      const [sport, booksForExport, budget, quietQuest, apprentissage, finance] = await Promise.all([
+        collectSportComplete(),
+        loadBooksForExport().then((books) => prepareBooksExportData(books, {
+          includeSessions: true,
+          includeMetadata: true
+        })),
+        prepareBudgetExportData({
+          includeHistory: true,
+          includeMetadata: true,
+          includeCalculations: false
+        }).catch((error) => {
+          console.warn('[export site] Budget ignoré:', error);
+          return null;
+        }),
+        exportQuietQuestData({ includeMetadata: true }).catch((error) => {
+          console.warn('[export site] QuietQuest ignoré:', error);
+          return null;
+        }),
+        prepareApprentissageExportData().catch((error) => {
+          console.warn('[export site] Apprentissage ignoré:', error);
+          return null;
+        }),
+        prepareFinanceExportData({
+          includeCalculations: true,
+          includeYahooData: true,
+          includeHistory: true
+        }).catch((error) => {
+          console.warn('[export site] Finance ignorée:', error);
+          return null;
+        })
+      ]);
+
+      downloadJsonFile(
+        `momentum-site-backup-${new Date().toISOString().split('T')[0]}.json`,
+        {
+          version: '1.0',
+          exportDate: new Date().toISOString(),
+          exportType: 'Site Complete',
+          appName: 'Momentum',
+          sections: {
+            sport,
+            books: booksForExport,
+            budget,
+            quietQuest,
+            apprentissage,
+            finance
+          }
+        }
+      );
+      setSiteExportStatus('success');
+      setTimeout(() => setSiteExportStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Erreur export site:', error);
+      setSiteExportStatus('error');
+      setTimeout(() => setSiteExportStatus(null), 3000);
+    }
+  }, [collectSportComplete]);
 
   // Export Garmin
   const handleExportGarminData = useCallback(async () => {
@@ -593,6 +640,7 @@ export const useSettingsExport = (
   return {
     // États
     exportStatus,
+    siteExportStatus,
     garminExportStatus,
     nutritionExportStatus,
     booksExportStatus,
@@ -603,6 +651,7 @@ export const useSettingsExport = (
     // Handlers
     exportBodyTrackingData,
     exportAllData,
+    exportSiteData,
     handleExportGarminData,
     handleExportNutritionData,
     handleExportBooksData,

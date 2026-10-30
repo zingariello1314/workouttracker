@@ -4,6 +4,7 @@
 import { aggregateCheckedRepsByDateAndExerciseId } from '../trainingLoadUtils';
 import { computeVolumeKgForWorkoutKey } from '../exerciseLoadVolume';
 import { getExerciseWeightUiMode } from '../exerciseWeightEligibility';
+import { resolveUserFacingExerciseName } from './recapStrengthPeriodStats';
 
 function parseWeightFromStore(workoutData, storageKey) {
   const w = workoutData?.exerciseWeights?.[storageKey];
@@ -105,8 +106,8 @@ export function buildWeightedTrainingRecapSnippets(workoutData, window, getExerc
     .filter((row) => row.repsBw >= 40 && row.repsW === 0)
     .slice(0, 2)
     .forEach((row) => {
-      const name =
-        (typeof getExerciseNameById === 'function' && getExerciseNameById(row.id)) || `#${row.id}`;
+      const name = resolveUserFacingExerciseName(row.id, getExerciseNameById);
+      if (name === 'un mouvement') return;
       const exLike = { name, materiel: '' };
       if (getExerciseWeightUiMode(exLike)?.mode === 'optional') {
         lines.push(
@@ -120,8 +121,8 @@ export function buildWeightedTrainingRecapSnippets(workoutData, window, getExerc
     .sort((a, b) => b.volKg - a.volKg)
     .slice(0, 2)
     .forEach((row) => {
-      const name =
-        (typeof getExerciseNameById === 'function' && getExerciseNameById(row.id)) || `#${row.id}`;
+      const name = resolveUserFacingExerciseName(row.id, getExerciseNameById);
+      if (name === 'un mouvement') return;
       lines.push(
         `${name} lesté : ~${row.repsW} reps récentes (dernière charge utile ~${Math.round(row.lastWeight)} kg).`
       );
@@ -131,8 +132,8 @@ export function buildWeightedTrainingRecapSnippets(workoutData, window, getExerc
     .filter((row) => row.repsW >= 15 && row.repsBw >= 15 && row.lastWeight > 0)
     .slice(0, 2)
     .forEach((row) => {
-      const name =
-        (typeof getExerciseNameById === 'function' && getExerciseNameById(row.id)) || `#${row.id}`;
+      const name = resolveUserFacingExerciseName(row.id, getExerciseNameById);
+      if (name === 'un mouvement') return;
       const shareW = Math.round((row.repsW / (row.repsW + row.repsBw)) * 100);
       lines.push(
         `${name} : ~${shareW} % des reps en lesté récent — compare avec tes séries poids du corps pour ajuster charge ou volume.`

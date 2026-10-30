@@ -65,6 +65,26 @@ describe('claimFromCandidate', () => {
     expect(emerged.sense).toBe('relation');
   });
 
+  it('sépare trajectoire de fenêtre et parcours lifetime pour le même exercice', () => {
+    const fenetre = claimFromCandidate(
+      candidate(
+        'disc_exercise_progress',
+        { exerciseId: '60', vsInitialPct: 40 },
+        { horizon: 'long' }
+      )
+    );
+    const parcours = claimFromCandidate(
+      candidate(
+        'journey_progress',
+        { exerciseId: '60', pctFromReliable: 40 },
+        { horizon: 'long' }
+      )
+    );
+    expect(fenetre.topic).toBe('exercice.fenetre.60');
+    expect(parcours.topic).toBe('exercice.parcours.60');
+    expect(fenetre.topic).not.toBe(parcours.topic);
+  });
+
   it('range 42 % et 43 % dans la même bande, 58 % dans une autre', () => {
     const low = stateKeyFromMetrics('mix.dos', { sharePct: 42 });
     const near = stateKeyFromMetrics('mix.dos', { sharePct: 43 });

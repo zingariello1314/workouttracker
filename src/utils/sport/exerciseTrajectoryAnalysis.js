@@ -14,6 +14,7 @@ import { resolveExerciseSetsForAnalysis } from './exerciseSessionSetsResolver';
 import { movementFamily } from './recapExposureNarratives';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { composeAnalyticalReading } from './recapAnalyticalReading';
+import { resolveUserFacingExerciseName, userFacingExerciseLabel } from './recapStrengthPeriodStats';
 
 /** @typedef {'established'|'probable'|'watch'|'indeterminate'} Stance */
 
@@ -46,6 +47,16 @@ function daysBetween(a, b) {
   const db = new Date(`${b}T12:00:00`);
   if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return null;
   return Math.round((db - da) / 86400000);
+}
+
+/** Identité affichée normalisée — ne suffit jamais à equater deux exercices. */
+function normalizeExerciseLabel(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function previousWindow(window) {
@@ -263,13 +274,31 @@ function classifyShape(sessionTotals, sessionMeta = []) {
   const earlyDates = sessionMeta.slice(0, halfK).map((s) => s?.date).filter(Boolean);
   const lateDates = sessionMeta.slice(-halfK).map((s) => s?.date).filter(Boolean);
 
+  /**
+   * Références nommées — ne pas les confondre dans le texte :
+   * - arcEarlyMean = moyenne des premières séances de l’arc (départ d’interprétation)
+   * - arcLateMean = moyenne des dernières séances de l’arc (peut mélanger creux+reprise)
+   * - lastPerformance = dernière séance seule (niveau final observé)
+   * - trough = minimum de l’arc
+   * La reprise « pleine » se juge sur lastPerformance vs arcEarlyMean, pas sur arcLateMean.
+   */
+  const referenceLevels = {
+    arcEarlyMean: round1(early),
+    arcLateMean: round1(late),
+    lastPerformance: round1(lastVal),
+    trough: round1(troughVal),
+    recoveryJudgedBy: 'last_session_vs_arc_early',
+    recoveredVsEarly
+  };
+
   return {
     kind,
     path,
     primaryStory,
-    detail: `early≈${round1(early)} → late≈${round1(late)} (${delta != null ? `${delta}%` : '—'}) · path=${path}`,
+    detail: `early≈${round1(early)} → late≈${round1(late)} (${delta != null ? `${delta}%` : '—'}) · last=${round1(lastVal)} · path=${path}`,
     earlyMean: round1(early),
     lateMean: round1(late),
+    lastPerformance: round1(lastVal),
     deltaPct: delta,
     absDelta,
     sessionCount: vals.length,
@@ -280,6 +309,7 @@ function classifyShape(sessionTotals, sessionMeta = []) {
       recoveryFromTroughPct
     },
     recoveredVsEarly,
+    referenceLevels,
     earlyDates,
     lateDates,
     atypicalIndex,
@@ -291,19 +321,72 @@ function classifyShape(sessionTotals, sessionMeta = []) {
   };
 }
 
-function classifySetMechanism(sessions) {
-  const trusted = (sessions || []).filter((s) => s.setsTrusted && s.setCount >= 1 && s.perSet != null);
+/**
+ * @param {Array} sessions
+ * @param {{ troughDate?: string|null }} [opts]
+ */
+function classifySetMechanism(sessions, opts = {}) {
+  const all = sessions || [];
+  const trusted = all.filter((s) => s.setsTrusted && s.setCount >= 1 && s.perSet != null);
+  const totalsOnly = all.filter((s) => !s.setsTrusted);
+  const granularity =
+    trusted.length === 0 ? 'totals_only' : totalsOnly.length === 0 ? 'full' : 'partial';
+  const coverage = {
+    sessionCount: all.length,
+    knownSetSessions: trusted.length,
+    totalsOnlySessions: totalsOnly.length,
+    totalsOnlyDates: totalsOnly.map((s) => s.date),
+    granularity
+  };
+
   if (trusted.length < 2) {
     return {
       available: false,
       reason:
         trusted.length === 0
           ? 'Détail des séries absent (pas de exerciseSetLogs structurés)'
-          : 'Une seule séance avec séries lisibles — pas de comparaison de format'
+          : 'Une seule séance avec séries lisibles — pas de comparaison de format',
+      ...coverage
     };
   }
-  const early = trusted.slice(0, Math.min(3, Math.ceil(trusted.length / 2)));
-  const late = trusted.slice(-Math.min(3, Math.ceil(trusted.length / 2)));
+
+  const sorted = [...trusted].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  let early;
+  let late;
+  const troughDate = opts.troughDate || null;
+
+  // Si un creux est connu : comparer uniquement des séances AVANT vs APRÈS (pas de chevauchement)
+  if (troughDate) {
+    const beforeTrough = sorted.filter((s) => s.date < troughDate);
+    const afterTrough = sorted.filter((s) => s.date > troughDate);
+    if (beforeTrough.length >= 1 && afterTrough.length >= 1) {
+      early = beforeTrough.slice(-Math.min(3, beforeTrough.length));
+      late = afterTrough.slice(0, Math.min(3, afterTrough.length));
+    }
+  }
+
+  if (!early || !late) {
+    // Split chronologique sans chevauchement (évite qu’une même séance soit dans before et after)
+    const mid = Math.floor(sorted.length / 2);
+    early = sorted.slice(0, Math.max(1, mid));
+    late = sorted.slice(Math.max(1, mid));
+    if (!late.length && early.length >= 2) {
+      late = [early[early.length - 1]];
+      early = early.slice(0, -1);
+    }
+  }
+
+  // Sécurité anti-chevauchement
+  const earlyDateSet = new Set(early.map((s) => s.date));
+  late = late.filter((s) => !earlyDateSet.has(s.date));
+  if (!late.length) {
+    return {
+      available: false,
+      reason: 'Pas assez de séances à séries connues distinctes pour comparer un avant/après',
+      ...coverage
+    };
+  }
+
   const before = {
     setCount: round1(median(early.map((s) => s.setCount))),
     perSet: round1(median(early.map((s) => s.perSet))),
@@ -325,7 +408,7 @@ function classifySetMechanism(sessions) {
   const repsDown = before.perSet - after.perSet > 1;
 
   let kind = 'stable_format';
-  let detail = 'Le format de séries reste du même ordre.';
+  let detail = 'Sur les séances où le détail de séries est connu, le format reste du même ordre.';
   if (countUp && !repsDown && !repsUp) {
     kind = 'more_sets_same_reps';
     detail = `Le nombre de séries augmente (${before.setCount} → ${after.setCount}), les répétitions par série restent du même ordre (~${before.perSet}).`;
@@ -346,10 +429,23 @@ function classifySetMechanism(sessions) {
     detail = `Moins de séries mais plus de répétitions par série.`;
   }
 
+  // Pendant un creux sans séries connues : on ne peut pas affirmer la stabilité du format sur toute la trajectoire
+  const troughTotalsOnly =
+    troughDate &&
+    totalsOnly.filter((s) => s.date >= troughDate && !late.some((l) => l.date === s.date));
+  const missingDuringTrough = Array.isArray(troughTotalsOnly) ? troughTotalsOnly.length : 0;
+  if (granularity === 'partial' && missingDuringTrough > 0) {
+    detail = `${detail} ${missingDuringTrough} séance${missingDuringTrough > 1 ? 's' : ''} du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée.`;
+  }
+
   const volPct = pctDelta(before.volume, after.volume);
   const maintained =
     late.length >= 2 &&
     late.every((s) => Math.abs(s.totalReps - after.volume) / Math.max(after.volume, 1) <= 0.2);
+
+  let stance =
+    maintained && (countUp || repsUp || countDown || repsDown) ? 'established' : 'probable';
+  if (granularity === 'partial' && missingDuringTrough > 0) stance = 'watch';
 
   return {
     available: true,
@@ -359,7 +455,9 @@ function classifySetMechanism(sessions) {
     after,
     volumeDeltaPct: volPct,
     maintained,
-    stance: maintained && (countUp || repsUp || countDown || repsDown) ? 'established' : 'probable'
+    stance,
+    ...coverage,
+    missingSetDetailDuringTrough: missingDuringTrough
   };
 }
 
@@ -408,6 +506,7 @@ function classifyInstallation(allSessions, windowSessions, window) {
     };
   }
 
+  // Installation durable : ≥3 séances sur ≥14 jours
   if (inWindow.length >= 3 && span != null && span >= 14) {
     const vols = inWindow.map((s) => s.totalReps);
     const risingOrFlat = vols[vols.length - 1] >= vols[0] * 0.9;
@@ -417,18 +516,34 @@ function classifyInstallation(allSessions, windowSessions, window) {
       sessionsInWindow: inWindow.length,
       spanDays: span,
       firstEver,
-      stance: risingOrFlat ? 'probable' : 'watch'
+      stance: risingOrFlat ? 'probable' : 'watch',
+      stage: risingOrFlat ? 'durable_integration' : 'installing'
     };
   }
 
-  if (inWindow.length >= 2 && span != null && span >= 7) {
+  // Installation progressive : ≥3 séances mais fenêtre encore courte
+  if (inWindow.length >= 3 && span != null && span >= 7) {
     return {
       kind: 'installing',
-      detail: `${inWindow.length} séances sur ${span} jours — trop tôt pour parler d’habitude durable`,
+      detail: `${inWindow.length} séances sur ${span} jours — installation progressive, pas encore une habitude durable`,
       sessionsInWindow: inWindow.length,
       spanDays: span,
       firstEver,
-      stance: 'probable'
+      stance: 'probable',
+      stage: 'installing'
+    };
+  }
+
+  // Deux séances espacées = répétition du format / de la présence, PAS une installation
+  if (inWindow.length >= 2 && span != null && span >= 7) {
+    return {
+      kind: 'repeated',
+      detail: `${inWindow.length} séances sur ${span} jours — répétition du format, trop tôt pour parler d’installation durable`,
+      sessionsInWindow: inWindow.length,
+      spanDays: span,
+      firstEver,
+      stance: 'probable',
+      stage: 'repetition'
     };
   }
 
@@ -438,7 +553,8 @@ function classifyInstallation(allSessions, windowSessions, window) {
     sessionsInWindow: inWindow.length,
     spanDays: span,
     firstEver,
-    stance: 'watch'
+    stance: 'watch',
+    stage: 'appearance'
   };
 }
 
@@ -450,22 +566,34 @@ function relatedFamilies(fam) {
   return fam && fam !== 'other' ? new Set([fam]) : new Set();
 }
 
-function analyzePeers(snapshot, exerciseId, name, window, getExerciseNameById, allSessionsForSubject) {
+function analyzePeers(
+  snapshot,
+  exerciseId,
+  name,
+  window,
+  getExerciseNameById,
+  allSessionsForSubject,
+  shapeHint = null
+) {
   const fam = movementFamily(exerciseId, name, getExerciseNameById);
   const famSet = relatedFamilies(fam);
   if (!famSet.size) {
     return { available: false, reason: 'Famille de mouvement non classée', verdict: 'insufficient', items: [] };
   }
 
+  const subjectLabel = normalizeExerciseLabel(name);
   const lifetime = collectLifetimeRepHistory(snapshot, window?.end || null);
   const items = [];
+  const skippedSameLabel = [];
   for (const [exId, rows] of lifetime.entries()) {
     if (String(exId) === String(exerciseId)) continue;
-    const peerName =
-      typeof getExerciseNameById === 'function'
-        ? String(getExerciseNameById(parseInt(String(exId), 10) || exId) || '').trim()
-        : `Exercice ${exId}`;
-    if (!peerName || /^Exercice\s+/i.test(peerName)) continue;
+    const peerName = resolveUserFacingExerciseName(exId, getExerciseNameById);
+    if (!peerName || peerName === 'un mouvement') continue;
+    // Identité stable : un même libellé + id différent = variante ambiguë, pas un témoin
+    if (subjectLabel && normalizeExerciseLabel(peerName) === subjectLabel) {
+      skippedSameLabel.push({ exerciseId: String(exId), name: peerName, reason: 'same_display_name_different_id' });
+      continue;
+    }
     const peerFam = movementFamily(exId, peerName, getExerciseNameById);
     if (!famSet.has(peerFam)) continue;
 
@@ -488,15 +616,43 @@ function analyzePeers(snapshot, exerciseId, name, window, getExerciseNameById, a
   }
 
   items.sort((a, b) => b.sessions - a.sessions);
-  const top = items.slice(0, 4);
+  // Dédupe entre témoins : un même libellé affiché ne doit apparaître qu’une fois (garde le + de séances)
+  const seenPeerLabels = new Set();
+  const deduped = [];
+  const skippedPeerDupLabels = [];
+  for (const it of items) {
+    const lab = normalizeExerciseLabel(it.name);
+    if (lab && seenPeerLabels.has(lab)) {
+      skippedPeerDupLabels.push({
+        exerciseId: it.exerciseId,
+        name: it.name,
+        reason: 'duplicate_peer_display_name'
+      });
+      continue;
+    }
+    if (lab) seenPeerLabels.add(lab);
+    deduped.push(it);
+  }
+  const top = deduped.slice(0, 4);
   if (!top.length) {
-    return { available: false, reason: 'Pas assez de témoins comparables (≥3 séances)', verdict: 'insufficient', items: [], family: fam };
+    return {
+      available: false,
+      reason: skippedSameLabel.length || skippedPeerDupLabels.length
+        ? 'Pas assez de témoins comparables après exclusion des homonymes (même nom, autre id)'
+        : 'Pas assez de témoins comparables (≥3 séances)',
+      verdict: 'insufficient',
+      items: [],
+      family: fam,
+      skippedSameLabel: [...skippedSameLabel, ...skippedPeerDupLabels]
+    };
   }
 
   const subjectInWin = (allSessionsForSubject || []).filter((s) => isDateInRecapWindow(s.date, window));
   const subjEarly = mean(subjectInWin.slice(0, Math.max(1, Math.floor(subjectInWin.length / 2))).map((s) => s.totalReps));
   const subjLate = mean(subjectInWin.slice(Math.max(1, Math.floor(subjectInWin.length / 2))).map((s) => s.totalReps));
   const subjDelta = pctDelta(subjEarly, subjLate);
+  const story = shapeHint?.primaryStory || null;
+  const isReboundStory = story === 'recovered' || story === 'partial_recovery' || shapeHint?.kind === 'rebound';
 
   const stablePeers = top.filter((p) => p.stable);
   const decliningPeers = top.filter((p) => (p.deltaPct || 0) <= -15);
@@ -518,9 +674,13 @@ function analyzePeers(snapshot, exerciseId, name, window, getExerciseNameById, a
   } else if (subjDelta != null && subjDelta <= -15 && decliningPeers.length >= 2) {
     verdict = 'shared';
     detail = `Plusieurs mouvements comparables baissent aussi (${peerPhrase(decliningPeers)}) : le signal dépasse cet exercice seul, sans que les données prouvent une cause unique.`;
+  } else if (isReboundStory && stablePeers.length >= 1) {
+    // Ne pas appeler « hausse localisée » une reprise après creux
+    verdict = 'localized_recovery';
+    detail = `La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que ${peerPhrase(stablePeers)} ${stablePeers.length > 1 ? 'restent' : 'reste'} stable${stablePeers.length > 1 ? 's' : ''}.`;
   } else if (subjDelta != null && subjDelta >= 15 && stablePeers.length >= 1) {
     verdict = 'localized_rise';
-    detail = `La hausse porte surtout sur cet exercice, tandis que ${peerPhrase(stablePeers)} restent stables.`;
+    detail = `La hausse porte surtout sur cet exercice, tandis que ${peerPhrase(stablePeers)} ${stablePeers.length > 1 ? 'restent' : 'reste'} stable${stablePeers.length > 1 ? 's' : ''}.`;
   } else {
     verdict = 'mixed';
     detail = 'Les témoins disponibles ne permettent pas d’isoler clairement si le signal est local ou partagé.';
@@ -530,6 +690,7 @@ function analyzePeers(snapshot, exerciseId, name, window, getExerciseNameById, a
     available: true,
     family: fam,
     relatedFamilies: [...famSet],
+    skippedSameLabel: [...skippedSameLabel, ...skippedPeerDupLabels],
     verdict,
     detail,
     subjectDeltaPct: subjDelta,
@@ -547,6 +708,21 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
       id: 'no_set_detail',
       text: setMechanism.reason,
       affects: 'Impossible de décomposer séries vs reps/série'
+    });
+  } else if (setMechanism.granularity === 'partial') {
+    limits.push({
+      id: 'partial_set_detail',
+      text: `${setMechanism.totalsOnlySessions || 0} séance(s) n’ont qu’un total — la structure de séries n’est pas connue partout`,
+      affects: 'Ne pas généraliser l’évolution des reps/série à toute la trajectoire'
+    });
+  }
+  if ((peers.skippedSameLabel || []).length) {
+    limits.push({
+      id: 'peer_same_label_excluded',
+      text: `Témoin(s) exclus pour homonymie (même nom affiché, autre id) : ${(peers.skippedSameLabel || [])
+        .map((p) => p.name || 'variante')
+        .join(', ')}`,
+      affects: 'Comparaison fondée sur des identifiants stables uniquement'
     });
   }
   if (shape.withoutAtypical?.kind === 'outlier_driven' || shape.primaryStory === 'outlier_driven') {
@@ -597,6 +773,14 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
           installation.firstEver ? ' — première présence connue dans l’historique disponible' : ''
         }.`
       };
+    } else if (installation.kind === 'repeated') {
+      titleHint = `${identity.name} : format repris, pas encore installé`;
+      main = {
+        stance: 'probable',
+        text: `${identity.name} apparaît sur ${installation.sessionsInWindow} séances réparties sur ${installation.spanDays || '—'} jours${
+          installation.firstEver ? ' — première présence connue dans l’historique disponible' : ''
+        }. C’est une répétition du format, pas encore une installation durable dans le programme.`
+      };
     } else if (installation.kind === 'first_session') {
       titleHint = `${identity.name} entre dans ton historique`;
       main = {
@@ -629,11 +813,22 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         text: setMechanism.detail,
         maintained: setMechanism.maintained
       };
-      if (setMechanism.maintained && installation.sessionsInWindow >= 2) {
+      // Ne pas promouvoir en « s'installe » avant le stade installing/installed (≥3 séances)
+      if (
+        setMechanism.maintained &&
+        (installation.kind === 'installed' || installation.kind === 'installing') &&
+        installation.sessionsInWindow >= 3
+      ) {
         titleHint = `${identity.name} s'installe dans ton entraînement`;
         main = {
           stance: 'probable',
           text: `${identity.name} : tu es passé d’environ ${setMechanism.before.setCount} × ${setMechanism.before.perSet} à environ ${setMechanism.after.setCount} × ${setMechanism.after.perSet}, soit une hausse de ${setMechanism.volumeDeltaPct ?? '—'} % du volume par séance, reproduite sur les séances suivantes.`
+        };
+      } else if (setMechanism.maintained && installation.kind === 'repeated') {
+        mechanism = {
+          stance: 'probable',
+          text: `Le format connu est repris (≈${setMechanism.after.setCount} × ${setMechanism.after.perSet}) : répétition, pas encore une installation durable.`,
+          maintained: true
         };
       }
     }
@@ -684,10 +879,13 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         };
       }
     } else if (story === 'recovered') {
+      const lastPerf = shape.lastPerformance ?? shape.referenceLevels?.lastPerformance;
+      const troughVal = shape.trough?.value ?? '—';
+      const troughDate = shape.trough?.date ? ` (${shape.trough.date})` : '';
       titleHint = `${identity.name} : recul puis retour au niveau de départ`;
       main = {
         stance: 'probable',
-        text: `${scopeLead}${identity.name} est passé par un creux (≈${shape.trough?.value ?? '—'}) puis est revenu vers ≈${shape.lateMean} répétitions par séance, proche du départ (≈${shape.earlyMean}).`
+        text: `${scopeLead}${identity.name} est passé par un creux (≈${troughVal}${troughDate}) puis la dernière séance est revenue à ≈${lastPerf} répétitions, proche du départ de l’arc (≈${shape.earlyMean}). La moyenne des dernières séances de l’arc (≈${shape.lateMean}) mélange encore creux et reprise : ce n’est pas le niveau final.`
       };
     } else if (story === 'net_rise') {
       titleHint = `${identity.name} : le volume par séance progresse`;
@@ -715,7 +913,13 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
       mechanism = { stance: setMechanism.stance, text: setMechanism.detail, kind: setMechanism.kind };
     }
 
-    if (peers.available && (peers.verdict === 'localized' || peers.verdict === 'shared' || peers.verdict === 'localized_rise')) {
+    if (
+      peers.available &&
+      (peers.verdict === 'localized' ||
+        peers.verdict === 'shared' ||
+        peers.verdict === 'localized_rise' ||
+        peers.verdict === 'localized_recovery')
+    ) {
       peerScope = { stance: peers.stance, text: peers.detail, verdict: peers.verdict };
     }
 
@@ -791,7 +995,10 @@ export function buildExerciseTrajectory({
   mode = 'progress'
 } = {}) {
   const id = String(exerciseId || '');
-  const name = String(exerciseName || `Exercice ${id}`).trim();
+  const name = userFacingExerciseLabel(
+    exerciseName || resolveUserFacingExerciseName(id, getExerciseNameById),
+    id
+  );
   const exclusions = [];
   const diagnostics = { missing: [], contradictions: [] };
 
@@ -852,8 +1059,8 @@ export function buildExerciseTrajectory({
         ? windowSessions
         : cappedLifetime.slice(-8);
   const contextBefore = arcSessions.filter((s) => window?.start && s.date < window.start);
-  const interpretingWithHistory =
-    mode === 'progress' && (shortWindow || windowSessions.length < 4) && contextBefore.length > 0;
+  // Vrai dès que l’arc consomme des séances antérieures à la fenêtre sélectionnée
+  const interpretingWithHistory = mode === 'progress' && contextBefore.length > 0;
 
   const volume = {
     windowSessionCount: windowSessions.length,
@@ -861,6 +1068,7 @@ export function buildExerciseTrajectory({
     windowTotal: windowTotals.reduce((s, n) => s + n, 0),
     prevComparable: prevSessions.reduce((s, n) => s + n.totalReps, 0),
     prevSessionCount: prevSessions.length,
+    /** Moyenne des séances DANS la fenêtre sélectionnée uniquement */
     meanPerSession: round1(mean(windowTotals)),
     medianPerSession: round1(median(windowTotals)),
     firstSessionTotal: windowSessions[0]?.totalReps ?? null,
@@ -873,19 +1081,21 @@ export function buildExerciseTrajectory({
         : null
   };
 
+  const shapeSource = mode === 'progress' && arcSessions.length >= 2 ? arcSessions : windowSessions;
+  const shape = classifyShape(
+    shapeSource.map((s) => s.totalReps),
+    shapeSource
+  );
+
   const mechSource =
     mode === 'progress' && arcSessions.length >= 2
       ? arcSessions
       : windowSessions.length >= 2
         ? windowSessions
         : allSessions;
-  const setMechanism = classifySetMechanism(mechSource);
-
-  const shapeSource = mode === 'progress' && arcSessions.length >= 2 ? arcSessions : windowSessions;
-  const shape = classifyShape(
-    shapeSource.map((s) => s.totalReps),
-    shapeSource
-  );
+  const setMechanism = classifySetMechanism(mechSource, {
+    troughDate: shape?.trough?.date || null
+  });
 
   const temporalScope = {
     windowStart: window.start || null,
@@ -907,7 +1117,15 @@ export function buildExerciseTrajectory({
   };
 
   const installation = classifyInstallation(allSessions, windowSessions, window);
-  const peers = analyzePeers(snapshot, id, name, window, getExerciseNameById, allSessions);
+  const peers = analyzePeers(
+    snapshot,
+    id,
+    name,
+    window,
+    getExerciseNameById,
+    allSessions,
+    shape
+  );
 
   const identity = {
     id,
@@ -1086,7 +1304,10 @@ export function trajectoryToMetrics(trajectory) {
     trajectoryPrimaryStory: trajectory.shape?.primaryStory || null,
     trajectorySetMechanism: trajectory.setMechanism?.available ? trajectory.setMechanism.kind : null,
     trajectorySetAvailable: Boolean(trajectory.setMechanism?.available),
+    trajectorySetGranularity: trajectory.setMechanism?.granularity || null,
     trajectoryPeers: trajectory.peers?.verdict || null,
+    trajectoryReferenceLevels: trajectory.shape?.referenceLevels || null,
+    peersSkippedSameLabel: trajectory.peers?.skippedSameLabel || [],
     trajectoryTitleHint: trajectory.findings?.titleHint || null,
     trajectoryImplicationRule: trajectory.findings?.implication?.ruleId || null,
     trajectoryRichness: richness,
