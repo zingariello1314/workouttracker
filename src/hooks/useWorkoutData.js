@@ -26,7 +26,10 @@ import {
   isWorkoutAggregateCloudSyncEnabled,
   pickNewerWorkoutRawForLoad,
   normalizeWorkoutAggregateRawForIdb,
-  flushWorkoutAggregateCloudPushNow
+  flushWorkoutAggregateCloudPushNow,
+  scheduleDeferredWorkoutAggregateCloudPush,
+  readWorkoutAggregateCloudDirty,
+  clearWorkoutAggregateCloudDirty
 } from '../services/workout/workoutAggregateCloudSync.js';
 import { applyWorkoutRepIntegrations, needsWorkoutRepIntegration } from '../services/endurance/workoutRepIntegrations';
 import {
@@ -743,6 +746,8 @@ export const useWorkoutData = (options = {}) => {
       incrementalSession = false,
       sessionDay = null,
       skipCloud = false,
+      failOnTimeout = false,
+      importFast = false,
     } = saveOptions;
     const effectiveKey = storageKeyOverride || storageKey;
 
@@ -779,7 +784,8 @@ export const useWorkoutData = (options = {}) => {
         }
       }
 
-      // Validation et nettoyage des répétitions
+      // L'import a déjà été validé : éviter un second parcours de chaque série.
+      if (!importFast) {
       if (newData.reps) {
         const cleanReps = {};
         for (const [key, value] of Object.entries(newData.reps)) {
@@ -901,6 +907,7 @@ export const useWorkoutData = (options = {}) => {
           if (Number.isFinite(n) && n >= 1 && n <= 5) cleanStretchStars[key] = n;
         }
         newData.stretchSessionEffortStars = cleanStretchStars;
+      }
       }
 
       // Validation des photos de progression
@@ -1040,7 +1047,9 @@ export const useWorkoutData = (options = {}) => {
           newData && Array.isArray(newData.pyramidSessionLog) ? [...newData.pyramidSessionLog] : [],
         addictionQuitData:
           newData && newData.addictionQuitData && typeof newData.addictionQuitData === 'object'
-            ? JSON.parse(JSON.stringify(newData.addictionQuitData))
+            ? importFast
+              ? newData.addictionQuitData
+              : JSON.parse(JSON.stringify(newData.addictionQuitData))
             : INITIAL_WORKOUT_DATA.addictionQuitData,
         circuitDefinitions:
           newData && newData.circuitDefinitions && typeof newData.circuitDefinitions === 'object'
@@ -1100,7 +1109,12 @@ export const useWorkoutData = (options = {}) => {
         writeEnduranceLocalBackup(effectiveKey, dataToSave.enduranceData);
         if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
           const { accessToken } = readServerTokens();
-          void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey: effectiveKey, row: dataToSave });
+          const pushArgs = { accessToken, storageKey: effectiveKey, row: dataToSave };
+          if (skipCloud) {
+            scheduleDeferredWorkoutAggregateCloudPush(pushArgs);
+          } else {
+            void flushWorkoutAggregateCloudPushNow(pushArgs);
+          }
         }
         return;
       }
@@ -1110,7 +1124,7 @@ export const useWorkoutData = (options = {}) => {
       // Timeout fréquent quand une écriture éphémère croise une migration / fermeture
       // de WorkoutTrackerDB : les données restent en mémoire + backups ; le prochain
       // cycle autosave réessaiera. Ne pas remonter comme erreur fatale non catchée.
-      if (error?.message === 'IDB_OPERATION_TIMEOUT') {
+      if (error?.message === 'IDB_OPERATION_TIMEOUT' && !failOnTimeout) {
         console.warn(
           '⏱️ saveToDB: timeout IndexedDB — réessai au prochain cycle (données en mémoire)'
         );
@@ -1281,6 +1295,10 @@ export const useWorkoutData = (options = {}) => {
             savedData = materializeValidatedFromIdbRow(normalized);
             savedData = await enrichWorkoutStateWithSessions(savedData);
             savedData = restoreEnduranceIfWiped(savedData, storageKey);
+            clearWorkoutAggregateCloudDirty(storageKey);
+          } else if (rawLocal && readWorkoutAggregateCloudDirty()?.storageKey === storageKey) {
+            const row = normalizeWorkoutAggregateRawForIdb(rawLocal, storageKey);
+            void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey, row });
           }
         } catch (e) {
           workoutDataLog.warn('Fusion snapshot workout cloud ignorée', e);
@@ -1320,7 +1338,9 @@ export const useWorkoutData = (options = {}) => {
       sessionDay = null,
       skipReact = false,
       skipCloud = false,
-      applyReactAfterPaint = false
+      applyReactAfterPaint = false,
+      importFast = false,
+      reactOnly = false
     } = options;
     const resolved = typeof newData === 'function' ? newData(dataRef.current) : newData;
     workoutDataLog.debug('🔄 updateData appelé avec:', resolved);
@@ -1337,12 +1357,19 @@ export const useWorkoutData = (options = {}) => {
         };
       }
     }
+    if (reactOnly) {
+      dataRef.current = toStore;
+      startTransition(() => {
+        setData(toStore);
+      });
+      return;
+    }
     if (strict) {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
       }
-      suppressAutoSaveUntilRef.current = Date.now() + 3000;
+      suppressAutoSaveUntilRef.current = Date.now() + (importFast ? 20000 : 3000);
     }
     if (!skipReact) {
       setData(toStore);
@@ -1354,6 +1381,8 @@ export const useWorkoutData = (options = {}) => {
         incrementalSession: Boolean(strict && sessionDay),
         sessionDay: sessionDay || null,
         skipCloud,
+        failOnTimeout: Boolean(strict),
+        importFast: Boolean(importFast),
       };
       if (strict && sessionDay) {
         await saveToDB(toStore, saveOpts);
@@ -1405,6 +1434,7 @@ export const useWorkoutData = (options = {}) => {
 
   const dataRef = useRef(data);
   useEffect(() => {
+    if (Date.now() < suppressAutoSaveUntilRef.current) return;
     dataRef.current = data;
   }, [data]);
 

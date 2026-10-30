@@ -14,6 +14,11 @@ describe('recapSelectionDiagnostics (R4)', () => {
     expect(analysisFamilyOfKind('adherence_dow')).toBe('adherence');
     expect(analysisFamilyOfKind('body_weight_parallel')).toBe('body');
     expect(analysisFamilyOfKind('gtg_repere_coevo')).toBe('gtg');
+    expect(analysisFamilyOfKind('stretch_gap')).toBe('mobility');
+    expect(analysisFamilyOfKind('span_session_cost')).toBe('rhythm');
+    expect(analysisFamilyOfKind('disc_best_month')).toBe('volume');
+    expect(analysisFamilyOfKind('disc_anchor')).toBe('volume');
+    expect(analysisFamilyOfKind('level_established')).toBe('exercise');
   });
 
   it('compte produced / deduped / ranked_out / shown', () => {

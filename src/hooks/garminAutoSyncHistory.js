@@ -21,6 +21,38 @@ const getScopedAutoSyncHistoryKey = () => `garmin_${getGarminScope()}_autosync_h
  * @param {Object} entry - Entrée d'historique AutoSync
  * @returns {Promise<void>}
  */
+export async function importAutoSyncHistoryBatch(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return;
+  const limited = entries.slice(0, AUTO_SYNC_HISTORY_LIMIT);
+  const db = await openDB();
+  if (!db) {
+    for (const entry of limited) {
+      await persistAutoSyncHistory(entry);
+    }
+    return;
+  }
+
+  const scope = getGarminScope();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_AUTO_SYNC_HISTORY], 'readwrite');
+    const store = tx.objectStore(STORE_AUTO_SYNC_HISTORY);
+    for (const entry of limited) {
+      store.add({
+        ...entry,
+        userId: entry?.userId || scope
+      });
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('autoSyncHistory import aborted'));
+  });
+}
+
+/**
+ * Persiste un déclenchement AutoSync dans IndexedDB
+ * @param {Object} entry
+ * @returns {Promise<void>}
+ */
 export async function persistAutoSyncHistory(entry) {
   try {
     const scope = getGarminScope();

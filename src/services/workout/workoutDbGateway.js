@@ -442,7 +442,7 @@ export async function putWorkoutRow(scopeKey, row) {
         tx.onerror = () => reject(tx.error);
         tx.onabort = () => reject(tx.error || new Error('WORKOUT_TX_ABORTED'));
       }),
-      20000
+      60000
     )
   );
 }

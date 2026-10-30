@@ -1404,6 +1404,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
 
   const insightHistory = loadInsightHistory();
   const mergedGarmin = mergeGarminDataForRecap(garminData, garminPartial, garminDailyMetrics);
+  const diagNow =
+    typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
+  const tComposed0 = diagNow();
   const composed = buildComposedInterpretationPipeline({
     snapshot,
     window,
@@ -1420,7 +1423,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     insightHistory,
     recapState
   });
+  const msComposed = Math.round(diagNow() - tComposed0);
 
+  const tSpan0 = diagNow();
   const spanStories = buildSpanStoryCandidates({
     snapshot,
     window,
@@ -1428,6 +1433,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     getExerciseNameById,
     garminData: mergedGarmin
   });
+  const msSpan = Math.round(diagNow() - tSpan0);
   const longPeriod = period === '30d' || period === '3m' || period === '6m' || period === '1y' || period === '2y' || period === 'all';
   const monthOrShorter = period === 'today' || period === '7d' || period === '30d';
   let candidates = [...spanStories, ...(composed.candidates || [])];
@@ -1486,10 +1492,12 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     hashSig(JSON.stringify(candidates.map((c) => `${c.id}:${c.weight}`).slice(0, 12)))
   ].join('|');
 
+  const tWeight0 = diagNow();
   const weightedCandidates = boostUnderrepresentedFamilies(
     applyNatureWeights(applyNoveltyWeights(candidates, insightHistory), composed.phenomena),
     { prefer: ['adherence', 'body', 'gtg', 'volume'] }
   );
+  const msWeight = Math.round(diagNow() - tWeight0);
 
   let spanDays = 7;
   if (window?.end && window?.start) {
@@ -1500,25 +1508,30 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     spanDays = 365;
   }
   const voiceKey = periodVoice(period, spanDays).key;
+  const tDedup0 = diagNow();
   const distinctCandidates = keepDistinctProofCards(weightedCandidates, {
     period,
     window,
     metricDates: Object.keys(mergedGarmin?.dailyMetrics || {})
   });
+  const msDedup = Math.round(diagNow() - tDedup0);
   const afterDedupIds = new Set(distinctCandidates.map((c) => c.id));
   const dedupedRows = weightedCandidates.filter((c) => !afterDedupIds.has(c.id));
   // Spec #24 Lot A — filtre dur avant sélection (rejeté = masqué)
+  const tValidate0 = diagNow();
   const validCandidates = filterValidInsights(distinctCandidates, {
     voiceKey,
     period,
     windowSpanDays: spanDays
   });
+  const msValidate = Math.round(diagNow() - tValidate0);
   const validIds = new Set(validCandidates.map((c) => c.id));
   const insufficientRows = distinctCandidates.filter((c) => !validIds.has(c.id));
   const caps = columnCapsForCandidates(validCandidates, {
     voiceKey,
     detectedKinds: (composed.periodDiscoveries?.all || []).map((d) => d.kind)
   });
+  const tSelect0 = diagNow();
   let pickedColumns = selectNarrativeColumns(validCandidates, caps, signature);
   let pickedShort = pickedColumns.short;
   let pickedMedium = pickedColumns.medium;
@@ -1558,6 +1571,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     starvedFamilies = familiesStarvedDespiteProduction(selectionDiagnostics);
     rescuedFamilies = rescued.rescued || [];
   }
+  const msSelect = Math.round(diagNow() - tSelect0);
 
   const prevSig = loadLastInsightSignature();
   if (!collectDiagnostic && prevSig !== signature && allPicked.length > 0) {
@@ -1626,7 +1640,10 @@ export function buildAdaptiveRecapInsights(opts = {}) {
           label: 'Pipeline composé (state, discoveries, essays)',
           module: 'recapInterpretationPipeline',
           executed: true,
+          ms: msComposed,
           outCount: (composed.candidates || []).length,
+          countUnit: 'candidates',
+          produced: (composed.candidates || []).length,
           detail: {
             discoveriesAll: (composed.periodDiscoveries?.all || []).length,
             discoveriesSelected: (composed.periodDiscoveries?.selected || []).length,
@@ -1639,39 +1656,58 @@ export function buildAdaptiveRecapInsights(opts = {}) {
           label: 'Span stories',
           module: 'recapAdaptiveInsights',
           executed: true,
-          outCount: (spanStories || []).length
+          ms: msSpan,
+          outCount: (spanStories || []).length,
+          countUnit: 'candidates',
+          produced: (spanStories || []).length
         },
         {
           id: 'weight_novelty',
           label: 'Pondération novelty / nature / familles',
           module: 'insightNoveltyEngine + recapSelectionDiagnostics',
           executed: true,
+          ms: msWeight,
           inCount: candidates.length,
-          outCount: weightedCandidates.length
+          outCount: weightedCandidates.length,
+          countUnit: 'candidates',
+          produced: weightedCandidates.length,
+          merged: candidates.length
         },
         {
           id: 'dedup',
           label: 'Déduplication kinship',
           module: 'recapCardKinship',
           executed: true,
+          ms: msDedup,
           inCount: weightedCandidates.length,
-          outCount: distinctCandidates.length
+          outCount: distinctCandidates.length,
+          countUnit: 'candidates',
+          filtered: dedupedRows.length,
+          dropped: dedupedRows.length
         },
         {
           id: 'validate',
           label: 'Validation insights',
           module: 'recapInsightValidate',
           executed: true,
+          ms: msValidate,
           inCount: distinctCandidates.length,
-          outCount: validCandidates.length
+          outCount: validCandidates.length,
+          countUnit: 'candidates',
+          filtered: insufficientRows.length,
+          dropped: insufficientRows.length
         },
         {
           id: 'select',
           label: 'Sélection colonnes + rescue familles',
           module: 'selectNarrativeColumns',
           executed: true,
+          ms: msSelect,
           inCount: validCandidates.length,
           outCount: allPicked.length,
+          countUnit: 'candidates',
+          filtered: rankedOutRows.length,
+          dropped: rankedOutRows.length,
           detail: { rescuedFamilies, starvedFamilies }
         }
       ]

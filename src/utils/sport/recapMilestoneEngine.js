@@ -24,6 +24,7 @@ import {
   volumeSharedWithRepSibling
 } from './recapExerciseIdentity';
 import { sameDayCompanions } from './recapFactReading';
+import { buildExerciseTrajectory, trajectoryToMetrics } from './exerciseTrajectoryAnalysis';
 
 export const REP_CUMUL_THRESHOLDS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
 export const SESSION_THRESHOLDS = [10, 25, 50, 100, 250, 500];
@@ -548,6 +549,56 @@ export function detectRecapMilestones({
     const oneParam = /restent du même ordre|reste le même/.test(setBit || '')
       ? ` Un seul paramètre a bougé. Le répéter avant d'en changer un autre garde la mesure lisible.`
       : '';
+    const trajWin = {
+      start: addCalendarDays(last.date, -Math.max(28, gap + 7)),
+      end: last.date
+    };
+    const traj = buildExerciseTrajectory({
+      snapshot,
+      exerciseId: last.id,
+      exerciseName: last.name,
+      window: trajWin,
+      getExerciseNameById,
+      mode: 'emergence'
+    });
+    const trajMetrics = trajectoryToMetrics(traj);
+    let mechBit = '';
+    if (
+      !setBit &&
+      traj?.ok &&
+      traj.setMechanism?.available &&
+      traj.setMechanism.before &&
+      traj.setMechanism.after
+    ) {
+      const b = traj.setMechanism.before;
+      const a = traj.setMechanism.after;
+      if (b.setCount != null && a.setCount != null) {
+        mechBit = ` Format observé autour du retour : environ ${b.setCount} × ${b.perSet} avant l'interruption, puis environ ${a.setCount} × ${a.perSet} à la reprise.`;
+      }
+    }
+    const legacyTitle = `Tu reprends ${last.name} après ${fmtInt(gap)} jours d'absence`;
+    const title =
+      trajMetrics.trajectoryOk && traj?.installation?.kind === 'returning'
+        ? `${last.name} revient après ${fmtInt(gap)} jours`
+        : legacyTitle;
+    const schemeBit = setBit ? ` ${setBit}` : mechBit;
+    const core = `${phraseTuViensDe({
+      eventYmd: last.date,
+      refYmd: DateHelper.getTodayLocal(),
+      perfectCore: `d'enregistrer ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.`,
+      simpleCore: `enregistré ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.`
+    })}${
+      ratio != null && ratio >= 2.5
+        ? ` L'écart dépasse ${fmt1(ratio)} fois ton intervalle habituel.`
+        : ''
+    }${
+      vs != null
+        ? ` Avec ${fmtInt(last.reps)} ${amountWord}, tu reviens à ${fmtPct(vs)} de ton volume moyen avant l'interruption.`
+        : ''
+    }${schemeBit}${oneParam}${mateBit}`;
+    const close = schemeBit
+      ? ` Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données.`
+      : ` Reproduire ce volume sur les prochaines séances confirme le retour dans l'entraînement.`;
     returns.push({
       gap,
       ratio: ratio || 0,
@@ -557,23 +608,29 @@ export function detectRecapMilestones({
       family: 'ms_return',
       type: 'EXERCISE_FIRST_RETURN',
       date: last.date,
-      title: `Tu reprends ${last.name} après ${fmtInt(gap)} jours d'absence`,
-      body: `${phraseTuViensDe({
-        eventYmd: last.date,
-        refYmd: DateHelper.getTodayLocal(),
-        perfectCore: `d'enregistrer ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.`,
-        simpleCore: `enregistré ta première séance depuis ${fmtInt(gap)} jours sur ${last.name.toLowerCase()}.`
-      })}${
-        ratio != null && ratio >= 2.5
-          ? ` L'écart dépasse ${fmt1(ratio)} fois ton intervalle habituel.`
-          : ''
-      }${
-        vs != null
-          ? ` Avec ${fmtInt(last.reps)} ${amountWord}, tu reviens à ${fmtPct(vs)} de ton volume moyen avant l'interruption.`
-          : ''
-      }${setBit ? ` ${setBit}` : ''}${oneParam}${mateBit} Ce volume mesure l'ampleur de la reprise, pas à lui seul une progression. Il devient un retour dans l'entraînement s'il se répète sur plusieurs séances.`,
+      prevDate: prev.date,
+      returnReps: last.reps,
+      priorAvg: avg,
+      vsPriorPct: vs,
+      habitMedianGap: med,
+      unit,
+      exerciseName: last.name,
+      mates: mates.map((other) => ({
+        id: other.id,
+        name: other.name,
+        reps: other.reps,
+        date: last.date
+      })),
+      title,
+      body: `${core}${close}`,
       evidence: `${fmtInt(gap)} j. · ${fmtInt(last.reps)} ${amountWord}`,
-      importance: 0.93
+      importance: 0.93,
+      metrics: {
+        name: last.name,
+        exerciseId: String(last.id),
+        draftTitle: legacyTitle,
+        ...trajMetrics
+      }
     });
   });
   returns.sort((a, b) => b.gap * 10 + b.ratio - (a.gap * 10 + a.ratio));

@@ -3,6 +3,11 @@
  * Aucun calcul métier parallèle : dérive uniquement du rapport d’exécution.
  */
 
+import {
+  normalizePipelineStages,
+  buildPipelineSummary
+} from './analysisEnginePipelineModel.js';
+
 /** Statuts métier exclusifs (un candidat = une case). */
 export const DIAG_STATUS = {
   SHOWN_NOW: 'shown_now',
@@ -395,33 +400,34 @@ function relationLikelyImplemented(rel) {
 }
 
 export function buildFamilyExplorer(report, registryRows = []) {
+  // Import lazy via string labels already on rows (familyLabel) when present
   const byFamily = report?.selectionDiagnostics?.byFamily || {};
   const fams = new Set([
     ...Object.keys(byFamily),
     ...registryRows.map((r) => r.family || 'misc')
   ]);
+  const shownTotal = registryRows.filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW).length;
   return [...fams]
     .filter(Boolean)
     .map((fam) => {
       const b = byFamily[fam] || {};
       const rows = registryRows.filter((r) => r.family === fam);
+      const shown = rows.filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW).length;
       return {
         family: fam,
+        familyLabel: rows[0]?.familyLabel || fam,
         produced: b.produced ?? rows.length,
-        shown: b.shown ?? rows.filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW).length,
+        shown: b.shown ?? shown,
         rejected:
           (b.insufficient_data || 0) +
           (b.deduped || 0) +
           (b.ranked_out || 0),
         intermediate: rows.filter((r) => r.diagStatus === DIAG_STATUS.INTERMEDIATE).length,
+        demoted: rows.filter((r) => r.diagStatus === DIAG_STATUS.DEMOTED).length,
         withoutEvidence: rows.filter((r) => r.evidenceCount === 0).length,
         kindsProduced: b.kindsProduced || [],
         kindsShown: b.kindsShown || [],
-        shareOfShown:
-          registryRows.filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW).length > 0
-            ? rows.filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW).length /
-              registryRows.filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW).length
-            : 0
+        shareOfShown: shownTotal > 0 ? shown / shownTotal : 0
       };
     })
     .sort((a, b) => b.shown - a.shown || b.produced - a.produced);
@@ -505,6 +511,9 @@ export function buildMissingOpportunities(report, correlations, registryRows) {
 }
 
 export function buildStageStatuses(stages = []) {
+  // Délègue au modèle pipeline (unités, timings, pertes typées).
+  // Import dynamique évité : fonction pure locale miroir — enrichDiagnosticReport
+  // appelle aussi normalize via pipelineSummary quand disponible.
   return stages.map((st, index) => {
     let status = 'ok';
     if (st.executed === false && st.errors?.length) status = 'error';
@@ -512,18 +521,29 @@ export function buildStageStatuses(stages = []) {
     else if (st.executed === false) status = 'not_run';
     else if (st.errors?.length) status = 'error';
     else if (st.warnings?.length) status = 'warn';
-    else if (st.executed !== false && st.outCount == null && st.inCount == null && !st.ms) {
+    else if (st.executed !== false && st.outCount == null && st.inCount == null && st.ms == null) {
       status = 'untraceable';
     }
+    const countsComparable =
+      st.inCount != null &&
+      st.outCount != null &&
+      st.countUnit !== 'bundle' &&
+      st.countUnit !== 'unknown';
+    const dropped =
+      st.dropped ??
+      st.filtered ??
+      (countsComparable && st.inCount >= st.outCount ? st.inCount - st.outCount : null);
     return {
       ...st,
       order: index + 1,
       stageStatus: status,
       stageMeta: STAGE_STATUS_META[status],
-      droppedApprox:
-        st.inCount != null && st.outCount != null && st.inCount >= st.outCount
-          ? st.inCount - st.outCount
-          : null
+      droppedApprox: dropped,
+      countsComparable,
+      hasTiming: st.ms != null,
+      technicallyExecuted: st.executed !== false,
+      functionallyOk:
+        st.executed !== false && !st.errors?.length && status !== 'untraceable' && status !== 'warn'
     };
   });
 }
@@ -579,7 +599,11 @@ export const TECHNICAL_LIMITS = [
   },
   {
     id: 'pipeline_drop_counts',
-    text: 'Les pertes exactes par étape ne sont disponibles que si inCount/outCount sont instrumentés ; sinon « non mesurable ».'
+    text: 'Pertes = in−out seulement si les compteurs sont de même unité (candidats). Assessment/enrichment exposent des agrégats (bundle=1), pas des cartes — ne pas les comparer aux étapes candidats.'
+  },
+  {
+    id: 'pipeline_timing_scope',
+    text: 'Les durées des sous-étapes adaptive (composed→select) sont chronométrées dans collectDiagnostic ; assessment/enrichment le sont au niveau diagnostic. Une étape « exécutée OK » ≠ conclusion métier correcte.'
   },
   {
     id: 'data_consumed_partial',
@@ -593,7 +617,11 @@ export function enrichDiagnosticReport(report) {
   const correlations = buildCorrelationLab(report);
   const families = buildFamilyExplorer(report, registry.rows);
   const opportunities = buildMissingOpportunities(report, correlations, registry.rows);
-  const stages = buildStageStatuses(report.stages || []);
+  const stages = normalizePipelineStages(report.stages || []).map((st) => ({
+    ...st,
+    stageMeta: STAGE_STATUS_META[st.stageStatus] || STAGE_STATUS_META.untraceable
+  }));
+  const pipelineSummary = buildPipelineSummary(stages);
   const coverage = buildDataCoverageInsights(report.dataInventory || []);
   return {
     ...report,
@@ -602,6 +630,7 @@ export function enrichDiagnosticReport(report) {
     families,
     opportunities,
     stagesDetailed: stages,
+    pipelineSummary,
     coverageInsights: coverage,
     limits: TECHNICAL_LIMITS,
     statusLegend: DIAG_STATUS_META,

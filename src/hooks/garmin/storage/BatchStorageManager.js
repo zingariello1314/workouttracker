@@ -43,7 +43,7 @@ class BatchStorageManager {
         return { ...merged, userId: scope };
       });
 
-      await Promise.all(mergedActivities.map((activity) => this.#putRecord(store, activity)));
+      for (const activity of mergedActivities) store.put(activity);
       await this.#awaitTransaction(tx);
 
       const duration = now() - start;
@@ -84,23 +84,18 @@ class BatchStorageManager {
       ).then(resolve, reject);
     });
 
-    const mergedRows = [];
-    for (let i = 0; i < entries.length; i += 1) {
-      const [date, metrics] = entries[i];
+    const mergedRows = entries.map(([date, metrics]) => {
       const existing = existingMap.get(date) || null;
       const merged = mergeDailyMetrics(metrics, existing, date);
-      mergedRows.push({ ...merged, date, userId: scope });
-      if (i % 5 === 4) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
-    }
+      return { ...merged, date, userId: scope };
+    });
 
-    const chunkSize = 20;
+    const chunkSize = 250;
     for (let offset = 0; offset < mergedRows.length; offset += chunkSize) {
       const chunk = mergedRows.slice(offset, offset + chunkSize);
       const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
       const store = tx.objectStore(STORE_DAILY_METRICS);
-      await Promise.all(chunk.map((row) => this.#putRecord(store, row)));
+      for (const row of chunk) store.put(row);
       await this.#awaitTransaction(tx);
     }
     const duration = now() - start;

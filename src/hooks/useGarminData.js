@@ -44,7 +44,7 @@ import {
   serializeUIMetricsSnapshot
 } from '../components/tabs/GarminTab/utils/uiMetricsStore';
 import { loadTelemetryHistory } from './garminTelemetryHistory';
-import { loadAutoSyncHistory, persistAutoSyncHistory, AUTO_SYNC_HISTORY_LIMIT } from './garminAutoSyncHistory';
+import { loadAutoSyncHistory, importAutoSyncHistoryBatch, AUTO_SYNC_HISTORY_LIMIT } from './garminAutoSyncHistory';
 import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../utils/accessControl';
 
@@ -322,17 +322,21 @@ export const useGarminData = () => {
    * @returns {Promise<void>} Promise résolue quand l'import est terminé
    */
   const importAll = useCallback(async (data) => {
-    if (!dbReady) return;
-    if (data.activities) await saveActivities(data.activities, dbReady);
-    if (data.dailyMetrics) await saveDailyMetrics(data.dailyMetrics, dbReady);
+    let ready = dbReady;
+    if (!ready) {
+      const db = await openDB();
+      ready = Boolean(db) || getUseFallback();
+      if (ready) setDbReady(true);
+    }
+    if (!ready) return;
+    if (data.activities) await saveActivities(data.activities, true);
+    if (data.dailyMetrics) await saveDailyMetrics(data.dailyMetrics, true);
     if (Array.isArray(data.forcedRangesHistory) && data.forcedRangesHistory.length > 0) {
       await importForcedRangesHistory(data.forcedRangesHistory);
     }
     // ✅ Tâche 13 : Importer l'historique AutoSync
     if (Array.isArray(data.autoSyncHistory) && data.autoSyncHistory.length > 0) {
-      for (const entry of data.autoSyncHistory) {
-        await persistAutoSyncHistory(entry);
-      }
+      await importAutoSyncHistoryBatch(data.autoSyncHistory);
     }
     if (data.maintenance) {
       const { purgeSummary, timeSeriesSummary, mockCleanupSummary } = data.maintenance;

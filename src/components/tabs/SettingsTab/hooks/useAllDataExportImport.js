@@ -34,6 +34,27 @@ import { importNutritionBackup } from '../utils/importNutritionBackup';
 import { restoreSportLocalSnapshot } from '../utils/sportLocalSnapshot';
 import { withIdbOperationTimeout } from '../../../../utils/sessionSaveTimeout';
 
+const PRE_IMPORT_BACKUP_KEY = 'workoutData_preImport_backup';
+let preImportBackupMemory = null;
+
+function rememberPreImportBackup(payload) {
+  preImportBackupMemory = payload;
+}
+
+function queuePreImportBackupDiskWrite() {
+  const payload = preImportBackupMemory;
+  if (!payload) return;
+  setTimeout(() => {
+    try {
+      const json = JSON.stringify(payload);
+      if (json.length > 4500000) return;
+      localStorage.setItem(PRE_IMPORT_BACKUP_KEY, json);
+    } catch (err) {
+      console.warn('[Settings] Backup pré-import non conservé sur disque:', err);
+    }
+  }, 0);
+}
+
 /**
  * Hook pour gérer l'import/export complet de toutes les données
  * 
@@ -289,14 +310,12 @@ export const useAllDataExportImport = (
     const newSessions = importedSessions.filter(imported => {
       const importedId = String(imported.id);
       const importedDateTime = `${imported.date || ''}_${imported.time || ''}`;
-      
+
       if (importedId && existingIds.has(importedId)) {
-        console.log(`⚠️ [Settings] Session avec ID dupliqué ignorée: ${importedId} (${imported.date} ${imported.time})`);
         return false;
       }
-      
+
       if (importedDateTime && importedDateTime !== '_' && existingDateTimes.has(importedDateTime)) {
-        console.log(`⚠️ [Settings] Session avec date/heure dupliquée ignorée: ${importedDateTime}`);
         return false;
       }
       
@@ -314,12 +333,11 @@ export const useAllDataExportImport = (
       const currentData = await loadFromDB();
       const backupData = currentData || data || {};
       const existingProgramCtx = await loadSportProgramContext(storageKey);
-      
-      localStorage.setItem('workoutData_preImport_backup', JSON.stringify({
+      rememberPreImportBackup({
         data: backupData,
         programContext: existingProgramCtx,
         backupDate: new Date().toISOString()
-      }));
+      });
       
       const importedData = allDataPreviewData.data;
       const mapMerged = mergeWorkoutMapFields(backupData, importedData);
@@ -374,12 +392,10 @@ export const useAllDataExportImport = (
               const key = `${c.name || ''}_${c.activityType || ''}_${c.startDate || c.targetDate || ''}`;
               
               if (id && id !== 'undefined' && existingChallengeIds.has(id)) {
-                console.log(`⚠️ [Settings] Défi avec ID dupliqué ignoré: ${id} (${c.name})`);
                 return false;
               }
               
               if (key && key !== '__' && existingChallengeKeys.has(key)) {
-                console.log(`⚠️ [Settings] Défi avec nom/type/date dupliqués ignoré: ${key}`);
                 return false;
               }
               
@@ -390,26 +406,31 @@ export const useAllDataExportImport = (
           })(),
           gtg: mergeGtgData(backupEd.gtg, importedEd.gtg)
         },
-        progressPhotos: [
-          ...(backupData.progressPhotos || []).filter(existingPhoto => {
-            const existingDate = existingPhoto.date || existingPhoto.timestamp;
-            return !(importedData.progressPhotos || []).some(importedPhoto => {
-              const importedDate = importedPhoto.date || importedPhoto.timestamp;
-              return existingDate === importedDate;
-            });
-          }),
-          ...(importedData.progressPhotos || [])
-        ],
-        progressEntries: [
-          ...(backupData.progressEntries || []).filter(existingEntry => {
-            const existingKey = `${existingEntry.date || existingEntry.timestamp}_${existingEntry.type}`;
-            return !(importedData.progressEntries || []).some(importedEntry => {
-              const importedKey = `${importedEntry.date || importedEntry.timestamp}_${importedEntry.type}`;
-              return existingKey === importedKey;
-            });
-          }),
-          ...(importedData.progressEntries || [])
-        ],
+        progressPhotos: (() => {
+          const importedDates = new Set(
+            (importedData.progressPhotos || []).map((photo) => photo.date || photo.timestamp)
+          );
+          return [
+            ...(backupData.progressPhotos || []).filter((existingPhoto) => {
+              return !importedDates.has(existingPhoto.date || existingPhoto.timestamp);
+            }),
+            ...(importedData.progressPhotos || [])
+          ];
+        })(),
+        progressEntries: (() => {
+          const importedKeys = new Set(
+            (importedData.progressEntries || []).map(
+              (entry) => `${entry.date || entry.timestamp}_${entry.type}`
+            )
+          );
+          return [
+            ...(backupData.progressEntries || []).filter((existingEntry) => {
+              const existingKey = `${existingEntry.date || existingEntry.timestamp}_${existingEntry.type}`;
+              return !importedKeys.has(existingKey);
+            }),
+            ...(importedData.progressEntries || [])
+          ];
+        })(),
         programHistory: [
           ...(backupData.programHistory || []),
           ...(importedData.programHistory || []).filter(imported => {
@@ -550,110 +571,110 @@ export const useAllDataExportImport = (
       // On continue Garmin / nutrition / budget même si l’entraînement n’a pas pu s’écrire.
       let workoutSaveError = null;
       try {
-        await updateData(mergedData, { strict: true, skipReact: true, skipCloud: true });
+        await updateData(mergedData, {
+          strict: true,
+          skipReact: true,
+          skipCloud: true,
+          importFast: true
+        });
       } catch (saveErr) {
         workoutSaveError = saveErr;
         console.error('[Settings] Sauvegarde entraînement interrompue:', saveErr);
       }
 
       const programCtx = extractSportProgramContextFromImport(importedData);
-      if (programCtx) {
-        const existingCtx = await loadSportProgramContext(storageKey);
-        const mergedCtx = mergeSportProgramContext(existingCtx, programCtx);
-        await persistSportProgramContext(storageKey, mergedCtx);
-        onApplyProgramContext?.(mergedCtx);
-      }
-
       const questionnaire = importedData.profileQuestionnaire
         ?? importedData.userProfileSnapshot?.profileQuestionnaire;
-      if (questionnaire && updateProfile && currentUser?.id) {
-        try {
-          const mergedQuestionnaire = mergeProfileQuestionnaire(
-            currentUser.profileQuestionnaire,
-            questionnaire
-          );
-          await updateProfile(currentUser.id, {
-            profileQuestionnaire: mergedQuestionnaire
-          });
-        } catch (profileErr) {
-          console.warn('[Settings] Import questionnaire profil ignoré:', profileErr);
-        }
-      }
-
-      // Importer Garmin si présent dans l'export
       const garminPayload =
         allDataPreviewData?.rawExport?.data?.garminData
         || allDataPreviewData?.rawExport?.garminData;
-      if (garminPayload && importGarminData) {
-        try {
-          await importGarminData(garminPayload);
-          console.log('[Settings] ✅ Import Garmin réussi depuis export complet');
-        } catch (garminErr) {
-          console.warn('[Settings] Import Garmin depuis export complet ignoré:', garminErr);
-        }
-      }
-
       const nutritionPayload =
         allDataPreviewData?.rawExport?.data?.nutritionData
         || allDataPreviewData?.rawExport?.nutritionData;
-      if (nutritionPayload) {
-        try {
-          const nutritionResult = await importNutritionBackup(nutritionPayload);
-          if (nutritionResult.skipped) {
-            console.warn('[Settings] Nutrition absente ou vide — repas non importés');
-          } else {
-            console.log('[Settings] ✅ Import nutrition', nutritionResult.stores);
-          }
-        } catch (nutritionErr) {
-          console.warn('[Settings] Import nutrition ignoré:', nutritionErr);
-        }
-      }
-
       const budgetPayload =
         allDataPreviewData?.rawExport?.data?.budgetData
         || allDataPreviewData?.rawExport?.budgetData;
-      if (budgetPayload) {
-        try {
-          await importBudgetData(budgetPayload, { merge: true, validate: true });
-          console.log('[Settings] ✅ Import budget');
-        } catch (budgetErr) {
-          console.warn('[Settings] Import budget ignoré:', budgetErr);
-        }
-      }
-
       const localSnapshot =
         allDataPreviewData?.rawExport?.sportLocalSnapshot
         || allDataPreviewData?.rawExport?.data?.sportLocalSnapshot;
-      if (localSnapshot) {
-        try {
-          restoreSportLocalSnapshot(localSnapshot);
-        } catch (snapshotErr) {
-          console.warn('[Settings] Jalons de grades non restaurés:', snapshotErr);
-        }
-      }
-
-      // Importer les livres si présents dans l'export
       const booksPreview = allDataPreviewData?.booksPreview;
-      if (booksPreview && booksPreview.valid && Array.isArray(booksPreview.books)) {
-        const booksToSave = booksPreview.books;
-        try {
-          const indexedOk = await withIdbOperationTimeout(saveBooksToIndexedDB(booksToSave), 12000);
-          if (indexedOk) {
-            console.log(`[Settings] ✅ Import Livres réussi (${booksToSave.length} livres restaurés dans IndexedDB depuis l'export global)`);
-          } else {
-            console.warn(`[Settings] ⚠️ Échec sauvegarde IndexedDB pour ${booksToSave.length} livres`);
-          }
-        } catch (booksError) {
-          console.error('❌ Erreur lors de la sauvegarde des Livres en IndexedDB:', booksError);
-        }
-      }
 
-      // Forcer rechargement depuis IndexedDB
-      const reloadedData = await loadFromDB();
-      if (reloadedData) {
-        console.log('[Settings] ✅ Import complet réussi, données rechargées depuis IndexedDB');
-      }
-      
+      await Promise.all([
+        (async () => {
+          if (!programCtx) return;
+          const existingCtx = await loadSportProgramContext(storageKey);
+          const mergedCtx = mergeSportProgramContext(existingCtx, programCtx);
+          await persistSportProgramContext(storageKey, mergedCtx);
+          onApplyProgramContext?.(mergedCtx);
+        })(),
+        (async () => {
+          if (!questionnaire || !updateProfile || !currentUser?.id) return;
+          try {
+            const mergedQuestionnaire = mergeProfileQuestionnaire(
+              currentUser.profileQuestionnaire,
+              questionnaire
+            );
+            await updateProfile(currentUser.id, {
+              profileQuestionnaire: mergedQuestionnaire
+            });
+          } catch (profileErr) {
+            console.warn('[Settings] Import questionnaire profil ignoré:', profileErr);
+          }
+        })(),
+        (async () => {
+          if (!garminPayload || !importGarminData) return;
+          try {
+            await importGarminData(garminPayload);
+            console.log('[Settings] Import Garmin réussi depuis export complet');
+          } catch (garminErr) {
+            console.warn('[Settings] Import Garmin depuis export complet ignoré:', garminErr);
+          }
+        })(),
+        (async () => {
+          if (!nutritionPayload) return;
+          try {
+            const nutritionResult = await importNutritionBackup(nutritionPayload);
+            if (nutritionResult.skipped) {
+              console.warn('[Settings] Nutrition absente ou vide — repas non importés');
+            } else {
+              console.log('[Settings] Import nutrition', nutritionResult.stores);
+            }
+          } catch (nutritionErr) {
+            console.warn('[Settings] Import nutrition ignoré:', nutritionErr);
+          }
+        })(),
+        (async () => {
+          if (!budgetPayload) return;
+          try {
+            await importBudgetData(budgetPayload, { merge: true, validate: true });
+            console.log('[Settings] Import budget');
+          } catch (budgetErr) {
+            console.warn('[Settings] Import budget ignoré:', budgetErr);
+          }
+        })(),
+        (async () => {
+          if (!localSnapshot) return;
+          try {
+            restoreSportLocalSnapshot(localSnapshot);
+          } catch (snapshotErr) {
+            console.warn('[Settings] Jalons de grades non restaurés:', snapshotErr);
+          }
+        })(),
+        (async () => {
+          if (!booksPreview || !booksPreview.valid || !Array.isArray(booksPreview.books)) return;
+          try {
+            const indexedOk = await withIdbOperationTimeout(saveBooksToIndexedDB(booksPreview.books), 60000);
+            if (indexedOk) {
+              console.log(`[Settings] Import Livres réussi (${booksPreview.books.length} livres)`);
+            } else {
+              console.warn(`[Settings] Échec sauvegarde IndexedDB pour ${booksPreview.books.length} livres`);
+            }
+          } catch (booksError) {
+            console.error('Erreur lors de la sauvegarde des Livres en IndexedDB:', booksError);
+          }
+        })()
+      ]);
+
       if (workoutSaveError) {
         setAllDataImportStatus('error');
         setTimeout(() => setAllDataImportStatus(null), 8000);
@@ -664,13 +685,14 @@ export const useAllDataExportImport = (
       setShowAllDataImportPreview(false);
       setImportData('');
       setAllDataPreviewData(null);
-      
-      setTimeout(() => {
-        setAllDataImportStatus(null);
-        if (window.confirm('Import réussi ! Voulez-vous recharger la page pour voir les changements ?')) {
-          window.location.reload();
-        }
-      }, 2000);
+      queuePreImportBackupDiskWrite();
+
+      if (window.confirm('Import réussi ! Voulez-vous recharger la page pour voir les changements ?')) {
+        window.location.reload();
+        return;
+      }
+      await updateData(mergedData, { reactOnly: true });
+      setAllDataImportStatus(null);
     } catch (error) {
       console.error('Erreur lors de l\'import complet:', error);
       setAllDataImportStatus('error');
@@ -681,9 +703,12 @@ export const useAllDataExportImport = (
   // Restaurer le backup pré-import
   const restorePreImportBackup = useCallback(async () => {
     try {
-      const backup = localStorage.getItem('workoutData_preImport_backup');
-      if (backup) {
-        const parsedBackup = JSON.parse(backup);
+      const backup = preImportBackupMemory
+        ? { data: preImportBackupMemory.data, programContext: preImportBackupMemory.programContext }
+        : null;
+      const stored = backup ? null : localStorage.getItem(PRE_IMPORT_BACKUP_KEY);
+      const parsedBackup = backup || (stored ? JSON.parse(stored) : null);
+      if (parsedBackup) {
         await updateData(parsedBackup.data);
         if (parsedBackup.programContext) {
           await persistSportProgramContext(storageKey, parsedBackup.programContext);

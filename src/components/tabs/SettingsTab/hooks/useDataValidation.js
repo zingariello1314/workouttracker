@@ -10,11 +10,21 @@
 
 import { useCallback } from 'react';
 import { validateBodyTrackingData } from '../../../BodyTracking/utils/exportImport';
-import {
-  buildSportExportMetadata,
-  extractSportProgramContextFromImport
-} from '../utils/sportExportBundle';
-import { buildGarminExportSummary } from '../utils/garminExportSummary';
+import { buildSportExportMetadata, extractSportProgramContextFromImport } from '../utils/sportExportBundle';
+
+function countGarminActivities(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+  const acts = payload.activities && typeof payload.activities === 'object' ? payload.activities : {};
+  const swimming = Array.isArray(acts.swimming) ? acts.swimming.length : 0;
+  const jumpRope = Array.isArray(acts.jumpRope) ? acts.jumpRope.length : 0;
+  const cardio = Array.isArray(acts.cardio) ? acts.cardio.length : 0;
+  const dailyMetrics = payload.dailyMetrics && typeof payload.dailyMetrics === 'object' ? payload.dailyMetrics : {};
+  return {
+    totalActivities: swimming + jumpRope + cardio,
+    dailyMetricsDays: Object.keys(dailyMetrics).length,
+    activityTypes: {}
+  };
+}
 
 /**
  * Hook pour valider les données d'import
@@ -156,62 +166,73 @@ export const useDataValidation = () => {
       warnings.push('Aucune donnée d\'endurance trouvée');
     }
 
-    const programCtx = extractSportProgramContextFromImport(workoutData) || {};
-    const enriched = buildSportExportMetadata(
-      workoutData,
-      programCtx,
-      { profileQuestionnaire: workoutData.profileQuestionnaire }
-    );
+    const meta = data.metadata && typeof data.metadata === 'object' ? data.metadata : null;
+    const sportMeta = typeof meta?.totalExercises === 'number' ? meta : null;
+    let enriched = null;
+    if (!sportMeta) {
+      const programCtx = extractSportProgramContextFromImport(workoutData) || {};
+      enriched = buildSportExportMetadata(
+        workoutData,
+        programCtx,
+        { profileQuestionnaire: workoutData.profileQuestionnaire }
+      );
+    }
 
     const journalFromExport = data.sportExport?.dailyJournal;
-    const journalDays = journalFromExport
-      ? Object.keys(journalFromExport).length
-      : enriched.dailyJournal.days;
-    const journalExerciseEntries = journalFromExport
-      ? Object.values(journalFromExport).reduce((n, d) => n + (d.exercises?.length || 0), 0)
-      : enriched.dailyJournal.exerciseEntries;
-    const journalStretchEntries = journalFromExport
-      ? Object.values(journalFromExport).reduce((n, d) => n + (d.stretches?.length || 0), 0)
-      : enriched.dailyJournal.stretchEntries;
+    const journalDays = sportMeta?.dailyJournal?.days
+      ?? (journalFromExport ? Object.keys(journalFromExport).length : enriched?.dailyJournal?.days ?? 0);
+    const journalExerciseEntries = sportMeta?.dailyJournal?.exerciseEntries
+      ?? (journalFromExport
+        ? Object.values(journalFromExport).reduce((n, d) => n + (d.exercises?.length || 0), 0)
+        : enriched?.dailyJournal?.exerciseEntries ?? 0);
+    const journalStretchEntries = sportMeta?.dailyJournal?.stretchEntries
+      ?? (journalFromExport
+        ? Object.values(journalFromExport).reduce((n, d) => n + (d.stretches?.length || 0), 0)
+        : enriched?.dailyJournal?.stretchEntries ?? 0);
 
+    const liftFromMeta = sportMeta?.liftVolume;
     const liftFromExport = data.sportExport?.dailyLiftVolume;
-    const liftVolumeTotalKg = liftFromExport
-      ? liftFromExport.reduce((s, d) => s + (d.totalKg || 0), 0)
-      : enriched.liftVolume?.totalKg ?? 0;
-    const liftVolumeDays = liftFromExport?.length ?? enriched.liftVolume?.daysWithVolume ?? 0;
+    const liftVolumeTotalKg = liftFromMeta?.totalKg
+      ?? (liftFromExport
+        ? liftFromExport.reduce((s, d) => s + (d.totalKg || 0), 0)
+        : enriched?.liftVolume?.totalKg ?? 0);
+    const liftVolumeDays = liftFromMeta?.daysWithVolume
+      ?? liftFromExport?.length
+      ?? enriched?.liftVolume?.daysWithVolume
+      ?? 0;
 
     const garminPayload = workoutData.garminData || null;
-    const garminMeta = data.metadata?.garminSummary || (garminPayload ? buildGarminExportSummary(garminPayload) : null);
+    const garminMeta = meta?.garminSummary || (garminPayload ? countGarminActivities(garminPayload) : null);
     
     const stats = {
-      exercises: enriched.totalExercises,
-      reps: enriched.totalReps,
-      repsWithValue: enriched.repsWithValue,
-      stretches: enriched.totalStretches,
+      exercises: sportMeta?.totalExercises ?? enriched?.totalExercises ?? 0,
+      reps: sportMeta?.totalReps ?? enriched?.totalReps ?? 0,
+      repsWithValue: sportMeta?.repsWithValue ?? enriched?.repsWithValue ?? 0,
+      stretches: sportMeta?.totalStretches ?? enriched?.totalStretches ?? 0,
       photos: (workoutData.progressPhotos || []).length,
       progressEntries: (workoutData.progressEntries || []).length,
       reminders: (workoutData.bodyTrackingReminders || []).length,
-      historyReps: enriched.historyReps,
-      programHistory: enriched.programHistory,
-      programs: enriched.programs,
-      activeProgramName: enriched.activeProgram,
-      profileQuestionnaire: enriched.profileQuestionnairePresent ? 1 : 0,
-      exerciseSessionPerceived: enriched.exerciseSessionPerceived,
-      circuitDefinitions: enriched.circuitDefinitions,
-      circuitProgressDays: enriched.circuitProgressDays,
+      historyReps: sportMeta?.historyReps ?? enriched?.historyReps ?? 0,
+      programHistory: sportMeta?.programHistory ?? enriched?.programHistory ?? 0,
+      programs: sportMeta?.programs ?? enriched?.programs ?? 0,
+      activeProgramName: sportMeta?.activeProgram ?? enriched?.activeProgram ?? null,
+      profileQuestionnaire: (sportMeta?.profileQuestionnairePresent ?? enriched?.profileQuestionnairePresent) ? 1 : 0,
+      exerciseSessionPerceived: sportMeta?.exerciseSessionPerceived ?? enriched?.exerciseSessionPerceived ?? 0,
+      circuitDefinitions: sportMeta?.circuitDefinitions ?? enriched?.circuitDefinitions ?? 0,
+      circuitProgressDays: sportMeta?.circuitProgressDays ?? enriched?.circuitProgressDays ?? 0,
       dailyJournalDays: journalDays,
       dailyJournalExerciseEntries: journalExerciseEntries,
       dailyJournalStretchEntries: journalStretchEntries,
       enduranceSessions: Object.values(workoutData.enduranceData?.sessions || {}).reduce(
         (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0
       ),
-      dailyVariations: enriched.dailyVariations,
-      sessionFeedbacks: enriched.sessionFeedbacks,
-      dayJustifications: enriched.dayJustifications,
-      exerciseWeightKeys: enriched.loadTracking.exerciseWeightKeys,
-      exercisePerArmKeys: enriched.loadTracking.exercisePerArmKeys,
-      exerciseSetWeightKeys: enriched.loadTracking.exerciseSetWeightKeys,
-      exerciseMaxRecords: enriched.exerciseMaxRecords,
+      dailyVariations: sportMeta?.dailyVariations ?? enriched?.dailyVariations ?? 0,
+      sessionFeedbacks: sportMeta?.sessionFeedbacks ?? enriched?.sessionFeedbacks ?? 0,
+      dayJustifications: sportMeta?.dayJustifications ?? enriched?.dayJustifications ?? 0,
+      exerciseWeightKeys: sportMeta?.loadTracking?.exerciseWeightKeys ?? enriched?.loadTracking?.exerciseWeightKeys ?? 0,
+      exercisePerArmKeys: sportMeta?.loadTracking?.exercisePerArmKeys ?? enriched?.loadTracking?.exercisePerArmKeys ?? 0,
+      exerciseSetWeightKeys: sportMeta?.loadTracking?.exerciseSetWeightKeys ?? enriched?.loadTracking?.exerciseSetWeightKeys ?? 0,
+      exerciseMaxRecords: sportMeta?.exerciseMaxRecords ?? enriched?.exerciseMaxRecords ?? 0,
       liftVolumeTotalKg: Math.round(liftVolumeTotalKg * 10) / 10,
       liftVolumeDays,
       garminPresent: Boolean(garminPayload),

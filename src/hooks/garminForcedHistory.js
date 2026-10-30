@@ -385,15 +385,37 @@ export const importForcedRangesHistory = async (entries = []) => {
     return { imported: 0 };
   }
 
-  let imported = 0;
-  for (const entry of entries.slice(0, MAX_HISTORY_ENTRIES)) {
-    try {
-      const normalized = normalizeEntry(entry);
-      await saveForcedRangeEntry(normalized);
-      imported += 1;
-    } catch (err) {
-      log.warn('[garminForcedHistory] Impossible d’importer une entrée', { err, entry });
-    }
+  const slice = entries.slice(0, MAX_HISTORY_ENTRIES);
+  if (getUseFallback() || !window.indexedDB) {
+    slice.forEach((entry) => saveToLocalStorage(entry));
+    return { imported: slice.length };
   }
-  return { imported };
+
+  const db = await openDB();
+  if (!db) {
+    slice.forEach((entry) => saveToLocalStorage(entry));
+    return { imported: slice.length };
+  }
+
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_FORCED_RANGES], 'readwrite');
+    const store = tx.objectStore(STORE_FORCED_RANGES);
+    for (const entry of slice) {
+      const data = { ...normalizeEntry(entry) };
+      if (!data.createdAt) data.createdAt = data.triggeredAt;
+      data.updatedAt = new Date().toISOString();
+      if (data.id) {
+        store.put(data);
+      } else {
+        const payload = { ...data };
+        delete payload.id;
+        store.add(payload);
+      }
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('forced history import aborted'));
+  });
+  await pruneIndexedDB(db);
+  return { imported: slice.length };
 };

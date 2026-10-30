@@ -93,7 +93,36 @@ export function buildExerciseBaseline(sessions) {
     established,
     consolidated,
     aboveOldMean,
-    last5Count: last5Prior.length || last5.length
+    last5Count: last5Prior.length || last5.length,
+    // Trace diagnostic : dates/séances réellement consommées (n’altère pas le texte).
+    dates: rows.map((s) => s.date),
+    sessionsDetail: rows.map((s) => ({ date: s.date, reps: s.reps })),
+    firstSessions: rows.slice(0, Math.min(5, rows.length)).map((s) => ({ date: s.date, reps: s.reps })),
+    lastSessions: rows.slice(-Math.min(5, rows.length)).map((s) => ({ date: s.date, reps: s.reps }))
+  };
+}
+
+/**
+ * Bloc metrics traçable depuis une baseline exercice (console diagnostic).
+ */
+export function baselineTraceMetrics(baseline, extra = {}) {
+  if (!baseline) return { ...extra };
+  return {
+    ...extra,
+    exerciseId: baseline.id != null ? String(baseline.id) : extra.exerciseId,
+    name: baseline.name || extra.name,
+    sessionCount: baseline.sessions ?? null,
+    historicalMean: baseline.historicalMean ?? null,
+    currentMean: baseline.currentMean ?? null,
+    recentMean: baseline.recentMean ?? null,
+    vsInitialPct: baseline.vsInitialPct ?? null,
+    vsHabitPct: baseline.vsHabitPct ?? null,
+    last: baseline.last || null,
+    bestDate: baseline.bestDate || null,
+    dates: baseline.dates || [],
+    sessions: baseline.sessionsDetail || [],
+    firstSessions: baseline.firstSessions || [],
+    lastSessions: baseline.lastSessions || []
   };
 }
 

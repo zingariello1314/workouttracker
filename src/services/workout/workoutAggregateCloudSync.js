@@ -307,24 +307,98 @@ export function scheduleWorkoutAggregateCloudPush(args) {
   }, DEBOUNCE_MS);
 }
 
+const CLOUD_DIRTY_KEY = 'momentum.workoutAggregateCloudDirty';
+
+/** Push différé annulé dès qu’un flush plus récent démarre. */
+let deferredCloudPush = null;
+
+export function readWorkoutAggregateCloudDirty() {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(CLOUD_DIRTY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.storageKey !== 'string') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeWorkoutAggregateCloudDirty(storageKey, lastSaved) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(
+      CLOUD_DIRTY_KEY,
+      JSON.stringify({ storageKey, lastSaved: String(lastSaved || '') })
+    );
+  } catch {
+    /* quota : IndexedDB reste la copie durable */
+  }
+}
+
+export function clearWorkoutAggregateCloudDirty(storageKey) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const current = readWorkoutAggregateCloudDirty();
+    if (!current) return;
+    if (storageKey && current.storageKey !== storageKey) return;
+    localStorage.removeItem(CLOUD_DIRTY_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
- * Annule le push différé et envoie tout de suite (ex. après sauvegarde IndexedDB, avant F5).
+ * Envoie l’agrégat après le rendu (import). Un rechargement immédiat
+ * retrouve le drapeau et renvoie la ligne IndexedDB.
  */
-export async function flushWorkoutAggregateCloudPushNow(args) {
+export function scheduleDeferredWorkoutAggregateCloudPush(args) {
   if (!isWorkoutAggregateCloudSyncEnabled()) return;
   const sk = String(args?.storageKey || '').trim();
-  if (!sk || sk === 'anonymous') return;
-  const token = String(args?.accessToken || '').trim();
-  if (!token) return;
   const row = args?.row && typeof args.row === 'object' ? args.row : null;
-  if (!row) return;
+  if (!sk || sk === 'anonymous' || !row) return;
+  const ticket = {
+    accessToken: String(args?.accessToken || '').trim(),
+    storageKey: sk,
+    row
+  };
+  deferredCloudPush = ticket;
+  writeWorkoutAggregateCloudDirty(sk, row.lastSaved);
+  const run = () => {
+    if (deferredCloudPush !== ticket) return;
+    void flushWorkoutAggregateCloudPushNow(ticket);
+  };
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(run, { timeout: 2000 });
+  } else {
+    setTimeout(run, 80);
+  }
+}
+
+export async function flushWorkoutAggregateCloudPushNow(args) {
+  deferredCloudPush = null;
+  if (!isWorkoutAggregateCloudSyncEnabled()) return false;
+  const sk = String(args?.storageKey || '').trim();
+  if (!sk || sk === 'anonymous') return false;
+  const token = String(args?.accessToken || '').trim();
+  if (!token) return false;
+  const row = args?.row && typeof args.row === 'object' ? args.row : null;
+  if (!row) return false;
   if (timerId != null) {
     clearTimeout(timerId);
     timerId = null;
   }
+  const saved = String(row.lastSaved || '');
   try {
     await pushWorkoutAggregateToServer(token, row);
+    const dirty = readWorkoutAggregateCloudDirty();
+    if (deferredCloudPush == null && (!dirty || dirty.lastSaved === saved)) {
+      clearWorkoutAggregateCloudDirty(sk);
+    }
+    return true;
   } catch (err) {
     console.warn('[workoutAggregateCloudSync] push immédiat échoué', err);
+    return false;
   }
 }

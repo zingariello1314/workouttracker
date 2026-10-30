@@ -153,24 +153,37 @@ function rewrite(card, voiceKey) {
   }
 
   if (kind === 'disc_exercise_progress') {
-    const up = /progressé/i.test(card.title || '');
-    const name = card.metrics?.name || (card.title || '').split(' a ')[0];
-    title = up
-      ? `${name} a un niveau plus haut qu'au début`
-      : `${name} a un niveau plus bas qu'au début`;
+    // La couche trajectoire fournit déjà un titre adapté (reprise, plateau, outlier…).
+    if (!card.metrics?.trajectoryOk) {
+      const up = /progressé|hausse|plus haut/i.test(card.title || '');
+      const name = card.metrics?.name || (card.title || '').split(' a ')[0];
+      title = up
+        ? `${name} a un niveau plus haut qu'au début`
+        : `${name} a un niveau plus bas qu'au début`;
+    }
     nature = 'journey';
   }
 
   if (kind === 'disc_structural_memory') {
-    const name = card.metrics?.name || (card.title || '').split(' entre ')[0].split(' devient ')[0];
-    title = `${name} prend une place qui n'était pas là avant`;
-    body = body.replace(/la fréquence des prochaines semaines dira[\s\S]*?(?=\.|$)/i, 'Le nombre de séances reste trop court pour parler d\'une habitude installée.');
+    if (!card.metrics?.trajectoryOk) {
+      const name = card.metrics?.name || (card.title || '').split(' entre ')[0].split(' devient ')[0];
+      title = `${name} prend une place qui n'était pas là avant`;
+      body = body.replace(
+        /la fréquence des prochaines semaines dira[\s\S]*?(?=\.|$)/i,
+        "Le nombre de séances reste trop court pour parler d'une habitude installée."
+      );
+    }
     nature = 'journey';
   }
 
   if (kind === 'disc_ms_return') {
-    const name = String(card.title || '').replace(/^Tu reprends\s+/i, '').replace(/\s+après[\s\S]*$/i, '').trim();
-    if (name) title = `${name} revient après un long silence`;
+    if (!card.metrics?.trajectoryOk) {
+      const name = String(card.title || '')
+        .replace(/^Tu reprends\s+/i, '')
+        .replace(/\s+après[\s\S]*$/i, '')
+        .trim();
+      if (name) title = `${name} revient après un long silence`;
+    }
     nature = 'now';
   }
 

@@ -10,6 +10,7 @@ Dossier de travail pour le moteur d’analyses Recap (toutes plages horaires).
 | **[PLAN-MISSION-MAJEURE-MOTEUR-ANALYSE.md](./PLAN-MISSION-MAJEURE-MOTEUR-ANALYSE.md)** | **Plan d’exécution béton** (exigences R1–R4 : Finding≠profondeur, inventaire corrélations, golden analytique, diagnostic sélection). |
 | [INVENTAIRE-CORRELATIONS-ANALYSES.md](./INVENTAIRE-CORRELATIONS-ANALYSES.md) | Matrice des relations données (dispo réelle, méthodes, priorités P0–P2). |
 | [COMPTE-RENDU-MISSION-MAJEURE-ANALYSES.md](./COMPTE-RENDU-MISSION-MAJEURE-ANALYSES.md) | Avant/après profondeur + statut livraison R1–R4. |
+| **[ETAT-AVANCE-PROFONDEUR-CONTENU-2026-10-29-2227.md](./ETAT-AVANCE-PROFONDEUR-CONTENU-2026-10-29-2227.md)** | **Snapshot 29/10/2026 22:27** — trajectoire exercice, passes récentes, fichiers touchés, console, suite. |
 
 ## Références (secondaires)
 

@@ -44,6 +44,8 @@ describe('analysisEngineDiagnostic', () => {
     expect(report.stages.length).toBeGreaterThan(2);
     expect(report.stages.every((s) => s.executed === false || s.label)).toBe(true);
     expect(report.dataInventory.some((d) => d.id === 'reps' && d.status === 'ok')).toBe(true);
+    expect(report.dataCatalog?.items?.length).toBeGreaterThan(10);
+    expect(report.dataCatalogShort?.some((d) => d.origin.includes('›'))).toBe(true);
     expect(Array.isArray(report.candidates.shown)).toBe(true);
     expect(Array.isArray(report.rejections)).toBe(true);
     expect(report.registry?.counts?.total).toBeGreaterThanOrEqual(0);

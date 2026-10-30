@@ -6,7 +6,9 @@ import {
   observationCaps,
   periodVoice,
   PERIOD_QUESTIONS,
-  selectPeriodDiscoveries
+  selectPeriodDiscoveries,
+  selectPeriodDiscoveriesWithTrace,
+  discoveryInformativeValue
 } from '../recapPeriodDiscoveries';
 import { computeRecapMuscleState } from '../recapMuscleLoadEngine';
 import { buildHorizonEssayCandidates } from '../recapHorizonEssays';
@@ -526,13 +528,18 @@ describe('recapPeriodDiscoveries', () => {
       { kind: 'disc_quarter_arc', nature: 'journey', family: 'quarter_profile', score: 64 }
     ];
     const month = selectPeriodDiscoveries(fake, null, 'month');
-    expect(month.filter((d) => d.nature === 'now').map((d) => d.kind)).toEqual([
-      'disc_volume_shape',
-      'disc_muscle_now'
-    ]);
+    expect(month.filter((d) => d.nature === 'now').map((d) => d.kind)).toContain('disc_volume_shape');
     expect(month.some((d) => d.kind === 'disc_best_month')).toBe(true);
-    expect(month.some((d) => d.kind === 'disc_muscle_share_shift')).toBe(true);
-    expect(month.some((d) => d.kind === 'disc_push_pull')).toBe(true);
+    // Une seule carte « composition / poussée-tirage » (même constat), la plus informative
+    const compositionKinds = [
+      'disc_muscle_now',
+      'disc_push_pull',
+      'disc_muscle_share_shift',
+      'disc_ratio_structure',
+      'disc_muscle_reorient'
+    ];
+    expect(month.filter((d) => compositionKinds.includes(d.kind))).toHaveLength(1);
+    expect(month.some((d) => compositionKinds.includes(d.kind))).toBe(true);
 
     const long = selectPeriodDiscoveries(fake, null, 'long');
     expect(long.find((d) => d.nature === 'now')?.kind).toBe('disc_volume_shape');
@@ -649,6 +656,48 @@ describe('recapPeriodDiscoveries', () => {
     );
     expect(withPush.some((d) => d.kind === 'disc_muscle_now' || d.kind === 'disc_volume_shape')).toBe(true);
     expect(withPush.some((d) => d.kind === 'disc_push_pull')).toBe(true);
+  });
+
+  it('dédoublonne la composition et préfère une trajectoire plus informative', () => {
+    const pack = [
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume_shape', score: 70 },
+      { kind: 'disc_muscle_now', nature: 'now', family: 'muscle_now', score: 80 },
+      { kind: 'disc_push_pull', nature: 'trajectory', family: 'push_pull', score: 82 },
+      {
+        kind: 'disc_exercise_progress',
+        nature: 'journey',
+        family: 'exercise_progress',
+        score: 78,
+        metrics: {
+          exerciseId: '60',
+          trajectoryOk: true,
+          trajectoryRichness: 8,
+          trajectorySetAvailable: true,
+          trajectoryPeers: 'localized',
+          trajectoryImplicationRule: 'stabilize_at_recent_level_when_localized_decline',
+          trajectoryPrimaryStory: 'net_decline'
+        }
+      }
+    ];
+    const traced = selectPeriodDiscoveriesWithTrace(pack, null, 'week');
+    const composition = traced.selected.filter((d) =>
+      ['disc_muscle_now', 'disc_push_pull', 'disc_muscle_share_shift'].includes(d.kind)
+    );
+    expect(composition).toHaveLength(1);
+    expect(traced.selected.some((d) => d.kind === 'disc_exercise_progress')).toBe(true);
+    const progress = traced.selected.find((d) => d.kind === 'disc_exercise_progress');
+    expect(discoveryInformativeValue(progress)).toBeGreaterThan(
+      discoveryInformativeValue(composition[0])
+    );
+    const droppedComp = traced.dropped.filter((d) =>
+      ['disc_muscle_now', 'disc_push_pull'].includes(d.kind)
+    );
+    expect(droppedComp.length).toBeGreaterThanOrEqual(1);
+    expect(
+      droppedComp.every(
+        (d) => d.reason === 'story_duplicate_composition' || d.reason === 'outranked_by_richer' || d.reason === 'rival'
+      )
+    ).toBe(true);
   });
 
   it('avec 12 paires séance×nuit, publie au moins une découverte sommeil retenue aujourd’hui et en 7 j.', () => {

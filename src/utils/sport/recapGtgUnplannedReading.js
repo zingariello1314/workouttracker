@@ -240,7 +240,21 @@ function buildNowCard(rows, judgments) {
     title,
     body,
     evidence: `${rows.length} hors planning · ${reps} reps${band ? ` · ${BAND_LABEL[band.band]}` : ''}`,
-    metrics: { sets: rows.length, reps, role: mode, band: band?.band || null }
+    metrics: {
+      sets: rows.length,
+      reps,
+      role: mode,
+      band: band?.band || null,
+      // Instrumentation diagnostic (n’altère pas le texte) : dates + séries brutes
+      dates: rows.map((row) => row.dateStr).filter(Boolean),
+      series: rows.map((row) => ({
+        date: row.dateStr,
+        time: row.time || null,
+        reps: row.reps,
+        adHoc: row.adHoc !== false,
+        exerciseId: row.exerciseId || row.id || null
+      }))
+    }
   });
 }
 
@@ -301,7 +315,22 @@ function buildContinuityCard(history, window, plans) {
     metrics: {
       currentSets: current.length,
       previousSets: before.length,
-      gapDays: nowGap.gaps
+      gapDays: nowGap.gaps,
+      dates: current.map((row) => row.dateStr).filter(Boolean),
+      series: current.map((row) => ({
+        date: row.dateStr,
+        time: row.time || null,
+        reps: row.reps,
+        adHoc: true,
+        window: 'current'
+      })),
+      previousSeries: before.map((row) => ({
+        date: row.dateStr,
+        time: row.time || null,
+        reps: row.reps,
+        adHoc: true,
+        window: 'previous'
+      }))
     }
   });
 }
@@ -445,9 +474,23 @@ function buildJourneyCard(snapshot, history, config, end) {
     metrics: {
       exerciseId: lead.exerciseId,
       ratio: round1(lead.change.ratio),
-      adHocShare: share
+      adHocShare: share,
+      dates: uniqDates(ownAdHoc.map((row) => row.dateStr)),
+      series: ownAdHoc.slice(0, 60).map((row) => ({
+        date: row.dateStr,
+        time: row.time || null,
+        reps: row.reps,
+        adHoc: true,
+        exerciseId: row.exerciseId
+      })),
+      earlyDate: lead.early?.date || null,
+      lateDate: lead.late?.date || null
     }
   });
+}
+
+function uniqDates(list) {
+  return [...new Set((list || []).filter(Boolean))].sort();
 }
 
 export function buildGtgUnplannedDiscoveries({ snapshot, window, profileQuestionnaireRaw = null } = {}) {

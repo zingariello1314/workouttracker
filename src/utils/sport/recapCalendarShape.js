@@ -4,6 +4,7 @@
  */
 import { formatDayFr } from './recapTrainingTimeline';
 import { enumerateDatesInclusive } from './dailyDenseTimeSeries';
+import { calendarGapImplication, composeAnalyticalReading } from './recapAnalyticalReading';
 
 const HABIT_GAP = 12;
 
@@ -96,23 +97,44 @@ export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod 
   }
   if (!bits.length) return null;
   const quietCount = dates.length - trained.length;
+  const titleThesis = quietLead && hotLead
+    ? `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)} mêlent un bloc chargé et un creux`
+    : hotLead
+      ? `Un bloc dépasse le niveau de séance de ${thisPeriod}`
+      : `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)} : le volume repose sur peu de journées`;
+  const constat = `${bits
+    .map((bit) => bit.charAt(0).toUpperCase() + bit.slice(1))
+    .join('. ')}. Sur ${dates.length} jours, ${trained.length} ont une séance et ${quietCount} n'en ont pas`;
+  const mechanism =
+    hotLead && habit > 0
+      ? `Le pic vaut environ ${(Math.max(...hotLead.reps) / habit).toFixed(1).replace('.', ',')} fois la médiane de séance de la fenêtre : la médiane décrit l’habitude, le pic un point haut`
+      : null;
+  const scope =
+    quietLead && hotLead
+      ? `Les jours sans séance font partie de ce rythme : ce sont eux qui rendent le bloc possible`
+      : quietLead
+        ? `Le creux calendaire est localisé ${rangeLabel(quietLead.start, quietLead.end, withYear)}`
+        : null;
+  const implication =
+    calendarGapImplication({
+      trainedDays: trained.length,
+      quietDays: quietCount,
+      spanDays: dates.length
+    }) ||
+    (quietLead && hotLead
+      ? `Les remplir avec une séance de l’ordre du pic changerait le bloc, ce ne serait pas un simple rattrapage`
+      : null);
+  const reading = composeAnalyticalReading({
+    titleThesis,
+    constat,
+    mechanism,
+    scope,
+    implication
+  });
   return {
-    title: quietLead && hotLead
-      ? `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)} mêlent un bloc chargé et un creux`
-      : hotLead
-        ? `Un bloc dépasse le niveau de séance de ${thisPeriod}`
-        : `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)} laissent un creux sans séance`,
-    body: `${bits
-      .map((bit) => bit.charAt(0).toUpperCase() + bit.slice(1))
-      .join('. ')}.${
-      hotLead && habit > 0
-        ? ` Le pic vaut environ ${(Math.max(...hotLead.reps) / habit).toFixed(1).replace('.', ',')} fois la médiane. La médiane décrit la séance habituelle ; le pic est un point haut. Après ce pic, la séance suivante se compare à la médiane, pas au pic.`
-        : ''
-    }${
-      quietLead && hotLead
-        ? ` Les jours sans séance font partie de ce rythme : ce sont eux qui rendent le bloc possible. Les remplir avec une séance de l'ordre du pic changerait le bloc, ce ne serait pas un simple rattrapage.`
-        : ''
-    } Sur ${dates.length} jours, ${trained.length} ont une séance et ${quietCount} n'en ont pas.`,
-    evidence: `${trained.length} jours entraînés · ${quietCount} jours sans séance`
+    title: reading.title,
+    body: reading.body,
+    evidence: `${trained.length} jours entraînés · ${quietCount} jours sans séance`,
+    readingBeats: reading.beats
   };
 }

@@ -6,17 +6,88 @@
 import { kindFromNarrativeCandidate } from './recapNarrativeClaims';
 import { isMilestoneKind } from './recapMilestoneEngine';
 
+/**
+ * Familles grossières pour sélection / console.
+ * Ordre = priorité (premier match gagne).
+ */
 const FAMILY_FROM_KIND = [
   [/sleep|sommeil/, 'sleep'],
   [/gtg/, 'gtg'],
-  [/ms_return|return|absence|abandoned/, 'exercise'],
-  [/ms_cumul|ms_sessions|volume|density|peak|decomp/, 'volume'],
+  [/stretch|mobility|souplesse/, 'mobility'],
+  [/kcal|cardio|run|steps|no_running/, 'cardio'],
+  [/ms_return|return|absence|abandoned|exercise_specific|level_establish/, 'exercise'],
+  [/ms_cumul|ms_sessions|volume|density|peak|decomp|best_month|anchor|period_weight/, 'volume'],
   [/adherence|completion|program|pending|continuity/, 'adherence'],
   [/body|weight|imc|impedance/, 'body'],
-  [/muscle|push|pull|mix|composition|stimulus/, 'mix'],
-  [/ms_|progress|pr_|journey|plateau|goal/, 'exercise'],
-  [/identity|rhythm|freq/, 'rhythm']
+  [/muscle|push|pull|mix|composition|stimulus|emergence|repertoire|reorient/, 'mix'],
+  [/ms_|progress|pr_|plateau|goal|exercise_/, 'exercise'],
+  [/identity|rhythm|freq|calendar|span_session|span_/, 'rhythm'],
+  [/disc_anchor|disc_best_month|disc_quarter|disc_emergence|disc_vs|vs_habit|comparable/, 'volume'],
+  [/relation\.|reading\.|span_/, 'rhythm']
 ];
+
+/** Alias des familles fines (discoveries) → famille console. */
+export const DISCOVERY_FAMILY_TO_COARSE = {
+  rest_day: 'adherence',
+  pending: 'adherence',
+  pending_context: 'adherence',
+  calendar_rhythm: 'rhythm',
+  steps: 'cardio',
+  density: 'volume',
+  volume_shape: 'volume',
+  muscle_now: 'mix',
+  peak_day: 'volume',
+  no_running: 'cardio',
+  muscle_shift: 'mix',
+  push_pull: 'mix',
+  exercise_share: 'exercise',
+  exercise_structure: 'exercise',
+  emergence: 'mix',
+  composition: 'mix',
+  period_weight: 'volume',
+  repertoire: 'exercise',
+  freq_span: 'rhythm',
+  kcal_profile: 'cardio',
+  quarter_profile: 'volume',
+  vs_habit: 'volume',
+  comparable: 'exercise',
+  exercise_progress: 'exercise',
+  sleep_night: 'sleep',
+  sleep_volume: 'sleep',
+  sleep_month: 'sleep',
+  sleep_week: 'sleep',
+  sleep_rpe: 'sleep',
+  sleep_assoc: 'sleep',
+  sleep_family: 'sleep',
+  sleep_cardio: 'sleep',
+  sleep_quarter: 'sleep',
+  sleep_freq: 'sleep',
+  sleep_rhythm: 'sleep',
+  sleep_reg: 'sleep',
+  best_month: 'volume',
+  gtg: 'gtg',
+  gtg_unplanned: 'gtg'
+};
+
+/** Libellés FR pour l’UI diagnostic (jamais afficher « misc » brut). */
+export const ANALYSIS_FAMILY_LABELS = {
+  sleep: 'Sommeil',
+  gtg: 'GTG',
+  mobility: 'Mobilité',
+  cardio: 'Cardio / pas',
+  exercise: 'Exercices',
+  volume: 'Volume & charge',
+  adherence: 'Assiduité',
+  body: 'Corps',
+  mix: 'Composition',
+  rhythm: 'Rythme & séances',
+  misc: 'Non classé'
+};
+
+export function analysisFamilyLabel(family) {
+  const f = String(family || 'misc');
+  return ANALYSIS_FAMILY_LABELS[f] || f;
+}
 
 export function analysisFamilyOfKind(kind) {
   const k = String(kind || '').toLowerCase();
@@ -27,6 +98,31 @@ export function analysisFamilyOfKind(kind) {
     if (re.test(k)) return fam;
   }
   return 'misc';
+}
+
+/**
+ * Résout la famille d’un candidat : préfère family découverte mappée, sinon kind.
+ * @param {object|string} rowOrKind
+ */
+export function resolveAnalysisFamily(rowOrKind) {
+  if (rowOrKind == null) return 'misc';
+  if (typeof rowOrKind === 'string') return analysisFamilyOfKind(rowOrKind);
+  const raw =
+    rowOrKind.family ||
+    rowOrKind.interpretation?.family ||
+    rowOrKind.interpretation?.context?.family ||
+    null;
+  if (raw) {
+    const key = String(raw).toLowerCase();
+    if (DISCOVERY_FAMILY_TO_COARSE[key]) return DISCOVERY_FAMILY_TO_COARSE[key];
+    if (ANALYSIS_FAMILY_LABELS[key]) return key;
+  }
+  const kind =
+    rowOrKind.kind ||
+    rowOrKind.interpretation?.context?.kind ||
+    kindFromNarrativeCandidate(rowOrKind) ||
+    '';
+  return analysisFamilyOfKind(kind);
 }
 
 function emptyBucket() {
@@ -65,7 +161,7 @@ export function buildSelectionDiagnostics(opts = {}) {
   const bump = (list, field) => {
     (list || []).forEach((row) => {
       const kind = kindOf(row);
-      const fam = analysisFamilyOfKind(kind);
+      const fam = resolveAnalysisFamily(row);
       const b = ensure(fam);
       b[field] += 1;
       if (field === 'produced') b.kindsProduced.push(kind);

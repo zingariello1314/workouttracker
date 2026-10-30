@@ -9,13 +9,14 @@ import { getRecapDateWindow } from './recapMuscleLoadEngine';
 import { buildRecapEnrichmentBundle } from './recapEnrichmentMetrics';
 import { computeRecapUserAssessment } from './recapUserAssessment';
 import { signalFamilyOfKind } from './recapInsightNature';
-import { analysisFamilyOfKind } from './recapSelectionDiagnostics';
+import { resolveAnalysisFamily, analysisFamilyLabel } from './recapSelectionDiagnostics';
 import {
   assertAnalyticalDepthPositive,
   hasDeferredReasoningPhrase
 } from './recapAnalysisDepthAssert';
 import { kindFromNarrativeCandidate } from './recapNarrativeClaims';
 import { enrichDiagnosticReport } from './analysisEngineDiagnosticModel';
+import { buildAnalysisEngineDataCatalog } from './analysisEngineDataCatalog';
 
 const PERIODS = ['today', '7d', '30d', '3m', '6m', '1y', 'all'];
 
@@ -24,13 +25,28 @@ function nowMs() {
 }
 
 function cardText(row) {
-  const ctx = row?.interpretation?.context || {};
+  const ctx = row?.interpretation?.context || row?.context || {};
   return {
     title: ctx.title || row?.title || '',
     body: ctx.body || row?.body || row?.text || '',
     evidence: ctx.evidenceLine || row?.evidence || '',
-    kind: ctx.kind || row?.kind || kindFromNarrativeCandidate(row) || ''
+    kind: ctx.kind || row?.kind || kindFromNarrativeCandidate(row) || '',
+    rewardTone: ctx.rewardTone || row?.rewardTone || null
   };
+}
+
+function producerHintFor(row, kind) {
+  const id = String(row?.id || '');
+  const k = String(kind || '');
+  if (k.startsWith('disc_ms_')) return 'recapMilestoneEngine';
+  if (k.startsWith('disc_gtg_')) return 'recapGtgUnplannedReading';
+  if (k.startsWith('disc_sleep_')) return 'sleep / periodDiscoveries';
+  if (k.startsWith('disc_')) return 'recapPeriodDiscoveries → horizon essays';
+  if (id.includes('span_')) return 'spanStories';
+  if (id.startsWith('relation.reading.')) return 'recapHorizonEssays / discoveries';
+  if (k.includes('gtg')) return 'recapGtgUnplannedReading';
+  if (k.includes('sleep')) return 'sleep / periodDiscoveries';
+  return 'pipeline';
 }
 
 function qualityOfText(title, body) {
@@ -49,131 +65,58 @@ function qualityOfText(title, body) {
   };
 }
 
-function summarizeDataAvailability({ snapshot, enrichment, garminData, window, assessment }) {
-  const repsKeys = Object.keys(snapshot?.reps || {}).length;
-  const checkedKeys = Object.keys(snapshot?.checkedExercises || {}).length;
-  const gtgDays = Object.keys(snapshot?.enduranceData?.gtg?.days || {}).length;
-  const weightEntries = (snapshot?.progressEntries || []).filter(
-    (e) => e?.type === 'metrics' || e?.type === 'impedance'
-  ).length;
-  const nightHint =
-    garminData?.dailyMetrics != null
-      ? Object.keys(garminData.dailyMetrics).length
-      : enrichment?.sleepDaily?.length || 0;
-  return [
-    {
-      id: 'reps',
-      label: 'Répétitions / perfs',
-      family: 'performances',
-      status: repsKeys > 0 ? 'ok' : 'missing',
-      n: repsKeys,
-      nInPeriod: 'non instrumenté',
-      nConsumed: 'non instrumenté',
-      source: 'snapshot.reps',
-      fields: ['clé date_exercice', 'valeur']
-    },
-    {
-      id: 'checked',
-      label: 'Exercices cochés',
-      family: 'séances',
-      status: checkedKeys > 0 ? 'ok' : 'missing',
-      n: checkedKeys,
-      nConsumed: 'non instrumenté',
-      source: 'snapshot.checkedExercises',
-      fields: ['clé date_exercice', 'bool']
-    },
-    {
-      id: 'completion',
-      label: 'Complétion programme',
-      family: 'assiduité',
-      status: enrichment?.completion ? 'ok' : 'sparse',
-      n: enrichment?.completion?.activeTrainingDays ?? null,
-      source: 'enrichment.completion',
-      fields: ['activeTrainingDays', 'rates']
-    },
-    {
-      id: 'dow',
-      label: 'Assiduité par jour',
-      family: 'assiduité',
-      status: (enrichment?.dayOfWeek || []).some((d) => d.plannedDays > 0) ? 'ok' : 'sparse',
-      n: (enrichment?.dayOfWeek || []).filter((d) => d.plannedDays > 0).length,
-      source: 'enrichment.dayOfWeek',
-      fields: ['plannedDays', 'doneDays']
-    },
-    {
-      id: 'gtg',
-      label: 'GTG',
-      family: 'gtg',
-      status: gtgDays > 0 ? 'ok' : 'missing',
-      n: gtgDays,
-      source: 'snapshot.enduranceData.gtg',
-      fields: ['days', 'config']
-    },
-    {
-      id: 'sleep',
-      label: 'Sommeil (Garmin / digest)',
-      family: 'sommeil',
-      status: nightHint > 0 ? (nightHint >= 8 ? 'ok' : 'sparse') : 'missing',
-      n: nightHint,
-      source: 'garmin.dailyMetrics | enrichment.sleepDaily',
-      fields: ['sleep', 'duration', 'scores']
-    },
-    {
-      id: 'weight',
-      label: 'Poids / mensurations',
-      family: 'corps',
-      status: weightEntries >= 2 ? 'ok' : weightEntries === 1 ? 'sparse' : 'missing',
-      n: weightEntries,
-      source: 'snapshot.progressEntries',
-      fields: ['type', 'weight', 'date']
-    },
-    {
-      id: 'window',
-      label: 'Fenêtre d’analyse',
-      family: 'temporel',
-      status: window?.start && window?.end ? 'ok' : 'missing',
-      n: window?.start && window?.end ? 1 : 0,
-      source: 'recap window',
-      detail: window ? `${window.start} → ${window.end}` : null,
-      coverage: window ? `${window.start} → ${window.end}` : null
-    },
-    {
-      id: 'assessment',
-      label: 'Assessment Recap',
-      family: 'contexte',
-      status: assessment ? 'ok' : 'missing',
-      n: assessment ? 1 : 0,
-      source: 'computeRecapUserAssessment',
-      fields: ['insights', 'kpis']
-    }
-  ];
+function summarizeDataAvailability(ctx) {
+  const catalog = buildAnalysisEngineDataCatalog(ctx);
+  // Compat inventaire : même shape enrichie (source = originPath)
+  return catalog.items.map((it) => ({
+    ...it,
+    family: it.tab,
+    source: it.originPath,
+    nConsumed: 'non instrumenté'
+  }));
 }
 
 function annotateCandidate(row, status, reason = null, stage = null) {
   const t = cardText(row);
-  const family = analysisFamilyOfKind(t.kind) || signalFamilyOfKind(t.kind);
+  const family =
+    resolveAnalysisFamily({ ...row, kind: t.kind }) || signalFamilyOfKind(t.kind) || 'misc';
+  const metrics =
+    row.metrics ||
+    row.interpretation?.metrics ||
+    row.interpretation?.context?.metrics ||
+    null;
+  const evidenceList = Array.isArray(row.evidence)
+    ? row.evidence
+    : Array.isArray(row.interpretation?.evidence)
+      ? row.interpretation.evidence
+      : null;
   return {
     id: row.id || `${t.kind}|${status}`,
     kind: t.kind,
     family,
+    familyLabel: analysisFamilyLabel(family),
     signalFamily: signalFamilyOfKind(t.kind),
     title: t.title,
     body: t.body,
-    evidence: t.evidence,
+    evidence: typeof row.evidence === 'string' ? row.evidence : t.evidence,
+    evidenceList,
     weight: row.weight ?? null,
     score: row.score ?? null,
-    horizon: row.horizon || null,
-    nature: row.nature || row.interpretation?.nature || null,
+    confidence: row.confidence ?? row.interpretation?.confidence ?? null,
+    relevance: row.relevance ?? row.interpretation?.relevance ?? null,
+    horizon: row.horizon || row.interpretation?.horizon || null,
+    nature: row.nature || row.interpretation?.nature || row.interpretation?.context?.nature || null,
     status,
     reason: reason || row.reason || null,
     stage,
-    metrics: row.metrics || row.interpretation?.metrics || row.interpretation?.context?.metrics || null,
+    metrics,
+    scope: row.scope || row.interpretation?.scope || null,
+    noveltyKey: row.noveltyKey || null,
+    evidenceFamilyId: row.evidenceFamilyId || null,
+    interpretation: row.interpretation || null,
     quality: qualityOfText(t.title, t.body),
-    producerHint: String(row.id || '').startsWith('relation.reading.')
-      ? 'recapHorizonEssays / discoveries'
-      : String(row.id || '').includes('span_')
-        ? 'spanStories'
-        : 'pipeline'
+    rewardTone: t.rewardTone,
+    producerHint: producerHintFor(row, t.kind)
   };
 }
 
@@ -201,17 +144,31 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
   } = opts;
 
   const t0 = nowMs();
+  const wall0 = Date.now();
   const stages = [];
   const pushStage = (id, label, module, extra = {}) => {
+    const ms = extra.ms ?? null;
+    const endedAt = extra.endedAt || new Date().toISOString();
+    const startedAt =
+      extra.startedAt ||
+      (ms != null ? new Date(Date.now() - ms).toISOString() : endedAt);
     stages.push({
       id,
       label,
       module,
       executed: extra.executed !== false,
       skippedReason: extra.skippedReason || null,
-      ms: extra.ms ?? null,
+      ms,
+      startedAt,
+      endedAt,
       inCount: extra.inCount ?? null,
       outCount: extra.outCount ?? null,
+      countUnit: extra.countUnit || null,
+      countSemantics: extra.countSemantics || null,
+      produced: extra.produced ?? null,
+      filtered: extra.filtered ?? null,
+      merged: extra.merged ?? null,
+      dropped: extra.dropped ?? null,
       warnings: extra.warnings || [],
       errors: extra.errors || [],
       detail: extra.detail || null
@@ -238,12 +195,15 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       });
       pushStage('assessment', 'Assessment utilisateur', 'recapUserAssessment', {
         ms: Math.round(nowMs() - s0),
-        outCount: 1
+        outCount: 1,
+        countUnit: 'bundle',
+        produced: 1
       });
     } catch (e) {
       pushStage('assessment', 'Assessment utilisateur', 'recapUserAssessment', {
         ms: Math.round(nowMs() - s0),
         executed: false,
+        countUnit: 'bundle',
         errors: [String(e?.message || e)]
       });
     }
@@ -251,7 +211,9 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     pushStage('assessment', 'Assessment utilisateur', 'recapUserAssessment', {
       executed: true,
       skippedReason: 'fourni par l’appelant',
-      outCount: 1
+      outCount: 1,
+      countUnit: 'bundle',
+      produced: 1
     });
   }
 
@@ -273,19 +235,24 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       });
       pushStage('enrichment', 'Enrichissement Recap', 'recapEnrichmentMetrics', {
         ms: Math.round(nowMs() - s1),
-        outCount: 1
+        outCount: 1,
+        countUnit: 'bundle',
+        produced: 1
       });
     } catch (e) {
       pushStage('enrichment', 'Enrichissement Recap', 'recapEnrichmentMetrics', {
         ms: Math.round(nowMs() - s1),
         executed: false,
+        countUnit: 'bundle',
         errors: [String(e?.message || e)]
       });
     }
   } else {
     pushStage('enrichment', 'Enrichissement Recap', 'recapEnrichmentMetrics', {
       skippedReason: 'fourni par l’appelant',
-      outCount: 1
+      outCount: 1,
+      countUnit: 'bundle',
+      produced: 1
     });
   }
 
@@ -310,18 +277,32 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       programs: Array.isArray(programs) ? programs : [],
       collectDiagnostic: true
     });
+    const shownN =
+      (adaptive?.insights?.shortTerm?.length || 0) +
+      (adaptive?.insights?.mediumTerm?.length || 0) +
+      (adaptive?.insights?.longTerm?.length || 0);
+    const producedN = adaptive?.diagnostic?.candidateStages?.produced?.length ?? null;
     pushStage('adaptive', 'Insights adaptatifs + sélection', 'recapAdaptiveInsights', {
       ms: Math.round(nowMs() - s2),
-      outCount:
-        (adaptive?.insights?.shortTerm?.length || 0) +
-        (adaptive?.insights?.mediumTerm?.length || 0) +
-        (adaptive?.insights?.longTerm?.length || 0),
-      detail: adaptive?.diagnostic?.stages || null
+      inCount: producedN,
+      outCount: shownN,
+      countUnit: 'candidates',
+      produced: producedN,
+      dropped: producedN != null ? Math.max(0, producedN - shownN) : null,
+      detail: {
+        wallClockOffsetMs: Math.round(Date.now() - wall0),
+        produced: producedN,
+        shown: shownN,
+        insufficient: adaptive?.diagnostic?.candidateStages?.insufficient?.length ?? null,
+        deduped: adaptive?.diagnostic?.candidateStages?.deduped?.length ?? null,
+        rankedOut: adaptive?.diagnostic?.candidateStages?.rankedOut?.length ?? null
+      }
     });
   } catch (e) {
     pushStage('adaptive', 'Insights adaptatifs + sélection', 'recapAdaptiveInsights', {
       ms: Math.round(nowMs() - s2),
       executed: false,
+      countUnit: 'candidates',
       errors: [String(e?.message || e)]
     });
   }
@@ -346,17 +327,19 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
   });
 
   const pipelineStages = diag.candidateStages || {};
-  const shownCards = [
-    ...(adaptive?.insights?.shortTerm || []).map((c) =>
-      annotateCandidate({ ...c, horizon: 'short' }, 'shown', null, 'final')
-    ),
-    ...(adaptive?.insights?.mediumTerm || []).map((c) =>
-      annotateCandidate({ ...c, horizon: 'medium' }, 'shown', null, 'final')
-    ),
-    ...(adaptive?.insights?.longTerm || []).map((c) =>
-      annotateCandidate({ ...c, horizon: 'long' }, 'shown', null, 'final')
-    )
-  ];
+  // Préférer les candidats complets (metrics / interpretation) — toInsightCard les strippe.
+  const shownSource =
+    Array.isArray(pipelineStages.shown) && pipelineStages.shown.length
+      ? pipelineStages.shown
+      : [
+          ...(adaptive?.insights?.shortTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'short' })),
+          ...(adaptive?.insights?.mediumTerm || []).map((c) => ({
+            ...c,
+            horizon: c.horizon || 'medium'
+          })),
+          ...(adaptive?.insights?.longTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'long' }))
+        ];
+  const shownCards = shownSource.map((c) => annotateCandidate(c, 'shown', null, 'final'));
 
   const rejections = [
     ...(pipelineStages.deduped || []).map((r) =>
@@ -396,12 +379,27 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       'Seules les corrélations effectivement produites par publishSleepCandidates / detectDiscoveries apparaissent ici.'
   };
 
+  const dataCatalog = buildAnalysisEngineDataCatalog({
+    snapshot,
+    enrichment,
+    garminData,
+    garminPartial,
+    window,
+    assessment,
+    activeProgram,
+    programs: Array.isArray(programs) ? programs : [],
+    profileQuestionnaireRaw
+  });
   const dataInventory = summarizeDataAvailability({
     snapshot,
     enrichment,
     garminData,
+    garminPartial,
     window,
-    assessment
+    assessment,
+    activeProgram,
+    programs: Array.isArray(programs) ? programs : [],
+    profileQuestionnaireRaw
   });
 
   const overview = {
@@ -417,8 +415,11 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     starvedFamilies: adaptive?.starvedFamilies || [],
     rescuedFamilies: adaptive?.rescuedFamilies || [],
     totalMs: Math.round(nowMs() - t0),
+    dataTotals: dataCatalog.totals,
     warnings: [
-      ...dataInventory.filter((d) => d.status === 'missing').map((d) => `Donnée manquante : ${d.label}`),
+      ...dataInventory
+        .filter((d) => d.status === 'missing')
+        .map((d) => `Donnée manquante : ${d.label} (${d.tab} › ${d.subtab})`),
       ...(adaptive?.starvedFamilies || []).map(
         (f) => `Famille produite mais non affichée : ${f.family}`
       )
@@ -440,6 +441,8 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     overview,
     stages: [...stages, ...(diag.pipelineSteps || [])],
     dataInventory,
+    dataCatalog,
+    dataCatalogShort: dataCatalog.short,
     signals,
     candidates: {
       discoveries: discoveryCandidates,

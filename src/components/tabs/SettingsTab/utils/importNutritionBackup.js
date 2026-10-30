@@ -85,8 +85,9 @@ export async function importNutritionBackup(payload) {
     [STORE_GAMIFICATION, gamificationRows(payload.gamification)]
   ];
   const stores = {};
-  for (const [storeName, rows] of plan) {
-    stores[storeName] = await putRows(db, storeName, rows);
-  }
+  const counts = await Promise.all(
+    plan.map(async ([storeName, rows]) => [storeName, await putRows(db, storeName, rows)])
+  );
+  for (const [storeName, count] of counts) stores[storeName] = count;
   return { stores, skipped: false };
 }
