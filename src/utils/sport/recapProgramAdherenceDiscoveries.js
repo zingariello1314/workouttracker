@@ -428,6 +428,7 @@ export function buildFrequencyProgressFindings({
 }
 
 function baseFreqMetrics(row, story) {
+  const shape = row.traj?.shape || {};
   return {
     exerciseId: row.exerciseId,
     name: row.name,
@@ -440,8 +441,20 @@ function baseFreqMetrics(row, story) {
     primaryStory: story,
     plannedOccurrences: row.plannedOccurrences,
     plannedFreqUsable: row.plannedFreqUsable,
-    trajectoryOk: true
+    trajectoryOk: true,
+    earlyMean: shape.earlyMean ?? null,
+    lateMean: shape.lateMean ?? null,
+    shapeDelta: shape.delta ?? null,
+    interpretingWithHistory: Boolean(row.traj?.temporalScope?.interpretingWithHistory)
   };
+}
+
+function perfCompareBit(m) {
+  if (m.earlyMean == null || m.lateMean == null) return '';
+  const hist = m.interpretingWithHistory
+    ? ' (arc d’interprétation incluant des séances antérieures à la fenêtre)'
+    : ' (comparaison bornée à la fenêtre)';
+  return ` Les niveaux comparés par la trajectoire P0 passent d’environ ${fmtInt(m.earlyMean)} à ${fmtInt(m.lateMean)} répétitions${hist}.`;
 }
 
 function significanceScore(f) {
@@ -599,21 +612,21 @@ export function composeProgramAdherenceDiscoveries(adherencePack, freqPack, { tr
     if (f.kind === 'freq_progress_high') {
       kind = 'disc_freq_progress_high';
       title = `${m.name} : progression avec une exposition élevée`;
-      body = `${m.name} cumule ${fmtInt(m.exposureDayCount)} jours d’exposition (${fmtInt(m.classicSessionCount)} séance${m.classicSessionCount > 1 ? 's' : ''} classique${m.classicSessionCount > 1 ? 's' : ''}${gtgBit}), soit environ ${m.sessionsPerWeek} jour${m.sessionsPerWeek > 1 ? 's' : ''}/semaine, pour un volume de ${fmtInt(m.volumeReps)} répétitions. La trajectoire indique ${storyFr(m.primaryStory)}. Fréquence, volume et progression sont trois lectures distinctes ; aucune causalité n’est affirmée.${plannedBit}`;
+      body = `${m.name} cumule ${fmtInt(m.exposureDayCount)} jours d’exposition (${fmtInt(m.classicSessionCount)} séance${m.classicSessionCount > 1 ? 's' : ''} classique${m.classicSessionCount > 1 ? 's' : ''}${gtgBit}), soit environ ${m.sessionsPerWeek} jour${m.sessionsPerWeek > 1 ? 's' : ''}/semaine, pour un volume de ${fmtInt(m.volumeReps)} répétitions.${perfCompareBit(m)} La trajectoire indique ${storyFr(m.primaryStory)}. Fréquence, volume et progression sont trois lectures distinctes ; aucune relation causale n’est affirmée.${plannedBit}`;
     } else if (f.kind === 'freq_progress_low') {
       kind = 'disc_freq_progress_low';
       title = `${m.name} : progression malgré une exposition faible`;
-      body = `${m.name} n’apparaît que sur ${fmtInt(m.exposureDayCount)} jour${m.exposureDayCount > 1 ? 's' : ''} d’exposition (${fmtInt(m.classicSessionCount)} classique${m.classicSessionCount > 1 ? 's' : ''}${gtgBit}) — rythme ≈ ${m.sessionsPerWeek}/semaine — tout en montrant ${storyFr(m.primaryStory)} (volume ${fmtInt(m.volumeReps)} reps). Une progression avec peu d’expositions peut refléter la qualité des séances ou un contexte hors séance ; ce n’est pas une preuve de cause.${plannedBit}`;
+      body = `${m.name} n’apparaît que sur ${fmtInt(m.exposureDayCount)} jour${m.exposureDayCount > 1 ? 's' : ''} d’exposition (${fmtInt(m.classicSessionCount)} classique${m.classicSessionCount > 1 ? 's' : ''}${gtgBit}) — rythme ≈ ${m.sessionsPerWeek}/semaine — avec un volume de ${fmtInt(m.volumeReps)} répétitions.${perfCompareBit(m)} La trajectoire indique ${storyFr(m.primaryStory)}. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause.${plannedBit}`;
       importance = 0.86;
     } else if (f.kind === 'freq_high_no_progress') {
       kind = 'disc_freq_high_no_progress';
       title = `${m.name} : exposition élevée sans progression mesurable`;
-      body = `${m.name} est exposé ${fmtInt(m.exposureDayCount)} jours (≈ ${m.sessionsPerWeek}/sem., ${fmtInt(m.volumeReps)} reps) alors que la trajectoire lit ${storyFr(m.primaryStory)}. La fréquence ne garantit pas la progression : charge, technique ou granularité des séries peuvent limiter la lecture.${plannedBit}`;
+      body = `${m.name} est exposé ${fmtInt(m.exposureDayCount)} jours (≈ ${m.sessionsPerWeek}/sem., volume ${fmtInt(m.volumeReps)} reps).${perfCompareBit(m)} La trajectoire lit ${storyFr(m.primaryStory)}. La fréquence ne garantit pas la progression : charge, technique ou granularité des séries peuvent limiter la lecture.${plannedBit}`;
       importance = 0.84;
     } else if (f.kind === 'freq_decline_with_low_exposure') {
       kind = 'disc_freq_decline_low_exposure';
-      title = `${m.name} : recul et exposition réduite coïncident`;
-      body = `${m.name} combine ${storyFr(m.primaryStory)} avec seulement ${fmtInt(m.exposureDayCount)} jour${m.exposureDayCount > 1 ? 's' : ''} d’exposition (≈ ${m.sessionsPerWeek}/sem.). La co-occurrence est établie ; la causalité (le recul cause la baisse d’exposition, ou l’inverse) ne l’est pas.${plannedBit}`;
+      title = `${m.name} : recul et exposition faible coïncident`;
+      body = `${m.name} combine ${storyFr(m.primaryStory)} avec seulement ${fmtInt(m.exposureDayCount)} jour${m.exposureDayCount > 1 ? 's' : ''} d’exposition (≈ ${m.sessionsPerWeek}/sem., volume ${fmtInt(m.volumeReps)} reps).${perfCompareBit(m)} La co-occurrence est établie ; aucune relation causale entre le recul et le niveau d’exposition n’est affirmée.${plannedBit}`;
       importance = 0.8;
     } else continue;
 

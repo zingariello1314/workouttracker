@@ -272,4 +272,38 @@ describe('compose — prose structurée', () => {
     expect(cards[0].body).toMatch(/aucun jour|plan figé|snapshot/i);
     expect(cards[0].body).toMatch(/taux|adhérence/i);
   });
+
+  it('cite early/late et volume sans affirmer de cause', () => {
+    const cards = composeProgramAdherenceDiscoveries(
+      { findings: [] },
+      {
+        findings: [
+          {
+            kind: 'freq_decline_with_low_exposure',
+            metrics: {
+              exerciseId: '202',
+              name: 'Pompes inclinées sur support',
+              exposureDayCount: 3,
+              classicSessionCount: 3,
+              gtgExposureDays: 0,
+              volumeReps: 120,
+              sessionsPerWeek: 0.7,
+              freqBand: 'low',
+              primaryStory: 'net_decline',
+              earlyMean: 52,
+              lateMean: 40,
+              interpretingWithHistory: true,
+              plannedFreqUsable: false,
+              trajectoryOk: true
+            }
+          }
+        ]
+      }
+    );
+    expect(cards[0].body).toMatch(/120/);
+    expect(cards[0].body).toMatch(/52/);
+    expect(cards[0].body).toMatch(/40/);
+    expect(cards[0].body).toMatch(/aucune relation causale/i);
+    expect(cards[0].body).not.toMatch(/parce que la fréquence/i);
+  });
 });

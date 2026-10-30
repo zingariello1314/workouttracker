@@ -22,6 +22,7 @@ Dossier de travail pour le moteur d’analyses Recap (toutes plages horaires).
 | **[P3.0-SOCLE-ADHERENCE-PROGRESSION-2026-10-30.md](./P3.0-SOCLE-ADHERENCE-PROGRESSION-2026-10-30.md)** | **P3.0 socle** — matrice plan×réalisé, règles, tests, comparaison live 30j (0 snapshot). |
 | **[VALIDATION-P3.0-MATRICE-2026-10-30.md](./VALIDATION-P3.0-MATRICE-2026-10-30.md)** | **Validation P3.0** — causes 0 snapshots, double dénominateur, exécution/GTG, correctifs, 19+12 tests. |
 | **[P3.1-ADHERENCE-PROGRESSION-2026-10-30.md](./P3.1-ADHERENCE-PROGRESSION-2026-10-30.md)** | **P3.1** — découvertes adhérence × freq/progression, claims, replay 30j, tests. |
+| **[VALIDATION-P3.1-AUDIT-FINAL-2026-10-30.md](./VALIDATION-P3.1-AUDIT-FINAL-2026-10-30.md)** | **Audit validation P3.1** — seuils freq, replay détaillé, GTG, sélection family, 99 tests. |
 
 ## Références (secondaires)
 
