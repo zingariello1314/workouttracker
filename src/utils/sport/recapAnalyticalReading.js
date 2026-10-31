@@ -86,15 +86,15 @@ export function densityImplication({ denser, lighter, vsPct, sleepHours, sleepHa
 }
 
 /**
- * Implication composition poussée/tirage — constat de stimulus, pas de quota.
+ * Implication composition poussée/tirage — constat d’exposition (parts attributives), pas de quota.
  */
 export function pushPullImplication({ pushReps, pullReps } = {}) {
   if (!(pushReps > 0) || pullReps == null) return null;
   if (pushReps > pullReps * 2) {
-    return 'Le stimulus dominant du haut du corps est clairement la poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre';
+    return 'L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre';
   }
   if (pushReps > pullReps * 1.6) {
-    return 'L’exposition reste asymétrique en faveur de la poussée ; ce n’est pas un déficit à « rattraper » automatiquement, c’est le stimulus réellement reçu';
+    return 'L’exposition reste asymétrique en faveur de la poussée ; ce n’est pas un déficit à « rattraper » automatiquement, c’est la répartition attribuée observée';
   }
   return null;
 }

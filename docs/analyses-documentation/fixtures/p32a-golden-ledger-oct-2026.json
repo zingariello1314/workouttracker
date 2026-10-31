@@ -1,0 +1,147 @@
+{
+  "generatedAt": "2026-10-31T05:03:22.713Z",
+  "window": {
+    "start": "2026-10-01",
+    "end": "2026-10-30"
+  },
+  "totals": {
+    "R": 4331,
+    "R_mono": 2571,
+    "R_multi": 1760,
+    "R_non_attr": 0,
+    "conservationOk": true,
+    "isoSecondsSum": 36,
+    "isoLineCount": 1,
+    "pipelineAggregateSum": 4331,
+    "deltaVsPipelineAggregate": 0,
+    "gtgRepsListed": 85,
+    "gtgAlreadyInClassic": 85,
+    "gtgUniqueNotInClassic": 0
+  },
+  "activity": {
+    "trainingDaysClassic": 16,
+    "occurrences": 109,
+    "distinctExercises": 47,
+    "setsRecorded": 182,
+    "weightPresentLines": 26,
+    "weightUnknownLines": 83,
+    "weightClassesCertainReps": {
+      "present": 26,
+      "explicitZero": 0,
+      "absent": 83
+    },
+    "weightClassesAllClassicLines": {
+      "present": 26,
+      "explicitZero": 0,
+      "absent": 84
+    },
+    "weightClassesExclusiveOk": true
+  },
+  "volumePrimary": {
+    "chest": 690,
+    "back": 711,
+    "biceps": 432,
+    "calves": 200,
+    "quads": 208,
+    "shoulders": 160,
+    "triceps": 170
+  },
+  "multiPrimaryTouch": {
+    "chest": 818,
+    "triceps": 818,
+    "biceps": 462,
+    "back": 378,
+    "core": 420,
+    "quads": 420,
+    "forearms": 144,
+    "shoulders": 60
+  },
+  "exposureDaysPrimary": {
+    "chest": 16,
+    "triceps": 16,
+    "back": 11,
+    "biceps": 10,
+    "core": 5,
+    "quads": 7,
+    "forearms": 4,
+    "calves": 2,
+    "shoulders": 1
+  },
+  "exposureDaysSecondary": {
+    "shoulders": 16,
+    "triceps": 13,
+    "biceps": 15,
+    "back": 11,
+    "glutes": 8,
+    "hamstrings": 6,
+    "core": 11,
+    "forearms": 4,
+    "calves": 2
+  },
+  "distinctExercisesPrimary": {
+    "chest": 10,
+    "triceps": 7,
+    "back": 12,
+    "biceps": 12,
+    "core": 4,
+    "quads": 8,
+    "forearms": 2,
+    "calves": 2,
+    "shoulders": 4
+  },
+  "identityCounts": {
+    "certain": 47,
+    "probable": 0,
+    "unresolved": 0
+  },
+  "identityUnresolvedSample": [],
+  "identityProbableSample": [],
+  "rawUniverse": {
+    "candidateKeys": 450,
+    "certain_reps": {
+      "lines": 110,
+      "valueSum": 4367
+    },
+    "isometric_seconds": {
+      "lines": 0,
+      "valueSum": 0
+    },
+    "duration_other": {
+      "lines": 0,
+      "valueSum": 0
+    },
+    "heuristic_unit": {
+      "lines": 0,
+      "valueSum": 0
+    },
+    "unknown_unit": {
+      "lines": 0,
+      "valueSum": 0
+    },
+    "invalid": {
+      "lines": 0,
+      "valueSum": 0
+    },
+    "uncheckedSkipped": 0,
+    "complementarySkipped": 0,
+    "outOfWindow": 340
+  },
+  "reconciliation": {
+    "documentedTotal": 4016,
+    "ledgerR": 4331,
+    "pipelineAggregateSum": 4331,
+    "deltaDocumentedMinusLedger": -315,
+    "deltaDocumentedMinusPipeline": -315,
+    "samePerimeterHypothesis": "mismatch_investigate_window_or_filters"
+  },
+  "gtg": {
+    "listed": 85,
+    "alreadyInClassic": 85,
+    "uniqueNotInClassic": 0
+  },
+  "lineBucketCounts": {
+    "multi_primary": 41,
+    "mono_primary": 68,
+    "unit_ambiguous": 1
+  }
+}

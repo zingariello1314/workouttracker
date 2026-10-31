@@ -168,6 +168,23 @@ export default function RecapTrainingStateDebugPanel({
             />
           </div>
 
+          {(periodDiscoveries?.reliabilityNotes || []).length ? (
+            <div>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Fiabilité / limites méthodologiques ({periodDiscoveries.reliabilityNotes.length})
+              </p>
+              <ChipList
+                items={periodDiscoveries.reliabilityNotes.map((n) => ({
+                  id: n.kind,
+                  type: n.contentClass || 'methodology_limit',
+                  narrative: n.title,
+                  text: n.summary || n.evidence
+                }))}
+                empty=""
+              />
+            </div>
+          ) : null}
+
           {periodDiscoveries?.debug ? (
             <div className="rounded-lg border border-amber-700/40 bg-amber-950/20 px-2.5 py-2 text-[10px] text-amber-100/90">
               <p className="mb-1 font-semibold uppercase tracking-wide text-amber-200/80">Tuyau sommeil / jalons</p>

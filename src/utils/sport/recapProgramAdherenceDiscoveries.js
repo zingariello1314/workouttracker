@@ -509,14 +509,16 @@ export function composeProgramAdherenceDiscoveries(adherencePack, freqPack, { tr
         kind: 'disc_plan_data_insufficient',
         nature: 'trajectory',
         family: 'program_adherence',
-        title: 'Adhérence historique : données de plan insuffisantes',
+        contentClass: 'methodology_limit',
+        title: 'Suivi de plan : preuve historique indisponible',
         body:
           snap === 0
-            ? `Sur cette fenêtre, aucun jour n’a de plan figé (snapshot). ${recon} jour${recon > 1 ? 's' : ''} montrent seulement ce qui a été enregistré (reconstruction), ce qui ne permet pas de calculer un taux d’adhérence au programme prévu. Les expositions réelles et les trajectoires restent exploitables séparément.`
-            : `Seulement ${snap} jour${snap > 1 ? 's' : ''} avec plan figé — en dessous du seuil de ${m.minRequired} requis pour un taux d’adhérence historique fiable. Aucun pourcentage d’adhérence n’est donc publié pour cette fenêtre.`,
+            ? `Aucun jour de cette fenêtre n’a de plan figé (snapshot) : un taux d’adhérence au programme prévu ne peut pas être calculé. ${recon} jour${recon > 1 ? 's' : ''} documentent seulement le réalisé (reconstruction). Les expositions et trajectoires restent lisibles à part.`
+            : `Seulement ${snap} jour${snap > 1 ? 's' : ''} avec plan figé (seuil ${m.minRequired}) : aucun pourcentage d’adhérence historique n’est publié pour cette fenêtre.`,
         evidence: `snapshots=${snap} · reconstruct=${recon}`,
-        weights: { importance: 0.72, reliability: 0.95, novelty: 0.7, fit: 0.88 },
-        metrics: { ...m, findingKind: f.kind }
+        // Fiabilité haute, mais importance/novelty basses : ce n’est pas une découverte sportive.
+        weights: { importance: 0.35, reliability: 0.95, novelty: 0.25, fit: 0.55 },
+        metrics: { ...m, findingKind: f.kind, contentClass: 'methodology_limit' }
       });
       continue;
     }

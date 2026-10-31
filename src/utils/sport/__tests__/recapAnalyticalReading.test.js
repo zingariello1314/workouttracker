@@ -48,6 +48,7 @@ describe('garde-fous titre / implications', () => {
 
   it('pushPullImplication borne le message', () => {
     expect(pushPullImplication({ pushReps: 470, pullReps: 108 })).toMatch(/poussée/i);
+    expect(pushPullImplication({ pushReps: 470, pullReps: 108 })).not.toMatch(/stimulus/i);
     expect(pushPullImplication({ pushReps: 100, pullReps: 90 })).toBeNull();
   });
 

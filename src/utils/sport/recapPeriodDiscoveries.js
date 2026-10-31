@@ -53,6 +53,13 @@ import { primaryGroup, sameDayCompanions, writeExerciseEvent } from './recapFact
 import { buildGtgUnplannedDiscoveries } from './recapGtgUnplannedReading';
 import { buildProgramAdherenceDiscoveries } from './recapProgramAdherenceDiscoveries';
 import {
+  CONTENT_CLASS,
+  contentClassForKind,
+  resolveContentClass,
+  isMethodologyLimitDiscovery,
+  reliabilityNoteFromMethodologyDiscovery
+} from './recapDiscoveryContentClass';
+import {
   buildExerciseTrajectory,
   renderExerciseTrajectoryCopy,
   trajectoryToMetrics
@@ -416,17 +423,22 @@ function scoreOf({ importance, reliability, novelty, fit }) {
 
 function discovery(partial) {
   const score = partial.score != null ? partial.score : scoreOf(partial.weights || {});
+  const contentClass =
+    partial.contentClass ||
+    partial.metrics?.contentClass ||
+    contentClassForKind(partial.kind);
   return withDiscoveryScope({
     id: partial.id || partial.kind,
     kind: partial.kind,
     nature: partial.nature,
     family: partial.family,
+    contentClass,
     score,
     title: partial.title,
     body: partial.body,
     evidence: partial.evidence || '',
     relevance: Math.min(0.995, 0.88 + score / 900),
-    metrics: partial.metrics || {},
+    metrics: { ...(partial.metrics || {}), contentClass },
     ...(partial.scope ? { scope: partial.scope } : {})
   });
 }
@@ -1247,7 +1259,7 @@ function detectDiscoveries(cmp, extras = {}) {
           : `${capLabel(top[0].label)} mène le volume de ${v.thisPeriod}`;
       const muscleReading = composeAnalyticalReading({
         titleThesis,
-        constat: `${fmtInt(top[0].reps)} de tes ${fmtInt(p.totalReps)} reps concernent ${muscleAvecArticle(top[0].label)}${
+        constat: `${fmtInt(top[0].reps)} reps attribuées à ${muscleAvecArticle(top[0].label)} sur ${fmtInt(p.totalReps)} reps de la fenêtre${
           top.length > 1
             ? `, contre ${top
                 .slice(1)
@@ -1258,18 +1270,25 @@ function detectDiscoveries(cmp, extras = {}) {
         mechanism: nearBit.trim() || null,
         scope: `Ce n'est pas le pic d'un seul exercice : plusieurs mouvements vont dans le même sens${tirageBit}.${ratioBit}${missingPull}${indirect}`.trim(),
         implication: pushPullImplication({ pushReps: pushNow, pullReps: backNow }),
-        limit: `Cette part décrit la composition de ${v.thisPeriod}, pas celle d'une séance isolée`
+        limit:
+          `Répartition indicative (parts conventionnelles primary/secondary), pas une mesure anatomique exacte. Composition de ${v.thisPeriod}, pas d'une séance isolée`
       });
       out.push(
         discovery({
           kind: 'disc_muscle_now',
           nature: 'now',
           family: 'muscle_now',
+          contentClass: CONTENT_CLASS.DESCRIPTIVE,
           title: muscleReading.title,
           body: muscleReading.body,
-          evidence: `${top.length} groupes · ${fmtInt(p.identifiedMuscleReps)} reps identifiées`,
-          weights: { importance: 0.86, reliability: 0.9, novelty: 0.84, fit: 0.96 },
-          metrics: { topGroup: top[0].group, topShare, readingBeats: muscleReading.beats }
+          evidence: `${top.length} groupes · ${fmtInt(p.identifiedMuscleReps)} reps attribuées (indicatif)`,
+          weights: { importance: 0.7, reliability: 0.72, novelty: 0.58, fit: 0.9 },
+          metrics: {
+            topGroup: top[0].group,
+            topShare,
+            readingBeats: muscleReading.beats,
+            attributionMode: 'conventional_rep_share'
+          }
         })
       );
     }
@@ -1374,35 +1393,47 @@ function detectDiscoveries(cmp, extras = {}) {
       .sort((a, b) => b.ofMonthPct - a.ofMonthPct);
     const lead = contrasts[0];
     const low = contrasts.filter((m) => m.group !== lead?.group && m.ofMonthPct < 12).slice(0, 2);
-    if (lead && lead.ofMonthPct >= 18) {
+    // Tautologie : fenêtre ≈ 30 j. comparée à d30 (même période) → ofMonthPct ~100 %.
+    const comparesPeriodToItself =
+      isMonth ||
+      (Number(p.spanDays) >= 28 && Number(p.spanDays) <= 32) ||
+      (lead.ofMonthPct != null && lead.ofMonthPct >= 95 && Number(lead.reps) === Number(lead.monthReps));
+    if (lead && lead.ofMonthPct >= 18 && !comparesPeriodToItself) {
       const reorientReading = composeAnalyticalReading({
         titleThesis: isToday
-          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} confirme une forte réorientation récente vers les ${lead.label}`
-          : `Le stimulus ${v.ofPeriod} se déplace vers les ${lead.label}`,
-        constat: `Les ${lead.label} représentent ${v.now} ${fmtInt(lead.reps)} reps attribuées, contre ${fmtInt(lead.monthReps)} sur les 30 derniers jours`,
-        mechanism: `À elle seule, ${v.thisPeriod} concentre environ ${fmtPct(lead.ofMonthPct)} de toute ton exposition ${lead.label} du dernier mois`,
+          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} concentre une part élevée des ${lead.label} du mois`
+          : `La part attribuée aux ${lead.label} ${v.ofPeriod} ressort face aux 30 derniers jours`,
+        constat: `Les ${lead.label} représentent ${v.now} ${fmtInt(lead.reps)} reps attribuées (répartition indicative), contre ${fmtInt(lead.monthReps)} sur les 30 derniers jours`,
+        mechanism: `À elle seule, ${v.thisPeriod} concentre environ ${fmtPct(lead.ofMonthPct)} de l’exposition attribuée ${lead.label} du dernier mois`,
         scope: low.length
-          ? `Le contraste est important avec ${low
-              .map((m) => `tes ${fmtInt(m.reps)} reps ${m.label} (environ ${fmtPct(m.ofMonthPct)} de leur volume mensuel)`)
+          ? `Le contraste est notable avec ${low
+              .map((m) => `${fmtInt(m.reps)} reps ${m.label} (≈${fmtPct(m.ofMonthPct)} de leur volume mensuel attribué)`)
               .join(' et ')}`
           : null,
         implication: isToday
-          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} n'est donc pas simplement une séance haut du corps : elle déplace fortement le stimulus vers les ${lead.label} par rapport à ta répartition habituelle`
-          : `Cette asymétrie n'est pas seulement descriptive : elle caractérise le stimulus dominant reçu pendant ${v.thisPeriod}`
+          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} déplace la composition attribuée vers les ${lead.label} par rapport au mois`
+          : `Lecture de composition (parts conventionnelles), pas une mesure de stimulation musculaire`,
+        limit: 'Parts issues d’une attribution conventionnelle des répétitions ; pas une preuve d’hypertrophie ni de déséquilibre à corriger'
       });
       out.push(
         discovery({
           kind: 'disc_muscle_reorient',
           nature: 'trajectory',
           family: 'muscle_shift',
+          contentClass: CONTENT_CLASS.DESCRIPTIVE,
           title: reorientReading.title,
           body: reorientReading.body,
           evidence: contrasts
             .slice(0, 4)
             .map((m) => `${m.label} ${fmtPct(m.ofMonthPct)} du mois`)
             .join(' · '),
-          weights: { importance: 0.93, reliability: 0.9, novelty: 0.9, fit: 1 },
-          metrics: { leadGroup: lead.group, ofMonthPct: lead.ofMonthPct, readingBeats: reorientReading.beats }
+          weights: { importance: 0.72, reliability: 0.7, novelty: 0.7, fit: 0.88 },
+          metrics: {
+            leadGroup: lead.group,
+            ofMonthPct: lead.ofMonthPct,
+            readingBeats: reorientReading.beats,
+            attributionMode: 'conventional_rep_share'
+          }
         })
       );
     }
@@ -1427,26 +1458,34 @@ function detectDiscoveries(cmp, extras = {}) {
             : null;
       const ppReading = composeAnalyticalReading({
         titleThesis,
-        constat: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} totalise environ ${fmtInt(pullNow)} reps de dos contre ${fmtInt(p.chestTricepsReps || pushNow)} reps pectoraux + triceps${
+        constat: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} totalise environ ${fmtInt(pullNow)} reps attribuées dos contre ${fmtInt(p.chestTricepsReps || pushNow)} reps pectoraux + triceps${
           pushNow !== (p.chestTricepsReps || 0)
-            ? ` (et ${fmtInt(pushNow)} reps en comptant aussi les épaules de poussée)`
+            ? ` (et ${fmtInt(pushNow)} en comptant aussi les épaules de poussée)`
             : ''
         }`,
-        mechanism: 'Le haut du corps reçoit donc nettement plus de travail en poussée qu’en tirage',
+        mechanism: 'La composition attribuée du haut du corps penche nettement poussée plutôt que tirage',
         scope: monthScope,
         implication: pushPullImplication({ pushReps: pushNow, pullReps: pullNow }),
-        limit: 'Ce n’est pas un jugement d’équilibre idéal : c’est le stimulus dominant réellement reçu'
+        limit:
+          'Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte'
       });
       out.push(
         discovery({
           kind: 'disc_push_pull',
           nature: 'trajectory',
           family: 'push_pull',
+          contentClass: CONTENT_CLASS.DESCRIPTIVE,
           title: ppReading.title,
           body: ppReading.body,
           evidence: `dos ${fmtInt(pullNow)} · pecs+triceps ${fmtInt(p.chestTricepsReps || 0)}`,
-          weights: { importance: 0.86, reliability: 0.88, novelty: 0.84, fit: 0.95 },
-          metrics: { pullNow, pushNow, ofMonth, readingBeats: ppReading.beats }
+          weights: { importance: 0.68, reliability: 0.72, novelty: 0.6, fit: 0.9 },
+          metrics: {
+            pullNow,
+            pushNow,
+            ofMonth,
+            readingBeats: ppReading.beats,
+            attributionMode: 'conventional_rep_share'
+          }
         })
       );
     }
@@ -2551,8 +2590,9 @@ function detectDiscoveries(cmp, extras = {}) {
           kind: 'disc_muscle_share_shift',
           nature: 'trajectory',
           family: 'muscle_shift',
-          title: `La part des ${lead.label} dans ton entraînement a ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} plus vite que le volume global`,
-          body: `Les ${lead.label} représentent actuellement ${fmtPct(lead.nowShare)} du volume musculaire identifié, contre ${fmtPct(lead.thenShare)} sur les 30 jours précédents. Sa part a donc ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} de ${fmtPct(Math.abs(lead.relPct))} relativement, alors que le volume global ${
+          contentClass: CONTENT_CLASS.DESCRIPTIVE,
+          title: `La part attribuée aux ${lead.label} a ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} plus vite que le volume global`,
+          body: `Les ${lead.label} représentent actuellement ${fmtPct(lead.nowShare)} du volume musculaire attribué (indicatif), contre ${fmtPct(lead.thenShare)} sur les 30 jours précédents. Sa part a donc ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} de ${fmtPct(Math.abs(lead.relPct))} relativement, alors que le volume global ${
             prev30.totalReps > 0
               ? `est ${fmtSignedPct(pctChange(p.totalReps, prev30.totalReps) || 0)}`
               : 'n’a pas le même ordre de grandeur'
@@ -2563,10 +2603,15 @@ function detectDiscoveries(cmp, extras = {}) {
             return gone
               ? ` ${gone.name} comptait ${fmtInt(gone.reps)} répétitions sur la période précédente et n'apparaît plus ici. Une partie du changement de part vient de cette disparition, pas seulement d'une baisse générale.`
               : '';
-          })()} On lit ici un changement de structure, pas seulement une hausse ou une baisse de répétitions.`,
+          })()} Lecture de structure de parts conventionnelles, pas une mesure anatomique exacte.`,
           evidence: `${lead.label} ${fmtPct(lead.thenShare)} → ${fmtPct(lead.nowShare)}`,
-          weights: { importance: 0.9, reliability: 0.88, novelty: 0.9, fit: 0.96 },
-          metrics: { group: lead.group, nowShare: lead.nowShare, thenShare: lead.thenShare }
+          weights: { importance: 0.7, reliability: 0.7, novelty: 0.72, fit: 0.9 },
+          metrics: {
+            group: lead.group,
+            nowShare: lead.nowShare,
+            thenShare: lead.thenShare,
+            attributionMode: 'conventional_rep_share'
+          }
         })
       );
     }
@@ -3136,7 +3181,6 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_efficiency',
       'disc_sleep_family',
       'disc_composition_not_volume',
-      'disc_muscle_reorient',
       'disc_structural_memory',
       'disc_stimulus_mix'
     ],
@@ -3158,7 +3202,7 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     trajectory: [
       'disc_gtg_unplanned_role',
       'disc_pending_context',
-      'disc_plan_data_insufficient',
+      // E0 : disc_plan_data_insufficient retiré de la priority (methodology_limit → reliabilityNotes)
       'disc_plan_follow_rate',
       'disc_plan_recurring_skip',
       'disc_freq_progress_low',
@@ -3166,11 +3210,12 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_freq_progress_high',
       'disc_freq_decline_low_exposure',
       'disc_offplan_pattern',
-      'disc_muscle_share_shift',
       'disc_exercise_base',
-      'disc_push_pull',
       'disc_structural_memory',
       'disc_stimulus_mix',
+      // Composition musculaire : plus bas — descriptive, pas forcée avant les trajectoires
+      'disc_muscle_share_shift',
+      'disc_push_pull',
       'disc_sleep_volume',
       'disc_sleep_perf',
       'disc_sleep_architecture',
@@ -3198,7 +3243,7 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_density', 'disc_muscle_now'],
     trajectory: [
       'disc_gtg_unplanned_role',
-      'disc_plan_data_insufficient',
+      // E0 : disc_plan_data_insufficient retiré de la priority
       'disc_plan_follow_rate',
       'disc_plan_recurring_skip',
       'disc_freq_progress_low',
@@ -3206,10 +3251,10 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_freq_progress_high',
       'disc_freq_decline_low_exposure',
       'disc_offplan_pattern',
-      'disc_muscle_share_shift',
       'disc_family_fade',
       'disc_cardio_strength',
       'disc_stimulus_mix',
+      'disc_muscle_share_shift',
       'disc_sleep_month',
       'disc_sleep_perf',
       'disc_sleep_load',
@@ -3342,11 +3387,19 @@ function discoveryIdentity(d) {
 /**
  * Valeur informative réelle — départage doublons et portraits vs trajectoires.
  * Utilise rawScore (avant mémoire) si fourni, pour ne pas écraser une analyse riche.
+ * E0 : fiabilité haute ≠ publication ; methodology_limit et composition descriptive sont pénalisées.
  */
 export function discoveryInformativeValue(d) {
   const baseScore = Number(d?.rawScore != null ? d.rawScore : d?.score) || 0;
   let v = baseScore;
   const m = d?.metrics || {};
+  const cls = resolveContentClass(d);
+
+  if (cls === CONTENT_CLASS.METHODOLOGY_LIMIT) {
+    // Plancher bas : ne doit pas gagner contre un constat athlète.
+    return Math.min(v, 28) - 20;
+  }
+
   if (m.trajectoryOk) {
     v += 6 + Math.min(10, Number(m.trajectoryRichness) || 0);
     if (m.trajectorySetAvailable) v += 4;
@@ -3363,9 +3416,10 @@ export function discoveryInformativeValue(d) {
       v += 3;
     }
   }
-  // Portraits composition / densité purs : neutres (ne gagnent pas contre une trajectoire riche)
-  if (COMPOSITION_STORY_KINDS.includes(d?.kind) && !m.trajectoryOk) v -= 1;
-  if (d?.kind === 'disc_density' && !m.trajectoryOk) v -= 1;
+  // Portraits composition / densité : descriptifs — ne gagnent pas contre une trajectoire riche
+  if (COMPOSITION_STORY_KINDS.includes(d?.kind) && !m.trajectoryOk) v -= 8;
+  if (d?.kind === 'disc_density' && !m.trajectoryOk) v -= 4;
+  if (cls === CONTENT_CLASS.DESCRIPTIVE && !m.trajectoryOk) v -= 3;
   return v;
 }
 
@@ -3409,7 +3463,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const scored = (discoveries || []).map((d) => {
     const rawScore = Number(d.score) || 0;
     const base = Math.round(rawScore * memoryFactor(insightHistory, d.kind, Date.now(), d));
-    const withBase = { ...d, rawScore, score: base };
+    const contentClass = resolveContentClass(d);
+    const withBase = { ...d, rawScore, score: base, contentClass };
     const info = discoveryInformativeValue(withBase);
     return { ...withBase, informativeValue: info, score: base };
   });
@@ -3421,7 +3476,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     if (!prev || (d.informativeValue || 0) > (prev.informativeValue || 0)) byIdentity.set(key, d);
   });
   const unique = [...byIdentity.values()];
-  // Tri : valeur informative d’abord, puis score
+  // Tri : valeur informative d’abord, puis score (priority ne force plus les methodology_limit)
   const sorted = unique.sort(
     (a, b) => (b.informativeValue || 0) - (a.informativeValue || 0) || (b.score || 0) - (a.score || 0)
   );
@@ -3439,6 +3494,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const famCaps = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
   const sleepBudget = TOTAL_SLEEP_BUDGET[voiceKey] ?? TOTAL_SLEEP_BUDGET.week;
   let sleepTaken = 0;
+  /** @type {object[]} */
+  const reliabilityNotes = [];
 
   const flatSelected = () => [...byAngle.now, ...byAngle.trajectory, ...byAngle.journey];
 
@@ -3463,6 +3520,12 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const canTake = (d) => {
     const nature = d.nature || 'trajectory';
     const info = d.informativeValue || 0;
+
+    // E0 : limites méthodologiques → notes de fiabilité (jamais slot principal)
+    if (isMethodologyLimitDiscovery(d)) {
+      return { ok: false, reason: 'methodology_demoted' };
+    }
+
     // Seuil score : une trajectoire riche (valeur informative élevée) ne doit pas
     // être éliminée uniquement par la mémoire de kind qui écrase le score affiché.
     const scoreOk =
@@ -3498,6 +3561,12 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
 
   const take = (d) => {
     if (isMilestoneKind(d.kind)) return false;
+    if (isMethodologyLimitDiscovery(d)) {
+      d._dropHint = 'methodology_demoted';
+      const note = reliabilityNoteFromMethodologyDiscovery(d);
+      if (note && !reliabilityNotes.some((n) => n.kind === note.kind)) reliabilityNotes.push(note);
+      return false;
+    }
     const nature = d.nature || 'trajectory';
     const sig = signalFamilyOfKind(d.kind);
     const cap = famCaps[nature]?.[sig] ?? 0;
@@ -3533,8 +3602,10 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     return true;
   };
 
+  // Priority : couverture thématique, mais jamais les methodology_limit
   ['now', 'trajectory', 'journey'].forEach((angle) => {
     (priority[angle] || []).forEach((kind) => {
+      if (contentClassForKind(kind) === CONTENT_CLASS.METHODOLOGY_LIMIT) return;
       const hit = unique.find((d) => d.kind === kind && (d.nature || 'trajectory') === angle);
       if (hit) take(hit);
     });
@@ -3563,6 +3634,13 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     });
   });
 
+  // Collecter les notes pour les limites non prises via take()
+  unique.forEach((d) => {
+    if (!isMethodologyLimitDiscovery(d)) return;
+    const note = reliabilityNoteFromMethodologyDiscovery(d);
+    if (note && !reliabilityNotes.some((n) => n.kind === note.kind)) reliabilityNotes.push(note);
+  });
+
   const selected = [...byAngle.now, ...byAngle.trajectory, ...byAngle.journey];
   const dropped = unique
     .filter((d) => !usedIdentity.has(discoveryIdentity(d)))
@@ -3570,14 +3648,21 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       ...d,
       nature: d.nature || 'trajectory',
       signalFamily: signalFamilyOfKind(d.kind),
+      contentClass: resolveContentClass(d),
       reason: inferDropReason(d, selected, famCaps, {
-        forcedReason: d._dropHint || null
+        forcedReason: d._dropHint || (isMethodologyLimitDiscovery(d) ? 'methodology_demoted' : null)
       }),
       blockedBy: d._blockedBy || null,
       informativeValue: d.informativeValue
     }));
 
-  return { selected, dropped, displaceLog, compositionStoryKinds: COMPOSITION_STORY_KINDS };
+  return {
+    selected,
+    dropped,
+    displaceLog,
+    compositionStoryKinds: COMPOSITION_STORY_KINDS,
+    reliabilityNotes
+  };
 }
 
 export function selectPeriodDiscoveries(discoveries, insightHistory = null, voiceKey = 'week') {
@@ -3610,7 +3695,8 @@ function refillAfterGate(selected, pool, voiceKey) {
       familyCount[nature].set(card.family, (familyCount[nature].get(card.family) || 0) + 1);
     }
   });
-  [...(pool || [])].filter((card) => card.reason === 'cap')
+  [...(pool || [])]
+    .filter((card) => card.reason === 'cap' && !isMethodologyLimitDiscovery(card))
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .forEach((card) => {
       const identity = discoveryIdentity(card);
@@ -3704,6 +3790,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       kind: card.kind,
       nature: card.nature,
       family: card.family,
+      contentClass: card.contentClass || card.metrics?.contentClass,
       title: card.title,
       body: card.body,
       evidence: card.evidence,
@@ -3790,6 +3877,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     all,
     selected,
     dropped,
+    /** E0 : limites méthodologiques (ex. plan sans snapshot) — contexte, pas cartes principales. */
+    reliabilityNotes: traced.reliabilityNotes || [],
     extras,
     question: comparisons.question,
     preferPeriodNow,
@@ -3805,6 +3894,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       milestonesSelected,
       displaceLog: traced.displaceLog || [],
       compositionStoryKinds: traced.compositionStoryKinds || COMPOSITION_STORY_KINDS,
+      reliabilityNotes: traced.reliabilityNotes || [],
       droppedBy: dropped.reduce((acc, d) => {
         acc[d.reason] = (acc[d.reason] || 0) + 1;
         return acc;
@@ -3812,6 +3902,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       selectedInformative: selected.map((d) => ({
         kind: d.kind,
         identity: discoveryIdentity(d),
+        contentClass: resolveContentClass(d),
         informativeValue: d.informativeValue ?? discoveryInformativeValue(d),
         trajectoryOk: Boolean(d.metrics?.trajectoryOk),
         primaryStory: d.metrics?.trajectoryPrimaryStory || null

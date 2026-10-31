@@ -1,0 +1,1313 @@
+{
+  "generatedAt": "2026-10-31T05:06:13.661Z",
+  "before": {
+    "R": 4331,
+    "R_mono": 1072,
+    "R_multi": 870,
+    "R_non_attr": 2389,
+    "certain": 21,
+    "probable": 26
+  },
+  "after": {
+    "totals": {
+      "R": 4331,
+      "R_mono": 2571,
+      "R_multi": 1760,
+      "R_non_attr": 0,
+      "conservationOk": true,
+      "isoSecondsSum": 36,
+      "isoLineCount": 1,
+      "pipelineAggregateSum": 4331,
+      "deltaVsPipelineAggregate": 0,
+      "gtgRepsListed": 85,
+      "gtgAlreadyInClassic": 85,
+      "gtgUniqueNotInClassic": 0
+    },
+    "coverage": {
+      "attributedReps": 4331,
+      "attributionCoveragePct": 100,
+      "namedExercises": 47,
+      "unnamedExercises": 0
+    },
+    "identityCounts": {
+      "certain": 47,
+      "probable": 0,
+      "unresolved": 0
+    },
+    "activity": {
+      "trainingDaysClassic": 16,
+      "occurrences": 109,
+      "distinctExercises": 47,
+      "setsRecorded": 182,
+      "weightPresentLines": 26,
+      "weightUnknownLines": 83,
+      "weightClassesCertainReps": {
+        "present": 26,
+        "explicitZero": 0,
+        "absent": 83
+      },
+      "weightClassesAllClassicLines": {
+        "present": 26,
+        "explicitZero": 0,
+        "absent": 84
+      },
+      "weightClassesExclusiveOk": true
+    },
+    "volumePrimary": {
+      "chest": 690,
+      "back": 711,
+      "biceps": 432,
+      "calves": 200,
+      "quads": 208,
+      "shoulders": 160,
+      "triceps": 170
+    },
+    "multiPrimaryTouch": {
+      "chest": 818,
+      "triceps": 818,
+      "biceps": 462,
+      "back": 378,
+      "core": 420,
+      "quads": 420,
+      "forearms": 144,
+      "shoulders": 60
+    }
+  },
+  "identityDiagnostic": [
+    {
+      "storageId": "103",
+      "originalId": "103",
+      "name": "Dips",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "dips",
+      "primaryGroups": [
+        "chest",
+        "triceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 174,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "104",
+      "originalId": "104",
+      "name": "Pompes déclinées",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "pompes déclinées",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 106,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "db_tractions_pronation",
+      "originalId": "db_tractions_pronation",
+      "name": "Tractions pronation",
+      "resolutionSource": "db_key_prefix",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions pronation",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 15,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "501",
+      "originalId": "501",
+      "name": "Tractions pronation",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions pronation",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 60,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "981046524",
+      "originalId": "dup_1790540331740_zdmn25c",
+      "name": "Tractions supination",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions supination",
+      "primaryGroups": [
+        "biceps",
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 45,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1979012181",
+      "originalId": "ex_1790540834938_6g4y7qg",
+      "name": "Hyperextension",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "hyperextension",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 144,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "502",
+      "originalId": "502",
+      "name": "Tractions australiennes — prise pronation",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions australiennes",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 144,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "503",
+      "originalId": "503",
+      "name": "Dips",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "dips",
+      "primaryGroups": [
+        "chest",
+        "triceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 144,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "146651247",
+      "originalId": "ex_1790540909908_zqmzjwj",
+      "name": "Tractions australiennes — prise serrée supination",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions australiennes prise serrée supination",
+      "primaryGroups": [
+        "biceps",
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 102,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "504",
+      "originalId": "504",
+      "name": "Pompes déclinées",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "pompes déclinées",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "101",
+      "originalId": "101",
+      "name": "Tractions pronation",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions pronation",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 60,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1993865426",
+      "originalId": "ex_1790539928026_6psc6n8",
+      "name": "Tractions supination",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions supination",
+      "primaryGroups": [
+        "biceps",
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 45,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "703294235",
+      "originalId": "ex_1790540011983_dh61rc8",
+      "name": "Hyperextension",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "hyperextension",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 144,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "102",
+      "originalId": "102",
+      "name": "Tractions australiennes — prise large pronation",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions australiennes prise large pronation",
+      "primaryGroups": [
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 144,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1433469569",
+      "originalId": "ex_1790540236477_0hcmz4e",
+      "name": "Tractions australiennes — prise serrée supination",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "tractions australiennes prise serrée supination",
+      "primaryGroups": [
+        "biceps",
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 126,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "106",
+      "originalId": "106",
+      "name": "Relevés de genoux à la barre",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "name_match",
+      "anatomyLinkConfidence": "probable",
+      "bankKey": null,
+      "primaryGroups": [
+        "core",
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 180,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "466084426",
+      "originalId": "ex_1790541481450_v3nfeus",
+      "name": "Développé couché incliné aux haltères",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "développé incliné haltères",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 144,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "202",
+      "originalId": "202",
+      "name": "Pompes déclinées",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "pompes déclinées",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 120,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "203",
+      "originalId": "203",
+      "name": "Curl assis dos calé",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl assis dos calé",
+      "primaryGroups": [
+        "biceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "204",
+      "originalId": "204",
+      "name": "Curl marteau",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl marteau",
+      "primaryGroups": [
+        "biceps",
+        "forearms"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "205",
+      "originalId": "205",
+      "name": "Curl Zottman",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl zottman",
+      "primaryGroups": [
+        "biceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "2038578021",
+      "originalId": "ex_1790541676057_4a2163w",
+      "name": "Curl concentration",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl concentration",
+      "primaryGroups": [
+        "biceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "448199957",
+      "originalId": "ex_1790541907349_37imp7r",
+      "name": "Mollets debout",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "mollets debout",
+      "primaryGroups": [
+        "calves"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 100,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1921222794",
+      "originalId": "ex_1790542857052_gh5jx8r",
+      "name": "Wall sit",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "wall sit",
+      "primaryGroups": [
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 4,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "77780789",
+      "originalId": "ex_1790542832238_kjzej5o",
+      "name": "Squat haltères",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "squat haltères",
+      "primaryGroups": [
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 100,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "complementary_endurance_pushups",
+      "originalId": "complementary_endurance_pushups",
+      "name": "Pompes endurance (complémentaire)",
+      "resolutionSource": "complementary_endurance_pushups",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "pompes",
+      "primaryGroups": [
+        "chest",
+        "triceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 500,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1599606959",
+      "originalId": "ex_1790793201835_vtb1qxc",
+      "name": "Développé Arnold",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "développé arnold",
+      "primaryGroups": [
+        "shoulders"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 40,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "304",
+      "originalId": "304",
+      "name": "Élévations latérales",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "élévations latérales",
+      "primaryGroups": [
+        "shoulders"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 60,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1735485569",
+      "originalId": "ex_1790799857022_hxsjfub",
+      "name": "Bent-Arm Lateral Dumbbell Raise",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "bent-arm lateral dumbbell raise",
+      "primaryGroups": [
+        "shoulders"
+      ],
+      "mappingQuality": "partial",
+      "nonAttributionReason": null,
+      "reps": 60,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "306",
+      "originalId": "306",
+      "name": "Face pull",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "face pull",
+      "primaryGroups": [
+        "shoulders",
+        "back"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 60,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "307",
+      "originalId": "307",
+      "name": "Extension triceps debout avec haltère",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "extension triceps debout haltère",
+      "primaryGroups": [
+        "triceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 42,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1250363242",
+      "originalId": "ex_1790801400811_1s7h9z9",
+      "name": "Side-Lying Single-Arm Dumbbell Triceps Extension",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "extension triceps couché latéral à un haltère",
+      "primaryGroups": [
+        "triceps"
+      ],
+      "mappingQuality": "partial",
+      "nonAttributionReason": null,
+      "reps": 40,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "369862756",
+      "originalId": "ex_1790801352679_etkwphn",
+      "name": "Single-Arm Dumbbell Lying Triceps Extension",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "single-arm dumbbell lying triceps extension",
+      "primaryGroups": [
+        "triceps"
+      ],
+      "mappingQuality": "partial",
+      "nonAttributionReason": null,
+      "reps": 40,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "308",
+      "originalId": "308",
+      "name": "Kickbacks triceps",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "kickbacks triceps",
+      "primaryGroups": [
+        "triceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 48,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "505",
+      "originalId": "505",
+      "name": "Relevés de genoux à la barre",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "name_match",
+      "anatomyLinkConfidence": "probable",
+      "bankKey": null,
+      "primaryGroups": [
+        "core",
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 120,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "506",
+      "originalId": "506",
+      "name": "Relevés de genoux aux parallèles",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "relevés de genoux aux parallèles",
+      "primaryGroups": [
+        "core",
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 80,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1488780401",
+      "originalId": "dup_1790542938554_opan3kz",
+      "name": "Développé couché incliné aux haltères",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "développé incliné haltères",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 96,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1974855961",
+      "originalId": "dup_1790542938555_t1fvyur",
+      "name": "Pompes inclinées",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "pompes inclinées",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 80,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "405829990",
+      "originalId": "dup_1790542938555_1mbr785",
+      "name": "Curl assis dos calé",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl assis dos calé",
+      "primaryGroups": [
+        "biceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "298605878",
+      "originalId": "dup_1790542938555_270xkuc",
+      "name": "Curl Zottman",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl zottman",
+      "primaryGroups": [
+        "biceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1393146215",
+      "originalId": "dup_1790542938555_du0uk28",
+      "name": "Curl marteau",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl marteau",
+      "primaryGroups": [
+        "biceps",
+        "forearms"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1343403170",
+      "originalId": "dup_1790542938555_n3d0zni",
+      "name": "Curl concentration",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "curl concentration",
+      "primaryGroups": [
+        "biceps"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "728134920",
+      "originalId": "dup_1790542938555_0f27ieq",
+      "name": "Mollets debout",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "mollets debout",
+      "primaryGroups": [
+        "calves"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 100,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "157819340",
+      "originalId": "dup_1790542938555_kftvdn5",
+      "name": "Wall sit",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "wall sit",
+      "primaryGroups": [
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 4,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "1647297599",
+      "originalId": "dup_1790542938555_2ymyflz",
+      "name": "Squat haltères",
+      "resolutionSource": "reverse_stable_hash",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "squat haltères",
+      "primaryGroups": [
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 100,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "105",
+      "originalId": "105",
+      "name": "Pompes inclinées",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "pompes inclinées",
+      "primaryGroups": [
+        "chest"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 72,
+      "identityConfidence": "certain"
+    },
+    {
+      "storageId": "107",
+      "originalId": "107",
+      "name": "Relevés de genoux aux parallèles",
+      "resolutionSource": "name_map_direct",
+      "attributionSource": "bank_key_explicit",
+      "anatomyLinkConfidence": "certain",
+      "bankKey": "relevés de genoux aux parallèles",
+      "primaryGroups": [
+        "core",
+        "quads"
+      ],
+      "mappingQuality": "complete",
+      "nonAttributionReason": null,
+      "reps": 40,
+      "identityConfidence": "certain"
+    }
+  ],
+  "unitPipeline": {
+    "steps": {
+      "rawCheckedInWindow": {
+        "lines": 110,
+        "valueSum": 4367,
+        "unit": "mixed_pre_name"
+      },
+      "afterDedupMax": {
+        "lines": 110,
+        "valueSum": 4367,
+        "eliminatedLines": 0,
+        "eliminatedValueSum": 0
+      },
+      "afterUnitSplit": {
+        "certain_reps": {
+          "lines": 109,
+          "valueSum": 4331
+        },
+        "isometric_seconds": {
+          "lines": 1,
+          "valueSum": 36,
+          "unitSource": "name_heuristic"
+        },
+        "note": "Iso retiré de R après résolution de nom ; 4367−4331=36 n’implique pas à lui seul une dedup correcte"
+      }
+    },
+    "invariants": {
+      "dedupSumPlusEliminatedEqualsRaw": true,
+      "certainPlusIsoLinesEqualsCanonical": true,
+      "certainSumPlusIsoSumEqualsDedupSumWhenOnlyThoseUnits": true
+    },
+    "rawUniverseCounts": {
+      "candidateKeys": 450,
+      "certain_reps": {
+        "lines": 110,
+        "valueSum": 4367
+      },
+      "isometric_seconds": {
+        "lines": 0,
+        "valueSum": 0
+      },
+      "duration_other": {
+        "lines": 0,
+        "valueSum": 0
+      },
+      "heuristic_unit": {
+        "lines": 0,
+        "valueSum": 0
+      },
+      "unknown_unit": {
+        "lines": 0,
+        "valueSum": 0
+      },
+      "invalid": {
+        "lines": 0,
+        "valueSum": 0
+      },
+      "uncheckedSkipped": 0,
+      "complementarySkipped": 0,
+      "outOfWindow": 340
+    }
+  },
+  "dayEligibility": {
+    "days": [
+      {
+        "date": "2026-10-01",
+        "hasChecks": true,
+        "canonicalCertainReps": 19,
+        "canonicalOccurrences": 3,
+        "gtgNativeReps": 19,
+        "gtgSyncedIntoClassic": true,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-02",
+        "hasChecks": true,
+        "canonicalCertainReps": 245,
+        "canonicalOccurrences": 7,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 245,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-03",
+        "hasChecks": true,
+        "canonicalCertainReps": 19,
+        "canonicalOccurrences": 3,
+        "gtgNativeReps": 19,
+        "gtgSyncedIntoClassic": true,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-04",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-05",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-06",
+        "hasChecks": true,
+        "canonicalCertainReps": 9,
+        "canonicalOccurrences": 2,
+        "gtgNativeReps": 9,
+        "gtgSyncedIntoClassic": true,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-07",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-08",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-09",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-10",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-11",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-12",
+        "hasChecks": true,
+        "canonicalCertainReps": 275,
+        "canonicalOccurrences": 7,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 275,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-13",
+        "hasChecks": true,
+        "canonicalCertainReps": 536,
+        "canonicalOccurrences": 10,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 536,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-14",
+        "hasChecks": true,
+        "canonicalCertainReps": 409,
+        "canonicalOccurrences": 11,
+        "gtgNativeReps": 19,
+        "gtgSyncedIntoClassic": true,
+        "classicNonGtgReps": 390,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-15",
+        "hasChecks": true,
+        "canonicalCertainReps": 19,
+        "canonicalOccurrences": 3,
+        "gtgNativeReps": 19,
+        "gtgSyncedIntoClassic": true,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-16",
+        "hasChecks": true,
+        "canonicalCertainReps": 315,
+        "canonicalOccurrences": 8,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 315,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-17",
+        "hasChecks": true,
+        "canonicalCertainReps": 536,
+        "canonicalOccurrences": 10,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 536,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-18",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-19",
+        "hasChecks": true,
+        "canonicalCertainReps": 390,
+        "canonicalOccurrences": 10,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 390,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-20",
+        "hasChecks": true,
+        "canonicalCertainReps": 188,
+        "canonicalOccurrences": 3,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 188,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-21",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-22",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-23",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-24",
+        "hasChecks": true,
+        "canonicalCertainReps": 332,
+        "canonicalOccurrences": 7,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 332,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-25",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-26",
+        "hasChecks": true,
+        "canonicalCertainReps": 356,
+        "canonicalOccurrences": 9,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 356,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-27",
+        "hasChecks": true,
+        "canonicalCertainReps": 332,
+        "canonicalOccurrences": 7,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 332,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      },
+      {
+        "date": "2026-10-28",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-29",
+        "hasChecks": false,
+        "canonicalCertainReps": 0,
+        "canonicalOccurrences": 0,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 0,
+        "eligibleCalendarDay": false,
+        "eligibleP30MatrixDay": false,
+        "eligibleP32aExposureDay": false,
+        "planSource": "none"
+      },
+      {
+        "date": "2026-10-30",
+        "hasChecks": true,
+        "canonicalCertainReps": 351,
+        "canonicalOccurrences": 9,
+        "gtgNativeReps": 0,
+        "gtgSyncedIntoClassic": false,
+        "classicNonGtgReps": 351,
+        "eligibleCalendarDay": true,
+        "eligibleP30MatrixDay": true,
+        "eligibleP32aExposureDay": true,
+        "planSource": "reconstruct"
+      }
+    ],
+    "counts": {
+      "daysWithChecks": 16,
+      "daysP32aExposure": 16,
+      "daysCalendar": 16,
+      "daysP30MatrixTouched": 16,
+      "daysWithGtg": 5
+    },
+    "definitions": {
+      "p32aExposure": "jour avec ≥1 ligne certain_reps canonique",
+      "calendarHeuristic": "aligné P3.2a exposure sur cet export (reps certain)",
+      "p30Matrix": "jour présent dans buildPlanRealizationMatrix (toute source)",
+      "note11vs15vs16": "11 = métrique discovery trainingDays (souvent séances densifiées) ; 15 = jours matrice P3.0 ; 16 = jours certain_reps P3.2a — prédicats distincts, pas un bug unique"
+    }
+  }
+}

@@ -271,6 +271,8 @@ describe('compose — prose structurée', () => {
     );
     expect(cards[0].body).toMatch(/aucun jour|plan figé|snapshot/i);
     expect(cards[0].body).toMatch(/taux|adhérence/i);
+    expect(cards[0].contentClass).toBe('methodology_limit');
+    expect(cards[0].weights.importance).toBeLessThan(0.5);
   });
 
   it('cite early/late et volume sans affirmer de cause', () => {
