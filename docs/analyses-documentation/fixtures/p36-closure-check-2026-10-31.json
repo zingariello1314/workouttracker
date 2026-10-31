@@ -1,0 +1,796 @@
+{
+  "generatedAt": "2026-10-31T23:39:00.930Z",
+  "horizons": {
+    "7j": {
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "coverage": {
+        "calendarDays": 7,
+        "classicActiveDays": 4,
+        "classicExclusiveDays": 4,
+        "gtgActiveDays": 0,
+        "gtgDays": 0,
+        "classicOnlyDays": 4,
+        "gtgOnlyDays": 0,
+        "bothDays": 0,
+        "daysWithoutClassicExclusive": 3,
+        "daysWithNoRecordedActivity": 3,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 3,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "freqVsVolume": {
+        "publishable": false,
+        "abstainReason": "missing_freq_arm"
+      },
+      "loadArm": null,
+      "weekdayRegularity": {
+        "publishable": false,
+        "champion": null,
+        "tiedGroup": null,
+        "abstainReason": "insufficient_weekday_sample"
+      },
+      "exercises": {
+        "publishableFreq": false,
+        "publishableVol": false,
+        "topFreq": null,
+        "topVolume": null,
+        "freqStatus": null,
+        "volStatus": null,
+        "byFreqTop5": [
+          {
+            "id": "106",
+            "dayCount": 1,
+            "exclusiveReps": 60,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "505",
+            "dayCount": 1,
+            "exclusiveReps": 60,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "1488780401",
+            "dayCount": 1,
+            "exclusiveReps": 48,
+            "label": "exercice 1488780401"
+          },
+          {
+            "id": "703294235",
+            "dayCount": 1,
+            "exclusiveReps": 48,
+            "label": "exercice 703294235"
+          },
+          {
+            "id": "103",
+            "dayCount": 1,
+            "exclusiveReps": 48,
+            "label": "Dips"
+          }
+        ],
+        "byVolTop5": [
+          {
+            "id": "106",
+            "dayCount": 1,
+            "exclusiveReps": 60,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "505",
+            "dayCount": 1,
+            "exclusiveReps": 60,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "1488780401",
+            "dayCount": 1,
+            "exclusiveReps": 48,
+            "label": "exercice 1488780401"
+          },
+          {
+            "id": "703294235",
+            "dayCount": 1,
+            "exclusiveReps": 48,
+            "label": "exercice 703294235"
+          },
+          {
+            "id": "103",
+            "dayCount": 1,
+            "exclusiveReps": 48,
+            "label": "Dips"
+          }
+        ]
+      },
+      "stability": {
+        "publishable": false,
+        "abstainReason": "insufficient_complete_weeks",
+        "weekCount": 0
+      },
+      "provenDow": {
+        "publishable": false,
+        "abstainReason": "insufficient_proven_planned_weekdays"
+      },
+      "abstentions": [
+        {
+          "family": "A_regularity",
+          "reason": "insufficient_weekday_sample"
+        },
+        {
+          "family": "B_volume",
+          "reason": "insufficient_sample"
+        },
+        {
+          "family": "B_freq_vs_vol",
+          "reason": "missing_freq_arm"
+        },
+        {
+          "family": "C_exercises",
+          "reason": "no_dominant_exercise_signal"
+        },
+        {
+          "family": "D_stability",
+          "reason": "insufficient_complete_weeks"
+        },
+        {
+          "family": "E_proven",
+          "reason": "insufficient_proven_planned_weekdays"
+        },
+        {
+          "family": "window",
+          "reason": "short_window_many_families_abstain"
+        }
+      ],
+      "dowSample": [
+        {
+          "label": "dimanche",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 0,
+          "withNeither": 1,
+          "rateClassicPct": 0,
+          "rateIfActiveOnlyDenominator": 0
+        },
+        {
+          "label": "lundi",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 1,
+          "withNeither": 0,
+          "rateClassicPct": 100,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "mardi",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 1,
+          "withNeither": 0,
+          "rateClassicPct": 100,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "mercredi",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 0,
+          "withNeither": 1,
+          "rateClassicPct": 0,
+          "rateIfActiveOnlyDenominator": 0
+        },
+        {
+          "label": "jeudi",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 0,
+          "withNeither": 1,
+          "rateClassicPct": 0,
+          "rateIfActiveOnlyDenominator": 0
+        },
+        {
+          "label": "vendredi",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 1,
+          "withNeither": 0,
+          "rateClassicPct": 100,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "samedi",
+          "calendar": 1,
+          "eligible": 1,
+          "incompleteCurrent": 0,
+          "withClassic": 1,
+          "withNeither": 0,
+          "rateClassicPct": 100,
+          "rateIfActiveOnlyDenominator": 100
+        }
+      ],
+      "candidatesProduced": [],
+      "selectedP36": [],
+      "droppedP36": []
+    },
+    "30j": {
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "coverage": {
+        "calendarDays": 30,
+        "classicActiveDays": 12,
+        "classicExclusiveDays": 12,
+        "gtgActiveDays": 5,
+        "gtgDays": 5,
+        "classicOnlyDays": 11,
+        "gtgOnlyDays": 4,
+        "bothDays": 1,
+        "daysWithoutClassicExclusive": 18,
+        "daysWithNoRecordedActivity": 14,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 14,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "freqVsVolume": {
+        "publishable": false,
+        "abstainReason": "load_arm_spike_sensitive",
+        "volLabel": "samedi",
+        "volActiveDays": 2,
+        "volValues": [
+          332,
+          536
+        ],
+        "freqRefMean": 352,
+        "threshold": 422.4
+      },
+      "loadArm": null,
+      "weekdayRegularity": {
+        "publishable": true,
+        "champion": null,
+        "tiedGroup": [
+          {
+            "dow": 1,
+            "label": "lundi",
+            "rateClassicPct": 75,
+            "eligibleOccurrences": 4,
+            "withClassicExclusive": 3
+          },
+          {
+            "dow": 2,
+            "label": "mardi",
+            "rateClassicPct": 75,
+            "eligibleOccurrences": 4,
+            "withClassicExclusive": 3
+          }
+        ],
+        "abstainReason": null
+      },
+      "exercises": {
+        "publishableFreq": false,
+        "publishableVol": false,
+        "topFreq": null,
+        "topVolume": null,
+        "freqStatus": null,
+        "volStatus": null,
+        "byFreqTop5": [
+          {
+            "id": "106",
+            "dayCount": 3,
+            "exclusiveReps": 180,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "1979012181",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "exercice 1979012181"
+          },
+          {
+            "id": "502",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "Tractions australiennes — prise pronation"
+          },
+          {
+            "id": "503",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "Dips"
+          },
+          {
+            "id": "703294235",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "exercice 703294235"
+          }
+        ],
+        "byVolTop5": [
+          {
+            "id": "106",
+            "dayCount": 3,
+            "exclusiveReps": 180,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "1979012181",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "exercice 1979012181"
+          },
+          {
+            "id": "502",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "Tractions australiennes — prise pronation"
+          },
+          {
+            "id": "503",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "Dips"
+          },
+          {
+            "id": "703294235",
+            "dayCount": 3,
+            "exclusiveReps": 144,
+            "label": "exercice 703294235"
+          }
+        ]
+      },
+      "stability": {
+        "publishable": false,
+        "abstainReason": "insufficient_complete_weeks",
+        "weekCount": 3
+      },
+      "provenDow": {
+        "publishable": false,
+        "abstainReason": "insufficient_proven_planned_weekdays"
+      },
+      "abstentions": [
+        {
+          "family": "B_volume",
+          "reason": "no_clear_volume_concentration"
+        },
+        {
+          "family": "B_freq_vs_vol",
+          "reason": "load_arm_spike_sensitive"
+        },
+        {
+          "family": "C_exercises",
+          "reason": "no_dominant_exercise_signal"
+        },
+        {
+          "family": "D_stability",
+          "reason": "insufficient_complete_weeks"
+        },
+        {
+          "family": "E_proven",
+          "reason": "insufficient_proven_planned_weekdays"
+        }
+      ],
+      "dowSample": [
+        {
+          "label": "dimanche",
+          "calendar": 4,
+          "eligible": 4,
+          "incompleteCurrent": 0,
+          "withClassic": 0,
+          "withNeither": 4,
+          "rateClassicPct": 0,
+          "rateIfActiveOnlyDenominator": 0
+        },
+        {
+          "label": "lundi",
+          "calendar": 4,
+          "eligible": 4,
+          "incompleteCurrent": 0,
+          "withClassic": 3,
+          "withNeither": 1,
+          "rateClassicPct": 75,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "mardi",
+          "calendar": 4,
+          "eligible": 4,
+          "incompleteCurrent": 0,
+          "withClassic": 3,
+          "withNeither": 0,
+          "rateClassicPct": 75,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "mercredi",
+          "calendar": 4,
+          "eligible": 4,
+          "incompleteCurrent": 0,
+          "withClassic": 1,
+          "withNeither": 3,
+          "rateClassicPct": 25,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "jeudi",
+          "calendar": 5,
+          "eligible": 5,
+          "incompleteCurrent": 0,
+          "withClassic": 0,
+          "withNeither": 3,
+          "rateClassicPct": 0,
+          "rateIfActiveOnlyDenominator": 0
+        },
+        {
+          "label": "vendredi",
+          "calendar": 5,
+          "eligible": 5,
+          "incompleteCurrent": 0,
+          "withClassic": 3,
+          "withNeither": 2,
+          "rateClassicPct": 60,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "samedi",
+          "calendar": 4,
+          "eligible": 4,
+          "incompleteCurrent": 0,
+          "withClassic": 2,
+          "withNeither": 1,
+          "rateClassicPct": 50,
+          "rateIfActiveOnlyDenominator": 100
+        }
+      ],
+      "candidatesProduced": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
+        }
+      ],
+      "selectedP36": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "score": 42
+        }
+      ],
+      "droppedP36": []
+    },
+    "3m": {
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "coverage": {
+        "calendarDays": 91,
+        "classicActiveDays": 41,
+        "classicExclusiveDays": 41,
+        "gtgActiveDays": 6,
+        "gtgDays": 6,
+        "classicOnlyDays": 40,
+        "gtgOnlyDays": 5,
+        "bothDays": 1,
+        "daysWithoutClassicExclusive": 50,
+        "daysWithNoRecordedActivity": 45,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 45,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "freqVsVolume": {
+        "publishable": true,
+        "mode": "per_active_day",
+        "freqLabels": [
+          "lundi",
+          "vendredi"
+        ],
+        "freqLabel": "lundi, vendredi",
+        "volLabel": "mercredi",
+        "freqRatePct": 76.9,
+        "volSharePct": null,
+        "volMeanActive": 482,
+        "volMedianActive": 496,
+        "volActiveDays": 3,
+        "volValues": [
+          426,
+          496,
+          524
+        ],
+        "strengthClass": "descriptive_tendency",
+        "freqRefMean": 300,
+        "threshold": 360,
+        "note": "Fréquence d’activité ≠ quantité par séance active"
+      },
+      "loadArm": {
+        "label": "mercredi",
+        "eligible": 13,
+        "activeClassic": 3,
+        "calendar": 13,
+        "values": [
+          426,
+          496,
+          524
+        ],
+        "min": 426,
+        "max": 524,
+        "mean": 482,
+        "median": 496,
+        "range": 98,
+        "spikeRatio": 1.06,
+        "withoutMaxMedian": 461,
+        "withoutMaxMean": 461,
+        "freqRefMean": 300,
+        "stillAboveRefWithoutMax": true,
+        "rateClassicPct": 23.1,
+        "note": "stable_enough_descriptive"
+      },
+      "weekdayRegularity": {
+        "publishable": true,
+        "champion": null,
+        "tiedGroup": [
+          {
+            "dow": 1,
+            "label": "lundi",
+            "rateClassicPct": 76.9,
+            "eligibleOccurrences": 13,
+            "withClassicExclusive": 10
+          },
+          {
+            "dow": 5,
+            "label": "vendredi",
+            "rateClassicPct": 69.2,
+            "eligibleOccurrences": 13,
+            "withClassicExclusive": 9
+          }
+        ],
+        "abstainReason": null
+      },
+      "exercises": {
+        "publishableFreq": false,
+        "publishableVol": false,
+        "topFreq": null,
+        "topVolume": null,
+        "freqStatus": null,
+        "volStatus": null,
+        "byFreqTop5": [
+          {
+            "id": "103",
+            "dayCount": 10,
+            "exclusiveReps": 480,
+            "label": "Dips"
+          },
+          {
+            "id": "102",
+            "dayCount": 10,
+            "exclusiveReps": 436,
+            "label": "Tractions australiennes — prise large pronation"
+          },
+          {
+            "id": "101",
+            "dayCount": 10,
+            "exclusiveReps": 200,
+            "label": "Tractions pronation"
+          },
+          {
+            "id": "502",
+            "dayCount": 9,
+            "exclusiveReps": 432,
+            "label": "Tractions australiennes — prise pronation"
+          },
+          {
+            "id": "503",
+            "dayCount": 9,
+            "exclusiveReps": 420,
+            "label": "Dips"
+          }
+        ],
+        "byVolTop5": [
+          {
+            "id": "103",
+            "dayCount": 10,
+            "exclusiveReps": 480,
+            "label": "Dips"
+          },
+          {
+            "id": "106",
+            "dayCount": 8,
+            "exclusiveReps": 480,
+            "label": "Relevés de genoux à la barre"
+          },
+          {
+            "id": "102",
+            "dayCount": 10,
+            "exclusiveReps": 436,
+            "label": "Tractions australiennes — prise large pronation"
+          },
+          {
+            "id": "502",
+            "dayCount": 9,
+            "exclusiveReps": 432,
+            "label": "Tractions australiennes — prise pronation"
+          },
+          {
+            "id": "503",
+            "dayCount": 9,
+            "exclusiveReps": 420,
+            "label": "Dips"
+          }
+        ]
+      },
+      "stability": {
+        "publishable": false,
+        "abstainReason": "not_remarkably_stable",
+        "weekCount": 12,
+        "medianActiveDaysPerWeek": 3.5,
+        "cvActiveDays": 0.454,
+        "activeDaysSeries": [
+          4,
+          4,
+          3,
+          3,
+          4,
+          2,
+          4,
+          1,
+          6,
+          1,
+          6,
+          3
+        ]
+      },
+      "provenDow": {
+        "publishable": false,
+        "abstainReason": "insufficient_proven_planned_weekdays"
+      },
+      "abstentions": [
+        {
+          "family": "B_volume",
+          "reason": "no_clear_volume_concentration"
+        },
+        {
+          "family": "C_exercises",
+          "reason": "no_dominant_exercise_signal"
+        },
+        {
+          "family": "D_stability",
+          "reason": "not_remarkably_stable"
+        },
+        {
+          "family": "E_proven",
+          "reason": "insufficient_proven_planned_weekdays"
+        }
+      ],
+      "dowSample": [
+        {
+          "label": "dimanche",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 3,
+          "withNeither": 10,
+          "rateClassicPct": 23.1,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "lundi",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 10,
+          "withNeither": 3,
+          "rateClassicPct": 76.9,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "mardi",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 8,
+          "withNeither": 4,
+          "rateClassicPct": 61.5,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "mercredi",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 3,
+          "withNeither": 9,
+          "rateClassicPct": 23.1,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "jeudi",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 3,
+          "withNeither": 8,
+          "rateClassicPct": 23.1,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "vendredi",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 9,
+          "withNeither": 4,
+          "rateClassicPct": 69.2,
+          "rateIfActiveOnlyDenominator": 100
+        },
+        {
+          "label": "samedi",
+          "calendar": 13,
+          "eligible": 13,
+          "incompleteCurrent": 0,
+          "withClassic": 5,
+          "withNeither": 7,
+          "rateClassicPct": 38.5,
+          "rateIfActiveOnlyDenominator": 100
+        }
+      ],
+      "candidatesProduced": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 76,9 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
+        },
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé)."
+        }
+      ],
+      "selectedP36": [
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé).",
+          "score": 49
+        }
+      ],
+      "droppedP36": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "reason": "rival",
+          "title": "Jours habituellement actifs"
+        }
+      ]
+    }
+  }
+}

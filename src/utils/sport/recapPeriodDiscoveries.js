@@ -59,6 +59,12 @@ import {
   isMethodologyLimitDiscovery,
   reliabilityNoteFromMethodologyDiscovery
 } from './recapDiscoveryContentClass';
+import { buildP32bMuscleDiscoveries, P32B_KINDS } from './recapMuscleP32bDiscoveries';
+import { buildP34RevisionDiscoveries } from './recapProgramRevisionP34';
+import { buildP35Discoveries } from './recapP35Discoveries';
+import { P35_KINDS, P35_RIVAL_GROUPS } from './recapP35Kinds';
+import { buildP36Discoveries } from './recapP36Discoveries';
+import { P36_KINDS, P36_RIVAL_GROUPS } from './recapP36Kinds';
 import {
   buildExerciseTrajectory,
   renderExerciseTrajectoryCopy,
@@ -3205,11 +3211,24 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       // E0 : disc_plan_data_insufficient retiré de la priority (methodology_limit → reliabilityNotes)
       'disc_plan_follow_rate',
       'disc_plan_recurring_skip',
+      P35_KINDS.GTG_MOVEMENT_SHARE,
+      P35_KINDS.GTG_COEXISTENCE,
+      P35_KINDS.GTG_OUTSIDE_CLASSIC,
+      P35_KINDS.GAP_NATURE,
       'disc_freq_progress_low',
       'disc_freq_high_no_progress',
       'disc_freq_progress_high',
       'disc_freq_decline_low_exposure',
       'disc_offplan_pattern',
+      P35_KINDS.FEEDBACK_DIFFICULTE,
+      P35_KINDS.CROSS_GTG_DIFFICULTE,
+      P36_KINDS.FREQ_VS_VOLUME,
+      P36_KINDS.WEEKDAY_REGULARITY,
+      P36_KINDS.WEEKDAY_VOLUME,
+      P36_KINDS.EXERCISE_VOLUME,
+      P36_KINDS.EXERCISE_FREQ,
+      P36_KINDS.HABIT_STABILITY,
+      P36_KINDS.PROVEN_ADHERENCE_DOW,
       'disc_exercise_base',
       'disc_structural_memory',
       'disc_stimulus_mix',
@@ -3228,6 +3247,7 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     ],
     journey: [
       'disc_gtg_unplanned_progress',
+      P36_KINDS.HABIT_STABILITY,
       'disc_anchor',
       'disc_kcal_profile',
       'disc_repertoire',
@@ -3246,11 +3266,24 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       // E0 : disc_plan_data_insufficient retiré de la priority
       'disc_plan_follow_rate',
       'disc_plan_recurring_skip',
+      P35_KINDS.GTG_MOVEMENT_SHARE,
+      P35_KINDS.GTG_COEXISTENCE,
+      P35_KINDS.GTG_OUTSIDE_CLASSIC,
+      P35_KINDS.GAP_NATURE,
+      P36_KINDS.FREQ_VS_VOLUME,
+      P36_KINDS.WEEKDAY_REGULARITY,
+      P36_KINDS.WEEKDAY_VOLUME,
+      P36_KINDS.EXERCISE_VOLUME,
+      P36_KINDS.EXERCISE_FREQ,
+      P36_KINDS.HABIT_STABILITY,
+      P36_KINDS.PROVEN_ADHERENCE_DOW,
       'disc_freq_progress_low',
       'disc_freq_high_no_progress',
       'disc_freq_progress_high',
       'disc_freq_decline_low_exposure',
       'disc_offplan_pattern',
+      P35_KINDS.FEEDBACK_DIFFICULTE,
+      P35_KINDS.CROSS_GTG_DIFFICULTE,
       'disc_family_fade',
       'disc_cardio_strength',
       'disc_stimulus_mix',
@@ -3265,12 +3298,26 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_family',
       'disc_sleep_architecture'
     ],
-    journey: ['disc_gtg_unplanned_progress', 'disc_best_month', 'disc_exercise_progress', 'disc_quarter_profile', 'disc_sleep_zones', 'disc_sleep_j2']
+    journey: [
+      'disc_gtg_unplanned_progress',
+      P36_KINDS.HABIT_STABILITY,
+      'disc_best_month',
+      'disc_exercise_progress',
+      'disc_quarter_profile',
+      'disc_sleep_zones',
+      'disc_sleep_j2'
+    ]
   },
   long: {
     now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_muscle_now', 'disc_density'],
     trajectory: [
       'disc_gtg_unplanned_role',
+      P35_KINDS.GTG_MOVEMENT_SHARE,
+      P35_KINDS.GTG_COEXISTENCE,
+      P35_KINDS.GAP_NATURE,
+      P36_KINDS.WEEKDAY_REGULARITY,
+      P36_KINDS.EXERCISE_VOLUME,
+      P36_KINDS.HABIT_STABILITY,
       'disc_sleep_volume',
       'disc_sleep_perf',
       'disc_sleep_combo',
@@ -3280,7 +3327,16 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_architecture',
       'disc_family_fade'
     ],
-    journey: ['disc_gtg_unplanned_progress', 'disc_sleep_quarter', 'disc_best_month', 'disc_sleep_freq', 'disc_sleep_delayed', 'disc_sleep_j2', 'disc_quarter_arc']
+    journey: [
+      'disc_gtg_unplanned_progress',
+      P36_KINDS.HABIT_STABILITY,
+      'disc_sleep_quarter',
+      'disc_best_month',
+      'disc_sleep_freq',
+      'disc_sleep_delayed',
+      'disc_sleep_j2',
+      'disc_quarter_arc'
+    ]
   }
 };
 PERIOD_DISCOVERY_PRIORITY.year = {
@@ -3306,8 +3362,23 @@ const COMPOSITION_STORY_KINDS = [
   'disc_muscle_reorient'
 ];
 
+/** P3.2b — lectures ledger (exposition / structure / plan) : rivales de la composition 74/26. */
+const P32B_MUSCLE_STORY_KINDS = [
+  P32B_KINDS.EXPOSURE_CONTRAST,
+  P32B_KINDS.EXPOSURE_SHIFT,
+  P32B_KINDS.MOVEMENT_STRUCTURE,
+  P32B_KINDS.PLAN_VS_ACTUAL
+];
+
+const MUSCLE_STORY_RIVAL_GROUP = [...COMPOSITION_STORY_KINDS, ...P32B_MUSCLE_STORY_KINDS];
+
 const DISCOVERY_RIVALS = [
-  [...COMPOSITION_STORY_KINDS],
+  // Composition 74/26 vs lectures ledger : une seule « story » musculaire globale.
+  [...MUSCLE_STORY_RIVAL_GROUP],
+  // Contraste statique vs structure push/pull : même angle descriptif de répartition.
+  [P32B_KINDS.EXPOSURE_CONTRAST, P32B_KINDS.MOVEMENT_STRUCTURE],
+  // Shift (évolution) peut coexister avec contrast seulement si le builder P3.2b
+  // n’a pas déjà appliqué la préférence shift→contrast ; pas de rivalité dure ici.
   ['disc_anchor', 'disc_freq_continuity'],
   ['disc_quarter_arc', 'disc_quarter_profile'],
   ['disc_exercise_share', 'disc_repertoire'],
@@ -3340,12 +3411,18 @@ const DISCOVERY_RIVALS = [
   // GTG hors planning : une carte « rôle/continuité » suffit (progress peut coexister).
   ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role'],
   // Adhérence : taux vs constat d’insuffisance (mutuellement exclusifs en pratique).
-  ['disc_plan_follow_rate', 'disc_plan_data_insufficient']
+  ['disc_plan_follow_rate', 'disc_plan_data_insufficient'],
+  // Limite plan vs limite ledger musculaire : une note de fiabilité suffit.
+  ['disc_plan_data_insufficient', P32B_KINDS.LEDGER_LIMITS],
+  // P3.5 : rivaux sémantiques (écarts / GTG hors classique / coexistence).
+  ...P35_RIVAL_GROUPS,
+  ...P36_RIVAL_GROUPS
 ];
 
 /** Rivals appliqués sur usedKind global (pas seulement la même nature). */
 const CROSS_NATURE_RIVALS = [
-  [...COMPOSITION_STORY_KINDS],
+  [...MUSCLE_STORY_RIVAL_GROUP],
+  [P32B_KINDS.EXPOSURE_CONTRAST, P32B_KINDS.MOVEMENT_STRUCTURE],
   [
     'disc_sleep_rhythm_obs',
     'disc_sleep_rhythm_habit',
@@ -3364,7 +3441,12 @@ const CROSS_NATURE_RIVALS = [
     'disc_sleep_rpe',
     'disc_sleep_intensity'
   ],
-  ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role']
+  ['disc_gtg_unplanned_now', 'disc_gtg_unplanned_role'],
+  [P35_KINDS.GAP_NATURE, 'disc_plan_follow_rate', 'disc_plan_recurring_skip', 'disc_offplan_pattern'],
+  // P3.5 : hors classique ≠ hors horaires — pas de rivalité cross-nature avec unplanned.
+  [P35_KINDS.GTG_COEXISTENCE, P35_KINDS.GTG_OUTSIDE_CLASSIC],
+  [P36_KINDS.EXERCISE_FREQ, P36_KINDS.EXERCISE_VOLUME, 'disc_exercise_share'],
+  [P36_KINDS.HABIT_STABILITY, 'disc_freq_continuity', 'disc_anchor']
 ];
 
 function rivalBlocked(kind, usedKinds) {
@@ -3420,6 +3502,11 @@ export function discoveryInformativeValue(d) {
   if (COMPOSITION_STORY_KINDS.includes(d?.kind) && !m.trajectoryOk) v -= 8;
   if (d?.kind === 'disc_density' && !m.trajectoryOk) v -= 4;
   if (cls === CONTENT_CLASS.DESCRIPTIVE && !m.trajectoryOk) v -= 3;
+  // P3.2b : évolution d’exposition solide > contraste statique modéré
+  if (d?.kind === P32B_KINDS.EXPOSURE_SHIFT && m.comparabilityLevel === 'solid') v += 6;
+  if (d?.kind === P32B_KINDS.EXPOSURE_CONTRAST && Number(m.relativeGap) > 0 && Number(m.relativeGap) < 0.45) {
+    v -= 4;
+  }
   return v;
 }
 
@@ -3798,6 +3885,107 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       metrics: card.metrics
     })
   );
+  /** P3.2b — toujours calculé (Phase 1) ; injection pool contrôlée (Phase 2). */
+  const p32bPack = buildP32bMuscleDiscoveries({
+    snapshot: opts.snapshot,
+    window: opts.window,
+    getExerciseNameById: opts.getExerciseNameById || null,
+    nameById: opts.nameById || null,
+    publishPlanVsActual: opts.publishP32bPlanVsActual !== false
+  });
+  // Phase 2 : activé par défaut après rejeu oct. (opt-out : includeP32bMuscleDiscoveries: false).
+  const includeP32b = opts.includeP32bMuscleDiscoveries !== false;
+  const p32bRaw = includeP32b
+    ? (p32bPack.discoveries || []).map((card) =>
+        discovery({
+          kind: card.kind,
+          nature: card.nature,
+          family: card.family,
+          contentClass: card.contentClass || card.metrics?.contentClass,
+          title: card.title,
+          body: card.body,
+          evidence: card.evidence,
+          weights: card.weights,
+          metrics: card.metrics
+        })
+      )
+    : [];
+  /** P3.4 — révisions structurelles ; opt-out : includeP34RevisionDiscoveries: false. */
+  const includeP34 = opts.includeP34RevisionDiscoveries !== false;
+  const p34Pack = includeP34
+    ? buildP34RevisionDiscoveries({
+        snapshot: opts.snapshot,
+        window: opts.window
+      })
+    : { discoveries: [] };
+  const p34Raw = (p34Pack.discoveries || []).map((card) =>
+    discovery({
+      kind: card.kind,
+      nature: card.nature,
+      family: card.family,
+      contentClass: card.contentClass || card.metrics?.contentClass,
+      title: card.title,
+      body: card.body,
+      evidence: card.evidence,
+      weights: card.weights,
+      metrics: card.metrics
+    })
+  );
+  /** P3.5 — GTG × classique / écarts / ressenti ; opt-out : includeP35Discoveries: false. */
+  const includeP35 = opts.includeP35Discoveries !== false;
+  const p35Pack = includeP35
+    ? buildP35Discoveries({
+        snapshot: opts.snapshot,
+        window: opts.window,
+        liveActiveProgram: opts.liveActiveProgram || null,
+        getExerciseNameById: opts.getExerciseNameById || null,
+        includeP35Discoveries: true
+      })
+    : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
+  const p35Raw = (p35Pack.discoveries || []).map((card) =>
+    discovery({
+      kind: card.kind,
+      nature: card.nature,
+      family: card.family,
+      contentClass: card.contentClass || card.metrics?.contentClass,
+      title: card.title,
+      body: card.body,
+      evidence: card.evidence,
+      weights: card.weights,
+      metrics: {
+        ...(card.metrics || {}),
+        p35ComputeMs: p35Pack.metrics?.performance?.computeMs
+      }
+    })
+  );
+  /** P3.6 — habitudes / weekday ; opt-out : includeP36Discoveries: false. */
+  const includeP36 = opts.includeP36Discoveries !== false;
+  const p36Pack = includeP36
+    ? buildP36Discoveries({
+        snapshot: opts.snapshot,
+        window: opts.window,
+        todayYmd: opts.todayYmd || null,
+        liveActiveProgram: opts.liveActiveProgram || null,
+        getExerciseNameById: opts.getExerciseNameById || null,
+        includeP36Discoveries: true
+      })
+    : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
+  const p36Raw = (p36Pack.discoveries || []).map((card) =>
+    discovery({
+      kind: card.kind,
+      nature: card.nature,
+      family: card.family,
+      contentClass: card.contentClass || card.metrics?.contentClass,
+      title: card.title,
+      body: card.body,
+      evidence: card.evidence,
+      weights: card.weights,
+      metrics: {
+        ...(card.metrics || {}),
+        p36ComputeMs: p36Pack.metrics?.performance?.computeMs
+      }
+    })
+  );
   const rawAll = [
     ...detectDiscoveries(comparisons, extras),
     ...rewriteSleepDiscoveries(sleepRaw, allNights),
@@ -3811,7 +3999,11 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       window: opts.window,
       profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
     }),
-    ...programAdherenceRaw
+    ...programAdherenceRaw,
+    ...p32bRaw,
+    ...p34Raw,
+    ...p35Raw,
+    ...p36Raw
   ];
   const period = comparisons.period || {};
   const activityCtx = buildPeriodActivityContext({
@@ -3879,6 +4071,27 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     dropped,
     /** E0 : limites méthodologiques (ex. plan sans snapshot) — contexte, pas cartes principales. */
     reliabilityNotes: traced.reliabilityNotes || [],
+    /** P3.2b — pack isolé (métriques + candidats + rejetés), même si non injecté dans le pool. */
+    p32bMuscle: {
+      includedInPool: includeP32b,
+      metrics: p32bPack.metrics,
+      discoveries: p32bPack.discoveries,
+      rejected: p32bPack.rejected
+    },
+    /** P3.5 — pack isolé (métriques + abstentions + candidats). */
+    p35: {
+      includedInPool: includeP35,
+      metrics: p35Pack.metrics,
+      discoveries: p35Pack.discoveries,
+      abstentions: p35Pack.abstentions || []
+    },
+    /** P3.6 — habitudes / weekday. */
+    p36: {
+      includedInPool: includeP36,
+      metrics: p36Pack.metrics,
+      discoveries: p36Pack.discoveries,
+      abstentions: p36Pack.abstentions || []
+    },
     extras,
     question: comparisons.question,
     preferPeriodNow,
@@ -3894,6 +4107,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       milestonesSelected,
       displaceLog: traced.displaceLog || [],
       compositionStoryKinds: traced.compositionStoryKinds || COMPOSITION_STORY_KINDS,
+      p32bMuscleStoryKinds: P32B_MUSCLE_STORY_KINDS,
+      includeP32bMuscleDiscoveries: includeP32b,
       reliabilityNotes: traced.reliabilityNotes || [],
       droppedBy: dropped.reduce((acc, d) => {
         acc[d.reason] = (acc[d.reason] || 0) + 1;

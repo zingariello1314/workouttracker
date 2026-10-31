@@ -154,7 +154,9 @@ export function reconstructDayPlanSnapshotFromKeys(
 
 export function getDayPlanSnapshot(workoutData, dateStr) {
   const snap = workoutData?.calendarDayPlanSnapshots?.[dateStr];
-  if (!snap || !Array.isArray(snap.exercises)) return null;
+  if (!snap || typeof snap !== 'object') return null;
+  // P3.3 : repos / no_program ont exercises: [] — toujours un tableau attendu.
+  if (!Array.isArray(snap.exercises)) return null;
   return snap;
 }
 
@@ -243,7 +245,7 @@ export function withDayPlanSnapshot(workoutData, dateStr, snapshot) {
 
 /**
  * Au premier enregistrement significatif du jour : fige le plan live si absent.
- * N’écrase jamais un snapshot existant.
+ * N’écrase jamais un snapshot existant (y compris capture P3.3 sans activité).
  */
 export function ensureDayPlanSnapshot(
   workoutData,
@@ -261,7 +263,22 @@ export function ensureDayPlanSnapshot(
     variant,
     combinedDays
   });
-  return withDayPlanSnapshot(workoutData, dateStr, snapshot);
+  // Provenance P3.3 (perf) — import dynamique évité : champs inline pour ne pas
+  // créer de dépendance circulaire avec calendarPlanCaptureP33.
+  const stamped = {
+    ...snapshot,
+    status: 'historical_frozen',
+    dayKind: (snapshot.exercises || []).length ? 'planned_workout' : 'no_program',
+    captureTrigger: 'performance',
+    plannedRest: false,
+    frozen: true,
+    provisional: false,
+    programIdentity: programId || snapshot.programId || null,
+    applicabilityConfidence: 'proven',
+    planCompareEligible: true,
+    provenanceVersion: 'p33.v1'
+  };
+  return withDayPlanSnapshot(workoutData, dateStr, stamped);
 }
 
 /**

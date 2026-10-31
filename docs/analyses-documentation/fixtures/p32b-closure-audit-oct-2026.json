@@ -1,0 +1,2443 @@
+{
+  "generatedAt": "2026-10-31T21:12:26.740Z",
+  "exposureAudit": {
+    "chest": {
+      "group": "chest",
+      "ledgerExposureDays": 16,
+      "reconstructedExposureDays": 16,
+      "exposureDates": [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-06",
+        "2026-10-12",
+        "2026-10-13",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16",
+        "2026-10-17",
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-24",
+        "2026-10-26",
+        "2026-10-27",
+        "2026-10-30"
+      ],
+      "complementaryOnlyDates": [],
+      "classicDates": [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-06",
+        "2026-10-12",
+        "2026-10-13",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16",
+        "2026-10-17",
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-24",
+        "2026-10-26",
+        "2026-10-27",
+        "2026-10-30"
+      ],
+      "monoReps": 690,
+      "multiTouch": 818,
+      "rowsByDate": {
+        "2026-10-01": [
+          {
+            "date": "2026-10-01",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 6,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-01",
+            "storageId": "104",
+            "name": "Pompes déclinées",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 10,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-02": [
+          {
+            "date": "2026-10-02",
+            "storageId": "503",
+            "name": "Dips",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-02",
+            "storageId": "504",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-03": [
+          {
+            "date": "2026-10-03",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 6,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-03",
+            "storageId": "104",
+            "name": "Pompes déclinées",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 10,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-06": [
+          {
+            "date": "2026-10-06",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 6,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-12": [
+          {
+            "date": "2026-10-12",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-13": [
+          {
+            "date": "2026-10-13",
+            "storageId": "466084426",
+            "name": "Développé couché incliné aux haltères",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-13",
+            "storageId": "202",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 40,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-13",
+            "storageId": "complementary_endurance_pushups",
+            "name": "Pompes endurance (complémentaire)",
+            "provenance": "complementary",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 100,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-14": [
+          {
+            "date": "2026-10-14",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 6,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-14",
+            "storageId": "104",
+            "name": "Pompes déclinées",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 10,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-15": [
+          {
+            "date": "2026-10-15",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 6,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-15",
+            "storageId": "104",
+            "name": "Pompes déclinées",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 10,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-16": [
+          {
+            "date": "2026-10-16",
+            "storageId": "503",
+            "name": "Dips",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-17": [
+          {
+            "date": "2026-10-17",
+            "storageId": "1488780401",
+            "name": "Développé couché incliné aux haltères",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-17",
+            "storageId": "1974855961",
+            "name": "Pompes inclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 40,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-17",
+            "storageId": "complementary_endurance_pushups",
+            "name": "Pompes endurance (complémentaire)",
+            "provenance": "complementary",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 100,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-19": [
+          {
+            "date": "2026-10-19",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-19",
+            "storageId": "104",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 30,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-19",
+            "storageId": "105",
+            "name": "Pompes inclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-20": [
+          {
+            "date": "2026-10-20",
+            "storageId": "466084426",
+            "name": "Développé couché incliné aux haltères",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-20",
+            "storageId": "202",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 40,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-20",
+            "storageId": "complementary_endurance_pushups",
+            "name": "Pompes endurance (complémentaire)",
+            "provenance": "complementary",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 100,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-24": [
+          {
+            "date": "2026-10-24",
+            "storageId": "complementary_endurance_pushups",
+            "name": "Pompes endurance (complémentaire)",
+            "provenance": "complementary",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 100,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-24",
+            "storageId": "1488780401",
+            "name": "Développé couché incliné aux haltères",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-24",
+            "storageId": "1974855961",
+            "name": "Pompes inclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 40,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-26": [
+          {
+            "date": "2026-10-26",
+            "storageId": "103",
+            "name": "Dips",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-26",
+            "storageId": "105",
+            "name": "Pompes inclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-26",
+            "storageId": "104",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-27": [
+          {
+            "date": "2026-10-27",
+            "storageId": "466084426",
+            "name": "Développé couché incliné aux haltères",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-27",
+            "storageId": "202",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 40,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-27",
+            "storageId": "complementary_endurance_pushups",
+            "name": "Pompes endurance (complémentaire)",
+            "provenance": "complementary",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 100,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-30": [
+          {
+            "date": "2026-10-30",
+            "storageId": "503",
+            "name": "Dips",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-30",
+            "storageId": "504",
+            "name": "Pompes déclinées",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ]
+      }
+    },
+    "back": {
+      "group": "back",
+      "ledgerExposureDays": 11,
+      "reconstructedExposureDays": 11,
+      "exposureDates": [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-06",
+        "2026-10-12",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16",
+        "2026-10-19",
+        "2026-10-26",
+        "2026-10-30"
+      ],
+      "complementaryOnlyDates": [],
+      "classicDates": [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-06",
+        "2026-10-12",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16",
+        "2026-10-19",
+        "2026-10-26",
+        "2026-10-30"
+      ],
+      "monoReps": 711,
+      "multiTouch": 378,
+      "rowsByDate": {
+        "2026-10-01": [
+          {
+            "date": "2026-10-01",
+            "storageId": "db_tractions_pronation",
+            "name": "Tractions pronation",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 3,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-02": [
+          {
+            "date": "2026-10-02",
+            "storageId": "501",
+            "name": "Tractions pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 20,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-02",
+            "storageId": "981046524",
+            "name": "Tractions supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 15,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-02",
+            "storageId": "1979012181",
+            "name": "Hyperextension",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-02",
+            "storageId": "502",
+            "name": "Tractions australiennes — prise pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-02",
+            "storageId": "146651247",
+            "name": "Tractions australiennes — prise serrée supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 30,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-03": [
+          {
+            "date": "2026-10-03",
+            "storageId": "db_tractions_pronation",
+            "name": "Tractions pronation",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 3,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-06": [
+          {
+            "date": "2026-10-06",
+            "storageId": "db_tractions_pronation",
+            "name": "Tractions pronation",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 3,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-12": [
+          {
+            "date": "2026-10-12",
+            "storageId": "101",
+            "name": "Tractions pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 20,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-12",
+            "storageId": "1993865426",
+            "name": "Tractions supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 15,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-12",
+            "storageId": "703294235",
+            "name": "Hyperextension",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-12",
+            "storageId": "102",
+            "name": "Tractions australiennes — prise large pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-12",
+            "storageId": "1433469569",
+            "name": "Tractions australiennes — prise serrée supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-14": [
+          {
+            "date": "2026-10-14",
+            "storageId": "db_tractions_pronation",
+            "name": "Tractions pronation",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 3,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-14",
+            "storageId": "1735485569",
+            "name": "Bent-Arm Lateral Dumbbell Raise",
+            "provenance": "classic",
+            "role": "secondary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "partial",
+            "volumeBucket": "mono_primary",
+            "reps": 60,
+            "includedInExposurePrimary": false,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-14",
+            "storageId": "306",
+            "name": "Face pull",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 60,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-15": [
+          {
+            "date": "2026-10-15",
+            "storageId": "db_tractions_pronation",
+            "name": "Tractions pronation",
+            "provenance": "classic_gtg_synced",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 3,
+            "includedInExposurePrimary": true,
+            "gtgSynced": true,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-16": [
+          {
+            "date": "2026-10-16",
+            "storageId": "501",
+            "name": "Tractions pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 20,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-16",
+            "storageId": "981046524",
+            "name": "Tractions supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 15,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-16",
+            "storageId": "1979012181",
+            "name": "Hyperextension",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-16",
+            "storageId": "502",
+            "name": "Tractions australiennes — prise pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-16",
+            "storageId": "146651247",
+            "name": "Tractions australiennes — prise serrée supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-19": [
+          {
+            "date": "2026-10-19",
+            "storageId": "1993865426",
+            "name": "Tractions supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 15,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-19",
+            "storageId": "703294235",
+            "name": "Hyperextension",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-19",
+            "storageId": "101",
+            "name": "Tractions pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 20,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-19",
+            "storageId": "102",
+            "name": "Tractions australiennes — prise large pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-19",
+            "storageId": "1433469569",
+            "name": "Tractions australiennes — prise serrée supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 45,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-26": [
+          {
+            "date": "2026-10-26",
+            "storageId": "101",
+            "name": "Tractions pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 20,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-26",
+            "storageId": "1993865426",
+            "name": "Tractions supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 15,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-26",
+            "storageId": "703294235",
+            "name": "Hyperextension",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-26",
+            "storageId": "1433469569",
+            "name": "Tractions australiennes — prise serrée supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 45,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-26",
+            "storageId": "102",
+            "name": "Tractions australiennes — prise large pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ],
+        "2026-10-30": [
+          {
+            "date": "2026-10-30",
+            "storageId": "501",
+            "name": "Tractions pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 20,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-30",
+            "storageId": "1979012181",
+            "name": "Hyperextension",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-30",
+            "storageId": "502",
+            "name": "Tractions australiennes — prise pronation",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "mono_primary",
+            "reps": 48,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-30",
+            "storageId": "146651247",
+            "name": "Tractions australiennes — prise serrée supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 36,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          },
+          {
+            "date": "2026-10-30",
+            "storageId": "981046524",
+            "name": "Tractions supination",
+            "provenance": "classic",
+            "role": "primary",
+            "anatomyLinkConfidence": "certain",
+            "mappingQuality": "complete",
+            "volumeBucket": "multi_primary",
+            "reps": 15,
+            "includedInExposurePrimary": true,
+            "gtgSynced": false,
+            "gtgListedNotInClassic": false
+          }
+        ]
+      }
+    },
+    "overlapDatesPrimary": [
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+      "2026-10-06",
+      "2026-10-12",
+      "2026-10-14",
+      "2026-10-15",
+      "2026-10-16",
+      "2026-10-19",
+      "2026-10-26",
+      "2026-10-30"
+    ],
+    "note": "Exposition primary = jours où ≥1 ligne certain_reps a le groupe en primaryGroups (mono ou multi). Complementary contribue aux jours sans inventer une séance classique distincte."
+  },
+  "packs": {
+    "7j": {
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "comparableWC": true,
+      "comparability": {
+        "ok": true,
+        "level": "solid",
+        "sameSpan": true,
+        "sameClassification": true,
+        "channelsComparable": true,
+        "activityDaysW": 4,
+        "activityDaysC": 3,
+        "RW": 1371,
+        "RC": 1114,
+        "reasons": [],
+        "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "family": "muscle_p32b_limits",
+          "score": 3,
+          "informativeValue": -17,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 47 % des reps sont multi-principales (exposition possible, volume non isolé par muscle).",
+          "evidence": "snapshots=0 · multiShare=46.6"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-24",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 4,
+            "activityDaysC": 3,
+            "RW": 1371,
+            "RC": 1114,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-24",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 4,
+            "activityDaysC": 3,
+            "RW": 1371,
+            "RC": 1114,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-24",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 4,
+            "activityDaysC": 3,
+            "RW": 1371,
+            "RC": 1114,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": [],
+          "punctualGaps": [],
+          "observedTwiceGaps": []
+        }
+      ],
+      "rivalryTrace": {
+        "input": [],
+        "selected": [],
+        "dropped": []
+      },
+      "packOffSelected": [
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours : le volume repose sur peu de journées",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées revient après une interruption",
+          "informativeValue": 108
+        },
+        {
+          "kind": "disc_exercise_share",
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "informativeValue": 78
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "informativeValue": 72
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "informativeValue": 77
+        }
+      ],
+      "packOnSelected": [
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours : le volume repose sur peu de journées",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées revient après une interruption",
+          "informativeValue": 108
+        },
+        {
+          "kind": "disc_exercise_share",
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "informativeValue": 78
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "informativeValue": 72
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "informativeValue": 77
+        }
+      ],
+      "addedKinds": [],
+      "removedKinds": [],
+      "p32bDroppedFromOn": [
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    },
+    "30j": {
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "comparableWC": true,
+      "comparability": {
+        "ok": true,
+        "level": "solid",
+        "sameSpan": true,
+        "sameClassification": true,
+        "channelsComparable": true,
+        "activityDaysW": 16,
+        "activityDaysC": 13,
+        "RW": 4331,
+        "RC": 3692,
+        "reasons": [],
+        "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "nature": "trajectory",
+          "family": "muscle_p32b_exposure",
+          "score": 59,
+          "informativeValue": 73,
+          "contentClass": "analytical",
+          "title": "Biceps : davantage de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 16+ jours d’activité (2026-09-01→2026-09-30 puis 2026-10-01→2026-10-30), les jours d’exposition primaire aux biceps passent de 4 à 10 (Δ +6). Les reps mono associées vont de 240 à 432 (Δ +192). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire.",
+          "evidence": "biceps 4→10 j · mono 240→432 · cmp=solid"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "family": "muscle_p32b_limits",
+          "score": 3,
+          "informativeValue": -17,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 41 % des reps sont multi-principales (exposition possible, volume non isolé par muscle). 36 s isométriques hors total de reps.",
+          "evidence": "snapshots=0 · multiShare=40.6"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 16,
+            "activityDaysC": 13,
+            "RW": 4331,
+            "RC": 3692,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 16,
+            "activityDaysC": 13,
+            "RW": 4331,
+            "RC": 3692,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": [],
+          "punctualGaps": [],
+          "observedTwiceGaps": []
+        }
+      ],
+      "rivalryTrace": {
+        "input": [
+          {
+            "kind": "disc_muscle_exposure_shift",
+            "score": 59,
+            "informativeValue": 73,
+            "family": "muscle_p32b_exposure",
+            "nature": "trajectory",
+            "title": "Biceps : davantage de jours d’exposition qu’en période précédente"
+          }
+        ],
+        "selected": [
+          "disc_muscle_exposure_shift"
+        ],
+        "dropped": []
+      },
+      "packOffSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "un mouvement : progression malgré une exposition faible",
+          "informativeValue": 82
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "title": "Pompes déclinées : recul et exposition faible coïncident",
+          "informativeValue": 77
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 110
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 95
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 101
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 100
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "informativeValue": 74
+        }
+      ],
+      "packOnSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "un mouvement : progression malgré une exposition faible",
+          "informativeValue": 82
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "title": "Pompes déclinées : recul et exposition faible coïncident",
+          "informativeValue": 77
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 110
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 95
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 101
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 100
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "informativeValue": 74
+        }
+      ],
+      "addedKinds": [],
+      "removedKinds": [],
+      "p32bDroppedFromOn": [
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "cap",
+          "title": "Biceps : davantage de jours d’exposition qu’en période précédente"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    },
+    "3m": {
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "comparableWC": true,
+      "comparability": {
+        "ok": true,
+        "level": "solid",
+        "sameSpan": true,
+        "sameClassification": true,
+        "channelsComparable": true,
+        "activityDaysW": 46,
+        "activityDaysC": 20,
+        "RW": 13431,
+        "RC": 5767,
+        "reasons": [],
+        "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "nature": "trajectory",
+          "family": "muscle_p32b_exposure",
+          "score": 59,
+          "informativeValue": 73,
+          "contentClass": "analytical",
+          "title": "Pectoraux : davantage de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 46+ jours d’activité (2026-05-02→2026-07-31 puis 2026-08-01→2026-10-30), les jours d’exposition primaire aux pectoraux passent de 11 à 40 (Δ +29). Les reps mono associées vont de 491 à 1 399 (Δ +908). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire.",
+          "evidence": "chest 11→40 j · mono 491→1399 · cmp=solid"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "family": "muscle_p32b_limits",
+          "score": 3,
+          "informativeValue": -17,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 32 % des reps sont multi-principales (exposition possible, volume non isolé par muscle). 102 s isométriques hors total de reps.",
+          "evidence": "snapshots=0 · multiShare=31.7"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-08-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 46,
+            "activityDaysC": 20,
+            "RW": 13431,
+            "RC": 5767,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-08-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": true,
+            "level": "solid",
+            "sameSpan": true,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 46,
+            "activityDaysC": 20,
+            "RW": 13431,
+            "RC": 5767,
+            "reasons": [],
+            "note": "Fenêtres de même durée, reps et jours d’activité suffisants, même classification."
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": [],
+          "punctualGaps": [],
+          "observedTwiceGaps": []
+        }
+      ],
+      "rivalryTrace": {
+        "input": [
+          {
+            "kind": "disc_muscle_exposure_shift",
+            "score": 59,
+            "informativeValue": 73,
+            "family": "muscle_p32b_exposure",
+            "nature": "trajectory",
+            "title": "Pectoraux : davantage de jours d’exposition qu’en période précédente"
+          }
+        ],
+        "selected": [
+          "disc_muscle_exposure_shift"
+        ],
+        "dropped": []
+      },
+      "packOffSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Face pull : progression malgré une exposition faible",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées dans la période",
+          "informativeValue": 117
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 104
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 103
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 448199957",
+          "informativeValue": 74
+        }
+      ],
+      "packOnSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Face pull : progression malgré une exposition faible",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées dans la période",
+          "informativeValue": 117
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 104
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 103
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 448199957",
+          "informativeValue": 74
+        }
+      ],
+      "addedKinds": [],
+      "removedKinds": [],
+      "p32bDroppedFromOn": [
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "cap",
+          "title": "Pectoraux : davantage de jours d’exposition qu’en période précédente"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    },
+    "long": {
+      "window": {
+        "start": "2026-07-01",
+        "end": "2026-10-30"
+      },
+      "comparableWC": false,
+      "comparability": {
+        "ok": false,
+        "level": "incomparable",
+        "sameSpan": false,
+        "sameClassification": true,
+        "channelsComparable": true,
+        "activityDaysW": 66,
+        "activityDaysC": 0,
+        "RW": 19198,
+        "RC": 0,
+        "reasons": [
+          "unequal_span",
+          "C_empty_or_no_reps",
+          "C_few_activity_days"
+        ],
+        "note": "Comparaison non admissible."
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "family": "muscle_p32b_limits",
+          "score": 3,
+          "informativeValue": -17,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 31 % des reps sont multi-principales (exposition possible, volume non isolé par muscle). 162 s isométriques hors total de reps.",
+          "evidence": "snapshots=0 · multiShare=31.1"
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-07-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": false,
+            "level": "incomparable",
+            "sameSpan": false,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 66,
+            "activityDaysC": 0,
+            "RW": 19198,
+            "RC": 0,
+            "reasons": [
+              "unequal_span",
+              "C_empty_or_no_reps",
+              "C_few_activity_days"
+            ],
+            "note": "Comparaison non admissible."
+          }
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "incomparable:incomparable",
+          "window": {
+            "start": "2026-07-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": false,
+            "level": "incomparable",
+            "sameSpan": false,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 66,
+            "activityDaysC": 0,
+            "RW": 19198,
+            "RC": 0,
+            "reasons": [
+              "unequal_span",
+              "C_empty_or_no_reps",
+              "C_few_activity_days"
+            ],
+            "note": "Comparaison non admissible."
+          }
+        },
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-07-01",
+            "end": "2026-10-30"
+          },
+          "comparability": {
+            "ok": false,
+            "level": "incomparable",
+            "sameSpan": false,
+            "sameClassification": true,
+            "channelsComparable": true,
+            "activityDaysW": 66,
+            "activityDaysC": 0,
+            "RW": 19198,
+            "RC": 0,
+            "reasons": [
+              "unequal_span",
+              "C_empty_or_no_reps",
+              "C_few_activity_days"
+            ],
+            "note": "Comparaison non admissible."
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": [],
+          "punctualGaps": [],
+          "observedTwiceGaps": []
+        }
+      ],
+      "rivalryTrace": {
+        "input": [],
+        "selected": [],
+        "dropped": []
+      },
+      "packOffSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Pompes déclinées : progression malgré une exposition faible",
+          "informativeValue": 87
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 116
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+          "informativeValue": 114
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise pronation s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes (endurance) dans la période",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 111
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 5 entraînements",
+          "informativeValue": 76
+        }
+      ],
+      "packOnSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Pompes déclinées : progression malgré une exposition faible",
+          "informativeValue": 87
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 116
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+          "informativeValue": 114
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise pronation s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes (endurance) dans la période",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 111
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 5 entraînements",
+          "informativeValue": 76
+        }
+      ],
+      "addedKinds": [],
+      "removedKinds": [],
+      "p32bDroppedFromOn": [
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    }
+  }
+}

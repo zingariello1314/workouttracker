@@ -1,0 +1,1602 @@
+{
+  "generatedAt": "2026-10-31T20:54:49.081Z",
+  "horizons": {
+    "7j": {
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "metricsSummary": {
+        "W": {
+          "R": 1371,
+          "R_mono": 732,
+          "R_multi": 639,
+          "R_non_attr": 0,
+          "iso": 0
+        },
+        "C": {
+          "R": 1114
+        },
+        "H": {
+          "R": 13570
+        },
+        "comparableWC": true,
+        "plan": {
+          "snapshotDayCount": 0,
+          "planMuscleComparable": false,
+          "materialGap": null
+        },
+        "flags": {
+          "hasComplementaryPushups": true,
+          "multiShareOfR": 46.6
+        },
+        "topGroups": [
+          {
+            "group": "chest",
+            "daysP": 4,
+            "daysS": 0,
+            "mono": 284,
+            "multiTouch": 296,
+            "ex": 10
+          },
+          {
+            "group": "biceps",
+            "daysP": 4,
+            "daysS": 4,
+            "mono": 216,
+            "multiTouch": 183,
+            "ex": 12
+          },
+          {
+            "group": "triceps",
+            "daysP": 4,
+            "daysS": 4,
+            "mono": 0,
+            "multiTouch": 296,
+            "ex": 3
+          },
+          {
+            "group": "back",
+            "daysP": 2,
+            "daysS": 2,
+            "mono": 232,
+            "multiTouch": 111,
+            "ex": 10
+          },
+          {
+            "group": "forearms",
+            "daysP": 2,
+            "daysS": 2,
+            "mono": 0,
+            "multiTouch": 72,
+            "ex": 2
+          },
+          {
+            "group": "core",
+            "daysP": 2,
+            "daysS": 4,
+            "mono": 0,
+            "multiTouch": 160,
+            "ex": 3
+          },
+          {
+            "group": "quads",
+            "daysP": 2,
+            "daysS": 0,
+            "mono": 0,
+            "multiTouch": 160,
+            "ex": 3
+          },
+          {
+            "group": "shoulders",
+            "daysP": 0,
+            "daysS": 4,
+            "mono": 0,
+            "multiTouch": 0,
+            "ex": 0
+          }
+        ],
+        "movement": {
+          "pushMonoReps": 284,
+          "pullMonoReps": 448,
+          "lowerMonoReps": 0,
+          "coreMonoReps": 0,
+          "otherMonoReps": 0,
+          "mixedMultiReps": 639,
+          "indeterminateReps": 0,
+          "monoLines": 19,
+          "multiLines": 13,
+          "complementaryReps": 200,
+          "complementaryOccurrences": 2,
+          "byAxisOccurrences": {
+            "push": 7,
+            "pull": 12,
+            "lower": 0,
+            "core": 0,
+            "other": 0,
+            "mixed": 13,
+            "indeterminate": 0
+          }
+        }
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "score": 3,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes « prévus » historiques n’est publiée. 47 % des reps sont multi-principales : elles comptent pour l’exposition, pas comme volume isolé d’un muscle.",
+          "evidence": "snapshots=0 · multiShare=46.6",
+          "metrics": {
+            "windowStart": "2026-10-24",
+            "windowEnd": "2026-10-30",
+            "snapshotDayCount": 0,
+            "multiShareOfR": 46.6,
+            "contentClass": "methodology_limit",
+            "findingKind": "muscle_ledger_limits",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-24",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-24",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-24",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": []
+        }
+      ],
+      "packBeforeSelected": [
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours : le volume repose sur peu de journées",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées revient après une interruption",
+          "informativeValue": 108
+        },
+        {
+          "kind": "disc_exercise_share",
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "informativeValue": 78
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "informativeValue": 72
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "informativeValue": 77
+        }
+      ],
+      "packAfterSelected": [
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours : le volume repose sur peu de journées",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées revient après une interruption",
+          "informativeValue": 108
+        },
+        {
+          "kind": "disc_exercise_share",
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "informativeValue": 78
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "informativeValue": 72
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "informativeValue": 77
+        }
+      ],
+      "p32bInSelected": [],
+      "reliabilityNotesAfter": [
+        {
+          "kind": "disc_plan_data_insufficient",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    },
+    "30j": {
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "metricsSummary": {
+        "W": {
+          "R": 4331,
+          "R_mono": 2571,
+          "R_multi": 1760,
+          "R_non_attr": 0,
+          "iso": 36
+        },
+        "C": {
+          "R": 3692
+        },
+        "H": {
+          "R": 14605
+        },
+        "comparableWC": true,
+        "plan": {
+          "snapshotDayCount": 0,
+          "planMuscleComparable": false,
+          "materialGap": null
+        },
+        "flags": {
+          "hasComplementaryPushups": true,
+          "multiShareOfR": 40.6
+        },
+        "topGroups": [
+          {
+            "group": "chest",
+            "daysP": 16,
+            "daysS": 0,
+            "mono": 690,
+            "multiTouch": 818,
+            "ex": 10
+          },
+          {
+            "group": "triceps",
+            "daysP": 16,
+            "daysS": 13,
+            "mono": 170,
+            "multiTouch": 818,
+            "ex": 7
+          },
+          {
+            "group": "back",
+            "daysP": 11,
+            "daysS": 11,
+            "mono": 711,
+            "multiTouch": 378,
+            "ex": 12
+          },
+          {
+            "group": "biceps",
+            "daysP": 10,
+            "daysS": 15,
+            "mono": 432,
+            "multiTouch": 462,
+            "ex": 12
+          },
+          {
+            "group": "quads",
+            "daysP": 7,
+            "daysS": 0,
+            "mono": 208,
+            "multiTouch": 420,
+            "ex": 8
+          },
+          {
+            "group": "core",
+            "daysP": 5,
+            "daysS": 11,
+            "mono": 0,
+            "multiTouch": 420,
+            "ex": 4
+          },
+          {
+            "group": "forearms",
+            "daysP": 4,
+            "daysS": 4,
+            "mono": 0,
+            "multiTouch": 144,
+            "ex": 2
+          },
+          {
+            "group": "calves",
+            "daysP": 2,
+            "daysS": 2,
+            "mono": 200,
+            "multiTouch": 0,
+            "ex": 2
+          }
+        ],
+        "movement": {
+          "pushMonoReps": 1020,
+          "pullMonoReps": 1143,
+          "lowerMonoReps": 408,
+          "coreMonoReps": 0,
+          "otherMonoReps": 0,
+          "mixedMultiReps": 1760,
+          "indeterminateReps": 0,
+          "monoLines": 68,
+          "multiLines": 41,
+          "complementaryReps": 500,
+          "complementaryOccurrences": 5,
+          "byAxisOccurrences": {
+            "push": 27,
+            "pull": 35,
+            "lower": 6,
+            "core": 0,
+            "other": 0,
+            "mixed": 41,
+            "indeterminate": 0
+          }
+        }
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "nature": "now",
+          "score": 51,
+          "contentClass": "analytical",
+          "title": "pectoraux a plus de jours d’exposition que dos",
+          "body": "Sur 2026-10-01 → 2026-10-30, pectoraux apparaît en primaire sur 16 jours distincts (10 exercices, 690 reps mono-principales), contre 11 jours pour dos (écart 5 jours). Ce sont des jours d’exposition, pas des séances ni un pourcentage de stimulation. 1 760 reps multi-principales sont comptées à part (exposition possible, volume non ventilé par groupe). Les pompes complémentaires restent marquées comme provenance endurance/complémentaire.",
+          "evidence": "chest 16j · back 11j · mono 690/711",
+          "metrics": {
+            "windowStart": "2026-10-01",
+            "windowEnd": "2026-10-30",
+            "leadGroup": "chest",
+            "trailGroup": "back",
+            "leadDays": 16,
+            "trailDays": 11,
+            "gapDays": 5,
+            "leadMonoReps": 690,
+            "trailMonoReps": 711,
+            "R_multi": 1760,
+            "complementaryReps": 500,
+            "unit": "exposure_days_primary",
+            "contentClass": "analytical",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "nature": "trajectory",
+          "score": 52,
+          "contentClass": "analytical",
+          "title": "Exposition biceps : augmentée vs la période précédente",
+          "body": "Entre 2026-09-01 → 2026-09-30 et 2026-10-01 → 2026-10-30 (même durée), les jours d’exposition primaire aux biceps passent de 4 à 10 (Δ +6). Les reps mono-principales associées vont de 240 à 432. La période antérieure contextualise W : elle n’est pas présentée comme réalisée pendant W.",
+          "evidence": "biceps 4→10 j · mono 240→432",
+          "metrics": {
+            "windowStart": "2026-10-01",
+            "windowEnd": "2026-10-30",
+            "compareStart": "2026-09-01",
+            "compareEnd": "2026-09-30",
+            "group": "biceps",
+            "daysW": 10,
+            "daysC": 4,
+            "deltaDays": 6,
+            "monoRepsW": 432,
+            "monoRepsC": 240,
+            "unit": "exposure_days_primary",
+            "contentClass": "analytical",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "score": 3,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes « prévus » historiques n’est publiée. 41 % des reps sont multi-principales : elles comptent pour l’exposition, pas comme volume isolé d’un muscle. 36 s isométriques restent hors du total de reps.",
+          "evidence": "snapshots=0 · multiShare=40.6",
+          "metrics": {
+            "windowStart": "2026-10-01",
+            "windowEnd": "2026-10-30",
+            "snapshotDayCount": 0,
+            "multiShareOfR": 40.6,
+            "contentClass": "methodology_limit",
+            "findingKind": "muscle_ledger_limits",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-10-01",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": []
+        }
+      ],
+      "packBeforeSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "un mouvement : progression malgré une exposition faible",
+          "informativeValue": 82
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "title": "Pompes déclinées : recul et exposition faible coïncident",
+          "informativeValue": 77
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 110
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 95
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 101
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 100
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "informativeValue": 74
+        }
+      ],
+      "packAfterSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "title": "pectoraux a plus de jours d’exposition que dos",
+          "informativeValue": 51
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "un mouvement : progression malgré une exposition faible",
+          "informativeValue": 82
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "title": "Pompes déclinées : recul et exposition faible coïncident",
+          "informativeValue": 77
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 110
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 95
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 101
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement entre dans ton historique",
+          "informativeValue": 100
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "informativeValue": 74
+        }
+      ],
+      "p32bInSelected": [
+        "disc_muscle_exposure_contrast"
+      ],
+      "reliabilityNotesAfter": [
+        {
+          "kind": "disc_plan_data_insufficient",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    },
+    "3m": {
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "metricsSummary": {
+        "W": {
+          "R": 13431,
+          "R_mono": 5356,
+          "R_multi": 4253,
+          "R_non_attr": 3822,
+          "iso": 102
+        },
+        "C": {
+          "R": 5767
+        },
+        "H": {
+          "R": 5767
+        },
+        "comparableWC": true,
+        "plan": {
+          "snapshotDayCount": 0,
+          "planMuscleComparable": false,
+          "materialGap": null
+        },
+        "flags": {
+          "hasComplementaryPushups": true,
+          "multiShareOfR": 31.7
+        },
+        "topGroups": [
+          {
+            "group": "chest",
+            "daysP": 40,
+            "daysS": 0,
+            "mono": 1399,
+            "multiTouch": 2336,
+            "ex": 10
+          },
+          {
+            "group": "triceps",
+            "daysP": 39,
+            "daysS": 27,
+            "mono": 446,
+            "multiTouch": 2336,
+            "ex": 7
+          },
+          {
+            "group": "back",
+            "daysP": 28,
+            "daysS": 28,
+            "mono": 1607,
+            "multiTouch": 577,
+            "ex": 12
+          },
+          {
+            "group": "biceps",
+            "daysP": 17,
+            "daysS": 35,
+            "mono": 882,
+            "multiTouch": 727,
+            "ex": 12
+          },
+          {
+            "group": "quads",
+            "daysP": 14,
+            "daysS": 0,
+            "mono": 312,
+            "multiTouch": 980,
+            "ex": 8
+          },
+          {
+            "group": "core",
+            "daysP": 11,
+            "daysS": 31,
+            "mono": 0,
+            "multiTouch": 980,
+            "ex": 4
+          },
+          {
+            "group": "forearms",
+            "daysP": 10,
+            "daysS": 10,
+            "mono": 0,
+            "multiTouch": 360,
+            "ex": 2
+          },
+          {
+            "group": "shoulders",
+            "daysP": 4,
+            "daysS": 40,
+            "mono": 410,
+            "multiTouch": 210,
+            "ex": 4
+          }
+        ],
+        "movement": {
+          "pushMonoReps": 2255,
+          "pullMonoReps": 2489,
+          "lowerMonoReps": 612,
+          "coreMonoReps": 0,
+          "otherMonoReps": 0,
+          "mixedMultiReps": 4253,
+          "indeterminateReps": 3822,
+          "monoLines": 143,
+          "multiLines": 86,
+          "complementaryReps": 1400,
+          "complementaryOccurrences": 14,
+          "byAxisOccurrences": {
+            "push": 57,
+            "pull": 77,
+            "lower": 9,
+            "core": 0,
+            "other": 0,
+            "mixed": 86,
+            "indeterminate": 92
+          }
+        }
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "nature": "now",
+          "score": 51,
+          "contentClass": "analytical",
+          "title": "pectoraux a plus de jours d’exposition que dos",
+          "body": "Sur 2026-08-01 → 2026-10-30, pectoraux apparaît en primaire sur 40 jours distincts (10 exercices, 1 399 reps mono-principales), contre 28 jours pour dos (écart 12 jours). Ce sont des jours d’exposition, pas des séances ni un pourcentage de stimulation. 4 253 reps multi-principales sont comptées à part (exposition possible, volume non ventilé par groupe). Les pompes complémentaires restent marquées comme provenance endurance/complémentaire.",
+          "evidence": "chest 40j · back 28j · mono 1399/1607",
+          "metrics": {
+            "windowStart": "2026-08-01",
+            "windowEnd": "2026-10-30",
+            "leadGroup": "chest",
+            "trailGroup": "back",
+            "leadDays": 40,
+            "trailDays": 28,
+            "gapDays": 12,
+            "leadMonoReps": 1399,
+            "trailMonoReps": 1607,
+            "R_multi": 4253,
+            "complementaryReps": 1400,
+            "unit": "exposure_days_primary",
+            "contentClass": "analytical",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "nature": "trajectory",
+          "score": 52,
+          "contentClass": "analytical",
+          "title": "Exposition pectoraux : augmentée vs la période précédente",
+          "body": "Entre 2026-05-02 → 2026-07-31 et 2026-08-01 → 2026-10-30 (même durée), les jours d’exposition primaire aux pectoraux passent de 11 à 40 (Δ +29). Les reps mono-principales associées vont de 491 à 1 399. La période antérieure contextualise W : elle n’est pas présentée comme réalisée pendant W.",
+          "evidence": "chest 11→40 j · mono 491→1399",
+          "metrics": {
+            "windowStart": "2026-08-01",
+            "windowEnd": "2026-10-30",
+            "compareStart": "2026-05-02",
+            "compareEnd": "2026-07-31",
+            "group": "chest",
+            "daysW": 40,
+            "daysC": 11,
+            "deltaDays": 29,
+            "monoRepsW": 1399,
+            "monoRepsC": 491,
+            "unit": "exposure_days_primary",
+            "contentClass": "analytical",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "score": 3,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes « prévus » historiques n’est publiée. 32 % des reps sont multi-principales : elles comptent pour l’exposition, pas comme volume isolé d’un muscle. 102 s isométriques restent hors du total de reps.",
+          "evidence": "snapshots=0 · multiShare=31.7",
+          "metrics": {
+            "windowStart": "2026-08-01",
+            "windowEnd": "2026-10-30",
+            "snapshotDayCount": 0,
+            "multiShareOfR": 31.7,
+            "contentClass": "methodology_limit",
+            "findingKind": "muscle_ledger_limits",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-08-01",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": []
+        }
+      ],
+      "packBeforeSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Face pull : progression malgré une exposition faible",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées dans la période",
+          "informativeValue": 117
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 104
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 103
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 448199957",
+          "informativeValue": 74
+        }
+      ],
+      "packAfterSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "title": "pectoraux a plus de jours d’exposition que dos",
+          "informativeValue": 51
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Face pull : progression malgré une exposition faible",
+          "informativeValue": 89
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées dans la période",
+          "informativeValue": 117
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 106
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement : format repris, pas encore installé",
+          "informativeValue": 105
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 104
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "un mouvement s'installe dans ton entraînement",
+          "informativeValue": 103
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 448199957",
+          "informativeValue": 74
+        }
+      ],
+      "p32bInSelected": [
+        "disc_muscle_exposure_contrast"
+      ],
+      "reliabilityNotesAfter": [
+        {
+          "kind": "disc_plan_data_insufficient",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    },
+    "long": {
+      "window": {
+        "start": "2026-07-01",
+        "end": "2026-10-30"
+      },
+      "metricsSummary": {
+        "W": {
+          "R": 19198,
+          "R_mono": 6937,
+          "R_multi": 5961,
+          "R_non_attr": 6300,
+          "iso": 162
+        },
+        "C": {
+          "R": 0
+        },
+        "H": {
+          "R": 0
+        },
+        "comparableWC": false,
+        "plan": {
+          "snapshotDayCount": 0,
+          "planMuscleComparable": false,
+          "materialGap": null
+        },
+        "flags": {
+          "hasComplementaryPushups": true,
+          "multiShareOfR": 31.1
+        },
+        "topGroups": [
+          {
+            "group": "chest",
+            "daysP": 51,
+            "daysS": 0,
+            "mono": 1890,
+            "multiTouch": 3155,
+            "ex": 10
+          },
+          {
+            "group": "triceps",
+            "daysP": 50,
+            "daysS": 34,
+            "mono": 635,
+            "multiTouch": 3155,
+            "ex": 7
+          },
+          {
+            "group": "back",
+            "daysP": 39,
+            "daysS": 39,
+            "mono": 2055,
+            "multiTouch": 742,
+            "ex": 12
+          },
+          {
+            "group": "biceps",
+            "daysP": 21,
+            "daysS": 46,
+            "mono": 1170,
+            "multiTouch": 871,
+            "ex": 12
+          },
+          {
+            "group": "quads",
+            "daysP": 21,
+            "daysS": 0,
+            "mono": 312,
+            "multiTouch": 1560,
+            "ex": 8
+          },
+          {
+            "group": "core",
+            "daysP": 18,
+            "daysS": 42,
+            "mono": 0,
+            "multiTouch": 1560,
+            "ex": 4
+          },
+          {
+            "group": "forearms",
+            "daysP": 14,
+            "daysS": 14,
+            "mono": 0,
+            "multiTouch": 504,
+            "ex": 2
+          },
+          {
+            "group": "shoulders",
+            "daysP": 8,
+            "daysS": 51,
+            "mono": 575,
+            "multiTouch": 375,
+            "ex": 4
+          }
+        ],
+        "movement": {
+          "pushMonoReps": 3100,
+          "pullMonoReps": 3225,
+          "lowerMonoReps": 612,
+          "coreMonoReps": 0,
+          "otherMonoReps": 0,
+          "mixedMultiReps": 5961,
+          "indeterminateReps": 6300,
+          "monoLines": 183,
+          "multiLines": 117,
+          "complementaryReps": 1900,
+          "complementaryOccurrences": 19,
+          "byAxisOccurrences": {
+            "push": 75,
+            "pull": 99,
+            "lower": 9,
+            "core": 0,
+            "other": 0,
+            "mixed": 117,
+            "indeterminate": 144
+          }
+        }
+      },
+      "candidates": [
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "nature": "now",
+          "score": 51,
+          "contentClass": "analytical",
+          "title": "pectoraux a plus de jours d’exposition que dos",
+          "body": "Sur 2026-07-01 → 2026-10-30, pectoraux apparaît en primaire sur 51 jours distincts (10 exercices, 1 890 reps mono-principales), contre 39 jours pour dos (écart 12 jours). Ce sont des jours d’exposition, pas des séances ni un pourcentage de stimulation. 5 961 reps multi-principales sont comptées à part (exposition possible, volume non ventilé par groupe). Les pompes complémentaires restent marquées comme provenance endurance/complémentaire.",
+          "evidence": "chest 51j · back 39j · mono 1890/2055",
+          "metrics": {
+            "windowStart": "2026-07-01",
+            "windowEnd": "2026-10-30",
+            "leadGroup": "chest",
+            "trailGroup": "back",
+            "leadDays": 51,
+            "trailDays": 39,
+            "gapDays": 12,
+            "leadMonoReps": 1890,
+            "trailMonoReps": 2055,
+            "R_multi": 5961,
+            "complementaryReps": 1900,
+            "unit": "exposure_days_primary",
+            "contentClass": "analytical",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "nature": "trajectory",
+          "score": 3,
+          "contentClass": "methodology_limit",
+          "title": "Limites du compte musculaire sur cette fenêtre",
+          "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes « prévus » historiques n’est publiée. 31 % des reps sont multi-principales : elles comptent pour l’exposition, pas comme volume isolé d’un muscle. 162 s isométriques restent hors du total de reps.",
+          "evidence": "snapshots=0 · multiShare=31.1",
+          "metrics": {
+            "windowStart": "2026-07-01",
+            "windowEnd": "2026-10-30",
+            "snapshotDayCount": 0,
+            "multiShareOfR": 31.1,
+            "contentClass": "methodology_limit",
+            "findingKind": "muscle_ledger_limits",
+            "engine": "p32b",
+            "classificationVersion": "p32.v1"
+          }
+        }
+      ],
+      "rejected": [
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-07-01",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_movement_structure",
+          "reason": "thresholds_or_data_not_met",
+          "window": {
+            "start": "2026-07-01",
+            "end": "2026-10-30"
+          }
+        },
+        {
+          "kind": "disc_muscle_plan_vs_actual",
+          "reason": "insufficient_snapshots",
+          "snapshotDayCount": 0,
+          "singleOccasionGroups": []
+        }
+      ],
+      "packBeforeSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Pompes déclinées : progression malgré une exposition faible",
+          "informativeValue": 87
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 116
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+          "informativeValue": 114
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise pronation s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes (endurance) dans la période",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 111
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 5 entraînements",
+          "informativeValue": 76
+        }
+      ],
+      "packAfterSelected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "informativeValue": 90
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours sont plus dense que ton rythme habituel",
+          "informativeValue": 63
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "informativeValue": 60
+        },
+        {
+          "kind": "disc_muscle_exposure_contrast",
+          "title": "pectoraux a plus de jours d’exposition que dos",
+          "informativeValue": 51
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 7 jours sont au-dessus de ton niveau habituel",
+          "informativeValue": 36
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "informativeValue": 91
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Pompes déclinées : progression malgré une exposition faible",
+          "informativeValue": 87
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "informativeValue": 85
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 116
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+          "informativeValue": 114
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise pronation s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées s'installe dans ton entraînement",
+          "informativeValue": 112
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "informativeValue": 55
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "informativeValue": 59
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "informativeValue": 56
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "informativeValue": 94
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "informativeValue": 48
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "informativeValue": 79
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes (endurance) dans la période",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre s'installe dans ton entraînement",
+          "informativeValue": 107
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips s'installe dans ton entraînement",
+          "informativeValue": 111
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 5 entraînements",
+          "informativeValue": 76
+        }
+      ],
+      "p32bInSelected": [
+        "disc_muscle_exposure_contrast"
+      ],
+      "reliabilityNotesAfter": [
+        {
+          "kind": "disc_plan_data_insufficient",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        }
+      ]
+    }
+  }
+}

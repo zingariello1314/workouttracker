@@ -21,6 +21,13 @@ import {
   resolveExercisesForCalendarDate,
   snapshotExercisesToDisplayList
 } from '../calendarDayPlanSnapshot.js';
+import {
+  isHistoricalFrozenSnapshot,
+  isIndeterminatePlanSnapshot,
+  isPlanCompareEligible,
+  isProvisionalForecastSnapshot,
+  resolveApplicabilityConfidence
+} from '../calendarPlanCaptureP33.js';
 import { collectCalendarRepKeysForExercise } from '../exerciseKeyGenerator.js';
 import { parseSeriesSetCount } from '../exerciseLoadVolume.js';
 import { gtgDayHasCompletedMiniSet } from '../calendarGtgDay.js';
@@ -347,6 +354,35 @@ export function resolveDayPlanReadOnly({
         programId: 'reconstructed'
       };
     }
+    // P3.3 : provisional / indeterminate / historical unverified ≠ snapshot high.
+    if (isProvisionalForecastSnapshot(existing)) {
+      return {
+        exercises: snapshotExercisesToDisplayList(existing),
+        source: PLAN_SOURCE.LIVE,
+        snapshot: existing,
+        variant: existing.variant || null,
+        programId: existing.programId || null
+      };
+    }
+    if (isIndeterminatePlanSnapshot(existing)) {
+      return {
+        exercises: [],
+        source: PLAN_SOURCE.NONE,
+        snapshot: existing,
+        variant: null,
+        programId: existing.programId || null
+      };
+    }
+    if (isHistoricalFrozenSnapshot(existing) && !isPlanCompareEligible(existing)) {
+      // Contenu candidat (ex. promote / backfill) : visible mais hors dénominateur.
+      return {
+        exercises: snapshotExercisesToDisplayList(existing),
+        source: PLAN_SOURCE.LIVE,
+        snapshot: existing,
+        variant: existing.variant || null,
+        programId: existing.programId || null
+      };
+    }
     return {
       exercises: snapshotExercisesToDisplayList(existing),
       source: PLAN_SOURCE.SNAPSHOT,
@@ -423,6 +459,24 @@ export function buildDayPlanRealizationRow({
   const classicActivity = hasPerformanceKeysForDate(data, dateStr);
   const gtg = buildDayGtgExposure(data, dateStr);
   const hasActivity = classicActivity || gtg.hasActivity;
+  const planSnap = plan.snapshot || getDayPlanSnapshot(data, dateStr);
+  const plannedRest = Boolean(
+    planSnap?.plannedRest || planSnap?.dayKind === 'planned_rest'
+  );
+  const dayKind =
+    planSnap?.dayKind ||
+    (plannedRest
+      ? 'planned_rest'
+      : plan.exercises.length
+        ? 'planned_workout'
+        : plan.source === PLAN_SOURCE.SNAPSHOT
+          ? 'no_program'
+          : null);
+  const snapshotStatus = planSnap?.status || (planSnap ? 'historical_frozen' : null);
+  const applicabilityConfidence = planSnap
+    ? resolveApplicabilityConfidence(planSnap)
+    : null;
+  const planCompareEligible = planSnap ? isPlanCompareEligible(planSnap) : false;
 
   const meta = classifyPlanMeta(plan.source, {
     hasPlanList: plan.exercises.length > 0,
@@ -450,6 +504,7 @@ export function buildDayPlanRealizationRow({
   const canAssertPlannedVsDone = meta.planSource === PLAN_SOURCE.SNAPSHOT;
 
   // ── Snapshot : seul cas où « prévu » est affirmable ───────────────────────
+  // Repos prévu (P3.3) : liste vide affirmable — jamais séance manquée (0 créneaux).
   if (canAssertPlannedVsDone) {
     for (const ex of plan.exercises) {
       const matchKey = exerciseMatchKey(ex);
@@ -739,7 +794,9 @@ export function buildDayPlanRealizationRow({
     date: dateStr,
     planSource: meta.planSource,
     reliability: meta.reliability,
-    planKnowledge: meta.planKnowledge,
+    planKnowledge: plannedRest
+      ? PLAN_KNOWLEDGE.KNOWN
+      : meta.planKnowledge,
     programId: plan.programId,
     variant: plan.variant,
     hasClassicActivity: classicActivity,
@@ -753,7 +810,19 @@ export function buildDayPlanRealizationRow({
     supplementalExercises: supplemental,
     gaps,
     missingDataFlags: [...new Set(missingDataFlags)],
-    denominator
+    denominator,
+    /** P3.3 */
+    plannedRest,
+    dayKind,
+    snapshotStatus,
+    captureTrigger: planSnap?.captureTrigger || null,
+    applicabilityConfidence,
+    planCompareEligible,
+    isMissedSessionCandidate:
+      canAssertPlannedVsDone &&
+      planCompareEligible &&
+      planned.length > 0 &&
+      notRealized.length === planned.length
   };
 }
 

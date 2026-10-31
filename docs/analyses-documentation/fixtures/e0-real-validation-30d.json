@@ -296,6 +296,22 @@
       "contentClass": "analytical",
       "title": "Pompes déclinées : recul et exposition faible coïncident",
       "body": "Pompes déclinées combine un recul net avec seulement 3 jours d’exposition (≈ 0.7/sem., volume 120 reps). Les niveaux comparés par la trajectoire P0 passent d’environ 53 à 40 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La co-occurrence est établie ; aucune relation causale entre le recul et le niveau d’exposition n’est affirmée. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+    },
+    {
+      "kind": "disc_muscle_exposure_shift",
+      "nature": "trajectory",
+      "score": 59,
+      "contentClass": "analytical",
+      "title": "Triceps : davantage de jours d’exposition qu’en période précédente",
+      "body": "Sur deux fenêtres comparables de 16+ jours d’activité (2026-09-01→2026-09-30 puis 2026-10-01→2026-10-30), les jours d’exposition primaire aux triceps passent de 11 à 16 (Δ +5). Les reps mono associées vont de 88 à 90 (Δ +2). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
+    },
+    {
+      "kind": "disc_muscle_ledger_limits",
+      "nature": "trajectory",
+      "score": 3,
+      "contentClass": "methodology_limit",
+      "title": "Limites du compte musculaire sur cette fenêtre",
+      "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 32 % des reps sont multi-principales (exposition possible, volume non isolé par muscle). 36 s isométriques hors total de reps."
     }
   ],
   "selected": [
@@ -550,6 +566,13 @@
       "title": "La reprise de pompes déclinées est devenue durable"
     },
     {
+      "kind": "disc_muscle_exposure_shift",
+      "reason": "cap",
+      "informativeValue": 73,
+      "contentClass": "analytical",
+      "title": "Triceps : davantage de jours d’exposition qu’en période précédente"
+    },
+    {
       "kind": "disc_th_pushPull_trajectory",
       "reason": "cap",
       "informativeValue": 64,
@@ -599,6 +622,13 @@
       "title": "Suivi de plan : preuve historique indisponible"
     },
     {
+      "kind": "disc_muscle_ledger_limits",
+      "reason": "methodology_demoted",
+      "informativeValue": -17,
+      "contentClass": "methodology_limit",
+      "title": "Limites du compte musculaire sur cette fenêtre"
+    },
+    {
       "kind": "disc_th_pushPull_now",
       "reason": "insight_validation:internal_chip",
       "informativeValue": 64,
@@ -639,6 +669,19 @@
         "reconstructDayCount": 16,
         "minRequired": 3,
         "reason": "no_historical_plan_snapshots"
+      }
+    },
+    {
+      "kind": "disc_muscle_ledger_limits",
+      "contentClass": "methodology_limit",
+      "title": "Limites du compte musculaire sur cette fenêtre",
+      "summary": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 32 % des reps sont multi-principales (exposition possible, volume non isolé par muscle). 36 s isométriques hors total de reps.",
+      "evidence": "snapshots=0 · multiShare=31.6",
+      "metrics": {
+        "snapshotDayCount": 0,
+        "reconstructDayCount": null,
+        "minRequired": null,
+        "reason": "muscle_ledger_limits"
       }
     }
   ]

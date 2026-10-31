@@ -1,0 +1,561 @@
+{
+  "generatedAt": "2026-10-31T22:49:05.778Z",
+  "source": "docs/analyses-documentation/fixtures/workout-main-jul-oct-2026.json",
+  "horizons": {
+    "7j": {
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "sources": {
+        "hasGtgConfig": true,
+        "gtgDayKeysInWindow": 0,
+        "sessionFeedbackKeysInWindow": 0,
+        "dayPlanSnapshotsInWindow": 0,
+        "programRevisionLogPresent": false
+      },
+      "coverage": {
+        "calendarDays": 7,
+        "classicActiveDays": 4,
+        "classicExclusiveDays": 4,
+        "gtgActiveDays": 0,
+        "gtgDays": 0,
+        "classicOnlyDays": 4,
+        "gtgOnlyDays": 0,
+        "bothDays": 0,
+        "daysWithoutClassicExclusive": 3,
+        "daysWithNoRecordedActivity": 3,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 3,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "abstentions": [
+        {
+          "family": "A_coexistence",
+          "reason": "coverage_or_gtg_below_threshold"
+        },
+        {
+          "family": "A_movement_share",
+          "reason": "no_overlapping_certain_identity"
+        },
+        {
+          "family": "A_continuity",
+          "reason": "days_without_classic_below_threshold"
+        },
+        {
+          "family": "B_gaps",
+          "reason": "insufficient_demonstrated_plan_days"
+        },
+        {
+          "family": "C_feedback",
+          "reason": "insufficient_feedback_or_none"
+        },
+        {
+          "family": "D_cross",
+          "reason": "no_feedback_base"
+        }
+      ],
+      "candidatesProduced": [],
+      "candidatesInPool": [],
+      "candidatesSelected": [],
+      "candidatesDropped": [],
+      "packSelectedKinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "collisions": {
+        "selectedKindsAlsoRivalPlan": false,
+        "selectedKindsAlsoRivalGtgUnplanned": false
+      },
+      "performance": {
+        "p35PackMs": 27,
+        "bundleWithoutP35Ms": 868,
+        "bundleWithP35Ms": 473.8,
+        "overheadMs": -394.1,
+        "metricsComputeMs": 26.03
+      },
+      "controlWithoutP35Selected": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ]
+    },
+    "30j": {
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "sources": {
+        "hasGtgConfig": true,
+        "gtgDayKeysInWindow": 5,
+        "sessionFeedbackKeysInWindow": 0,
+        "dayPlanSnapshotsInWindow": 0,
+        "programRevisionLogPresent": false
+      },
+      "coverage": {
+        "calendarDays": 30,
+        "classicActiveDays": 12,
+        "classicExclusiveDays": 12,
+        "gtgActiveDays": 5,
+        "gtgDays": 5,
+        "classicOnlyDays": 11,
+        "gtgOnlyDays": 4,
+        "bothDays": 1,
+        "daysWithoutClassicExclusive": 18,
+        "daysWithNoRecordedActivity": 14,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 14,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "abstentions": [
+        {
+          "family": "A_movement_share",
+          "reason": "no_overlapping_certain_identity"
+        },
+        {
+          "family": "B_gaps",
+          "reason": "insufficient_demonstrated_plan_days"
+        },
+        {
+          "family": "C_feedback",
+          "reason": "insufficient_feedback_or_none"
+        },
+        {
+          "family": "D_cross",
+          "reason": "no_feedback_base"
+        }
+      ],
+      "candidatesProduced": [
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "GTG et séances classiques",
+          "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "evidence": {
+            "phase": "P3.5",
+            "classicOnlyDays": 11,
+            "gtgOnlyDays": 4,
+            "bothDays": 1,
+            "activeChannelDays": 16
+          },
+          "metrics": {
+            "proofLevel": "observed_channels"
+          }
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
+          "evidence": {
+            "phase": "P3.5",
+            "daysWithoutClassicExclusive": 18,
+            "daysWithoutClassicWithGtg": 4,
+            "plannedRestWithGtg": 0,
+            "demonstratedMissedWithGtg": 0,
+            "unknownPlanWithGtg": 4,
+            "sharePct": 22.2,
+            "publishable": true,
+            "denominators": {
+              "daysWithoutClassicExclusive": 18,
+              "note": "Pas des jours de repos prévus — absence de séance classique exclusive seulement"
+            }
+          },
+          "metrics": {
+            "proofLevel": "observed_absence_of_classic_exclusive"
+          }
+        }
+      ],
+      "candidatesInPool": [
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "score": 43,
+          "contentClass": "analytical",
+          "title": "GTG et séances classiques",
+          "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "evidence": {
+            "phase": "P3.5",
+            "classicOnlyDays": 11,
+            "gtgOnlyDays": 4,
+            "bothDays": 1,
+            "activeChannelDays": 16
+          },
+          "metrics": {
+            "proofLevel": "observed_channels"
+          }
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "nature": "trajectory",
+          "score": 47,
+          "contentClass": "analytical",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
+          "evidence": {
+            "phase": "P3.5",
+            "daysWithoutClassicExclusive": 18,
+            "daysWithoutClassicWithGtg": 4,
+            "plannedRestWithGtg": 0,
+            "demonstratedMissedWithGtg": 0,
+            "unknownPlanWithGtg": 4,
+            "sharePct": 22.2,
+            "publishable": true,
+            "denominators": {
+              "daysWithoutClassicExclusive": 18,
+              "note": "Pas des jours de repos prévus — absence de séance classique exclusive seulement"
+            }
+          },
+          "metrics": {
+            "proofLevel": "observed_absence_of_classic_exclusive"
+          }
+        }
+      ],
+      "candidatesSelected": [
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "score": 43,
+          "contentClass": "analytical",
+          "title": "GTG et séances classiques",
+          "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "evidence": {
+            "phase": "P3.5",
+            "classicOnlyDays": 11,
+            "gtgOnlyDays": 4,
+            "bothDays": 1,
+            "activeChannelDays": 16
+          },
+          "metrics": {
+            "proofLevel": "observed_channels"
+          }
+        }
+      ],
+      "candidatesDropped": [
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "reason": "rival",
+          "title": "GTG hors séances classiques"
+        }
+      ],
+      "packSelectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ],
+      "collisions": {
+        "selectedKindsAlsoRivalPlan": false,
+        "selectedKindsAlsoRivalGtgUnplanned": false
+      },
+      "performance": {
+        "p35PackMs": 48.4,
+        "bundleWithoutP35Ms": 1764.5,
+        "bundleWithP35Ms": 1695.3,
+        "overheadMs": -69.2,
+        "metricsComputeMs": 47.79
+      },
+      "controlWithoutP35Selected": [
+        "disc_gtg_unplanned_now",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ]
+    },
+    "3m": {
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "sources": {
+        "hasGtgConfig": true,
+        "gtgDayKeysInWindow": 6,
+        "sessionFeedbackKeysInWindow": 0,
+        "dayPlanSnapshotsInWindow": 0,
+        "programRevisionLogPresent": false
+      },
+      "coverage": {
+        "calendarDays": 91,
+        "classicActiveDays": 41,
+        "classicExclusiveDays": 41,
+        "gtgActiveDays": 6,
+        "gtgDays": 6,
+        "classicOnlyDays": 40,
+        "gtgOnlyDays": 5,
+        "bothDays": 1,
+        "daysWithoutClassicExclusive": 50,
+        "daysWithNoRecordedActivity": 45,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 45,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "abstentions": [
+        {
+          "family": "A_movement_share",
+          "reason": "no_overlapping_certain_identity"
+        },
+        {
+          "family": "B_gaps",
+          "reason": "insufficient_demonstrated_plan_days"
+        },
+        {
+          "family": "C_feedback",
+          "reason": "insufficient_feedback_or_none"
+        },
+        {
+          "family": "D_cross",
+          "reason": "no_feedback_base"
+        }
+      ],
+      "candidatesProduced": [
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "GTG et séances classiques",
+          "body": "Sur 46 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 40 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "evidence": {
+            "phase": "P3.5",
+            "classicOnlyDays": 40,
+            "gtgOnlyDays": 5,
+            "bothDays": 1,
+            "activeChannelDays": 46
+          },
+          "metrics": {
+            "proofLevel": "observed_channels"
+          }
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 50 journées sans séance classique (hors reps GTG synchronisées), 5 comportent du GTG (10 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 5 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
+          "evidence": {
+            "phase": "P3.5",
+            "daysWithoutClassicExclusive": 50,
+            "daysWithoutClassicWithGtg": 5,
+            "plannedRestWithGtg": 0,
+            "demonstratedMissedWithGtg": 0,
+            "unknownPlanWithGtg": 5,
+            "sharePct": 10,
+            "publishable": true,
+            "denominators": {
+              "daysWithoutClassicExclusive": 50,
+              "note": "Pas des jours de repos prévus — absence de séance classique exclusive seulement"
+            }
+          },
+          "metrics": {
+            "proofLevel": "observed_absence_of_classic_exclusive"
+          }
+        }
+      ],
+      "candidatesInPool": [
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "score": 43,
+          "contentClass": "analytical",
+          "title": "GTG et séances classiques",
+          "body": "Sur 46 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 40 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "evidence": {
+            "phase": "P3.5",
+            "classicOnlyDays": 40,
+            "gtgOnlyDays": 5,
+            "bothDays": 1,
+            "activeChannelDays": 46
+          },
+          "metrics": {
+            "proofLevel": "observed_channels"
+          }
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "nature": "trajectory",
+          "score": 47,
+          "contentClass": "analytical",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 50 journées sans séance classique (hors reps GTG synchronisées), 5 comportent du GTG (10 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 5 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
+          "evidence": {
+            "phase": "P3.5",
+            "daysWithoutClassicExclusive": 50,
+            "daysWithoutClassicWithGtg": 5,
+            "plannedRestWithGtg": 0,
+            "demonstratedMissedWithGtg": 0,
+            "unknownPlanWithGtg": 5,
+            "sharePct": 10,
+            "publishable": true,
+            "denominators": {
+              "daysWithoutClassicExclusive": 50,
+              "note": "Pas des jours de repos prévus — absence de séance classique exclusive seulement"
+            }
+          },
+          "metrics": {
+            "proofLevel": "observed_absence_of_classic_exclusive"
+          }
+        }
+      ],
+      "candidatesSelected": [
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "score": 43,
+          "contentClass": "analytical",
+          "title": "GTG et séances classiques",
+          "body": "Sur 46 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 40 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "evidence": {
+            "phase": "P3.5",
+            "classicOnlyDays": 40,
+            "gtgOnlyDays": 5,
+            "bothDays": 1,
+            "activeChannelDays": 46
+          },
+          "metrics": {
+            "proofLevel": "observed_channels"
+          }
+        }
+      ],
+      "candidatesDropped": [
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "reason": "rival",
+          "title": "GTG hors séances classiques"
+        }
+      ],
+      "packSelectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_freq_progress_low",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ],
+      "collisions": {
+        "selectedKindsAlsoRivalPlan": false,
+        "selectedKindsAlsoRivalGtgUnplanned": false
+      },
+      "performance": {
+        "p35PackMs": 116.5,
+        "bundleWithoutP35Ms": 2871.9,
+        "bundleWithP35Ms": 2976.3,
+        "overheadMs": 104.4,
+        "metricsComputeMs": 116.26
+      },
+      "controlWithoutP35Selected": [
+        "disc_gtg_unplanned_now",
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_freq_progress_low",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ]
+    }
+  }
+}

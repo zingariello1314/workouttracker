@@ -232,6 +232,14 @@
       "contentClass": "methodology_limit",
       "title": "Suivi de plan : preuve historique indisponible",
       "body": "Aucun jour de cette fenêtre n’a de plan figé (snapshot) : un taux d’adhérence au programme prévu ne peut pas être calculé. 4 jours documentent seulement le réalisé (reconstruction). Les expositions et trajectoires restent lisibles à part."
+    },
+    {
+      "kind": "disc_muscle_ledger_limits",
+      "nature": "trajectory",
+      "score": 3,
+      "contentClass": "methodology_limit",
+      "title": "Limites du compte musculaire sur cette fenêtre",
+      "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 36 % des reps sont multi-principales (exposition possible, volume non isolé par muscle)."
     }
   ],
   "selected": [
@@ -423,6 +431,13 @@
       "title": "Suivi de plan : preuve historique indisponible"
     },
     {
+      "kind": "disc_muscle_ledger_limits",
+      "reason": "methodology_demoted",
+      "informativeValue": -17,
+      "contentClass": "methodology_limit",
+      "title": "Limites du compte musculaire sur cette fenêtre"
+    },
+    {
       "kind": "disc_volume_shape",
       "reason": "editorial_gate",
       "informativeValue": 71,
@@ -498,6 +513,19 @@
         "reconstructDayCount": 4,
         "minRequired": 3,
         "reason": "no_historical_plan_snapshots"
+      }
+    },
+    {
+      "kind": "disc_muscle_ledger_limits",
+      "contentClass": "methodology_limit",
+      "title": "Limites du compte musculaire sur cette fenêtre",
+      "summary": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 36 % des reps sont multi-principales (exposition possible, volume non isolé par muscle).",
+      "evidence": "snapshots=0 · multiShare=35.9",
+      "metrics": {
+        "snapshotDayCount": 0,
+        "reconstructDayCount": null,
+        "minRequired": null,
+        "reason": "muscle_ledger_limits"
       }
     }
   ]

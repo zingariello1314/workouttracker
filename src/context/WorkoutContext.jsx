@@ -72,6 +72,12 @@ import {
   requestOpenEnduranceSubTab,
   requestOpenCalendarDay
 } from './NavigationContext';
+import {
+  prepareProgramMutationBundle,
+  markPendingUncertain,
+  appendDatedExceptionEvent,
+  REVISION_RELIABILITY
+} from '../utils/programRevisionJournalP34';
 
 const WorkoutContext = createContext();
 
@@ -262,6 +268,66 @@ const WorkoutProvider = ({ children }) => {
     [currentDate]
   );
 
+  /**
+   * P3.4 — Persiste seal P3.3 + journal de révisions **avant** la mutation programme.
+   * En cas d’échec de sauvegarde : événement uncertain (pas de preuve high inventée).
+   */
+  const prepareAndPersistBeforeMutation = useCallback(
+    async ({
+      previousActiveProgram = activeProgram,
+      nextActiveProgram = null,
+      nextProgramForRevision = null,
+      source = 'update',
+      mutationKind = null
+    } = {}) => {
+      const todayYmd = getDateStr(new Date());
+      const nowIso = new Date().toISOString();
+      const current = getCurrentData() || {};
+      const bundle = prepareProgramMutationBundle({
+        workoutData: current,
+        previousActiveProgram,
+        nextActiveProgram,
+        nextProgramForRevision,
+        todayYmd,
+        nowIso,
+        source,
+        mutationKind,
+        reliability: REVISION_RELIABILITY.RECORDED,
+        sealPastDays: 3
+      });
+
+      try {
+        await updateData(bundle.workoutData, { strict: true });
+        return {
+          ok: true,
+          revisionWrote: bundle.revisionWrote,
+          revisionReason: bundle.revisionReason,
+          revisionId: bundle.revision?.revisionId || null
+        };
+      } catch (error) {
+        console.error('❌ [P3.4] Persistance journal/seal échouée — événement uncertain:', error);
+        const uncertainData = markPendingUncertain(bundle.workoutData, {
+          source,
+          mutationKind,
+          reason: 'persist_failed_before_program_mutation',
+          intendedRevisionId: bundle.revision?.revisionId || null,
+          programId:
+            nextProgramForRevision?.id ||
+            nextActiveProgram?.id ||
+            previousActiveProgram?.id ||
+            null
+        });
+        try {
+          await updateData(uncertainData);
+        } catch (e2) {
+          console.error('❌ [P3.4] Impossible de persister pendingUncertain:', e2);
+        }
+        return { ok: false, uncertain: true, error };
+      }
+    },
+    [activeProgram, getCurrentData, updateData]
+  );
+
   // ✅ PHASE 4 : Utilisation du hook pour les programmes
   const {
     addProgram,
@@ -276,7 +342,8 @@ const WorkoutProvider = ({ children }) => {
     activeProgram,
     setActiveProgram,
     data,
-    persistProgramsPartial
+    persistProgramsPartial,
+    prepareAndPersistBeforeMutation
   );
 
   // ✅ PHASE 4 : Utilisation du hook pour les exercices exceptionnels
@@ -855,13 +922,21 @@ const WorkoutProvider = ({ children }) => {
       };
 
       // ✅ Sauvegarder immédiatement (action critique) — uniquement la variation du jour (pas de cocher auto).
-      const updatedData = {
+      // P3.4 : exception datée (pas une révision structurelle globale).
+      let updatedData = {
         ...currentData,
         dailyVariations: {
           ...(currentData.dailyVariations || {}),
           [dateStr]: updatedVariation
         }
       };
+      updatedData = appendDatedExceptionEvent(updatedData, {
+        dateStr,
+        suppressedExerciseIds: updatedVariation.suppressedExercises,
+        additionalExerciseIds: (updatedVariation.additionalExercises || []).map((e) => e.id),
+        seriesOverrides: updatedVariation.exerciseSeriesOverrides || null,
+        source: 'suppress_exercise'
+      }).workoutData;
 
       await updateData(updatedData);
 
@@ -934,7 +1009,7 @@ const WorkoutProvider = ({ children }) => {
         Boolean(hasSeriesOverrides) ||
         Boolean(hasTrainingPatterns);
 
-      const updatedData = {
+      let updatedData = {
         ...currentData,
         dailyVariations: {
           ...(currentData.dailyVariations || {}),
@@ -946,6 +1021,14 @@ const WorkoutProvider = ({ children }) => {
       if (!hasOtherVariations) {
         delete updatedData.dailyVariations[dateStr];
       }
+
+      updatedData = appendDatedExceptionEvent(updatedData, {
+        dateStr,
+        suppressedExerciseIds: updatedVariation.suppressedExercises || [],
+        additionalExerciseIds: (updatedVariation.additionalExercises || []).map((e) => e.id),
+        seriesOverrides: updatedVariation.exerciseSeriesOverrides || null,
+        source: 'restore_exercise'
+      }).workoutData;
 
       // ✅ Sauvegarder immédiatement (action critique)
       await updateData(updatedData);
@@ -1033,10 +1116,19 @@ const WorkoutProvider = ({ children }) => {
       delete nextDaily[dateStr];
     }
 
-    await updateData({
+    let nextData = {
       ...currentData,
       dailyVariations: nextDaily
-    });
+    };
+    nextData = appendDatedExceptionEvent(nextData, {
+      dateStr,
+      suppressedExerciseIds: updatedVariation.suppressedExercises || [],
+      additionalExerciseIds: (updatedVariation.additionalExercises || []).map((e) => e.id),
+      seriesOverrides: updatedVariation.exerciseSeriesOverrides || null,
+      source: 'series_override'
+    }).workoutData;
+
+    await updateData(nextData);
   };
 
   /**

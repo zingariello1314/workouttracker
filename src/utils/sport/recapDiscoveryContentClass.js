@@ -15,7 +15,29 @@ export const CONTENT_CLASS = Object.freeze({
 
 /** Limites de données / preuve — pas des constats athlète. */
 export const METHODOLOGY_LIMIT_KINDS = Object.freeze([
-  'disc_plan_data_insufficient'
+  'disc_plan_data_insufficient',
+  'disc_muscle_ledger_limits',
+  'disc_program_revision_insufficient',
+  'disc_program_revision_journal_limit'
+]);
+
+/** Portraits descriptifs de révision de plan (P3.4) — pas de causalité. */
+export const DESCRIPTIVE_REVISION_KINDS = Object.freeze([
+  'disc_program_revision_frequency',
+  'disc_program_revision_before_after_obs',
+  'disc_program_revision_exercise_churn'
+]);
+
+/** P3.5 — portraits ressenti / croisements descriptifs (pas de causalité). */
+export const DESCRIPTIVE_P35_KINDS = Object.freeze([
+  'disc_p35_feedback_difficulte',
+  'disc_p35_cross_gtg_difficulte'
+]);
+
+/** P3.6 — fréquences d’exercices / portraits d’habitude (descriptifs). */
+export const DESCRIPTIVE_P36_KINDS = Object.freeze([
+  'disc_p36_exercise_dominant_freq',
+  'disc_p36_habit_stability_weeks'
 ]);
 
 /**
@@ -40,6 +62,9 @@ export function contentClassForKind(kind) {
   const k = String(kind || '');
   if (METHODOLOGY_LIMIT_KINDS.includes(k)) return CONTENT_CLASS.METHODOLOGY_LIMIT;
   if (DESCRIPTIVE_COMPOSITION_KINDS.includes(k)) return CONTENT_CLASS.DESCRIPTIVE;
+  if (DESCRIPTIVE_REVISION_KINDS.includes(k)) return CONTENT_CLASS.DESCRIPTIVE;
+  if (DESCRIPTIVE_P35_KINDS.includes(k)) return CONTENT_CLASS.DESCRIPTIVE;
+  if (DESCRIPTIVE_P36_KINDS.includes(k)) return CONTENT_CLASS.DESCRIPTIVE;
   if (k.startsWith('__debug') || k.startsWith('tech_')) return CONTENT_CLASS.TECHNICAL_INTERNAL;
   return CONTENT_CLASS.ANALYTICAL;
 }

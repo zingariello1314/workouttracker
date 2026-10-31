@@ -192,12 +192,18 @@ import { buildPlannedStretchListForDateStr } from '../utils/programCompletionBon
 import {
   buildDefaultWorkoutVariants,
   buildWorkoutVariantsForProgramDay,
-  getPlannedExercisesForCalendarDate
+  getPlannedExercisesForCalendarDate,
+  getLivePlannedExercisesForCalendarDate
 } from '../utils/calendarProgramExercises';
 import {
   ensureDayPlanSnapshot,
   ensureReconstructedDayPlanSnapshot
 } from '../utils/calendarDayPlanSnapshot';
+import {
+  reconcilePlanCaptureOnAppOpen,
+  buildCaptureIntentFromProgram
+} from '../utils/calendarPlanCaptureP33';
+import { reconcileLiveProgramAgainstJournal } from '../utils/programRevisionJournalP34';
 import { calendarHeatmapCompositeBackground } from '../utils/calendarHeatmapTint';
 import {
   calculateCurrentTrainingStreak,
@@ -2814,6 +2820,78 @@ const CalendarHeatmap = ({
       }
     }));
   }, [variant, activeProgram, yearMonths, allData?.calendarMonthPlanSnapshots, updateData, getCurrentData]);
+
+  /**
+   * P3.3 — à l’ouverture / changement de programme : sceller les jours passés sans activité
+   * et poser des prévisions provisoires (navigateur fermé ≠ cron).
+   */
+  const p33ReconcileSigRef = useRef('');
+  useEffect(() => {
+    if (variant !== 'sport' || typeof updateData !== 'function' || typeof getCurrentData !== 'function') {
+      return;
+    }
+    const todayYmd = getDateStr(new Date());
+    const progId = activeProgram?.id ?? 'none';
+    const sig = `${todayYmd}|${progId}`;
+    if (p33ReconcileSigRef.current === sig) return;
+    p33ReconcileSigRef.current = sig;
+
+    const current = getCurrentData() || {};
+    // Ne jamais déduire « proven » de la seule proximité calendaire (absence de journal ≠ preuve).
+    // reconcile : hier → historical unverified ; plus ancien → indeterminate ; futurs → provisional.
+    const resolveIntent = (dateStr) => {
+      const [yy, mm, dd] = dateStr.split('-').map(Number);
+      const date = new Date(yy, mm - 1, dd);
+      const dayName = getDayName(date);
+      const effectiveRestDay =
+        typeof getEffectiveRestDayForDate === 'function' && activeProgram
+          ? getEffectiveRestDayForDate(date, activeProgram, current)
+          : null;
+      const exercises = getLivePlannedExercisesForCalendarDate({
+        date,
+        dayName,
+        dateStr,
+        getTodayWorkout,
+        activeProgram
+      });
+
+      return buildCaptureIntentFromProgram({
+        dateStr,
+        activeProgram,
+        workoutData: current,
+        exercises,
+        effectiveRestDay,
+        programApplicabilityProven: false
+      });
+    };
+
+    const result = reconcilePlanCaptureOnAppOpen(current, {
+      todayYmd,
+      resolveIntent,
+      backfillLookbackDays: 14,
+      provisionalHorizonDays: 2
+    });
+    // P3.4 — rupture live ↔ journal après redémarrage / mutation incertaine
+    const journalReco = reconcileLiveProgramAgainstJournal(result.workoutData, activeProgram, {
+      todayYmd
+    });
+    const nextData = journalReco.workoutData;
+    const changed =
+      result.promoted.length > 0 ||
+      result.sealed.length > 0 ||
+      result.forecasted.length > 0 ||
+      journalReco.changed;
+    if (!changed) return;
+    if (nextData === current) return;
+    updateData(() => nextData);
+  }, [
+    variant,
+    activeProgram?.id,
+    updateData,
+    getCurrentData,
+    getTodayWorkout,
+    getEffectiveRestDayForDate
+  ]);
 
   /**
    * Couleur case : dégradé direct depuis l’indice composite (sans recalage « teinte » sur la période).

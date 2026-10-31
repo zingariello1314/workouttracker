@@ -1,0 +1,585 @@
+{
+  "generatedAt": "2026-10-31T23:39:01.410Z",
+  "source": "docs/analyses-documentation/fixtures/workout-main-jul-oct-2026.json",
+  "horizons": {
+    "7j": {
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "coverage": {
+        "calendarDays": 7,
+        "classicActiveDays": 4,
+        "classicExclusiveDays": 4,
+        "gtgActiveDays": 0,
+        "gtgDays": 0,
+        "classicOnlyDays": 4,
+        "gtgOnlyDays": 0,
+        "bothDays": 0,
+        "daysWithoutClassicExclusive": 3,
+        "daysWithNoRecordedActivity": 3,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 3,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "byDowSummary": [
+        {
+          "label": "dimanche",
+          "eligible": 1,
+          "classic": 0,
+          "rateClassicPct": 0,
+          "classicReps": 0,
+          "provenPlanned": 0
+        },
+        {
+          "label": "lundi",
+          "eligible": 1,
+          "classic": 1,
+          "rateClassicPct": 100,
+          "classicReps": 356,
+          "provenPlanned": 0
+        },
+        {
+          "label": "mardi",
+          "eligible": 1,
+          "classic": 1,
+          "rateClassicPct": 100,
+          "classicReps": 332,
+          "provenPlanned": 0
+        },
+        {
+          "label": "mercredi",
+          "eligible": 1,
+          "classic": 0,
+          "rateClassicPct": 0,
+          "classicReps": 0,
+          "provenPlanned": 0
+        },
+        {
+          "label": "jeudi",
+          "eligible": 1,
+          "classic": 0,
+          "rateClassicPct": 0,
+          "classicReps": 0,
+          "provenPlanned": 0
+        },
+        {
+          "label": "vendredi",
+          "eligible": 1,
+          "classic": 1,
+          "rateClassicPct": 100,
+          "classicReps": 351,
+          "provenPlanned": 0
+        },
+        {
+          "label": "samedi",
+          "eligible": 1,
+          "classic": 1,
+          "rateClassicPct": 100,
+          "classicReps": 332,
+          "provenPlanned": 0
+        }
+      ],
+      "abstentions": [
+        {
+          "family": "A_regularity",
+          "reason": "insufficient_weekday_sample"
+        },
+        {
+          "family": "B_volume",
+          "reason": "insufficient_sample"
+        },
+        {
+          "family": "B_freq_vs_vol",
+          "reason": "missing_freq_arm"
+        },
+        {
+          "family": "C_exercises",
+          "reason": "no_dominant_exercise_signal"
+        },
+        {
+          "family": "D_stability",
+          "reason": "insufficient_complete_weeks"
+        },
+        {
+          "family": "E_proven",
+          "reason": "insufficient_proven_planned_weekdays"
+        },
+        {
+          "family": "window",
+          "reason": "short_window_many_families_abstain"
+        }
+      ],
+      "candidatesProduced": [],
+      "candidatesInPool": [],
+      "candidatesSelected": [],
+      "candidatesDropped": [],
+      "packSelectedKinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "controlWithoutP36Selected": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "performance": {
+        "p36PackMs": 32.4,
+        "bundleWithoutP36Ms": 507.9,
+        "bundleWithP36Ms": 264.6,
+        "overheadMs": -243.3,
+        "metricsComputeMs": 31.5
+      }
+    },
+    "30j": {
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "coverage": {
+        "calendarDays": 30,
+        "classicActiveDays": 12,
+        "classicExclusiveDays": 12,
+        "gtgActiveDays": 5,
+        "gtgDays": 5,
+        "classicOnlyDays": 11,
+        "gtgOnlyDays": 4,
+        "bothDays": 1,
+        "daysWithoutClassicExclusive": 18,
+        "daysWithNoRecordedActivity": 14,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 14,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "byDowSummary": [
+        {
+          "label": "dimanche",
+          "eligible": 4,
+          "classic": 0,
+          "rateClassicPct": 0,
+          "classicReps": 0,
+          "provenPlanned": 0
+        },
+        {
+          "label": "lundi",
+          "eligible": 4,
+          "classic": 3,
+          "rateClassicPct": 75,
+          "classicReps": 1021,
+          "provenPlanned": 0
+        },
+        {
+          "label": "mardi",
+          "eligible": 4,
+          "classic": 3,
+          "rateClassicPct": 75,
+          "classicReps": 1056,
+          "provenPlanned": 0
+        },
+        {
+          "label": "mercredi",
+          "eligible": 4,
+          "classic": 1,
+          "rateClassicPct": 25,
+          "classicReps": 426,
+          "provenPlanned": 0
+        },
+        {
+          "label": "jeudi",
+          "eligible": 5,
+          "classic": 0,
+          "rateClassicPct": 0,
+          "classicReps": 0,
+          "provenPlanned": 0
+        },
+        {
+          "label": "vendredi",
+          "eligible": 5,
+          "classic": 3,
+          "rateClassicPct": 60,
+          "classicReps": 911,
+          "provenPlanned": 0
+        },
+        {
+          "label": "samedi",
+          "eligible": 4,
+          "classic": 2,
+          "rateClassicPct": 50,
+          "classicReps": 868,
+          "provenPlanned": 0
+        }
+      ],
+      "abstentions": [
+        {
+          "family": "B_volume",
+          "reason": "no_clear_volume_concentration"
+        },
+        {
+          "family": "B_freq_vs_vol",
+          "reason": "load_arm_spike_sensitive"
+        },
+        {
+          "family": "C_exercises",
+          "reason": "no_dominant_exercise_signal"
+        },
+        {
+          "family": "D_stability",
+          "reason": "insufficient_complete_weeks"
+        },
+        {
+          "family": "E_proven",
+          "reason": "insufficient_proven_planned_weekdays"
+        }
+      ],
+      "candidatesProduced": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "metrics": {
+            "proofLevel": "eligible_weekday_rates"
+          }
+        }
+      ],
+      "candidatesInPool": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "score": 42,
+          "contentClass": "analytical",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "metrics": {
+            "proofLevel": "eligible_weekday_rates"
+          }
+        }
+      ],
+      "candidatesSelected": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "score": 42,
+          "contentClass": "analytical",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "metrics": {
+            "proofLevel": "eligible_weekday_rates"
+          }
+        }
+      ],
+      "candidatesDropped": [],
+      "packSelectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_p36_weekday_regularity",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ],
+      "controlWithoutP36Selected": [
+        "disc_gtg_unplanned_now",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ],
+      "performance": {
+        "p36PackMs": 37.5,
+        "bundleWithoutP36Ms": 1017.7,
+        "bundleWithP36Ms": 1095.7,
+        "overheadMs": 78,
+        "metricsComputeMs": 37.32
+      }
+    },
+    "3m": {
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "coverage": {
+        "calendarDays": 91,
+        "classicActiveDays": 41,
+        "classicExclusiveDays": 41,
+        "gtgActiveDays": 6,
+        "gtgDays": 6,
+        "classicOnlyDays": 40,
+        "gtgOnlyDays": 5,
+        "bothDays": 1,
+        "daysWithoutClassicExclusive": 50,
+        "daysWithNoRecordedActivity": 45,
+        "feedbackDays": 0,
+        "planDemonstratedDays": 0,
+        "planProbableDays": 0,
+        "nonReconstructibleDays": 45,
+        "plannedRestDays": 0,
+        "plannedMissedDays": 0,
+        "consistency": {
+          "activeEqualsParts": true,
+          "partition": true,
+          "withoutClassic": true
+        }
+      },
+      "byDowSummary": [
+        {
+          "label": "dimanche",
+          "eligible": 13,
+          "classic": 3,
+          "rateClassicPct": 23.1,
+          "classicReps": 1339,
+          "provenPlanned": 0
+        },
+        {
+          "label": "lundi",
+          "eligible": 13,
+          "classic": 10,
+          "rateClassicPct": 76.9,
+          "classicReps": 3000,
+          "provenPlanned": 0
+        },
+        {
+          "label": "mardi",
+          "eligible": 13,
+          "classic": 8,
+          "rateClassicPct": 61.5,
+          "classicReps": 2549,
+          "provenPlanned": 0
+        },
+        {
+          "label": "mercredi",
+          "eligible": 13,
+          "classic": 3,
+          "rateClassicPct": 23.1,
+          "classicReps": 1446,
+          "provenPlanned": 0
+        },
+        {
+          "label": "jeudi",
+          "eligible": 13,
+          "classic": 3,
+          "rateClassicPct": 23.1,
+          "classicReps": 878,
+          "provenPlanned": 0
+        },
+        {
+          "label": "vendredi",
+          "eligible": 13,
+          "classic": 9,
+          "rateClassicPct": 69.2,
+          "classicReps": 2017,
+          "provenPlanned": 0
+        },
+        {
+          "label": "samedi",
+          "eligible": 13,
+          "classic": 5,
+          "rateClassicPct": 38.5,
+          "classicReps": 2195,
+          "provenPlanned": 0
+        }
+      ],
+      "abstentions": [
+        {
+          "family": "B_volume",
+          "reason": "no_clear_volume_concentration"
+        },
+        {
+          "family": "C_exercises",
+          "reason": "no_dominant_exercise_signal"
+        },
+        {
+          "family": "D_stability",
+          "reason": "not_remarkably_stable"
+        },
+        {
+          "family": "E_proven",
+          "reason": "insufficient_proven_planned_weekdays"
+        }
+      ],
+      "candidatesProduced": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 76,9 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "metrics": {
+            "proofLevel": "eligible_weekday_rates"
+          }
+        },
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "nature": "trajectory",
+          "contentClass": "analytical",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé).",
+          "metrics": {
+            "proofLevel": "freq_rate_vs_median_load_per_active_day"
+          }
+        }
+      ],
+      "candidatesInPool": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "score": 42,
+          "contentClass": "analytical",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 76,9 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "metrics": {
+            "proofLevel": "eligible_weekday_rates"
+          }
+        },
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "nature": "trajectory",
+          "score": 49,
+          "contentClass": "analytical",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé).",
+          "metrics": {
+            "proofLevel": "freq_rate_vs_median_load_per_active_day"
+          }
+        }
+      ],
+      "candidatesSelected": [
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "nature": "trajectory",
+          "score": 49,
+          "contentClass": "analytical",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé).",
+          "metrics": {
+            "proofLevel": "freq_rate_vs_median_load_per_active_day"
+          }
+        }
+      ],
+      "candidatesDropped": [
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "reason": "rival",
+          "title": "Jours habituellement actifs"
+        }
+      ],
+      "packSelectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_freq_progress_low",
+        "disc_p36_freq_vs_volume_weekday",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ],
+      "controlWithoutP36Selected": [
+        "disc_gtg_unplanned_now",
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_freq_progress_low",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_sessions",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_first_exercise"
+      ],
+      "performance": {
+        "p36PackMs": 125.2,
+        "bundleWithoutP36Ms": 1644.2,
+        "bundleWithP36Ms": 2971.8,
+        "overheadMs": 1327.6,
+        "metricsComputeMs": 125
+      }
+    }
+  }
+}
