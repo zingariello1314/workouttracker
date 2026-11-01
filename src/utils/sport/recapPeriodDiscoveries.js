@@ -70,6 +70,8 @@ import {
   renderExerciseTrajectoryCopy,
   trajectoryToMetrics
 } from './exerciseTrajectoryAnalysis';
+import { enrichDiscoveriesWithComposedEvidence } from './recapComposedEvidence';
+import { polishDiscoveriesProse, editorialValidateDiscovery } from './recapEditorialPolish';
 import {
   composeAnalyticalReading,
   densityImplication,
@@ -477,7 +479,11 @@ function emptyMeasure(window) {
     firstSeen: {},
     lastSeenBefore: {},
     strengthDays: 0,
-    strengthReps: 0
+    strengthReps: 0,
+    dayContracts: {
+      strengthDays: 'positive_reps_days',
+      trainingDays: 'calendar_training_union_day'
+    }
   };
 }
 
@@ -613,6 +619,8 @@ export function measureRecapWindow({
   const cal = calendarLoad(snapshot, garminData, window);
   const minutes = Number(cal?.otherExerciseMinutes) || 0;
   const totalMinutes = Number(cal?.totalMinutes) || minutes;
+  // F2 contrats : trainingDays = union calendrier ; strengthDays = jours à reps > 0
+  // (peut inclure GTG syncé partiel hors crédit calendrier). Pas interchangeables.
   const trainingDays = Number(cal?.trainingDays) || repsByDate.size;
   const strengthDays = repsByDate.size;
   const bannerReps = Number(cal?.totalReps) || 0;
@@ -656,6 +664,11 @@ export function measureRecapWindow({
     strengthReps,
     trainingDays,
     strengthDays,
+    /** Provenance F2 des compteurs de jours (libellés / diagnostics). */
+    dayContracts: {
+      strengthDays: 'positive_reps_days',
+      trainingDays: 'calendar_training_union_day'
+    },
     minutes,
     totalMinutes,
     activeKcal: Number(cal?.activeKcal) || 0,
@@ -1000,7 +1013,9 @@ function detectDiscoveries(cmp, extras = {}) {
         }),
         limit:
           sleepCtx?.hours != null && (isToday || isWeek)
-            ? `La nuit associée (${fmt1(sleepCtx.hours)} h${
+            ? `La nuit${
+                sleepCtx?.night?.ymd ? ` du ${formatDayFr(sleepCtx.night.ymd)}` : ''
+              } (${fmt1(sleepCtx.hours)} h${
                 sleepCtx.habitHours != null ? `, habitude ~${fmt1(sleepCtx.habitHours)} h` : ''
               }) entre dans cette lecture sans en faire une preuve de causalité`
             : null
@@ -2052,14 +2067,29 @@ function detectDiscoveries(cmp, extras = {}) {
           : deltaMin < 0
             ? 'Une nuit plus courte que ton niveau récent'
             : 'Une nuit plus longue que ton niveau récent',
-        body: `${isToday ? 'Cette nuit' : 'La nuit associée'}, tu as dormi ${formatSleepHoursFr(night.hours)}, contre ${formatSleepHoursFr(recentHabit.hours)} de moyenne sur tes ${recentHabit.n} dernières nuits.${
+        body: `${
+          isToday
+            ? night.ymd
+              ? `Cette nuit (${formatDayFr(night.ymd)})`
+              : 'Cette nuit'
+            : night.ymd
+              ? `La nuit du ${formatDayFr(night.ymd)}`
+              : 'Une nuit récente'
+        }, tu as dormi ${formatSleepHoursFr(night.hours)}, contre ${formatSleepHoursFr(recentHabit.hours)} de moyenne sur tes ${recentHabit.n} dernières nuits.${
           smallGap
             ? ` L'écart de ${Math.abs(deltaMin)} minutes est faible et ne constitue donc pas une réduction significative de ton temps de sommeil.`
             : ` L'écart est de ${Math.abs(deltaMin)} minutes.`
         }${archSentence}${hrBit}${bbBit}${physioClose}`,
-        evidence: `${formatSleepHoursFr(night.hours)} vs ${formatSleepHoursFr(recentHabit.hours)} · ${recentHabit.n} nuits`,
+        evidence: `${night.ymd || 'nuit'} · ${formatSleepHoursFr(night.hours)} vs ${formatSleepHoursFr(recentHabit.hours)} · ${recentHabit.n} nuits`,
         weights: { importance: 0.9, reliability: 0.9, novelty: 0.88, fit: 0.96 },
-        metrics: { hours: night.hours, habitHours: recentHabit.hours, deltaMin }
+        metrics: {
+          hours: night.hours,
+          habitHours: recentHabit.hours,
+          deltaMin,
+          nightYmd: night.ymd || null,
+          sleepAttachment: night.attachment || null,
+          sleepWindowRole: 'primary_observation'
+        }
       })
     );
   }
@@ -4017,7 +4047,20 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     sleepPairs: catalogPairs.length
   });
   const scoped = filterDiscoveriesByPeriodScope(rawAll, activityCtx);
-  const all = scoped.kept;
+  // F3 — compose preuves structurées ; F4 — narration + polish (sans retirer du pool avant E0).
+  // N’altère ni kind ni scores E0 (informativeValue inchangé).
+  const enriched = enrichDiscoveriesWithComposedEvidence(scoped.kept, {
+    getExerciseNameById: opts.getExerciseNameById || null,
+    applyNarration: opts.applyF4Narration !== false
+  });
+  const all = polishDiscoveriesProse(enriched);
+  const editorialTrace = all
+    .map((d) => {
+      const v = editorialValidateDiscovery(d, { voiceKey: comparisons.voice?.key });
+      if (!v.warnings?.length && !v.rejects?.length) return null;
+      return { kind: d.kind, title: d.title, rejects: v.rejects, warnings: v.warnings };
+    })
+    .filter(Boolean);
   const traced = selectPeriodDiscoveriesWithTrace(
     all,
     opts.insightHistory || null,
@@ -4120,8 +4163,35 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
         contentClass: resolveContentClass(d),
         informativeValue: d.informativeValue ?? discoveryInformativeValue(d),
         trajectoryOk: Boolean(d.metrics?.trajectoryOk),
-        primaryStory: d.metrics?.trajectoryPrimaryStory || null
-      }))
+        primaryStory: d.metrics?.trajectoryPrimaryStory || null,
+        composedOk: Boolean(d.metrics?.composedOk),
+        composedFactCount: d.metrics?.composedFactCount ?? null
+      })),
+      composedPool: {
+        trajectoryOk: all.filter((d) => d.metrics?.trajectoryOk).length,
+        composedOk: all.filter((d) => d.metrics?.composedOk).length,
+        factCounts: all
+          .filter((d) => d.metrics?.composedOk)
+          .map((d) => ({
+            kind: d.kind,
+            factCount: d.metrics.composedFactCount,
+            continuity: d.metrics.composedEvidence?.continuity?.kind || null,
+            attribution: d.metrics.composedEvidence?.volumeAttribution?.kind || null,
+            peers: d.metrics.composedEvidence?.comparators?.verdict || null
+          }))
+      },
+      f4: {
+        narrated: all.filter((d) => d.metrics?.f4Narration?.used).length,
+        polished: all.filter((d) => d.metrics?.f4Polish).length,
+        depth: all
+          .filter((d) => d.metrics?.f4Narration?.used)
+          .map((d) => ({
+            kind: d.kind,
+            depth: d.metrics.f4Narration.depth,
+            title: d.title
+          })),
+        editorialTrace: editorialTrace.slice(0, 40)
+      }
     }
   };
 }

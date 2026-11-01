@@ -1,0 +1,909 @@
+{
+  "generatedAt": "2026-11-01T01:36:29.974Z",
+  "note": "F4 replay — narration depuis composedEvidence ; E0 non retuné ; kinds attendus stables",
+  "liveProfileInspected": false,
+  "periods": {
+    "7d": {
+      "ms": 691,
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "poolSize": 31,
+      "selectedSize": 12,
+      "selectedKinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "composedOkSelected": 3,
+      "narratedSelected": 3,
+      "depthCounts": {
+        "composed": 3
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 3,
+        "compositionUsedInText": 3,
+        "withMechanism": 3,
+        "withContinuity": 3,
+        "withComparator": 0
+      },
+      "f4Debug": {
+        "narrated": 4,
+        "polished": 0,
+        "depth": [
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Pompes déclinées revient après une interruption"
+          },
+          {
+            "kind": "disc_exercise_progress",
+            "depth": "composed",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          {
+            "kind": "disc_structural_memory",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre revient après une interruption"
+          },
+          {
+            "kind": "disc_family_fade",
+            "depth": "composed",
+            "title": "Relevés de genoux aux parallèles : volume par séance stable"
+          }
+        ],
+        "editorialTrace": [
+          {
+            "kind": "disc_emergence",
+            "title": "Pompes déclinées revient après une interruption",
+            "rejects": [
+              "forbidden_durable_return"
+            ],
+            "warnings": []
+          },
+          {
+            "kind": "disc_structural_memory",
+            "title": "Relevés de genoux à la barre revient après une interruption",
+            "rejects": [
+              "forbidden_durable_return"
+            ],
+            "warnings": []
+          },
+          {
+            "kind": "disc_ms_pr",
+            "title": "Meilleure série observée : 12 exercice 146651247",
+            "rejects": [
+              "raw_exercise_id"
+            ],
+            "warnings": []
+          }
+        ]
+      },
+      "beforeAfter": [
+        {
+          "kind": "disc_structural_memory",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "Relevés de genoux à la barre revient après une interruption",
+          "titleAfter": "Relevés de genoux à la barre revient après une interruption",
+          "bodyBefore": "Relevés de genoux à la barre pèsent désormais 120 reps sur 2 séances des 30 derniers jours, soit 26,3 % de ta tronc, alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20. Ce n'est plus une séance isolée ; répéter ce volume sur les prochaines séances dira s'il structure vraiment la tronc.",
+          "bodyAfter": "Relevés de genoux à la barre : Réapparition après 49 jours. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 20 comme 3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
+          "continuity": "punctual_return",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées revient après une interruption",
+          "titleAfter": "Pompes déclinées revient après une interruption",
+          "bodyBefore": "Pompes déclinées : Réapparition après 28 jours. Le volume par séance passe d’environ 5 × 10 à environ 5 × 10 (0 %). Ces 36 répétitions font 15,7 % des 229 répétitions de pectoraux de la période.",
+          "bodyAfter": "Sur 8 séances comparables, le volume de répétitions enregistré sur Pompes déclinées passe d’environ 50 à 36 répétitions par séance, soit une baisse d’environ 28 %. Sur les séances où le détail de séries est connu, le format reste du même ordre (5 × 10 comme 5 × 10). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
+          "continuity": "punctual_return",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "historicalContext",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées : recul puis retour au niveau de départ",
+          "titleAfter": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "bodyBefore": "Sur les 8 dernières séances (dont 7 avant la fenêtre sélectionnée, 1 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Le retour près du niveau de départ est confirmé sur les séances récentes : le maintenir sur les prochaines séances avant de changer la dose.",
+          "bodyAfter": "Le volume de répétitions enregistré sur Pompes déclinées passe d’environ 27.3 à 25.3 répétitions par séance. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 12 comme 3 × 12). Après un creux, les séances récentes reviennent près du niveau de départ. Le contexte historique (7 séances avant la fenêtre) sert uniquement à situer cette évolution, pas à remplacer la période sélectionnée. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        }
+      ],
+      "editorialWarnings": [
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées revient après une interruption",
+          "rejects": [
+            "forbidden_durable_return"
+          ],
+          "warnings": []
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "rejects": [
+            "forbidden_durable_return"
+          ],
+          "warnings": []
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "rejects": [
+            "raw_exercise_id"
+          ],
+          "warnings": []
+        }
+      ]
+    },
+    "30d": {
+      "ms": 1619,
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "poolSize": 43,
+      "selectedSize": 19,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_emergence",
+        "disc_ms_return_durable"
+      ],
+      "composedOkSelected": 7,
+      "narratedSelected": 7,
+      "depthCounts": {
+        "explanatory": 2,
+        "composed": 4,
+        "deep": 1
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 7,
+        "compositionUsedInText": 7,
+        "withMechanism": 7,
+        "withContinuity": 7,
+        "withComparator": 2
+      },
+      "f4Debug": {
+        "narrated": 12,
+        "polished": 2,
+        "depth": [
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "un mouvement : volume par séance stable"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre revient après une interruption"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "explanatory",
+            "title": "un mouvement : davantage de répétitions par séance"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "explanatory",
+            "title": "un mouvement entre dans ton historique"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "explanatory",
+            "title": "un mouvement entre dans ton historique"
+          },
+          {
+            "kind": "disc_exercise_progress",
+            "depth": "deep",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          {
+            "kind": "disc_structural_memory",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre revient après une interruption"
+          },
+          {
+            "kind": "disc_family_fade",
+            "depth": "composed",
+            "title": "Relevés de genoux aux parallèles : volume par séance stable"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "explanatory",
+            "title": "un mouvement : volume par séance en hausse"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "explanatory",
+            "title": "un mouvement : davantage de répétitions par séance"
+          },
+          {
+            "kind": "disc_freq_decline_low_exposure",
+            "depth": "composed",
+            "title": "Pompes déclinées : moins de répétitions par séance"
+          }
+        ],
+        "editorialTrace": [
+          {
+            "kind": "disc_emergence",
+            "title": "Relevés de genoux à la barre revient après une interruption",
+            "rejects": [
+              "forbidden_durable_return"
+            ],
+            "warnings": []
+          },
+          {
+            "kind": "disc_structural_memory",
+            "title": "Relevés de genoux à la barre revient après une interruption",
+            "rejects": [
+              "forbidden_durable_return"
+            ],
+            "warnings": []
+          },
+          {
+            "kind": "disc_ms_pr",
+            "title": "Meilleure série observée : 12 exercice 146651247",
+            "rejects": [
+              "raw_exercise_id"
+            ],
+            "warnings": []
+          }
+        ]
+      },
+      "beforeAfter": [
+        {
+          "kind": "disc_freq_progress_low",
+          "depth": "explanatory",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "historicalContext",
+            "f4Narration"
+          ],
+          "titleBefore": "un mouvement : progression malgré une exposition faible",
+          "titleAfter": "un mouvement : volume par séance en hausse",
+          "bodyBefore": "un mouvement n’apparaît que sur 3 jours d’exposition (3 classiques) — rythme ≈ 0.7/semaine — avec un volume de 126 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 35 à 45 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre.",
+          "bodyAfter": "Sur la période sélectionnée, et en tenant compte du contexte des séances précédentes, le volume de répétitions enregistré sur un mouvement passe d’environ 36 à 45 répétitions par séance, soit une hausse d’environ 25 %. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 15 comme 3 × 15). Le contexte historique (1 séance avant la fenêtre) sert uniquement à situer cette évolution, pas à remplacer la période sélectionnée.",
+          "continuity": "directional_change",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "volumeAttribution",
+            "comparators",
+            "historicalContext",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées : recul et exposition faible coïncident",
+          "titleAfter": "Pompes déclinées : moins de répétitions par séance",
+          "bodyBefore": "Pompes déclinées combine un recul net avec seulement 3 jours d’exposition (≈ 0.7/sem., volume 120 reps). Les niveaux comparés par la trajectoire P0 passent d’environ 53 à 40 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La co-occurrence est établie ; aucune relation causale entre le recul et le niveau d’exposition n’est affirmée. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre.",
+          "bodyAfter": "Le volume de répétitions enregistré sur Pompes déclinées passe d’environ 53.3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Le contexte historique (3 séances avant la fenêtre) sert uniquement à situer cette évolution, pas à remplacer la période sélectionnée.",
+          "continuity": "directional_change",
+          "attribution": "per_session_driven_decline",
+          "setMechanism": "same_sets_fewer_reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "explanatory",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "un mouvement s'installe dans ton entraînement",
+          "titleAfter": "un mouvement : davantage de répétitions par séance",
+          "bodyBefore": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le nombre de séries reste ~3 ; les répétitions par série augmentent (~10 → ~12). 1 séance du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Au total, 102 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "bodyAfter": "Sur 3 séances comparables, le volume de répétitions enregistré sur un mouvement passe d’environ 30 à 36 répétitions par séance, soit une hausse d’environ 20 %. Le nombre de séries reste proche de 3 ; les répétitions par série augmentent (environ 10 → 12).",
+          "continuity": "directional_change",
+          "attribution": null,
+          "setMechanism": "same_sets_more_reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "volumeAttribution",
+            "f4Narration"
+          ],
+          "titleBefore": "Relevés de genoux à la barre revient après une interruption",
+          "titleAfter": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+          "bodyBefore": "Relevés de genoux à la barre : Réapparition après 35 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %), et ce format se maintient sur les séances suivantes. Ces 180 répétitions font 70,9 % des 254 répétitions de gainage/tronc de la période.",
+          "bodyAfter": "Relevés de genoux à la barre : Réapparition après 35 jours. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 20 comme 3 × 20). Le volume par séance reste récemment stable.",
+          "continuity": "stable_plateau",
+          "attribution": "frequency_driven_total_rise",
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "un mouvement s'installe dans ton entraînement",
+          "titleAfter": "un mouvement : volume par séance stable",
+          "bodyBefore": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 144 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "bodyAfter": "Un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Sur les séances où le détail de séries est connu, le format reste du même ordre (4 × 12 comme 4 × 12). Le volume par séance reste récemment stable.",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "depth": "deep",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "historicalContext",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées : recul puis retour au niveau de départ",
+          "titleAfter": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "bodyBefore": "Sur les 8 dernières séances (dont 2 avant la fenêtre sélectionnée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Le retour près du niveau de départ est confirmé sur les séances récentes : le maintenir sur les prochaines séances avant de changer la dose.",
+          "bodyAfter": "Sur la période sélectionnée, et en tenant compte du contexte des séances précédentes, le volume de répétitions enregistré sur Pompes déclinées passe d’environ 10 à 36 répétitions par séance, soit une hausse d’environ 260 %. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 12 comme 3 × 12). Après un creux, les séances récentes reviennent près du niveau de départ. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Le contexte historique (2 séances avant la fenêtre) sert uniquement à situer cette évolution, pas à remplacer la période sélectionnée. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "Relevés de genoux à la barre revient après une interruption",
+          "titleAfter": "Relevés de genoux à la barre revient après une interruption",
+          "bodyBefore": "Relevés de genoux à la barre : Réapparition après 49 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %). Ces 120 répétitions font 47,2 % des 254 répétitions de gainage/tronc de la période.",
+          "bodyAfter": "Relevés de genoux à la barre : Réapparition après 49 jours. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 20 comme 3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
+          "continuity": "punctual_return",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        }
+      ],
+      "editorialWarnings": [
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "rejects": [
+            "forbidden_durable_return"
+          ],
+          "warnings": []
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "rejects": [
+            "forbidden_durable_return"
+          ],
+          "warnings": []
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "rejects": [
+            "raw_exercise_id"
+          ],
+          "warnings": []
+        }
+      ]
+    },
+    "3m": {
+      "ms": 2689,
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "poolSize": 52,
+      "selectedSize": 21,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_return_durable"
+      ],
+      "composedOkSelected": 5,
+      "narratedSelected": 5,
+      "depthCounts": {
+        "composed": 3,
+        "explanatory": 1,
+        "deep": 1
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 5,
+        "compositionUsedInText": 5,
+        "withMechanism": 5,
+        "withContinuity": 5,
+        "withComparator": 2
+      },
+      "f4Debug": {
+        "narrated": 11,
+        "polished": 1,
+        "depth": [
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Pompes déclinées : moins de répétitions par séance"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Relevés de genoux aux parallèles : volume par séance stable"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "un mouvement : volume par séance stable"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "un mouvement : volume par séance stable"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "explanatory",
+            "title": "un mouvement : volume par séance en hausse"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "un mouvement : volume par séance stable"
+          },
+          {
+            "kind": "disc_exercise_progress",
+            "depth": "deep",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          {
+            "kind": "disc_structural_memory",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre : volume par séance stable"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "composed",
+            "title": "Face pull : une séance plus chargée, sans consolidation"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "composed",
+            "title": "Élévations latérales : davantage de répétitions par séance"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "explanatory",
+            "title": "un mouvement : volume par séance en hausse"
+          }
+        ],
+        "editorialTrace": [
+          {
+            "kind": "disc_ms_pr",
+            "title": "Meilleure série observée : 12 exercice 146651247",
+            "rejects": [
+              "raw_exercise_id"
+            ],
+            "warnings": []
+          },
+          {
+            "kind": "disc_ms_first_exercise",
+            "title": "Première apparition : Exercice 728134920",
+            "rejects": [
+              "raw_exercise_id"
+            ],
+            "warnings": []
+          }
+        ]
+      },
+      "beforeAfter": [
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées dans la période",
+          "titleAfter": "Pompes déclinées : moins de répétitions par séance",
+          "bodyBefore": "6 séances sur 54 jours. Le volume par séance passe d’environ 4 × 15 à environ 4 × 10 (-33.3 %), et ce format se maintient sur les séances suivantes. Au total, 280 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 280 répétitions font 16,1 % des 1 740 répétitions de pectoraux de la période.",
+          "bodyAfter": "Sur 6 séances comparables, le volume de répétitions enregistré sur Pompes déclinées passe d’environ 60 à 40 répétitions par séance, soit une baisse d’environ 33.3 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé.",
+          "continuity": "directional_change",
+          "attribution": null,
+          "setMechanism": "same_sets_fewer_reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "titleAfter": "Relevés de genoux aux parallèles : volume par séance stable",
+          "bodyBefore": "Relevés de genoux aux parallèles apparaît sur 6 séances réparties sur 77 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 2 × 20 à environ 2 × 20 (0 %), et ce format se maintient sur les séances suivantes. Au total, 240 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 240 répétitions font 37,5 % des 640 répétitions de gainage/tronc de la période.",
+          "bodyAfter": "Relevés de genoux aux parallèles apparaît sur 6 séances réparties sur 77 jours — première présence connue dans l’historique disponible. Sur les séances où le détail de séries est connu, le format reste du même ordre (2 × 20 comme 2 × 20). Le volume par séance reste récemment stable.",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "explanatory",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "un mouvement s'installe dans ton entraînement",
+          "titleAfter": "un mouvement : volume par séance en hausse",
+          "bodyBefore": "un mouvement apparaît sur 4 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 3 × 15 à environ 3 × 15 (0 %). Au total, 160 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "bodyAfter": "Sur 4 séances comparables, le volume de répétitions enregistré sur un mouvement passe d’environ 34 à 45 répétitions par séance, soit une hausse d’environ 32.4 %. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 15 comme 3 × 15).",
+          "continuity": "directional_change",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "f4Narration"
+          ],
+          "titleBefore": "un mouvement s'installe dans ton entraînement",
+          "titleAfter": "un mouvement : volume par séance stable",
+          "bodyBefore": "un mouvement apparaît sur 4 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 192 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "bodyAfter": "Un mouvement apparaît sur 4 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Sur les séances où le détail de séries est connu, le format reste du même ordre (4 × 12 comme 4 × 12). Le volume par séance reste récemment stable.",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "depth": "deep",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées : recul puis retour au niveau de départ",
+          "titleAfter": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "bodyBefore": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Pompes lestées (autour de 40 répétitions par séance) reste stable. Le retour près du niveau de départ est confirmé sur les séances récentes : le maintenir sur les prochaines séances avant de changer la dose.",
+          "bodyAfter": "Le volume de répétitions enregistré sur Pompes déclinées passe d’environ 27.3 à 25.3 répétitions par séance. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 12 comme 3 × 12). Après un creux, les séances récentes reviennent près du niveau de départ. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Pompes lestées (autour de 40 répétitions par séance) reste stable. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        }
+      ],
+      "editorialWarnings": [
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "rejects": [
+            "raw_exercise_id"
+          ],
+          "warnings": []
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "rejects": [
+            "raw_exercise_id"
+          ],
+          "warnings": []
+        }
+      ]
+    },
+    "6m": {
+      "ms": 2747,
+      "window": {
+        "start": "2026-05-01",
+        "end": "2026-10-30"
+      },
+      "poolSize": 54,
+      "selectedSize": 20,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_arc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ],
+      "composedOkSelected": 5,
+      "narratedSelected": 5,
+      "depthCounts": {
+        "composed": 3,
+        "deep": 2
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 5,
+        "compositionUsedInText": 5,
+        "withMechanism": 5,
+        "withContinuity": 5,
+        "withComparator": 5
+      },
+      "f4Debug": {
+        "narrated": 11,
+        "polished": 0,
+        "depth": [
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre : volume par séance stable"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Dips : recul confirmé sur plusieurs séances"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Dips : volume par séance stable"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "deep",
+            "title": "Tractions australiennes — prise large pronation : un format plus volumineux se maintient"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "Pompes déclinées : recul confirmé sur plusieurs séances"
+          },
+          {
+            "kind": "disc_emergence",
+            "depth": "composed",
+            "title": "un mouvement : volume par séance stable"
+          },
+          {
+            "kind": "disc_exercise_progress",
+            "depth": "deep",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          {
+            "kind": "disc_structural_memory",
+            "depth": "composed",
+            "title": "Relevés de genoux à la barre : volume par séance stable"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "composed",
+            "title": "Dips : volume par séance en hausse"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "deep",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          {
+            "kind": "disc_freq_progress_low",
+            "depth": "composed",
+            "title": "Face pull : une séance plus chargée, sans consolidation"
+          }
+        ],
+        "editorialTrace": [
+          {
+            "kind": "disc_ms_pr",
+            "title": "Meilleure série observée : 12 exercice 146651247",
+            "rejects": [
+              "raw_exercise_id"
+            ],
+            "warnings": []
+          },
+          {
+            "kind": "disc_ms_first_exercise",
+            "title": "Première apparition : Exercice 728134920",
+            "rejects": [
+              "raw_exercise_id"
+            ],
+            "warnings": []
+          }
+        ]
+      },
+      "beforeAfter": [
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Dips s'installe dans ton entraînement",
+          "titleAfter": "Dips : recul confirmé sur plusieurs séances",
+          "bodyBefore": "Dips apparaît sur 19 séances réparties sur 112 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 643 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 643 répétitions font 26,2 % des 2 457 répétitions de pectoraux de la période.",
+          "bodyAfter": "Sur 19 séances comparables, le volume de répétitions enregistré sur Dips passe d’environ 40 à 48 répétitions par séance, soit une hausse d’environ 20 %. Sur les séances où le détail de séries est connu, le format reste du même ordre (4 × 12 comme 4 × 12). Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique.",
+          "continuity": "directional_change",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "deep",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+          "titleAfter": "Tractions australiennes — prise large pronation : un format plus volumineux se maintient",
+          "bodyBefore": "Tractions australiennes — prise large pronation : tu es passé d’environ 4 × 10 à environ 4 × 12, soit une hausse de 20 % du volume par séance, reproduite sur les séances suivantes. Le nombre de séries reste ~4 ; les répétitions par série augmentent (~10 → ~12). 1 séance du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Au total, 564 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 564 répétitions font 40,0 % des 1 411 répétitions de dos de la période.",
+          "bodyAfter": "Sur 13 séances comparables, le volume de répétitions enregistré sur Tractions australiennes — prise large pronation passe d’environ 40 à 48 répétitions par séance, soit une hausse d’environ 20 %. Le nombre de séries reste proche de 4 ; les répétitions par série augmentent (environ 10 → 12). Il ne s’agit donc pas seulement d’une séance exceptionnelle : le journal montre une organisation du travail reproduite. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 18 répétitions par séance) et Tractions australiennes — prise pronation (autour de 48 répétitions par séance) et Oiseaux (autour de 45 répétitions par séance) restent stables. Cela montre une augmentation maintenue du volume réalisé, sans suffire à démontrer à elle seule une progression physiologique.",
+          "continuity": "consolidated_format",
+          "attribution": null,
+          "setMechanism": "same_sets_more_reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées s'installe dans ton entraînement",
+          "titleAfter": "Pompes déclinées : recul confirmé sur plusieurs séances",
+          "bodyBefore": "Pompes déclinées apparaît sur 16 séances réparties sur 112 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 3 × 12 à environ 3 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 528 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 528 répétitions font 21,5 % des 2 457 répétitions de pectoraux de la période.",
+          "bodyAfter": "Le volume de répétitions enregistré sur Pompes déclinées passe d’environ 69.3 à 25.3 répétitions par séance, soit une baisse d’environ 63.5 %. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 12 comme 3 × 12). Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique.",
+          "continuity": "directional_change",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_emergence",
+          "depth": "composed",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Dips s'installe dans ton entraînement",
+          "titleAfter": "Dips : volume par séance stable",
+          "bodyBefore": "Dips apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 612 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 612 répétitions font 24,9 % des 2 457 répétitions de pectoraux de la période.",
+          "bodyAfter": "Dips apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Sur les séances où le détail de séries est connu, le format reste du même ordre (4 × 12 comme 4 × 12). Le volume par séance reste récemment stable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé.",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "depth": "deep",
+          "factsUsed": [
+            "decomposition",
+            "continuity",
+            "comparators",
+            "f4Narration"
+          ],
+          "titleBefore": "Pompes déclinées : recul puis retour au niveau de départ",
+          "titleAfter": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "bodyBefore": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Plusieurs mouvements comparables baissent aussi (Dips (autour de 27 répétitions par séance) et Pompes lestées (autour de 40 répétitions par séance)) : le signal dépasse cet exercice seul, sans que les données prouvent une cause unique. Le retour près du niveau de départ est confirmé sur les séances récentes : le maintenir sur les prochaines séances avant de changer la dose.",
+          "bodyAfter": "Le volume de répétitions enregistré sur Pompes déclinées passe d’environ 27.3 à 25.3 répétitions par séance. Sur les séances où le détail de séries est connu, le format reste du même ordre (3 × 12 comme 3 × 12). Après un creux, les séances récentes reviennent près du niveau de départ. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "setMechanism": "stable_format"
+        }
+      ],
+      "editorialWarnings": [
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "rejects": [
+            "raw_exercise_id"
+          ],
+          "warnings": []
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "rejects": [
+            "raw_exercise_id"
+          ],
+          "warnings": []
+        }
+      ]
+    }
+  }
+}

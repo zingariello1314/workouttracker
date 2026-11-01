@@ -1,0 +1,4800 @@
+{
+  "generatedAt": "2026-11-01T00:28:32.597Z",
+  "source": "docs/analyses-documentation/fixtures/workout-main-jul-oct-2026.json",
+  "kindCountInSourceScan": 133,
+  "kindsSeenInReplay": 47,
+  "kindsSourceOnly": [
+    "disc_cardio_strength",
+    "disc_comparable",
+    "disc_composition_not_volume",
+    "disc_freq_high_no_progress",
+    "disc_freq_progress_high",
+    "disc_gtg_",
+    "disc_gtg_unplanned_progress",
+    "disc_kcal_profile",
+    "disc_ms_",
+    "disc_ms_day_volume",
+    "disc_ms_first",
+    "disc_ms_first_hour",
+    "disc_ms_first_load",
+    "disc_ms_first_run",
+    "disc_ms_first_session",
+    "disc_ms_goal",
+    "disc_ms_goal_run",
+    "disc_ms_goal_weight",
+    "disc_ms_hours",
+    "disc_ms_km",
+    "disc_ms_mix_shift",
+    "disc_ms_pr_consolidated",
+    "disc_ms_pr_density",
+    "disc_ms_pr_load",
+    "disc_ms_pr_pace",
+    "disc_ms_regime",
+    "disc_ms_return_gtg",
+    "disc_ms_return_run",
+    "disc_ms_sleep_combo",
+    "disc_ms_week_freq",
+    "disc_ms_weight",
+    "disc_muscle_exposure_contrast",
+    "disc_muscle_movement_structure",
+    "disc_muscle_plan_vs_actual",
+    "disc_offplan_pattern",
+    "disc_p35_cross_gtg_difficulte",
+    "disc_p35_feedback_difficulte",
+    "disc_p35_gap_nature",
+    "disc_p35_gtg_movement_share",
+    "disc_p36_exercise_dominant_freq",
+    "disc_p36_exercise_dominant_volume",
+    "disc_p36_habit_stability_weeks",
+    "disc_p36_proven_adherence_weekday",
+    "disc_p36_weekday_volume",
+    "disc_peak_day",
+    "disc_pending_context",
+    "disc_pending_session",
+    "disc_plan_follow_rate",
+    "disc_plan_recurring_skip",
+    "disc_program_revision_before_after_obs",
+    "disc_program_revision_exercise_churn",
+    "disc_program_revision_frequency",
+    "disc_program_revision_insufficient",
+    "disc_program_revision_structural",
+    "disc_rest_day",
+    "disc_sleep_",
+    "disc_sleep_architecture",
+    "disc_sleep_assoc",
+    "disc_sleep_cardio",
+    "disc_sleep_combo",
+    "disc_sleep_context",
+    "disc_sleep_deep",
+    "disc_sleep_delayed",
+    "disc_sleep_drift",
+    "disc_sleep_efficiency",
+    "disc_sleep_family",
+    "disc_sleep_freq",
+    "disc_sleep_intensity",
+    "disc_sleep_j2",
+    "disc_sleep_load",
+    "disc_sleep_month",
+    "disc_sleep_night",
+    "disc_sleep_perf",
+    "disc_sleep_quarter",
+    "disc_sleep_reference",
+    "disc_sleep_regularity",
+    "disc_sleep_rhythm_habit",
+    "disc_sleep_rhythm_obs",
+    "disc_sleep_rpe",
+    "disc_sleep_tolerance",
+    "disc_sleep_volume",
+    "disc_sleep_week",
+    "disc_sleep_weekend",
+    "disc_sleep_zones",
+    "disc_steps_level",
+    "disc_steps_split"
+  ],
+  "register": [
+    {
+      "kind": "disc_anchor",
+      "family": "period_weight",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapP36Kinds.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_best_month",
+      "family": "best_month",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_calendar_rhythm",
+      "family": "calendar_rhythm",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_cardio_strength",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_comparable",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_composition_not_volume",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_density",
+      "family": "density",
+      "natureHint": "now",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_emergence",
+      "family": "emergence",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_exercise_base",
+      "family": "exercise_structure",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "family": "exercise_progress",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapHorizonEssays.js",
+        "src/utils/sport/recapNarrativeClaims.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_exercise_share",
+      "family": "exercise_share",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapP36Kinds.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_family_fade",
+      "family": "family_fade",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapHorizonEssays.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_freq_continuity",
+      "family": "freq_span",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapP36Kinds.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_freq_decline_low_exposure",
+      "family": "program_freq_progress",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_freq_high_no_progress",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_freq_progress_high",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_freq_progress_low",
+      "family": "program_freq_progress",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_gtg_",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/analysisEngineDiagnostic.js"
+      ]
+    },
+    {
+      "kind": "disc_gtg_unplanned_now",
+      "family": "gtg_unplanned",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapGtgUnplannedReading.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_gtg_unplanned_progress",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapGtgUnplannedReading.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_gtg_unplanned_role",
+      "family": "gtg_unplanned",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapGtgUnplannedReading.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_kcal_profile",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/analysisEngineDiagnostic.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_cumul",
+      "family": "ms_threshold",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js",
+        "src/utils/sport/recapNarrativeClaims.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_day_volume",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_event_combo",
+      "family": "ms_combo",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_first",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_first_exercise",
+      "family": "ms_first",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_first_hour",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_first_load",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_first_run",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_first_session",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_goal",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_goal_run",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_goal_weight",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_hours",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_km",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_mix_shift",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_pr",
+      "family": "ms_pr",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_pr_consolidated",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_pr_density",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_pr_load",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_pr_pace",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_regime",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_return",
+      "family": "ms_return",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_return_durable",
+      "family": "ms_return",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_return_gtg",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_return_run",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_sessions",
+      "family": "ms_threshold",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapMilestoneEngine.js",
+        "src/utils/sport/recapNarrativeClaims.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_sleep_combo",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_week_freq",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js"
+      ]
+    },
+    {
+      "kind": "disc_ms_weight",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapMilestoneEngine.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_exposure_contrast",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapMuscleP32bDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_exposure_shift",
+      "family": "muscle_p32b_exposure",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapMuscleP32bDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_ledger_limits",
+      "family": "muscle_p32b_limits",
+      "natureHint": "trajectory",
+      "contentClass": "methodology_limit",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapMuscleP32bDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_movement_structure",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapMuscleP32bDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_now",
+      "family": "muscle_now",
+      "natureHint": "now",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_plan_vs_actual",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapMuscleP32bDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_reorient",
+      "family": "muscle_shift",
+      "natureHint": "trajectory",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_muscle_share_shift",
+      "family": "muscle_shift",
+      "natureHint": "trajectory",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_no_running",
+      "family": "no_running",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapHorizonEssays.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_offplan_pattern",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapP35Kinds.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_p35_cross_gtg_difficulte",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapP35Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p35_feedback_difficulte",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapP35Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p35_gap_nature",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapP35Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p35_gtg_coexistence",
+      "family": "p35",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapP35Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p35_gtg_movement_share",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapP35Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p35_gtg_outside_classic",
+      "family": "p35",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapP35Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_exercise_dominant_freq",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_exercise_dominant_volume",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_freq_vs_volume_weekday",
+      "family": "p36",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_habit_stability_weeks",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_proven_adherence_weekday",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_weekday_regularity",
+      "family": "p36",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_p36_weekday_volume",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapP36Kinds.js"
+      ]
+    },
+    {
+      "kind": "disc_peak_day",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_pending_context",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_pending_session",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapHorizonEssays.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_plan_data_insufficient",
+      "family": "program_adherence",
+      "natureHint": "trajectory",
+      "contentClass": "methodology_limit",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_plan_follow_rate",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapP35Kinds.js",
+        "src/utils/sport/recapP36Kinds.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_plan_recurring_skip",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapP35Kinds.js",
+        "src/utils/sport/recapP36Kinds.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/recapProgramAdherenceDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_program_revision_before_after_obs",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapProgramRevisionP34.js"
+      ]
+    },
+    {
+      "kind": "disc_program_revision_exercise_churn",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapProgramRevisionP34.js"
+      ]
+    },
+    {
+      "kind": "disc_program_revision_frequency",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapProgramRevisionP34.js"
+      ]
+    },
+    {
+      "kind": "disc_program_revision_insufficient",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapProgramRevisionP34.js"
+      ]
+    },
+    {
+      "kind": "disc_program_revision_journal_limit",
+      "family": "program_revision",
+      "natureHint": "trajectory",
+      "contentClass": "methodology_limit",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapProgramRevisionP34.js"
+      ]
+    },
+    {
+      "kind": "disc_program_revision_structural",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapProgramRevisionP34.js"
+      ]
+    },
+    {
+      "kind": "disc_push_pull",
+      "family": "push_pull",
+      "natureHint": "trajectory",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_quarter_arc",
+      "family": "quarter_profile",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_quarter_profile",
+      "family": "quarter_profile",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_ratio_structure",
+      "family": "ratios",
+      "natureHint": "trajectory",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_repertoire",
+      "family": "repertoire",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_rest_assoc",
+      "family": "rest_assoc",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_rest_day",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/analysisEngineDiagnostic.js",
+        "src/utils/sport/recapInsightNature.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_architecture",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_assoc",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapNarrativeClaims.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_cardio",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_combo",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapNarrativeClaims.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_context",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_deep",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_delayed",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_drift",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_efficiency",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_family",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_freq",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightValidate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_intensity",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_j2",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_load",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_month",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapNarrativeClaims.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_night",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_perf",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapNarrativeClaims.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_quarter",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_reference",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_regularity",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_rhythm_habit",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_rhythm_obs",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_rpe",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_tolerance",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_volume",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapNarrativeClaims.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_week",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_weekend",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapAnalysisProofs.js",
+        "src/utils/sport/recapPeriodDiscoveries.js",
+        "src/utils/sport/sleepRhythmAnalysis.js"
+      ]
+    },
+    {
+      "kind": "disc_sleep_zones",
+      "family": null,
+      "natureHint": "journey",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_steps_level",
+      "family": null,
+      "natureHint": "trajectory",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_steps_split",
+      "family": null,
+      "natureHint": "now",
+      "contentClass": null,
+      "seenInFixtureReplay": false,
+      "files": [
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_stimulus_mix",
+      "family": "stimulus_mix",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_structural_memory",
+      "family": "structural_memory",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/analysisEngineCopyProvenance.js",
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapInsightNature.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_th_pushPull_journey",
+      "family": "th_push_pull",
+      "natureHint": "journey",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "(runtime-only)"
+      ]
+    },
+    {
+      "kind": "disc_th_pushPull_now",
+      "family": "th_push_pull",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "(runtime-only)"
+      ]
+    },
+    {
+      "kind": "disc_th_pushPull_trajectory",
+      "family": "th_push_pull",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "(runtime-only)"
+      ]
+    },
+    {
+      "kind": "disc_th_rhythm_trajectory",
+      "family": "th_rhythm",
+      "natureHint": "trajectory",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "(runtime-only)"
+      ]
+    },
+    {
+      "kind": "disc_volume_shape",
+      "family": "volume_shape",
+      "natureHint": "now",
+      "contentClass": "descriptive",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapDiscoveryContentClass.js",
+        "src/utils/sport/recapEditorialGate.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    },
+    {
+      "kind": "disc_vs_habit",
+      "family": "vs_habit",
+      "natureHint": "now",
+      "contentClass": "analytical",
+      "seenInFixtureReplay": true,
+      "files": [
+        "src/utils/sport/insightSemanticThemes.js",
+        "src/utils/sport/recapPeriodDiscoveries.js"
+      ]
+    }
+  ],
+  "replays": {
+    "7d": {
+      "ms": 468,
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "poolSize": 31,
+      "selectedSize": 12,
+      "droppedSize": 22,
+      "reliabilityNotes": 3,
+      "selected": [
+        {
+          "kind": "disc_density",
+          "nature": "now",
+          "family": "density",
+          "contentClass": "descriptive",
+          "score": 70,
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "body": "Ces 7 jours concentre 1 371 répétitions en 20 min, soit environ 4 113 reps par heure. Sur tes 30 derniers jours, tu réalises en moyenne environ 5 240 reps par heure : ces 7 jours sont donc 21,5 % moins dense que ton rythme mensuel. , soit environ 343 répétitions et 5 min par séan",
+          "metricsKeys": [
+            "repsPerHour",
+            "vs30",
+            "vs7",
+            "readingBeats",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "nature": "now",
+          "family": "calendar_rhythm",
+          "contentClass": "analytical",
+          "score": 60,
+          "title": "Ces 7 jours : le volume repose sur peu de journées",
+          "body": "Du 28 octobre 2026 au 29 octobre 2026 reste sans séance. Sur 7 jours, 4 ont une séance et 3 n'en ont pas. Le creux calendaire est localisé du 28 octobre 2026 au 29 octobre 2026. Les jours sans séance font partie du rythme observé : ce n’est pas un trou à remplir automatiquement p",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "family": "vs_habit",
+          "contentClass": "analytical",
+          "score": 36,
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "body": "Tes séances de pompes déclinées se situent habituellement autour de 50 répétitions (médiane, écart interquartile 46,5–50). Les 36 répétitions du 30 octobre 2026 placent cette séance environ 28,0 % en dessous de ton niveau habituel. D'habitude, 5 séries de 10 répétitions. Cette sé",
+          "metricsKeys": [
+            "lastReps",
+            "median",
+            "exerciseId",
+            "name",
+            "sessionCount",
+            "historicalMean",
+            "lifetimeFirstMean",
+            "currentMean",
+            "lifetimeRecentInclLast",
+            "recentMean",
+            "lifetimeRecentExclLast",
+            "vsInitialPct",
+            "vsHabitPct",
+            "meanDefinitions",
+            "last",
+            "bestDate",
+            "dates",
+            "sessions",
+            "firstSessions",
+            "lastSessions",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_structural_memory",
+          "nature": "journey",
+          "family": "structural_memory",
+          "contentClass": "analytical",
+          "score": 72,
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "body": "Relevés de genoux à la barre pèsent désormais 120 reps sur 2 séances des 30 derniers jours, soit 26,3 % de ta tronc, alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20. Ce n'est plus une séance i",
+          "metricsKeys": [
+            "name",
+            "family",
+            "nowShare",
+            "thenShare",
+            "exerciseId",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint",
+            "trajectoryImplicationRule",
+            "trajectoryRichness"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 94,
+          "title": "Pompes déclinées revient après une interruption",
+          "body": "Pompes déclinées : Réapparition après 28 jours. Le volume par séance passe d’environ 5 × 10 à environ 5 × 10 (0 %). Ces 36 répétitions font 15,7 % des 229 répétitions de pectoraux de la période.",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_exercise_share",
+          "nature": "trajectory",
+          "family": "exercise_share",
+          "contentClass": "analytical",
+          "score": 78,
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 40 un mouvement ces 7",
+          "metricsKeys": [
+            "exercises",
+            "readingBeats",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "nature": "trajectory",
+          "family": "rest_assoc",
+          "contentClass": "analytical",
+          "score": 55,
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historiqu",
+          "metricsKeys": [
+            "restedAvg",
+            "denseAvg",
+            "deltaPct",
+            "restedN",
+            "denseN",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20"
+          ]
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "nature": "trajectory",
+          "family": "ms_return",
+          "contentClass": "analytical",
+          "score": 72,
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "body": "Depuis la reprise de relevés de genoux à la barre le 12 octobre 2026, tu as enchaîné 3 séances en 18 jours. L'interruption de 35 jours n'est plus l'événement : c'est la suite qui se construit.",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15"
+          ]
+        },
+        {
+          "kind": "disc_anchor",
+          "nature": "journey",
+          "family": "period_weight",
+          "contentClass": "analytical",
+          "score": 59,
+          "title": "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 7 jours représente à elle seule 31,4 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 7 jours sert de nouveau point d'ancra",
+          "metricsKeys": [
+            "ofMonthVol",
+            "monthReps",
+            "monthDays",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21"
+          ]
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "family": "exercise_progress",
+          "contentClass": "analytical",
+          "score": 63,
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 7 avant la fenêtre sélectionnée, 1 dedans), Pompes déclinées est passé par un creux (≈10 (2026-10-01)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mél",
+          "metricsKeys": [
+            "exerciseId",
+            "name",
+            "sessionCount",
+            "historicalMean",
+            "lifetimeFirstMean",
+            "currentMean",
+            "lifetimeRecentInclLast",
+            "recentMean",
+            "lifetimeRecentExclLast",
+            "vsInitialPct",
+            "vsHabitPct",
+            "meanDefinitions",
+            "last",
+            "bestDate",
+            "dates",
+            "sessions",
+            "firstSessions",
+            "lastSessions",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "nature": "journey",
+          "family": "quarter_profile",
+          "contentClass": "analytical",
+          "score": 48,
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "body": "Sur le trimestre, tu as réalisé 13 799 répétitions, dont environ 1 795 pectoraux, environ 1 151 triceps, environ 1 069 dos, environ 800 biceps. Ces 7 jours, la répartition observée peut s’écarter de cette structure historique (229 pectoraux, 103 triceps, 101 dos, 97 biceps). Ces ",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20"
+          ]
+        },
+        {
+          "kind": "disc_ms_pr",
+          "nature": "now",
+          "family": "ms_pr",
+          "contentClass": "analytical",
+          "score": 77,
+          "title": "Meilleure série observée : 12 exercice 146651247",
+          "body": "Meilleure série observée : 12 exercice 146651247. Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent 10).",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        }
+      ],
+      "dropped": [
+        {
+          "kind": "disc_family_fade",
+          "reason": "rival",
+          "title": "Relevés de genoux aux parallèles s'efface de ta tronc"
+        },
+        {
+          "kind": "disc_ms_pr",
+          "reason": "cap",
+          "title": "Meilleure série observée : 12 exercice 146651247"
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "reason": "cap",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour"
+        },
+        {
+          "kind": "disc_repertoire",
+          "reason": "rival",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni"
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "reason": "rival",
+          "title": "Cette semaine s'inscrit dans une pratique déjà documentée"
+        },
+        {
+          "kind": "disc_no_running",
+          "reason": "score",
+          "title": "La charge de la semaine provient entièrement des exercices de renforcement"
+        },
+        {
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global"
+        },
+        {
+          "kind": "disc_muscle_reorient",
+          "reason": "score",
+          "title": "La part attribuée aux biceps de la semaine ressort face aux 30 derniers jours"
+        },
+        {
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "title": "Les pectoraux porte 16,7 % du volume de cette semaine"
+        },
+        {
+          "kind": "disc_push_pull",
+          "reason": "score",
+          "title": "La poussée domine nettement le tirage de la semaine"
+        },
+        {
+          "kind": "disc_plan_data_insufficient",
+          "reason": "methodology_demoted",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        },
+        {
+          "kind": "disc_program_revision_journal_limit",
+          "reason": "methodology_demoted",
+          "title": "Historique de révisions de programme indisponible"
+        },
+        {
+          "kind": "disc_volume_shape",
+          "reason": "editorial_gate",
+          "title": "Le rythme de la semaine reste lisible par rapport à ton habitude"
+        },
+        {
+          "kind": "disc_th_pushPull_now",
+          "reason": "insight_validation:internal_chip",
+          "title": "Le haut du corps travaille surtout en poussée"
+        },
+        {
+          "kind": "disc_ms_pr",
+          "reason": "insight_validation:raw_exercise_id",
+          "title": "Meilleure série observée : 12 exercice 146651247"
+        },
+        {
+          "kind": "disc_exercise_base",
+          "reason": "editorial_gate",
+          "title": "Le socle hebdomadaire n’est pas le même que ce qui structure une séance"
+        },
+        {
+          "kind": "disc_stimulus_mix",
+          "reason": "editorial_gate",
+          "title": "Le mix force / endurance / poly de la semaine se lit dans les parts, pas dans le total"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "reason": "insight_validation:internal_chip",
+          "title": "Ces 7 jours sont au-dessus du rythme de renforcement d'avant"
+        },
+        {
+          "kind": "disc_th_pushPull_trajectory",
+          "reason": "editorial_gate",
+          "title": "Le haut du corps travaille surtout en poussée"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "reason": "editorial_gate",
+          "title": "La structure de la semaine se lit dans les ratios, pas seulement dans le total"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "reason": "editorial_gate",
+          "title": "Le haut du corps travaille surtout en poussée"
+        }
+      ],
+      "poolKinds": [
+        "disc_anchor",
+        "disc_calendar_rhythm",
+        "disc_density",
+        "disc_emergence",
+        "disc_exercise_base",
+        "disc_exercise_progress",
+        "disc_exercise_share",
+        "disc_family_fade",
+        "disc_freq_continuity",
+        "disc_ms_pr",
+        "disc_ms_return_durable",
+        "disc_muscle_ledger_limits",
+        "disc_muscle_now",
+        "disc_muscle_reorient",
+        "disc_muscle_share_shift",
+        "disc_no_running",
+        "disc_plan_data_insufficient",
+        "disc_program_revision_journal_limit",
+        "disc_push_pull",
+        "disc_quarter_profile",
+        "disc_ratio_structure",
+        "disc_repertoire",
+        "disc_rest_assoc",
+        "disc_stimulus_mix",
+        "disc_structural_memory",
+        "disc_th_pushPull_journey",
+        "disc_th_pushPull_now",
+        "disc_th_pushPull_trajectory",
+        "disc_th_rhythm_trajectory",
+        "disc_volume_shape",
+        "disc_vs_habit"
+      ],
+      "selectedKinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ]
+    },
+    "30d": {
+      "ms": 1014,
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "poolSize": 43,
+      "selectedSize": 19,
+      "droppedSize": 28,
+      "reliabilityNotes": 3,
+      "selected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "nature": "now",
+          "family": "gtg_unplanned",
+          "contentClass": "analytical",
+          "score": 90,
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune min",
+          "metricsKeys": [
+            "sets",
+            "reps",
+            "role",
+            "band",
+            "dates",
+            "series"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_volume_shape",
+          "nature": "now",
+          "family": "volume_shape",
+          "contentClass": "descriptive",
+          "score": 75,
+          "title": "Le volume du mois dépasse la période précédente",
+          "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc péri",
+          "metricsKeys": [
+            "volPct",
+            "freqPct",
+            "windowSpanDays",
+            "baselineSpanDays",
+            "baselineSameLength",
+            "readingBeats",
+            "dates",
+            "daysDetail",
+            "sessions",
+            "trainingDays",
+            "totalReps",
+            "windowStart",
+            "windowEnd",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "nature": "now",
+          "family": "calendar_rhythm",
+          "contentClass": "analytical",
+          "score": 52,
+          "title": "Ces 30 jours mêlent un bloc chargé et un creux",
+          "body": "Du 13 octobre 2026 au 14 octobre 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 324 répétitions, pic 536). Du 7 octobre 2026 au 11 octobre 2026 reste sans séance. Sur 30 jours, 16 ont une séance et 14 n'en ont pas. Le pic vaut environ 1,7 fois la médiane de s",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "family": "vs_habit",
+          "contentClass": "analytical",
+          "score": 36,
+          "title": "Face pull : ces 30 jours sont au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. C",
+          "metricsKeys": [
+            "lastReps",
+            "median",
+            "exerciseId",
+            "name",
+            "sessionCount",
+            "historicalMean",
+            "lifetimeFirstMean",
+            "currentMean",
+            "lifetimeRecentInclLast",
+            "recentMean",
+            "lifetimeRecentExclLast",
+            "vsInitialPct",
+            "vsHabitPct",
+            "meanDefinitions",
+            "last",
+            "bestDate",
+            "dates",
+            "sessions",
+            "firstSessions",
+            "lastSessions",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_ms_return",
+          "nature": "now",
+          "family": "ms_return",
+          "contentClass": "analytical",
+          "score": 91,
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21"
+          ]
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "family": "p35",
+          "contentClass": "analytical",
+          "score": 43,
+          "title": "GTG et séances classiques",
+          "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement ",
+          "informativeValue": 72,
+          "proofLevel": "observed_channels",
+          "metricsKeys": [
+            "phase",
+            "contentClass",
+            "informativeValue",
+            "calendarDays",
+            "classicActiveDays",
+            "classicOnlyDays",
+            "gtgActiveDays",
+            "gtgOnlyDays",
+            "bothDays",
+            "daysWithoutClassicExclusive",
+            "daysWithNoRecordedActivity",
+            "activeChannelDays",
+            "note",
+            "gtgShareOfActiveDays",
+            "bothShareOfGtgDays",
+            "proofLevel",
+            "p35ComputeMs"
+          ],
+          "evidenceKeys": [
+            "phase",
+            "classicOnlyDays",
+            "gtgOnlyDays",
+            "bothDays",
+            "activeChannelDays"
+          ]
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "family": "p36",
+          "contentClass": "analytical",
+          "score": 42,
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une in",
+          "informativeValue": 74,
+          "proofLevel": "eligible_weekday_rates",
+          "metricsKeys": [
+            "phase",
+            "contentClass",
+            "informativeValue",
+            "proofLevel",
+            "metric",
+            "p36ComputeMs"
+          ],
+          "evidenceKeys": [
+            "phase",
+            "tiedGroup"
+          ]
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "nature": "trajectory",
+          "family": "program_freq_progress",
+          "contentClass": "analytical",
+          "score": 56,
+          "title": "un mouvement : progression malgré une exposition faible",
+          "body": "un mouvement n’apparaît que sur 3 jours d’exposition (3 classiques) — rythme ≈ 0.7/semaine — avec un volume de 126 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 35 à 45 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). L",
+          "metricsKeys": [
+            "exerciseId",
+            "name",
+            "exposureDayCount",
+            "classicSessionCount",
+            "gtgExposureDays",
+            "volumeReps",
+            "sessionsPerWeek",
+            "freqBand",
+            "primaryStory",
+            "plannedOccurrences",
+            "plannedFreqUsable",
+            "trajectoryOk",
+            "earlyMean",
+            "lateMean",
+            "shapeDelta",
+            "interpretingWithHistory",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19"
+          ]
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "nature": "trajectory",
+          "family": "program_freq_progress",
+          "contentClass": "analytical",
+          "score": 52,
+          "title": "Pompes déclinées : recul et exposition faible coïncident",
+          "body": "Pompes déclinées combine un recul net avec seulement 3 jours d’exposition (≈ 0.7/sem., volume 120 reps). Les niveaux comparés par la trajectoire P0 passent d’environ 53 à 40 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La co-occurrence est éta",
+          "metricsKeys": [
+            "exerciseId",
+            "name",
+            "exposureDayCount",
+            "classicSessionCount",
+            "gtgExposureDays",
+            "volumeReps",
+            "sessionsPerWeek",
+            "freqBand",
+            "primaryStory",
+            "plannedOccurrences",
+            "plannedFreqUsable",
+            "trajectoryOk",
+            "earlyMean",
+            "lateMean",
+            "shapeDelta",
+            "interpretingWithHistory",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 91,
+          "title": "un mouvement s'installe dans ton entraînement",
+          "body": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le nombre de séries reste ~3 ; les répétitions par série augmentent (~10 → ~12). 1 séance du creux n’ont qu’un total de répétitions : la structure de séries pendant",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 94,
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "body": "Relevés de genoux à la barre : Réapparition après 35 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %), et ce format se maintient sur les séances suivantes. Ces 180 répétitions font 70,9 % des 254 répétitions de gainage/tronc de la période.",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 93,
+          "title": "un mouvement s'installe dans ton entraînement",
+          "body": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 144 répétitions sur la période, c",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "nature": "trajectory",
+          "family": "rest_assoc",
+          "contentClass": "analytical",
+          "score": 55,
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historiqu",
+          "metricsKeys": [
+            "restedAvg",
+            "denseAvg",
+            "deltaPct",
+            "restedN",
+            "denseN",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20"
+          ]
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "family": "exercise_progress",
+          "contentClass": "analytical",
+          "score": 63,
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 2 avant la fenêtre sélectionnée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (2026-10-01)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mél",
+          "metricsKeys": [
+            "exerciseId",
+            "name",
+            "sessionCount",
+            "historicalMean",
+            "lifetimeFirstMean",
+            "currentMean",
+            "lifetimeRecentInclLast",
+            "recentMean",
+            "lifetimeRecentExclLast",
+            "vsInitialPct",
+            "vsHabitPct",
+            "meanDefinitions",
+            "last",
+            "bestDate",
+            "dates",
+            "sessions",
+            "firstSessions",
+            "lastSessions",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "nature": "journey",
+          "family": "quarter_profile",
+          "contentClass": "analytical",
+          "score": 48,
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+          "body": "Sur le trimestre, tu as réalisé 13 799 répétitions, dont environ 1 795 pectoraux, environ 1 151 triceps, environ 1 053 épaules, environ 1 069 dos. Ce mois, la répartition observée peut s’écarter de cette structure historique (617 pectoraux, 384 triceps, 341 épaules, 335 dos). Ces",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20"
+          ]
+        },
+        {
+          "kind": "disc_anchor",
+          "nature": "journey",
+          "family": "period_weight",
+          "contentClass": "analytical",
+          "score": 59,
+          "title": "Ces 30 jours devient un nouveau point d'ancrage dans ton historique",
+          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'an",
+          "metricsKeys": [
+            "ofMonthVol",
+            "monthReps",
+            "monthDays",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22"
+          ]
+        },
+        {
+          "kind": "disc_repertoire",
+          "nature": "journey",
+          "family": "repertoire",
+          "contentClass": "analytical",
+          "score": 56,
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "body": "Pompes (endurance) : 500 ce mois sur 500 en 30 jours. Relevés de genoux à la barre : 180 ce mois sur 180 en 30 jours. Dips : 174 ce mois sur 174 en 30 jours. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble : Momentum peut suivre l'évolutio",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 92,
+          "title": "Relevés de genoux à la barre revient après une interruption",
+          "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %). Ces 120 répétitions font 47,2 % des 254 répétitions de gainage/tronc de la période.",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "nature": "trajectory",
+          "family": "ms_return",
+          "contentClass": "analytical",
+          "score": 76,
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15"
+          ]
+        }
+      ],
+      "dropped": [
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "Relevés de genoux à la barre revient après une interruption"
+        },
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "un mouvement : format repris, pas encore installé"
+        },
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "un mouvement entre dans ton historique"
+        },
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "un mouvement : format repris, pas encore installé"
+        },
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "un mouvement entre dans ton historique"
+        },
+        {
+          "kind": "disc_ms_return",
+          "reason": "cap",
+          "title": "Tu reprends Relevés de genoux aux parallèles après 42 jours d'absence"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "reason": "cap",
+          "title": "Relevés de genoux à la barre revient après une interruption"
+        },
+        {
+          "kind": "disc_family_fade",
+          "reason": "outranked_by_richer",
+          "title": "Relevés de genoux aux parallèles s'efface de ta tronc"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "reason": "family",
+          "title": "un mouvement : progression malgré une exposition faible"
+        },
+        {
+          "kind": "disc_ms_pr",
+          "reason": "cap",
+          "title": "Meilleure série observée : 12 exercice 146651247"
+        },
+        {
+          "kind": "disc_ms_event_combo",
+          "reason": "cap",
+          "title": "Reprise et niveau habituel le même jour"
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "reason": "cap",
+          "title": "La reprise de pompes déclinées est devenue durable"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "cap",
+          "title": "Biceps : davantage de jours d’exposition qu’en période précédente"
+        },
+        {
+          "kind": "disc_th_pushPull_trajectory",
+          "reason": "cap",
+          "title": "Le haut du corps travaille surtout en poussée"
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "reason": "rival",
+          "title": "GTG hors séances classiques"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "reason": "cap",
+          "title": "La structure du mois se lit dans les ratios, pas seulement dans le total"
+        },
+        {
+          "kind": "disc_no_running",
+          "reason": "score",
+          "title": "La charge du mois provient entièrement des exercices de renforcement"
+        },
+        {
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global"
+        },
+        {
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "title": "Les pectoraux porte 14,1 % du volume de ces 30 jours"
+        },
+        {
+          "kind": "disc_push_pull",
+          "reason": "score",
+          "title": "La poussée domine nettement le tirage du mois"
+        },
+        {
+          "kind": "disc_plan_data_insufficient",
+          "reason": "methodology_demoted",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        },
+        {
+          "kind": "disc_program_revision_journal_limit",
+          "reason": "methodology_demoted",
+          "title": "Historique de révisions de programme indisponible"
+        },
+        {
+          "kind": "disc_th_pushPull_now",
+          "reason": "insight_validation:internal_chip",
+          "title": "Le haut du corps travaille surtout en poussée"
+        },
+        {
+          "kind": "disc_stimulus_mix",
+          "reason": "editorial_gate",
+          "title": "Le mix force / endurance / poly du mois se lit dans les parts, pas dans le total"
+        },
+        {
+          "kind": "disc_ms_event_combo",
+          "reason": "editorial_gate",
+          "title": "Reprise et niveau habituel le même jour"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "reason": "editorial_gate",
+          "title": "Le haut du corps travaille surtout en poussée"
+        }
+      ],
+      "poolKinds": [
+        "disc_anchor",
+        "disc_calendar_rhythm",
+        "disc_emergence",
+        "disc_exercise_progress",
+        "disc_family_fade",
+        "disc_freq_decline_low_exposure",
+        "disc_freq_progress_low",
+        "disc_gtg_unplanned_now",
+        "disc_gtg_unplanned_role",
+        "disc_ms_event_combo",
+        "disc_ms_pr",
+        "disc_ms_return",
+        "disc_ms_return_durable",
+        "disc_muscle_exposure_shift",
+        "disc_muscle_ledger_limits",
+        "disc_muscle_now",
+        "disc_muscle_share_shift",
+        "disc_no_running",
+        "disc_p35_gtg_coexistence",
+        "disc_p35_gtg_outside_classic",
+        "disc_p36_weekday_regularity",
+        "disc_plan_data_insufficient",
+        "disc_program_revision_journal_limit",
+        "disc_push_pull",
+        "disc_quarter_profile",
+        "disc_ratio_structure",
+        "disc_repertoire",
+        "disc_rest_assoc",
+        "disc_stimulus_mix",
+        "disc_structural_memory",
+        "disc_th_pushPull_journey",
+        "disc_th_pushPull_now",
+        "disc_th_pushPull_trajectory",
+        "disc_volume_shape",
+        "disc_vs_habit"
+      ],
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_emergence",
+        "disc_ms_return_durable"
+      ]
+    },
+    "3m": {
+      "ms": 1819,
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "poolSize": 52,
+      "selectedSize": 21,
+      "droppedSize": 35,
+      "reliabilityNotes": 3,
+      "selected": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "nature": "now",
+          "family": "gtg_unplanned",
+          "contentClass": "analytical",
+          "score": 90,
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune min",
+          "metricsKeys": [
+            "sets",
+            "reps",
+            "role",
+            "band",
+            "dates",
+            "series"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_volume_shape",
+          "nature": "now",
+          "family": "volume_shape",
+          "contentClass": "descriptive",
+          "score": 74,
+          "title": "Le trimestre a un volume et un rythme, pas seulement un total",
+          "body": "Cette période totalise 13 533 répétitions en 41 jours entraînés, soit environ 294 reps par séance. La question n'est pas « tu manques de régularité » : c'est comment ce volume se construit. Aucune course : la charge est entièrement du renforcement. Les 30 derniers jours (4 367 re",
+          "metricsKeys": [
+            "totalReps",
+            "trainingDays",
+            "rateSource",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18"
+          ]
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "nature": "now",
+          "family": "calendar_rhythm",
+          "contentClass": "analytical",
+          "score": 52,
+          "title": "Cette période mêlent un bloc chargé et un creux",
+          "body": "Du 8 août 2026 au 9 août 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 298 répétitions, pic 548). Du 20 septembre 2026 au 24 septembre 2026 reste sans séance. Sur 91 jours, 46 ont une séance et 45 n'en ont pas. Le pic vaut environ 1,8 fois la médiane de séan",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "family": "vs_habit",
+          "contentClass": "analytical",
+          "score": 36,
+          "title": "Face pull : cette période est au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. C",
+          "metricsKeys": [
+            "lastReps",
+            "median",
+            "exerciseId",
+            "name",
+            "sessionCount",
+            "historicalMean",
+            "lifetimeFirstMean",
+            "currentMean",
+            "lifetimeRecentInclLast",
+            "recentMean",
+            "lifetimeRecentExclLast",
+            "vsInitialPct",
+            "vsHabitPct",
+            "meanDefinitions",
+            "last",
+            "bestDate",
+            "dates",
+            "sessions",
+            "firstSessions",
+            "lastSessions",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_ms_return",
+          "nature": "now",
+          "family": "ms_return",
+          "contentClass": "analytical",
+          "score": 91,
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21"
+          ]
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "family": "p35",
+          "contentClass": "analytical",
+          "score": 43,
+          "title": "GTG et séances classiques",
+          "body": "Sur 46 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 40 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquemen",
+          "informativeValue": 72,
+          "proofLevel": "observed_channels",
+          "metricsKeys": [
+            "phase",
+            "contentClass",
+            "informativeValue",
+            "calendarDays",
+            "classicActiveDays",
+            "classicOnlyDays",
+            "gtgActiveDays",
+            "gtgOnlyDays",
+            "bothDays",
+            "daysWithoutClassicExclusive",
+            "daysWithNoRecordedActivity",
+            "activeChannelDays",
+            "note",
+            "gtgShareOfActiveDays",
+            "bothShareOfGtgDays",
+            "proofLevel",
+            "p35ComputeMs"
+          ],
+          "evidenceKeys": [
+            "phase",
+            "classicOnlyDays",
+            "gtgOnlyDays",
+            "bothDays",
+            "activeChannelDays"
+          ]
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "family": "p36",
+          "contentClass": "analytical",
+          "score": 42,
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 76,9 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à u",
+          "informativeValue": 74,
+          "proofLevel": "eligible_weekday_rates",
+          "metricsKeys": [
+            "phase",
+            "contentClass",
+            "informativeValue",
+            "proofLevel",
+            "metric",
+            "p36ComputeMs"
+          ],
+          "evidenceKeys": [
+            "phase",
+            "tiedGroup"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 94,
+          "title": "Pompes déclinées dans la période",
+          "body": "6 séances sur 54 jours. Le volume par séance passe d’environ 4 × 15 à environ 4 × 10 (-33.3 %), et ce format se maintient sur les séances suivantes. Au total, 280 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 280 répétitions font 16,1 % des 1",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 93,
+          "title": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "body": "Relevés de genoux aux parallèles apparaît sur 6 séances réparties sur 77 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 2 × 20 à environ 2 × 20 (0 %), et ce format se maintient sur les séances suivantes. Au total, 240 répétitio",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 92,
+          "title": "un mouvement : format repris, pas encore installé",
+          "body": "un mouvement apparaît sur 2 séances réparties sur 14 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 5 × 20 à environ 5 × 20 (0 %). Au total,",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 88,
+          "title": "un mouvement s'installe dans ton entraînement",
+          "body": "un mouvement apparaît sur 4 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 3 × 15 à environ 3 × 15 (0 %). Au total, 160 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 91,
+          "title": "un mouvement : format repris, pas encore installé",
+          "body": "un mouvement apparaît sur 2 séances réparties sur 14 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 5 × 20 à environ 5 × 20 (0 %). Au total,",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "family": "emergence",
+          "contentClass": "analytical",
+          "score": 90,
+          "title": "un mouvement s'installe dans ton entraînement",
+          "body": "un mouvement apparaît sur 4 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 192 répétitions sur la période, c",
+          "metricsKeys": [
+            "exerciseId",
+            "factId",
+            "name",
+            "dates",
+            "sessionCount",
+            "lastDate",
+            "gapDays",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode",
+            "trajectoryInstallation",
+            "trajectoryShape",
+            "trajectoryPath",
+            "trajectoryPrimaryStory",
+            "trajectorySetMechanism",
+            "trajectorySetAvailable",
+            "trajectorySetGranularity",
+            "trajectoryPeers",
+            "trajectoryReferenceLevels",
+            "peersSkippedSameLabel",
+            "trajectoryTitleHint"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "nature": "trajectory",
+          "family": "rest_assoc",
+          "contentClass": "analytical",
+          "score": 55,
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historiqu",
+          "metricsKeys": [
+            "restedAvg",
+            "denseAvg",
+            "deltaPct",
+            "restedN",
+            "denseN",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20"
+          ]
+        },
+        {
+          "kind": "disc_best_month",
+          "nature": "journey",
+          "family": "best_month",
+          "contentClass": "analytical",
+          "score": 65,
+          "title": "août 2026 concentre la part la plus productive de la période",
+          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition.",
+          "metricsKeys": [
+            "ym",
+            "reps",
+            "days",
+            "share",
+            "dates",
+            "daysDetail",
+            "sessions",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "nature": "journey",
+          "family": "quarter_profile",
+          "contentClass": "analytical",
+          "score": 64,
+          "title": "Le trimestre a une trajectoire interne, pas seulement un total",
+          "body": "Les 30 derniers jours totalisent 4 367 reps en 12 jours, contre 5 344 reps en 17 jours au début du trimestre (−18,3 %, fréquence −29,4 %). Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxième version du court terme.",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "family": "exercise_progress",
+          "contentClass": "analytical",
+          "score": 63,
+          "title": "Pompes déclinées : recul puis retour au niveau de départ",
+          "body": "Pompes déclinées est passé par un creux (≈10 (2026-10-01)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances o",
+          "metricsKeys": [
+            "exerciseId",
+            "name",
+            "sessionCount",
+            "historicalMean",
+            "lifetimeFirstMean",
+            "currentMean",
+            "lifetimeRecentInclLast",
+            "recentMean",
+            "lifetimeRecentExclLast",
+            "vsInitialPct",
+            "vsHabitPct",
+            "meanDefinitions",
+            "last",
+            "bestDate",
+            "dates",
+            "sessions",
+            "firstSessions",
+            "lastSessions",
+            "draftTitle",
+            "draftBody",
+            "legacyTitle",
+            "legacyBody",
+            "trajectoryOk",
+            "trajectoryMode"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_anchor",
+          "nature": "journey",
+          "family": "period_weight",
+          "contentClass": "analytical",
+          "score": 59,
+          "title": "Cette période devient un nouveau point d'ancrage dans ton historique",
+          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et cette période représente à elle seule 309,9 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : cette période sert de nouveau point d'",
+          "metricsKeys": [
+            "ofMonthVol",
+            "monthReps",
+            "monthDays",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_repertoire",
+          "nature": "journey",
+          "family": "repertoire",
+          "contentClass": "analytical",
+          "score": 56,
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "body": "Pompes (endurance) : 1 400 cette période sur 500 en 30 jours. Dips : 516 cette période sur 174 en 30 jours. Relevés de genoux à la barre : 480 cette période sur 180 en 30 jours. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble : Momentum pe",
+          "metricsKeys": [
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "nature": "journey",
+          "family": "ms_threshold",
+          "contentClass": "analytical",
+          "score": 79,
+          "title": "50e séance enregistrée",
+          "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance.",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23"
+          ]
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "nature": "trajectory",
+          "family": "ms_return",
+          "contentClass": "analytical",
+          "score": 76,
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.",
+          "metricsKeys": [
+            "type",
+            "date",
+            "prevDate",
+            "dates",
+            "sessions",
+            "daysDetail",
+            "threshold",
+            "exerciseId",
+            "exerciseName",
+            "gapDays",
+            "habitMedianGap",
+            "habitIntervalRatio",
+            "returnReps",
+            "priorAvg",
+            "vsPriorPct",
+            "unit",
+            "mates",
+            "factId",
+            "name",
+            "draftTitle",
+            "draftBody",
+            "contentClass"
+          ],
+          "evidenceKeys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15"
+          ]
+        }
+      ],
+      "dropped": [
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "un mouvement s'installe dans ton entraînement"
+        },
+        {
+          "kind": "disc_emergence",
+          "reason": "cap",
+          "title": "un mouvement s'installe dans ton entraînement"
+        },
+        {
+          "kind": "disc_ms_return",
+          "reason": "cap",
+          "title": "Tu reprends Relevés de genoux aux parallèles après 42 jours d'absence"
+        },
+        {
+          "kind": "disc_ms_return",
+          "reason": "cap",
+          "title": "Tu reprends Exercice 701 après 35 jours d'absence"
+        },
+        {
+          "kind": "disc_ms_return",
+          "reason": "cap",
+          "title": "Tu reprends Exercice 702 après 35 jours d'absence"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "reason": "cap",
+          "title": "Face pull : progression malgré une exposition faible"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "reason": "cap",
+          "title": "Relevés de genoux à la barre revient après une interruption"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "reason": "cap",
+          "title": "Élévations latérales : progression malgré une exposition faible"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "reason": "cap",
+          "title": "un mouvement : progression malgré une exposition faible"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "reason": "cap",
+          "title": "50e séance enregistrée"
+        },
+        {
+          "kind": "disc_ms_cumul",
+          "reason": "cap",
+          "title": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées"
+        },
+        {
+          "kind": "disc_ms_pr",
+          "reason": "cap",
+          "title": "Meilleure série observée : 12 exercice 146651247"
+        },
+        {
+          "kind": "disc_ms_event_combo",
+          "reason": "cap",
+          "title": "Reprise et niveau habituel le même jour"
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "reason": "cap",
+          "title": "La reprise de pompes déclinées est devenue durable"
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "reason": "cap",
+          "title": "Première apparition : Exercice 728134920"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "reason": "cap",
+          "title": "Pectoraux : davantage de jours d’exposition qu’en période précédente"
+        },
+        {
+          "kind": "disc_th_pushPull_trajectory",
+          "reason": "cap",
+          "title": "Le haut du corps travaille surtout en poussée"
+        },
+        {
+          "kind": "disc_stimulus_mix",
+          "reason": "cap",
+          "title": "Le mix force / endurance / poly de la période se lit dans les parts, pas dans le total"
+        },
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "reason": "rival",
+          "title": "Fréquence et charge ne coïncident pas"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "reason": "rival",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil"
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "reason": "rival",
+          "title": "GTG hors séances classiques"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "reason": "cap",
+          "title": "La structure de la période se lit dans les ratios, pas seulement dans le total"
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "reason": "rival",
+          "title": "Cette période s'inscrit dans une pratique déjà documentée"
+        },
+        {
+          "kind": "disc_no_running",
+          "reason": "score",
+          "title": "La charge de la période provient entièrement des exercices de renforcement"
+        },
+        {
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global"
+        },
+        {
+          "kind": "disc_muscle_reorient",
+          "reason": "score",
+          "title": "La part attribuée aux biceps de la période ressort face aux 30 derniers jours"
+        },
+        {
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "title": "Les pectoraux porte 12,9 % du volume de cette période"
+        },
+        {
+          "kind": "disc_push_pull",
+          "reason": "score",
+          "title": "La poussée domine nettement le tirage de la période"
+        },
+        {
+          "kind": "disc_plan_data_insufficient",
+          "reason": "methodology_demoted",
+          "title": "Suivi de plan : preuve historique indisponible"
+        },
+        {
+          "kind": "disc_muscle_ledger_limits",
+          "reason": "methodology_demoted",
+          "title": "Limites du compte musculaire sur cette fenêtre"
+        },
+        {
+          "kind": "disc_program_revision_journal_limit",
+          "reason": "methodology_demoted",
+          "title": "Historique de révisions de programme indisponible"
+        },
+        {
+          "kind": "disc_th_pushPull_now",
+          "reason": "insight_validation:internal_chip",
+          "title": "Le haut du corps travaille surtout en poussée"
+        },
+        {
+          "kind": "disc_ms_event_combo",
+          "reason": "editorial_gate",
+          "title": "Reprise et niveau habituel le même jour"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "reason": "editorial_gate",
+          "title": "Le haut du corps travaille surtout en poussée"
+        }
+      ],
+      "poolKinds": [
+        "disc_anchor",
+        "disc_best_month",
+        "disc_calendar_rhythm",
+        "disc_emergence",
+        "disc_exercise_progress",
+        "disc_freq_continuity",
+        "disc_freq_progress_low",
+        "disc_gtg_unplanned_now",
+        "disc_gtg_unplanned_role",
+        "disc_ms_cumul",
+        "disc_ms_event_combo",
+        "disc_ms_first_exercise",
+        "disc_ms_pr",
+        "disc_ms_return",
+        "disc_ms_return_durable",
+        "disc_ms_sessions",
+        "disc_muscle_exposure_shift",
+        "disc_muscle_ledger_limits",
+        "disc_muscle_now",
+        "disc_muscle_reorient",
+        "disc_muscle_share_shift",
+        "disc_no_running",
+        "disc_p35_gtg_coexistence",
+        "disc_p35_gtg_outside_classic",
+        "disc_p36_freq_vs_volume_weekday",
+        "disc_p36_weekday_regularity",
+        "disc_plan_data_insufficient",
+        "disc_program_revision_journal_limit",
+        "disc_push_pull",
+        "disc_quarter_arc",
+        "disc_quarter_profile",
+        "disc_ratio_structure",
+        "disc_repertoire",
+        "disc_rest_assoc",
+        "disc_stimulus_mix",
+        "disc_structural_memory",
+        "disc_th_pushPull_journey",
+        "disc_th_pushPull_now",
+        "disc_th_pushPull_trajectory",
+        "disc_volume_shape",
+        "disc_vs_habit"
+      ],
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_return_durable"
+      ]
+    }
+  }
+}

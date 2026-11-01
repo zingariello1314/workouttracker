@@ -15,6 +15,12 @@ import { movementFamily } from './recapExposureNarratives';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { composeAnalyticalReading } from './recapAnalyticalReading';
 import { resolveUserFacingExerciseName, userFacingExerciseLabel } from './recapStrengthPeriodStats';
+import {
+  classifyVolumeAttribution,
+  buildComposedEvidenceFromTrajectory,
+  resolveVolumeLexicon
+} from './recapComposedEvidence';
+import { formatDayFr } from './recapTrainingTimeline';
 
 /** @typedef {'established'|'probable'|'watch'|'indeterminate'} Stance */
 
@@ -748,6 +754,10 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
   let pathNote = null;
 
   const arcN = shape.sessionCount || temporalScope?.arcSessionCount || volume.windowSessionCount || 0;
+  const lexicon = resolveVolumeLexicon({ setMechanism, peers, ok: true });
+  const volumeNoun = lexicon.maySayPerformance
+    ? `tes performances en ${identity.name.toLowerCase()}`
+    : `ton volume de répétitions enregistré sur ${identity.name.toLowerCase()}`;
   const scopeLead = (() => {
     if (!temporalScope?.interpretingWithHistory) return '';
     const before = temporalScope.contextSessionCountBeforeWindow || 0;
@@ -760,6 +770,7 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
     }
     return '';
   })();
+  const troughDateFr = shape.trough?.date ? formatDayFr(shape.trough.date, true) : null;
 
   if (mode === 'emergence') {
     if (installation.kind === 'installed' || installation.kind === 'installing') {
@@ -846,7 +857,7 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
     const troughBit =
       shape.trough?.value != null && (shape.path || '').includes('partial_recovery')
         ? ` Après un creux vers ${shape.trough.value} répétitions${
-            shape.trough.date ? ` (${shape.trough.date})` : ''
+            troughDateFr ? ` (${troughDateFr})` : ''
           }, le niveau remonte vers ${shape.lateMean}, mais reste en retrait du départ.`
         : shape.path === 'decline_then_full_recovery'
           ? ` Un creux vers ${shape.trough?.value ?? '—'} a été suivi d’un retour près du niveau de départ.`
@@ -866,7 +877,9 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
           : `${identity.name} : le volume par séance recule`;
       main = {
         stance: shape.path === 'progressive_decline' || shape.kind === 'steady_decline' ? 'established' : 'probable',
-        text: `${scopeLead}tes performances en ${identity.name.toLowerCase()} sont passées d’environ ${shape.earlyMean} à ${shape.lateMean} répétitions par séance${
+        text: `${scopeLead}${volumeNoun} ${
+          lexicon.maySayPerformance ? 'sont passées' : 'est passé'
+        } d’environ ${shape.earlyMean} à ${shape.lateMean} répétitions par séance${
           shape.deltaPct != null ? `, soit ${shape.deltaPct} %` : ''
         }${shape.absDelta != null ? ` (${shape.absDelta > 0 ? '+' : ''}${shape.absDelta} reps)` : ''}${
           arcN >= 3 ? ` sur ${arcN} séances` : ''
@@ -881,7 +894,7 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
     } else if (story === 'recovered') {
       const lastPerf = shape.lastPerformance ?? shape.referenceLevels?.lastPerformance;
       const troughVal = shape.trough?.value ?? '—';
-      const troughDate = shape.trough?.date ? ` (${shape.trough.date})` : '';
+      const troughDate = troughDateFr ? ` (${troughDateFr})` : '';
       titleHint = `${identity.name} : recul puis retour au niveau de départ`;
       main = {
         stance: 'probable',
@@ -911,6 +924,12 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
 
     if (setMechanism.available) {
       mechanism = { stance: setMechanism.stance, text: setMechanism.detail, kind: setMechanism.kind };
+    } else if (volume?.attribution?.detail) {
+      mechanism = {
+        stance: volume.attribution.stance || 'probable',
+        text: volume.attribution.detail,
+        kind: volume.attribution.kind
+      };
     }
 
     if (
@@ -1062,7 +1081,9 @@ export function buildExerciseTrajectory({
   // Vrai dès que l’arc consomme des séances antérieures à la fenêtre sélectionnée
   const interpretingWithHistory = mode === 'progress' && contextBefore.length > 0;
 
-  const volume = {
+  const prevTotals = prevSessions.map((s) => s.totalReps);
+  const prevMean = prevTotals.length ? mean(prevTotals) : null;
+  const volumeBase = {
     windowSessionCount: windowSessions.length,
     lifetimeSessionCount: allSessions.length,
     windowTotal: windowTotals.reduce((s, n) => s + n, 0),
@@ -1079,6 +1100,13 @@ export function buildExerciseTrajectory({
             (windowSessions.length / Math.max(1, daysBetween(window.start, window.end) + 1)) * 7
           )
         : null
+  };
+  const volume = {
+    ...volumeBase,
+    attribution: classifyVolumeAttribution({
+      ...volumeBase,
+      prevMeanPerSession: prevMean
+    })
   };
 
   const shapeSource = mode === 'progress' && arcSessions.length >= 2 ? arcSessions : windowSessions;
@@ -1149,7 +1177,7 @@ export function buildExerciseTrajectory({
     temporalScope
   });
 
-  return {
+  const trajectory = {
     ok: true,
     mode,
     identity,
@@ -1176,6 +1204,10 @@ export function buildExerciseTrajectory({
     exclusions,
     diagnostics
   };
+  trajectory.composedEvidence = buildComposedEvidenceFromTrajectory(trajectory, {
+    volumeAttribution: volume.attribution
+  });
+  return trajectory;
 }
 
 /**
@@ -1340,6 +1372,10 @@ export function trajectoryToMetrics(trajectory) {
     exclusions: trajectory.exclusions,
     diagnostics: trajectory.diagnostics,
     // Brouillon produit par la couche (avant gate)
-    draftTitle: trajectory.findings?.titleHint || null
+    draftTitle: trajectory.findings?.titleHint || null,
+    // F3 — preuves composées (structurées, pas du texte parsé)
+    composedEvidence: trajectory.composedEvidence || buildComposedEvidenceFromTrajectory(trajectory),
+    composedFactCount: trajectory.composedEvidence?.factCount ?? null,
+    composedOk: Boolean(trajectory.composedEvidence?.composed)
   };
 }

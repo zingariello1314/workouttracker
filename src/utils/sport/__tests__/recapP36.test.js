@@ -164,6 +164,16 @@ describe('P3.6 — régularité / volume / exercices', () => {
     expect(m.freqVsVolume.abstainReason).toBe('load_arm_spike_sensitive');
   });
 
+  it('abstient la régularité si aucune activité classique (taux 0 %)', () => {
+    const m = computeP36WindowMetrics(
+      { checkedExercises: {}, reps: {} },
+      W30,
+      { todayYmd: '2026-11-01' }
+    );
+    expect(m.weekdayRegularity.publishable).toBe(false);
+    expect(m.weekdayRegularity.abstainReason).toBe('no_classic_activity_in_window');
+  });
+
   it('abstient la régularité weekday sur 7 jours', () => {
     let data = { checkedExercises: {}, reps: {} };
     data = seedClassic(data, '2026-10-26', 101, 20);

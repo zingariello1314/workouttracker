@@ -1,0 +1,336 @@
+{
+  "generatedAt": "2026-11-01T00:51:49.232Z",
+  "note": "F2 replay — contrats jours annotés ; reject strength>training retiré",
+  "periods": {
+    "7d": {
+      "ms": 692,
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "primaryMeta": {
+        "role": "primaryWindow",
+        "roleLabelFr": "Fenêtre principale (période sélectionnée)",
+        "start": "2026-10-24",
+        "end": "2026-10-30",
+        "inclusiveBounds": true,
+        "spanDays": 7,
+        "eligibleDays": null,
+        "source": "getRecapDateWindow(7d)",
+        "reason": "Période sélectionnée par l’utilisateur"
+      },
+      "journeyMeta": {
+        "role": "historicalContextWindow",
+        "roleLabelFr": "Contexte historique (interprétation, pas sujet)",
+        "start": "2026-07-31",
+        "end": "2026-10-30",
+        "inclusiveBounds": true,
+        "spanDays": 92,
+        "eligibleDays": null,
+        "source": "journey_91d",
+        "reason": "Contexte de parcours pour interpréter la période primaire"
+      },
+      "measure": {
+        "strengthDays": 4,
+        "trainingDays": 4,
+        "totalReps": 1371,
+        "dayContracts": {
+          "strengthDays": "positive_reps_days",
+          "trainingDays": "calendar_training_union_day"
+        }
+      },
+      "gap": {
+        "methodologicallyExpected": false,
+        "strengthOnly": [],
+        "causes": []
+      },
+      "poolSize": 31,
+      "selectedSize": 12,
+      "droppedSize": 22,
+      "selectedKinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "droppedReasons": [
+        "cap",
+        "editorial_gate",
+        "insight_validation:internal_chip",
+        "insight_validation:raw_exercise_id",
+        "methodology_demoted",
+        "rival",
+        "score"
+      ],
+      "selectedTitles": [
+        "Ces 7 jours concentre le travail sur moins de temps",
+        "Ces 7 jours : le volume repose sur peu de journées",
+        "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+        "Relevés de genoux à la barre revient après une interruption",
+        "Pompes déclinées revient après une interruption",
+        "3 mouvements concentrent une part importante de ton travail récent",
+        "Tes données montrent une association entre repos et volume de séance",
+        "3 séances de relevés de genoux à la barre depuis le retour",
+        "Ces 7 jours devient un nouveau point d'ancrage dans ton historique",
+        "Pompes déclinées : recul puis retour au niveau de départ",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+        "Meilleure série observée : 12 exercice 146651247"
+      ]
+    },
+    "30d": {
+      "ms": 1548,
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "primaryMeta": {
+        "role": "primaryWindow",
+        "roleLabelFr": "Fenêtre principale (période sélectionnée)",
+        "start": "2026-10-01",
+        "end": "2026-10-30",
+        "inclusiveBounds": true,
+        "spanDays": 30,
+        "eligibleDays": null,
+        "source": "getRecapDateWindow(30d)",
+        "reason": "Période sélectionnée par l’utilisateur"
+      },
+      "journeyMeta": {
+        "role": "historicalContextWindow",
+        "roleLabelFr": "Contexte historique (interprétation, pas sujet)",
+        "start": "2026-07-31",
+        "end": "2026-10-30",
+        "inclusiveBounds": true,
+        "spanDays": 92,
+        "eligibleDays": null,
+        "source": "journey_91d",
+        "reason": "Contexte de parcours pour interpréter la période primaire"
+      },
+      "measure": {
+        "strengthDays": 16,
+        "trainingDays": 12,
+        "totalReps": 4367,
+        "dayContracts": {
+          "strengthDays": "positive_reps_days",
+          "trainingDays": "calendar_training_union_day"
+        }
+      },
+      "gap": {
+        "methodologicallyExpected": true,
+        "strengthOnly": [
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-15"
+        ],
+        "causes": [
+          {
+            "date": "2026-10-01",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-03",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-06",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-15",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          }
+        ]
+      },
+      "poolSize": 43,
+      "selectedSize": 19,
+      "droppedSize": 28,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_emergence",
+        "disc_ms_return_durable"
+      ],
+      "droppedReasons": [
+        "cap",
+        "editorial_gate",
+        "family",
+        "insight_validation:internal_chip",
+        "methodology_demoted",
+        "outranked_by_richer",
+        "rival",
+        "score"
+      ],
+      "selectedTitles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Le volume du mois dépasse la période précédente",
+        "Ces 30 jours mêlent un bloc chargé et un creux",
+        "Face pull : ces 30 jours sont au-dessus de ton niveau habituel",
+        "Relevés de genoux aux parallèles revient après un long silence",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "un mouvement : progression malgré une exposition faible",
+        "Pompes déclinées : recul et exposition faible coïncident",
+        "un mouvement s'installe dans ton entraînement",
+        "Relevés de genoux à la barre revient après une interruption",
+        "un mouvement s'installe dans ton entraînement",
+        "Tes données montrent une association entre repos et volume de séance",
+        "Pompes déclinées : recul puis retour au niveau de départ",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
+        "Ces 30 jours devient un nouveau point d'ancrage dans ton historique",
+        "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+        "Relevés de genoux à la barre revient après une interruption",
+        "La reprise de pompes déclinées est devenue durable"
+      ]
+    },
+    "3m": {
+      "ms": 2678,
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "primaryMeta": {
+        "role": "primaryWindow",
+        "roleLabelFr": "Fenêtre principale (période sélectionnée)",
+        "start": "2026-07-31",
+        "end": "2026-10-30",
+        "inclusiveBounds": true,
+        "spanDays": 92,
+        "eligibleDays": null,
+        "source": "getRecapDateWindow(3m)",
+        "reason": "Période sélectionnée par l’utilisateur"
+      },
+      "journeyMeta": {
+        "role": "historicalContextWindow",
+        "roleLabelFr": "Contexte historique (interprétation, pas sujet)",
+        "start": "2026-07-31",
+        "end": "2026-10-30",
+        "inclusiveBounds": true,
+        "spanDays": 92,
+        "eligibleDays": null,
+        "source": "journey_91d",
+        "reason": "Contexte de parcours pour interpréter la période primaire"
+      },
+      "measure": {
+        "strengthDays": 46,
+        "trainingDays": 41,
+        "totalReps": 13533,
+        "dayContracts": {
+          "strengthDays": "positive_reps_days",
+          "trainingDays": "calendar_training_union_day"
+        }
+      },
+      "gap": {
+        "methodologicallyExpected": true,
+        "strengthOnly": [
+          "2026-09-02",
+          "2026-10-01",
+          "2026-10-03",
+          "2026-10-06",
+          "2026-10-15"
+        ],
+        "causes": [
+          {
+            "date": "2026-09-02",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-01",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-03",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-06",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          },
+          {
+            "date": "2026-10-15",
+            "cause": "gtg_synced_reps_without_calendar_credit"
+          }
+        ]
+      },
+      "poolSize": 52,
+      "selectedSize": 21,
+      "droppedSize": 35,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_return_durable"
+      ],
+      "droppedReasons": [
+        "cap",
+        "editorial_gate",
+        "insight_validation:internal_chip",
+        "methodology_demoted",
+        "rival",
+        "score"
+      ],
+      "selectedTitles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Le trimestre a un volume et un rythme, pas seulement un total",
+        "Cette période mêlent un bloc chargé et un creux",
+        "Face pull : cette période est au-dessus de ton niveau habituel",
+        "Relevés de genoux aux parallèles revient après un long silence",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Pompes déclinées dans la période",
+        "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+        "un mouvement : format repris, pas encore installé",
+        "un mouvement s'installe dans ton entraînement",
+        "un mouvement : format repris, pas encore installé",
+        "un mouvement s'installe dans ton entraînement",
+        "Tes données montrent une association entre repos et volume de séance",
+        "août 2026 concentre la part la plus productive de la période",
+        "Le trimestre a une trajectoire interne, pas seulement un total",
+        "Pompes déclinées : recul puis retour au niveau de départ",
+        "Cette période devient un nouveau point d'ancrage dans ton historique",
+        "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+        "50e séance enregistrée",
+        "La reprise de pompes déclinées est devenue durable"
+      ]
+    }
+  }
+}

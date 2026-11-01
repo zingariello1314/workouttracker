@@ -62,6 +62,28 @@ function bodyBatteryPack(day) {
 }
 
 /**
+ * Convention de rattachement F2 (source de vérité code).
+ *
+ * `ymd` = clé `garminData.dailyMetrics[ymd]`.
+ * Commentaire produit historique : « la nuit qui se termine le matin de ymd »
+ * (jour du réveil / clé journalière Garmin), **pas** le jour civil du coucher.
+ * bedTime/wakeTime horaires peuvent chevaucher le jour précédent ; on ne
+ * recalcule pas ymd depuis ces horaires.
+ *
+ * Si bedTime/wakeTime ISO absolus manquent, la convention reste celle de la clé
+ * métriques — documentée comme `garmin_daily_metrics_key_wake_morning`.
+ */
+export const SLEEP_ATTACHMENT_CONVENTION = Object.freeze({
+  id: 'garmin_daily_metrics_key_wake_morning',
+  ymdMeans: 'wake_morning_of_key',
+  sourceField: 'garmin.dailyMetrics[ymd]',
+  certainty: 'documented_in_code',
+  noteFr:
+    'ymd est la clé dailyMetrics. Interprétation produit : nuit se terminant le matin de ymd. ' +
+    'Pas de recalcul depuis bedTime/wakeTime.'
+});
+
+/**
  * Une nuit calendaire (la nuit qui se termine le matin de `ymd`).
  * @returns {object|null}
  */
@@ -127,7 +149,52 @@ export function extractSleepNight(garminData, ymd) {
     bodyBatteryEnd: bb.end,
     bodyBatteryCharged: bb.charged,
     quality: toNum(sleep.quality ?? sleep.score),
-    source: 'garmin.dailyMetrics'
+    source: 'garmin.dailyMetrics',
+    attachment: { ...SLEEP_ATTACHMENT_CONVENTION, ymd }
+  };
+}
+
+/**
+ * Rôle de publication d’une nuit vs fenêtre primaire sélectionnée.
+ * @returns {{ role: 'primary_observation'|'historical_reference'|'out_of_scope', inPrimary: boolean }}
+ */
+export function classifySleepNightWindowRole(nightYmd, primaryWindow) {
+  const ymd = nightYmd || null;
+  if (!ymd || !primaryWindow?.end) {
+    return { role: 'out_of_scope', inPrimary: false };
+  }
+  const start = primaryWindow.start;
+  const end = primaryWindow.end;
+  const inPrimary =
+    start == null ? ymd <= end : ymd >= start && ymd <= end;
+  if (inPrimary) return { role: 'primary_observation', inPrimary: true };
+  return { role: 'historical_reference', inPrimary: false };
+}
+
+/**
+ * Contrat de preuve sommeil minimal pour publication période.
+ * Une nuit hors fenêtre ne peut pas être `primary_observation`.
+ */
+export function buildSleepNightProofFields(night, primaryWindow, { roleOverride = null } = {}) {
+  if (!night?.ymd) return null;
+  const classified = classifySleepNightWindowRole(night.ymd, primaryWindow);
+  const role = roleOverride || classified.role;
+  return {
+    nightYmd: night.ymd,
+    source: night.source || 'garmin.dailyMetrics',
+    attachment: night.attachment || { ...SLEEP_ATTACHMENT_CONVENTION, ymd: night.ymd },
+    primaryWindow: primaryWindow
+      ? { start: primaryWindow.start ?? null, end: primaryWindow.end }
+      : null,
+    role,
+    inPrimary: classified.inPrimary,
+    indicators: {
+      hours: night.hours ?? null,
+      efficiency: night.efficiency ?? null,
+      deepMin: night.deepMin ?? null,
+      remMin: night.remMin ?? null
+    },
+    publishAsPeriodObservation: role === 'primary_observation' && classified.inPrimary
   };
 }
 

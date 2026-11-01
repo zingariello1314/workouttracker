@@ -6,6 +6,7 @@ Dossier de travail pour le moteur d’analyses Recap (toutes plages horaires).
 
 | Document | Rôle |
 | --- | --- |
+| **[RAPPORT-COMPLET-ARCHITECTURE-ANALYSES-2026-11-01-0042.md](./RAPPORT-COMPLET-ARCHITECTURE-ANALYSES-2026-11-01-0042.md)** | **Synthèse 1er nov. 2026 00:42** — chronologie P0→P3.6, architecture complète, inspection live 7j/30j/3m. |
 | **[MISSION-MAJEURE-MOTEUR-ANALYSE-APPROFONDI.md](./MISSION-MAJEURE-MOTEUR-ANALYSE-APPROFONDI.md)** | **Lead.** Mission majeure : moteur d’analyse approfondi, transversal et intelligent (raisonnement d’abord). **Prime** en cas de conflit. |
 | **[PLAN-MISSION-MAJEURE-MOTEUR-ANALYSE.md](./PLAN-MISSION-MAJEURE-MOTEUR-ANALYSE.md)** | **Plan d’exécution béton** (exigences R1–R4 : Finding≠profondeur, inventaire corrélations, golden analytique, diagnostic sélection). |
 | [INVENTAIRE-CORRELATIONS-ANALYSES.md](./INVENTAIRE-CORRELATIONS-ANALYSES.md) | Matrice des relations données (dispo réelle, méthodes, priorités P0–P2). |

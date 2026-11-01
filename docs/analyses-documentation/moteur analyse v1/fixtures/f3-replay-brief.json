@@ -1,0 +1,190 @@
+{
+  "generatedAt": "2026-11-01T01:13:04.823Z",
+  "periods": {
+    "7d": {
+      "ms": 701,
+      "pool": 31,
+      "selected": 12,
+      "composedPool": 4,
+      "composedSelected": 3,
+      "selectedKinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "composedTitles": [
+        "Relevés de genoux à la barre revient après une interruption",
+        "Pompes déclinées revient après une interruption",
+        "Pompes déclinées : recul puis retour au niveau de départ"
+      ],
+      "continuities": [
+        "punctual_return",
+        "decline_then_recovery"
+      ],
+      "coverage": {
+        "strengthDays": 4,
+        "trainingDays": 4,
+        "totalReps": 1371,
+        "windowHasStrength": true,
+        "note": "Fenêtre couverte par la fixture"
+      }
+    },
+    "30d": {
+      "ms": 1555,
+      "pool": 43,
+      "selected": 19,
+      "composedPool": 12,
+      "composedSelected": 7,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_emergence",
+        "disc_ms_return_durable"
+      ],
+      "composedTitles": [
+        "un mouvement : progression malgré une exposition faible",
+        "Pompes déclinées : recul et exposition faible coïncident",
+        "un mouvement s'installe dans ton entraînement",
+        "Relevés de genoux à la barre revient après une interruption",
+        "un mouvement s'installe dans ton entraînement",
+        "Pompes déclinées : recul puis retour au niveau de départ",
+        "Relevés de genoux à la barre revient après une interruption"
+      ],
+      "continuities": [
+        "directional_change",
+        "stable_plateau",
+        "decline_then_recovery",
+        "punctual_return"
+      ],
+      "coverage": {
+        "strengthDays": 16,
+        "trainingDays": 12,
+        "totalReps": 4367,
+        "windowHasStrength": true,
+        "note": "Fenêtre couverte par la fixture"
+      }
+    },
+    "3m": {
+      "ms": 2596,
+      "pool": 52,
+      "selected": 21,
+      "composedPool": 11,
+      "composedSelected": 5,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_return_durable"
+      ],
+      "composedTitles": [
+        "Pompes déclinées dans la période",
+        "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+        "un mouvement s'installe dans ton entraînement",
+        "un mouvement s'installe dans ton entraînement",
+        "Pompes déclinées : recul puis retour au niveau de départ"
+      ],
+      "continuities": [
+        "directional_change",
+        "stable_plateau",
+        "decline_then_recovery"
+      ],
+      "coverage": {
+        "strengthDays": 46,
+        "trainingDays": 41,
+        "totalReps": 13533,
+        "windowHasStrength": true,
+        "note": "Fenêtre couverte par la fixture"
+      }
+    },
+    "6m": {
+      "ms": 2606,
+      "pool": 54,
+      "selected": 20,
+      "composedPool": 11,
+      "composedSelected": 5,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_arc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ],
+      "composedTitles": [
+        "Dips s'installe dans ton entraînement",
+        "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+        "Pompes déclinées s'installe dans ton entraînement",
+        "Dips s'installe dans ton entraînement",
+        "Pompes déclinées : recul puis retour au niveau de départ"
+      ],
+      "continuities": [
+        "directional_change",
+        "consolidated_format",
+        "stable_plateau",
+        "decline_then_recovery"
+      ],
+      "coverage": {
+        "strengthDays": 66,
+        "trainingDays": 71,
+        "totalReps": 19360,
+        "windowHasStrength": true,
+        "note": "Fenêtre calculable ; couverture réelle limitée à juil–oct 2026 sur cette fixture"
+      }
+    }
+  }
+}

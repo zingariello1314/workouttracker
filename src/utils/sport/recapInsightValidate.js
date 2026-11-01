@@ -142,6 +142,25 @@ export function insightRejectReason(card, ctx = {}) {
     }
   }
 
+  // F4 — conclusions interdites encore présentes dans la prose (après polish/narration)
+  const forbidden = metrics.composedEvidence?.forbiddenConclusions || [];
+  if (
+    forbidden.includes('adaptation_physiologique') &&
+    /adaptation physiologique|gain de force généralis/i.test(text)
+  ) {
+    return 'forbidden_physiological_claim';
+  }
+  if (
+    forbidden.includes('causalite_sommeil_performance') &&
+    /parce que.*(nuit|sommeil)|(nuit|sommeil).*a causé/i.test(text)
+  ) {
+    return 'forbidden_sleep_causality';
+  }
+  // ISO restant dans title/body utilisateur (pas evidence technique)
+  if (/\b20\d{2}-\d{2}-\d{2}\b/.test(title) || /\b20\d{2}-\d{2}-\d{2}\b/.test(String(card.body || ''))) {
+    return 'iso_date_in_user_prose';
+  }
+
   return '';
 }
 
@@ -177,20 +196,13 @@ export function assertWindowMeasureConsistency(measure, opts = {}) {
   const total = Number(measure.totalReps) || 0;
   const identified = Number(measure.identifiedMuscleReps) || 0;
   const strengthDays = Number(measure.strengthDays) || 0;
-  const trainingDays = Number(measure.trainingDays) || 0;
+  // trainingDays (calendar_training_union) ≠ strengthDays (positive_reps) — F2.
 
   if (identified > total + 2 && total > 0) {
     logRecapReject({
       id: `${label}:muscle_sum`,
       rule: 'muscle_identified_gt_total',
       values: { identified, total, strength }
-    });
-  }
-  if (strengthDays > trainingDays + 1 && trainingDays > 0) {
-    logRecapReject({
-      id: `${label}:days`,
-      rule: 'strength_days_gt_training_days',
-      values: { strengthDays, trainingDays }
     });
   }
   if (strengthDays > 0 && strength > 0) {

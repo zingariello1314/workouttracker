@@ -1,0 +1,252 @@
+{
+  "generatedAt": "2026-11-01T01:36:29.974Z",
+  "periods": {
+    "7d": {
+      "ms": 691,
+      "selected": 12,
+      "kinds": [
+        "disc_density",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_ms_return_durable",
+        "disc_anchor",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_ms_pr"
+      ],
+      "narrated": 3,
+      "composed": 3,
+      "depthCounts": {
+        "composed": 3
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 3,
+        "compositionUsedInText": 3,
+        "withMechanism": 3,
+        "withContinuity": 3,
+        "withComparator": 0
+      },
+      "sampleTitles": [
+        {
+          "before": "Relevés de genoux à la barre revient après une interruption",
+          "after": "Relevés de genoux à la barre revient après une interruption",
+          "depth": "composed"
+        },
+        {
+          "before": "Pompes déclinées revient après une interruption",
+          "after": "Pompes déclinées revient après une interruption",
+          "depth": "composed"
+        },
+        {
+          "before": "Pompes déclinées : recul puis retour au niveau de départ",
+          "after": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "depth": "composed"
+        }
+      ]
+    },
+    "30d": {
+      "ms": 1619,
+      "selected": 19,
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_progress_low",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_profile",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_emergence",
+        "disc_ms_return_durable"
+      ],
+      "narrated": 7,
+      "composed": 7,
+      "depthCounts": {
+        "explanatory": 2,
+        "composed": 4,
+        "deep": 1
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 7,
+        "compositionUsedInText": 7,
+        "withMechanism": 7,
+        "withContinuity": 7,
+        "withComparator": 2
+      },
+      "sampleTitles": [
+        {
+          "before": "un mouvement : progression malgré une exposition faible",
+          "after": "un mouvement : volume par séance en hausse",
+          "depth": "explanatory"
+        },
+        {
+          "before": "Pompes déclinées : recul et exposition faible coïncident",
+          "after": "Pompes déclinées : moins de répétitions par séance",
+          "depth": "composed"
+        },
+        {
+          "before": "un mouvement s'installe dans ton entraînement",
+          "after": "un mouvement : davantage de répétitions par séance",
+          "depth": "explanatory"
+        },
+        {
+          "before": "Relevés de genoux à la barre revient après une interruption",
+          "after": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+          "depth": "composed"
+        },
+        {
+          "before": "un mouvement s'installe dans ton entraînement",
+          "after": "un mouvement : volume par séance stable",
+          "depth": "composed"
+        }
+      ]
+    },
+    "3m": {
+      "ms": 2689,
+      "selected": 21,
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_return_durable"
+      ],
+      "narrated": 5,
+      "composed": 5,
+      "depthCounts": {
+        "composed": 3,
+        "explanatory": 1,
+        "deep": 1
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 5,
+        "compositionUsedInText": 5,
+        "withMechanism": 5,
+        "withContinuity": 5,
+        "withComparator": 2
+      },
+      "sampleTitles": [
+        {
+          "before": "Pompes déclinées dans la période",
+          "after": "Pompes déclinées : moins de répétitions par séance",
+          "depth": "composed"
+        },
+        {
+          "before": "Relevés de genoux aux parallèles s'installe dans ton entraînement",
+          "after": "Relevés de genoux aux parallèles : volume par séance stable",
+          "depth": "composed"
+        },
+        {
+          "before": "un mouvement s'installe dans ton entraînement",
+          "after": "un mouvement : volume par séance en hausse",
+          "depth": "explanatory"
+        },
+        {
+          "before": "un mouvement s'installe dans ton entraînement",
+          "after": "un mouvement : volume par séance stable",
+          "depth": "composed"
+        },
+        {
+          "before": "Pompes déclinées : recul puis retour au niveau de départ",
+          "after": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "depth": "deep"
+        }
+      ]
+    },
+    "6m": {
+      "ms": 2747,
+      "selected": 20,
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_calendar_rhythm",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_quarter_arc",
+        "disc_anchor",
+        "disc_repertoire",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ],
+      "narrated": 5,
+      "composed": 5,
+      "depthCounts": {
+        "composed": 3,
+        "deep": 2
+      },
+      "visibleDepthScore": {
+        "compositionAvailable": 5,
+        "compositionUsedInText": 5,
+        "withMechanism": 5,
+        "withContinuity": 5,
+        "withComparator": 5
+      },
+      "sampleTitles": [
+        {
+          "before": "Dips s'installe dans ton entraînement",
+          "after": "Dips : recul confirmé sur plusieurs séances",
+          "depth": "composed"
+        },
+        {
+          "before": "Tractions australiennes — prise large pronation s'installe dans ton entraînement",
+          "after": "Tractions australiennes — prise large pronation : un format plus volumineux se maintient",
+          "depth": "deep"
+        },
+        {
+          "before": "Pompes déclinées s'installe dans ton entraînement",
+          "after": "Pompes déclinées : recul confirmé sur plusieurs séances",
+          "depth": "composed"
+        },
+        {
+          "before": "Dips s'installe dans ton entraînement",
+          "after": "Dips : volume par séance stable",
+          "depth": "composed"
+        },
+        {
+          "before": "Pompes déclinées : recul puis retour au niveau de départ",
+          "after": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "depth": "deep"
+        }
+      ]
+    }
+  }
+}

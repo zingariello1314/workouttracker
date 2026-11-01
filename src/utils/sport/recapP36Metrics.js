@@ -153,9 +153,28 @@ function summarizeWeekdayRegularity(occasions, occasionsC) {
   );
   const top = ranked[0];
   const second = ranked[1];
+  // Pas de « jour régulier » si aucune activité classique documentée.
+  if (!top || !(top.rateClassicPct > 0) || !(top.withClassicExclusive >= 1)) {
+    return {
+      publishable: false,
+      abstainReason: 'no_classic_activity_in_window',
+      ranked: ranked.map((r) => ({
+        dow: r.dow,
+        label: r.label,
+        rateClassicPct: r.rateClassicPct,
+        rateAnyActivityPct: r.rateAnyActivityPct,
+        eligibleOccurrences: r.eligibleOccurrences,
+        withClassicExclusive: r.withClassicExclusive
+      })),
+      champion: null,
+      tiedGroup: null
+    };
+  }
   const gap = (top.rateClassicPct || 0) - (second?.rateClassicPct || 0);
   const nearTies = ranked.filter(
-    (r) => Math.abs((r.rateClassicPct || 0) - (top.rateClassicPct || 0)) < 8
+    (r) =>
+      (r.rateClassicPct || 0) > 0 &&
+      Math.abs((r.rateClassicPct || 0) - (top.rateClassicPct || 0)) < 8
   );
 
   let champion = null;

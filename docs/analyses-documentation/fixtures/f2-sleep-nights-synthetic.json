@@ -1,0 +1,63 @@
+{
+  "_comment": "F2 — fixture synthétique sommeil (aucune donnée personnelle). Clés dailyMetrics = convention wake_morning.",
+  "dailyMetrics": {
+    "2026-10-31": {
+      "sleep": {
+        "duration": 7.5,
+        "deep": 1.2,
+        "rem": 1.5,
+        "light": 4.5,
+        "awake": 0.3,
+        "efficiency": 92,
+        "bedTime": "23:30",
+        "wakeTime": "07:00",
+        "avgHR": 54
+      },
+      "heartRate": { "resting": 50 },
+      "bodyBattery": { "start": 30, "end": 85, "charged": 55 }
+    },
+    "2026-11-01": {
+      "sleep": {
+        "duration": 6.2,
+        "deepSleep": 55,
+        "remSleep": 70,
+        "lightSleep": 220,
+        "awake": 25,
+        "efficiency": 88,
+        "bedTime": "00:45",
+        "wakeTime": "07:00"
+      },
+      "heartRate": { "resting": 53 }
+    },
+    "2026-11-02": {
+      "sleep": {
+        "duration": 8.1,
+        "deep": 1.4,
+        "rem": 1.8,
+        "light": 4.6,
+        "awake": 0.3,
+        "efficiency": 94,
+        "bedTime": "22:50",
+        "wakeTime": "07:00"
+      }
+    },
+    "2026-11-03": {
+      "sleep": {
+        "duration": 45,
+        "note": "trop court — extractSleepNight doit retourner null (< 90 min)"
+      }
+    },
+    "2026-10-24": {
+      "sleep": {
+        "duration": 7.0,
+        "deep": 1.0,
+        "rem": 1.4,
+        "light": 4.3,
+        "awake": 0.3,
+        "efficiency": 90,
+        "bedTime": "23:00",
+        "wakeTime": "06:30"
+      }
+    }
+  }
+}
