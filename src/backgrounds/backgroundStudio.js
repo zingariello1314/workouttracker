@@ -409,6 +409,86 @@ export const BACKGROUND_STUDIOS = {
         ]
       }
     ]
+  },
+  snowfall: {
+    baseId: 'snowfall',
+    title: 'Chute de neige',
+    fields: [
+      color('background', 'Fond', '#000000'),
+      color('color', 'Couleur', '#ffffff'),
+      range('count', 'Nombre', 0, 1200, 1, 632),
+      range('wind', 'Vent', -10, 10, 1, -1),
+      range('windVariation', 'Variation du vent', 0, 5, 0.1, 0),
+      select('direction', 'Direction', [
+        { value: 'down', label: 'Bas' },
+        { value: 'up', label: 'Haut' }
+      ], 'down'),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: [
+      {
+        id: 'flakes',
+        label: 'Flocons',
+        fields: [
+          range('sizeMin', 'Taille min', 0.2, 8, 0.1, 0.5),
+          range('sizeMax', 'Taille max', 0.2, 8, 0.1, 1.5),
+          range('speedMin', 'Vitesse min', 0.1, 8, 0.1, 0.8),
+          range('speedMax', 'Vitesse max', 0.1, 8, 0.1, 2.7),
+          range('opacityMin', 'Opacité min', 0, 100, 1, 30),
+          range('opacityMax', 'Opacité max', 0, 100, 1, 90)
+        ]
+      }
+    ]
+  },
+  'toon-fireball': {
+    baseId: 'toon-fireball',
+    title: 'Boule de feu toon',
+    fields: [
+      color('background', 'Fond', '#000000'),
+      color('baseColor', 'Couleur de base', '#ed7363'),
+      color('accentColor', "Couleur d'accent", '#ffffff'),
+      range('density', 'Densité', 1, 40, 1, 18),
+      range('size', 'Taille', 20, 300, 1, 182),
+      range('speed', 'Vitesse', 0, 100, 1, 21),
+      range('angle', 'Angle', -90, 90, 1, -45),
+      range('tilt', 'Inclinaison', 0, 90, 1, 45)
+    ],
+    groups: [
+      {
+        id: 'fire',
+        label: 'Feu',
+        fields: [
+          color('fireCore', 'Cœur', '#ff0000'),
+          color('fireTrail', 'Traînée', '#ff0e0e'),
+          color('fireSteam', 'Vapeur', '#fb7171')
+        ]
+      },
+      {
+        id: 'bloom',
+        label: 'Éclat',
+        fields: [
+          range('bloomStrength', 'Force', 0, 400, 1, 172),
+          range('bloomRadius', 'Rayon', 0, 100, 1, 39)
+        ]
+      }
+    ]
+  },
+  'wire-terrain': {
+    baseId: 'wire-terrain',
+    title: 'Terrain filaire',
+    fields: [
+      color('background', 'Fond', '#000000'),
+      color('lineColor', 'Lignes', '#b12b00'),
+      color('accentColor', "Couleur d'accent", '#ff3c00'),
+      range('density', 'Densité', 10, 120, 1, 120),
+      range('speed', 'Vitesse', 0, 200, 1, 100),
+      range('relief', 'Relief', 0, 200, 1, 100),
+      range('sunSize', 'Soleil', 0, 200, 1, 100),
+      range('cameraHeight', 'Hauteur caméra', 10, 200, 1, 94),
+      range('hover', 'Survol', 0, 300, 1, 200),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: []
   }
 };
 

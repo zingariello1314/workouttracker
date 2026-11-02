@@ -72,7 +72,7 @@ export function analyzePerformanceRobustness(opts = {}) {
     if (setSessions.length < 2) continue;
     const row = classifyExercisePerformanceLevel(setSessions);
     if (!row.kind) continue;
-    let exerciseName = `Exercice ${exId}`;
+    let exerciseName = '';
     if (typeof getExerciseNameById === 'function') {
       const n = parseInt(String(exId), 10);
       if (Number.isFinite(n)) {

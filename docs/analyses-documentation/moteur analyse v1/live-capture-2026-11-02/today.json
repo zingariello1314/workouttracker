@@ -1,0 +1,23 @@
+{
+  "pressed": "Today",
+  "header": "Today · dimanche 1 novembre 2026 → lundi 2 novembre 2026",
+  "count": "ALL 8",
+  "families": [
+    "ALL 8",
+    "ACTIVITÉ 2",
+    "PROGRESSION 3",
+    "SOMMEIL 1",
+    "RYTHME 1",
+    "ALERTE 1"
+  ],
+  "cards": [
+    "ACTIVITÉ\nLe volume bouge via fréquence et dose ensemble\n\nLe volume de répétitions est passé de 4493 à 418 (-91 %) entre deux fenêtres comparables. Fréquence (-12 %) et dose par séance (+12 %) contribuent toutes les deux; ce n'est pas un seul levier. Le creux porte surtout sur la dose par séance; la fréquence seule n’explique pas tout le mouvement.\n\n28\nJ.\n+52 %\n·\n7\nJ.\n+26 %",
+    "PROGRESSION\nLa production de répétitions observée recule — le niveau n’est pas encore lisible\n\nEn moyenne, tes répétitions récentes reculent (environ 60 % de moins). Sans le même exercice, la même variante et assez de séances comparables, on ne peut pas parler de baisse de performance: seulement d'une production observée en retrait.\n\nREPS OBSERVÉES\n-60 %",
+    "ACTIVITÉ\n50 %\n\nLe réalisé est inférieur au prévu (~50 %) avec des séances souvent incomplètes (alignement ~50/100). La différence vient surtout de séances commencées mais raccourcies, plutôt que de journées entièrement sautées.",
+    "ALERTE\nLa course a glissé hors de ta routine, pas toute ton activité\n\nTa dernière course (Course) était le 27 juillet 2026. Cela fait 98 jours, alors que tu as continué à t'entraîner (50 autres séances). Ce n'est pas un arrêt du sport: une qualité précise n'est plus exposée. Si tu voulais garder de l'endurance, le sujet n'est pas les répétitions de musculation: c'est la place réelle de la course. Après un trou aussi long, la prochaine séance se lira comme une reprise, pas comme une comparaison à ton meilleur niveau récent.\n\n27\nJUILLET 2026 ·\n98\nJ. ·\n50 SÉANCES\nENTRE-TEMPS",
+    "PROGRESSION\nLe programme est davantage laissé de côté que tes séances ne sont allégées\n\nTu as commencé 1 séance alors que 2 jours avaient du contenu prévu. Le trou vient surtout des jours non commencés (1), plus que d'un effondrement de chaque séance. Sur la période, ça représente un peu plus de la moitié du plan (~50 %).\n\n~\n50 %\nDU PLAN · ALIGNEMENT\n50/100",
+    "SOMMEIL\nLes journées lourdes suivent plus souvent une nuit longue\n\nSur 7 séances dépassant 300 reps, 6 ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, 4 des 9 séances sous 250 reps ont suivi une nuit plus courte. L'écart porte sur 16 séances: assez pour être suivi, pas assez pour en faire une règle. L'écart entre les deux proportions est d'environ 30 points. Cette fenêtre a aussi des jours sans séance: une nuit plus longue peut venir de ces jours-là, pas seulement précéder le volume. Le phénomène concerne surtout la quantité de travail réalisée: le sommeil semble davantage associé à ta capacité à maintenir une séance longue et volumineuse qu'à une augmentation automatique de chaque série.\n\n6/7\n≥ 300 ·\n4/9\n< 250",
+    "PROGRESSION\nPompes inclinées pieds sur banc : recul puis retour près du niveau de départ\n\nEn lisant les 8 dernières séances jusqu’à la fin de la fenêtre (contexte hors fenêtre inclus), Pompes inclinées pieds sur banc est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Cette lecture s’appuie aussi sur 8 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.\n\nARC\n8\n(FENÊTRE\n0\n) · RECOVERED ·\n-7.3 %\n· 3×12→3×12",
+    "RYTHME\n100 %\n\nLes séances d'exercices sont bien plus tenues (~100 %) que les étirements (~0 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacité : la mobilité prévue n'entre presque pas dans l'exposition réelle."
+  ]
+}

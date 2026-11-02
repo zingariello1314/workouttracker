@@ -175,8 +175,31 @@ const HomePage = () => {
   const [layer1Opacity, setLayer1Opacity] = useState(0);
   const [layer0Loaded, setLayer0Loaded] = useState(false);
   const [layer1Loaded, setLayer1Loaded] = useState(false);
+  /** Resolvers en attente du vrai calque (frame peinte) — pas d’un probe jetable. */
+  const layerReadyWaitersRef = useRef({ 0: null, 1: null });
   /** Son global session : vidéos démarrent muettes (autoplay navigateur), bouton pour réactiver. */
   const [sessionMuted, setSessionMuted] = useState(true);
+
+  const waitForLayerReady = useCallback((layerIndex, timeoutMs = 2400) => {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (layerReadyWaitersRef.current[layerIndex] === finish) {
+          layerReadyWaitersRef.current[layerIndex] = null;
+        }
+        resolve();
+      };
+      layerReadyWaitersRef.current[layerIndex] = finish;
+      window.setTimeout(finish, timeoutMs);
+    });
+  }, []);
+
+  const notifyLayerReady = useCallback((layerIndex) => {
+    const waiter = layerReadyWaitersRef.current[layerIndex];
+    if (typeof waiter === 'function') waiter();
+  }, []);
   
   // ✅ Chargement initial : État pour savoir si l'image initiale est chargée
   const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
@@ -281,6 +304,10 @@ const HomePage = () => {
       };
 
       if (isVideo) {
+        // Injecter le src sur le vrai calque, puis attendre onReady (loadeddata
+        // du <video> monté). Un probe jetable rechargeait 2× → fade sur noir.
+        applyMediaMeta(fullData, false);
+        await waitForLayerReady(layerIndex);
         applyMediaMeta(fullData, true);
         if (isInitialLoad && !initialImageLoadedRef.current) {
           initialImageLoadedRef.current = true;
@@ -387,29 +414,34 @@ const HomePage = () => {
     
     if (!nextImage) return;
     
-    // Déterminer le layer inactif
+    // Déterminer le layer inactif — forcer opacity 0 avant chargement pour
+    // que la transition CSS 0.8s parte toujours d’un état stable (image↔vidéo).
     const inactiveLayer = activeLayerRef.current === 0 ? 1 : 0;
-    
-    // Charger la nouvelle image dans le layer inactif (thumbnail d'abord, puis full)
+    if (inactiveLayer === 0) setLayer0Opacity(0);
+    else setLayer1Opacity(0);
+
+    // Laisser un frame peindre l’opacity 0 avant d’injecter le média suivant.
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // Charger la nouvelle image/vidéo dans le layer inactif (thumbnail puis full / canplay)
     await loadImageIntoLayer(nextImage, inactiveLayer, true);
-    
-    // Attendre un court instant pour que le thumbnail soit visible
-    // Puis faire le cross-fade immédiatement (l'image full se chargera en arrière-plan)
-    // Layer actif : opacity 1 → 0
-    // Layer inactif : opacity 0 → 1
+
+    // Un frame de plus : le navigateur a le src + première frame avant le fade-in.
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // Cross-fade : layer actif 1→0, inactif 0→1 (transition CSS du calque)
     if (activeLayerRef.current === 0) {
-      setLayer1Opacity(1); // Afficher layer 1 (avec thumbnail ou full)
-      setLayer0Opacity(0); // Masquer layer 0
+      setLayer1Opacity(1);
+      setLayer0Opacity(0);
       setActiveLayer(1);
       activeLayerRef.current = 1;
     } else {
-      setLayer0Opacity(1); // Afficher layer 0 (avec thumbnail ou full)
-      setLayer1Opacity(0); // Masquer layer 1
+      setLayer0Opacity(1);
+      setLayer1Opacity(0);
       setActiveLayer(0);
       activeLayerRef.current = 0;
     }
-    
-    // Mettre à jour l'index
+
     setCurrentImageIndex(nextIndex);
     currentImageIndexRef.current = nextIndex;
   };
@@ -921,6 +953,7 @@ const HomePage = () => {
           zIndex={activeLayer === 0 ? 1 : 0}
           active={activeLayer === 0 && introPlaybackDone}
           sessionMuted={sessionMuted}
+          onReady={() => notifyLayerReady(0)}
           onVideoEnded={() => {
             if (activeLayer === 0) changeBackgroundImage();
           }}
@@ -951,6 +984,7 @@ const HomePage = () => {
           zIndex={activeLayer === 1 ? 1 : 0}
           active={activeLayer === 1 && introPlaybackDone}
           sessionMuted={sessionMuted}
+          onReady={() => notifyLayerReady(1)}
           onVideoEnded={() => {
             if (activeLayer === 1) changeBackgroundImage();
           }}

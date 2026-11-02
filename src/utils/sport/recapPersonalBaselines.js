@@ -160,7 +160,7 @@ export function buildExerciseBaselines({
           : '';
       out.push({
         id: String(exId),
-        name: name || `Exercice ${exId}`,
+        name: name || '',
         ...baseline
       });
     });
@@ -229,7 +229,7 @@ function buildSessionCatalogUncached({
     const name =
       typeof getExerciseNameById === 'function'
         ? String(getExerciseNameById(Number.isFinite(n) ? n : exId) || '').trim()
-        : `Exercice ${exId}`;
+        : '';
     const groups = inferMuscleGroupsForExercise({ name });
     sessions.forEach((s) => {
       if (!s?.date) return;

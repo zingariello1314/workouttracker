@@ -672,16 +672,24 @@ export function buildProgramAdherenceDiscoveries({
   window = null,
   getExerciseNameById = null,
   liveExercisesByDate = null,
-  computeScope = null
+  computeScope = null,
+  /** Si fournie, réutilise la matrice (partage avec P32b). */
+  planMatrix = null,
+  /** true → { cards, matrix } pour mutualiser avec d’autres producteurs. */
+  returnMatrix = false
 } = {}) {
-  if (!snapshot || !window?.start || !window?.end) return [];
+  if (!snapshot || !window?.start || !window?.end) {
+    return returnMatrix ? { cards: [], matrix: null } : [];
+  }
 
-  const matrix = buildPlanRealizationMatrix({
-    workoutData: snapshot,
-    window,
-    liveExercisesByDate,
-    getExerciseNameById
-  });
+  const matrix =
+    planMatrix ||
+    buildPlanRealizationMatrix({
+      workoutData: snapshot,
+      window,
+      liveExercisesByDate,
+      getExerciseNameById
+    });
 
   const adherencePack = buildAdherenceFindingsFromMatrix(matrix, { getExerciseNameById });
   const freqPack = buildFrequencyProgressFindings({
@@ -697,8 +705,7 @@ export function buildProgramAdherenceDiscoveries({
     if (row.traj?.ok) trajById.set(String(row.exerciseId), row.traj);
   }
 
-  const cards = composeProgramAdherenceDiscoveries(adherencePack, freqPack, { trajById });
-  return cards.map((c) => ({
+  const cards = composeProgramAdherenceDiscoveries(adherencePack, freqPack, { trajById }).map((c) => ({
     ...c,
     metrics: {
       ...(c.metrics || {}),
@@ -706,4 +713,5 @@ export function buildProgramAdherenceDiscoveries({
       adherencePrimary: matrix.adherenceSnapshotOnly?.primary || 'adjusted'
     }
   }));
+  return returnMatrix ? { cards, matrix } : cards;
 }

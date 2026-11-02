@@ -445,6 +445,30 @@ function scoreOf({ importance, reliability, novelty, fit }) {
   return Math.round((importance || 0) * (reliability || 0) * (novelty || 0) * (fit || 0) * 100);
 }
 
+function coerceEvidenceLine(evidence) {
+  if (evidence == null || evidence === '') return '';
+  if (typeof evidence === 'string') return evidence;
+  if (Array.isArray(evidence)) {
+    return evidence
+      .map((x) => coerceEvidenceLine(x))
+      .filter(Boolean)
+      .join(' · ');
+  }
+  if (typeof evidence === 'object') {
+    const parts = [];
+    for (const [k, v] of Object.entries(evidence)) {
+      if (k === 'phase' || v == null) continue;
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+        parts.push(String(v));
+      } else if (typeof v === 'object' && (v.name || v.label || v.title)) {
+        parts.push(String(v.name || v.label || v.title));
+      }
+    }
+    return parts.join(' · ');
+  }
+  return String(evidence);
+}
+
 function discovery(partial) {
   const score = partial.score != null ? partial.score : scoreOf(partial.weights || {});
   const contentClass =
@@ -460,7 +484,7 @@ function discovery(partial) {
     score,
     title: partial.title,
     body: partial.body,
-    evidence: partial.evidence || '',
+    evidence: coerceEvidenceLine(partial.evidence),
     relevance: Math.min(0.995, 0.88 + score / 900),
     metrics: { ...(partial.metrics || {}), contentClass },
     ...(partial.scope ? { scope: partial.scope } : {})
@@ -554,7 +578,7 @@ function calendarLoad(
   garminData,
   window,
   perfTimer = null,
-  { sportCache = null, calendarMemo = null } = {}
+  { sportCache = null, calendarMemo = null, grouped = null } = {}
 ) {
   const startYmd = window?.start;
   const endYmd = window?.end;
@@ -565,23 +589,28 @@ function calendarLoad(
     return calendarMemo.get(memoKey);
   }
   const measure = (name, fn) => (perfTimer?.measure ? perfTimer.measure(name, fn) : fn());
-  const grouped = aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
+  const agg =
+    grouped ||
+    aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
   const dates = measure('enumerateDatesInclusive', () => enumerateDatesInclusive(startYmd, endYmd));
+  // Pas d’objets Date : ymd string suffit (skipStreak — non consommé par measureRecapWindow).
   const days = measure('calendarDayMap', () =>
-    dates.map((ymd) => {
-      const endurance = Math.floor(
-        Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0
-      );
-      return {
-        isCurrentMonth: true,
-        date: new Date(`${ymd}T12:00:00`),
-        intensity: { reps: dayCheckedReps(grouped, ymd) + endurance }
-      };
-    })
+    dates.map((ymd) => ({
+      isCurrentMonth: true,
+      ymd,
+      date: ymd,
+      intensity: {
+        reps:
+          dayCheckedReps(agg, ymd) +
+          Math.floor(Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0)
+      }
+    }))
   );
   const cache = sportCache || getCalendarSportStatsCache(snapshot, garminData);
   const result = measure('computeCalendarMonthSportStats', () =>
-    computeCalendarMonthSportStats(days, snapshot, garminData, getDateStr, cache)
+    computeCalendarMonthSportStats(days, snapshot, garminData, getDateStr, cache, {
+      skipStreak: true
+    })
   );
   if (calendarMemo) calendarMemo.set(memoKey, result);
   return result;
@@ -600,11 +629,14 @@ export function measureRecapWindow({
   refDate = null,
   perfTimer = null,
   sportCache = null,
-  calendarMemo = null
+  calendarMemo = null,
+  grouped: groupedIn = null
 } = {}) {
   if (!snapshot || !window?.start || !window?.end) return emptyMeasure(window);
   const measure = (name, fn) => (perfTimer?.measure ? perfTimer.measure(name, fn) : fn());
-  const grouped = aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
+  const grouped =
+    groupedIn ||
+    aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
   const byExercise = new Map();
   const repsByDate = new Map();
   const exercisesByDate = new Map();
@@ -661,7 +693,11 @@ export function measureRecapWindow({
     .sort((a, b) => b.reps - a.reps);
 
   const cal = measure('calendarLoad', () =>
-    calendarLoad(snapshot, garminData, window, perfTimer, { sportCache, calendarMemo })
+    calendarLoad(snapshot, garminData, window, perfTimer, {
+      sportCache,
+      calendarMemo,
+      grouped
+    })
   );
   const minutes = Number(cal?.otherExerciseMinutes) || 0;
   const totalMinutes = Number(cal?.totalMinutes) || minutes;
@@ -756,7 +792,19 @@ export function buildPeriodComparisons({
   const ref = refFromYmd(end);
   const sportCache = getCalendarSportStatsCache(snapshot, garminData);
   const calendarMemo = new Map();
-  const winOpts = { snapshot, getExerciseNameById, garminData, perfTimer, sportCache, calendarMemo };
+  const grouped = aggregateCheckedRepsByDateAndExerciseId(
+    snapshot?.reps,
+    snapshot?.checkedExercises
+  );
+  const winOpts = {
+    snapshot,
+    getExerciseNameById,
+    garminData,
+    perfTimer,
+    sportCache,
+    calendarMemo,
+    grouped
+  };
   const periodM = measure('measureRecapWindow:period', () =>
     measureRecapWindow({
       ...winOpts,
@@ -862,7 +910,19 @@ export async function buildPeriodComparisonsAsync(opts = {}) {
   const ref = refFromYmd(end);
   const sportCache = getCalendarSportStatsCache(snapshot, garminData);
   const calendarMemo = new Map();
-  const winOpts = { snapshot, getExerciseNameById, garminData, perfTimer, sportCache, calendarMemo };
+  const grouped = aggregateCheckedRepsByDateAndExerciseId(
+    snapshot?.reps,
+    snapshot?.checkedExercises
+  );
+  const winOpts = {
+    snapshot,
+    getExerciseNameById,
+    garminData,
+    perfTimer,
+    sportCache,
+    calendarMemo,
+    grouped
+  };
 
   await coopGate(coop);
   const periodM = measure('measureRecapWindow:period', () =>
@@ -3047,42 +3107,50 @@ function detectDiscoveries(cmp, extras = {}) {
   const runMin = Number(p.runningMinutes) || 0;
   const runBase = volumeBaseline || prev30;
   const prevKm = Number(runBase?.runningKm) || 0;
+  // Ne publier la carte générique que s'il y a un contraste réel course ↔ renforcement.
+  // Un simple cumul « X km + Y reps » est trop faible face aux arcs / interruptions course.
   if ((runKm >= 1.5 || runMin >= 15) && p.totalReps >= 80) {
     const kmPct = prevKm >= 1.5 ? pctChange(runKm, prevKm) : null;
     const repsPct = runBase?.totalReps >= 80 ? pctChange(p.totalReps, runBase.totalReps) : null;
-    let read = 'Course et renforcement coexistent sur la période.';
-    if (kmPct != null && repsPct != null && kmPct < -12 && repsPct > 8) {
-      read = `Le volume de course recule (${fmtSignedPct(kmPct)}) tandis que les reps de renforcement augmentent (${fmtSignedPct(repsPct)}).`;
-    } else if (kmPct != null && repsPct != null && kmPct > 12 && repsPct < -8) {
-      read = `La course augmente (${fmtSignedPct(kmPct)}) alors que les reps de renforcement reculent (${fmtSignedPct(repsPct)}).`;
-    } else if (kmPct == null && prevKm < 1) {
-      read = 'La course réapparaît à côté du renforcement.';
+    const hasContrast =
+      (kmPct != null && repsPct != null && Math.abs(kmPct) >= 12 && Math.abs(repsPct) >= 8 && Math.sign(kmPct) !== Math.sign(repsPct)) ||
+      (kmPct == null && prevKm < 1 && runKm >= 3);
+    if (hasContrast) {
+      let read = 'Course et renforcement coexistent sur la période.';
+      if (kmPct != null && repsPct != null && kmPct < -12 && repsPct > 8) {
+        read = `Le volume de course recule (${fmtSignedPct(kmPct)}) tandis que les reps de renforcement augmentent (${fmtSignedPct(repsPct)}).`;
+      } else if (kmPct != null && repsPct != null && kmPct > 12 && repsPct < -8) {
+        read = `La course augmente (${fmtSignedPct(kmPct)}) alors que les reps de renforcement reculent (${fmtSignedPct(repsPct)}).`;
+      } else if (kmPct == null && prevKm < 1) {
+        read = 'La course réapparaît à côté du renforcement.';
+      }
+      const runClock = runMin >= 10 ? ` en ${formatDurationFr(runMin)}` : '';
+      out.push(
+        discovery({
+          kind: 'disc_cardio_strength',
+          nature: 'trajectory',
+          family: 'cardio_strength',
+          title: 'Course et renforcement divergent sur la période',
+          body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} combine ${fmt1(runKm)} km de course${runClock} et ${fmtInt(p.totalReps)} reps de renforcement.${
+            prevKm >= 1 || runBase?.totalReps >= 80
+              ? ` Sur ${volumeBaselineLabel} : ${fmt1(prevKm)} km et ${fmtInt(runBase.totalReps)} reps.`
+              : ''
+          } ${read}`,
+          evidence: `${fmt1(runKm)} km · ${fmtInt(p.totalReps)} reps`,
+          weights: { importance: 0.8, reliability: 0.88, novelty: 0.86, fit: 0.9 },
+          metrics: {
+            runKm,
+            runMin,
+            kmPct,
+            repsPct,
+            windowSpanDays: p.spanDays,
+            baselineSpanDays: runBase?.spanDays ?? null,
+            baselineSameLength: !isLongVoice(v) || (runBase?.spanDays != null && Math.abs((runBase.spanDays || 0) - (p.spanDays || 0)) < 3),
+            contrastOnly: true
+          }
+        })
+      );
     }
-    const runClock = runMin >= 10 ? ` en ${formatDurationFr(runMin)}` : '';
-    out.push(
-      discovery({
-        kind: 'disc_cardio_strength',
-        nature: 'trajectory',
-        family: 'cardio_strength',
-        title: 'Course et renforcement se lisent ensemble',
-        body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} combine ${fmt1(runKm)} km de course${runClock} et ${fmtInt(p.totalReps)} reps de renforcement.${
-          prevKm >= 1 || runBase?.totalReps >= 80
-            ? ` Sur ${volumeBaselineLabel} : ${fmt1(prevKm)} km et ${fmtInt(runBase.totalReps)} reps.`
-            : ''
-        } ${read}`,
-        evidence: `${fmt1(runKm)} km · ${fmtInt(p.totalReps)} reps`,
-        weights: { importance: 0.86, reliability: 0.88, novelty: 0.9, fit: 0.92 },
-        metrics: {
-          runKm,
-          runMin,
-          kmPct,
-          repsPct,
-          windowSpanDays: p.spanDays,
-          baselineSpanDays: runBase?.spanDays ?? null,
-          baselineSameLength: !isLongVoice(v) || (runBase?.spanDays != null && Math.abs((runBase.spanDays || 0) - (p.spanDays || 0)) < 3)
-        }
-      })
-    );
   }
 
   const fadeSrc = isToday || isWeek ? d30 : p;
@@ -3181,7 +3249,9 @@ function detectDiscoveries(cmp, extras = {}) {
     // Arcs multi-mois (fréquence vs densité) — prioritaire sur les longs horizons.
     if (isLongVoice(v) || (isMonth && Object.keys(p.repsByDate || {}).length >= 40)) {
       buildMonthlyVolumeArcDiscoveries(p.repsByDate, {
-        windowEndYmd: p.window?.end || null
+        windowEndYmd: p.window?.end || null,
+        snapshot: extras.snapshot || null,
+        garminData: extras.garminData || null
       }).forEach((partial) => out.push(discovery(partial)));
     }
   }
@@ -4348,16 +4418,23 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     measure('sleepRhythm', () =>
       buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog })
     );
-  const programAdherenceCards =
-    pre?.programAdherenceCards ||
+  const programAdherencePack =
+    pre?.programAdherencePack ||
     measure('programAdherence', () =>
       buildProgramAdherenceDiscoveries({
         snapshot: opts.snapshot,
         window: opts.window,
         getExerciseNameById: opts.getExerciseNameById || null,
-        computeScope
+        computeScope,
+        returnMatrix: true
       })
     );
+  const programAdherenceCards = Array.isArray(programAdherencePack)
+    ? programAdherencePack
+    : programAdherencePack?.cards || [];
+  const sharedPlanMatrix = Array.isArray(programAdherencePack)
+    ? null
+    : programAdherencePack?.matrix || null;
   const programAdherenceRaw = programAdherenceCards.map((card) =>
     discovery({
       kind: card.kind,
@@ -4380,7 +4457,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
         window: opts.window,
         getExerciseNameById: opts.getExerciseNameById || null,
         nameById: opts.nameById || null,
-        publishPlanVsActual: opts.publishP32bPlanVsActual !== false
+        publishPlanVsActual: opts.publishP32bPlanVsActual !== false,
+        planMatrix: sharedPlanMatrix
       })
     );
   // Phase 2 : activé par défaut après rejeu oct. (opt-out : includeP32bMuscleDiscoveries: false).
@@ -4424,6 +4502,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       metrics: card.metrics
     })
   );
+  /** P3.5 / P3.6 partagent la table jour (évite 2–3 rebuilds sur la même fenêtre). */
+  const p35p36DayTableCache = pre?.p35p36DayTableCache || new Map();
   /** P3.5 — GTG × classique / écarts / ressenti ; opt-out : includeP35Discoveries: false. */
   const includeP35 = opts.includeP35Discoveries !== false;
   const p35Pack = includeP35
@@ -4434,7 +4514,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
           window: opts.window,
           liveActiveProgram: opts.liveActiveProgram || null,
           getExerciseNameById: opts.getExerciseNameById || null,
-          includeP35Discoveries: true
+          includeP35Discoveries: true,
+          dayTableCache: p35p36DayTableCache
         })
       )
     : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
@@ -4465,7 +4546,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
           todayYmd: opts.todayYmd || null,
           liveActiveProgram: opts.liveActiveProgram || null,
           getExerciseNameById: opts.getExerciseNameById || null,
-          includeP36Discoveries: true
+          includeP36Discoveries: true,
+          dayTableCache: p35p36DayTableCache
         })
       )
     : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
@@ -4789,14 +4871,17 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
   );
 
   await coopGate(coop);
-  const programAdherenceCards = measure('programAdherence', () =>
+  const programAdherencePack = measure('programAdherence', () =>
     buildProgramAdherenceDiscoveries({
       snapshot: opts.snapshot,
       window: opts.window,
       getExerciseNameById: opts.getExerciseNameById || null,
-      computeScope
+      computeScope,
+      returnMatrix: true
     })
   );
+  const programAdherenceCards = programAdherencePack?.cards || [];
+  const sharedPlanMatrix = programAdherencePack?.matrix || null;
 
   await coopGate(coop);
   const p32bPack = measure('p32b', () =>
@@ -4805,7 +4890,8 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
       window: opts.window,
       getExerciseNameById: opts.getExerciseNameById || null,
       nameById: opts.nameById || null,
-      publishPlanVsActual: opts.publishP32bPlanVsActual !== false
+      publishPlanVsActual: opts.publishP32bPlanVsActual !== false,
+      planMatrix: sharedPlanMatrix
     })
   );
 
@@ -4821,6 +4907,7 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
     : { discoveries: [] };
 
   await coopGate(coop);
+  const p35p36DayTableCache = new Map();
   const includeP35 = opts.includeP35Discoveries !== false;
   const p35Pack = includeP35
     ? measure('p35', () =>
@@ -4829,7 +4916,8 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
           window: opts.window,
           liveActiveProgram: opts.liveActiveProgram || null,
           getExerciseNameById: opts.getExerciseNameById || null,
-          includeP35Discoveries: true
+          includeP35Discoveries: true,
+          dayTableCache: p35p36DayTableCache
         })
       )
     : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
@@ -4844,7 +4932,8 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
           todayYmd: opts.todayYmd || null,
           liveActiveProgram: opts.liveActiveProgram || null,
           getExerciseNameById: opts.getExerciseNameById || null,
-          includeP36Discoveries: true
+          includeP36Discoveries: true,
+          dayTableCache: p35p36DayTableCache
         })
       )
     : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
@@ -4860,7 +4949,7 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
       baselines,
       extras,
       sleepRaw,
-      programAdherenceCards,
+      programAdherencePack,
       p32bPack,
       p34Pack,
       p35Pack,

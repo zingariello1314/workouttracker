@@ -270,10 +270,12 @@ export default function SemaineModule({
         </span>
         <span>
           <b>
-            {stats.done} / {plannedPerWeek}
+            {stats.done + stats.part} / {plannedPerWeek}
           </b>{' '}
-          séances {isCurrentWeek ? 'faites' : 'complètes'}
-          {stats.part > 0 ? ` · ${stats.part} partielle${stats.part > 1 ? 's' : ''}` : ''}
+          séances avec au moins un exercice coché
+          {' · '}
+          <b>{stats.done}</b>
+          {` séance${stats.done > 1 ? 's' : ''} complète${stats.done > 1 ? 's' : ''}`}
         </span>
         {stats.avg != null ? (
           <span>
@@ -305,12 +307,14 @@ export default function SemaineModule({
         </div>
       ) : null}
 
-      <div className="wk-days" role="group" aria-label="Jours de la semaine">
+      <div className="wk-days" role="group" aria-label="Jours autour de la date sélectionnée">
         {Array.from({ length: 7 }, (_, i) => {
-          const d = addDays(selMon, i);
+          // Fenêtre glissante : J−3 … J … J+3 (centré sur le jour sélectionné)
+          const d = addDays(sel, i - 3);
           const ymd = keyOf(d);
           const view = resolveDayView(sessions, restDays, d, todayYmd);
           const future = ymd > todayYmd;
+          const dow = (d.getDay() + 6) % 7;
           const cls = [
             'wk-d',
             view.kind === 'done' && 'done',
@@ -331,7 +335,7 @@ export default function SemaineModule({
               aria-pressed={ymd === keyOf(sel)}
             >
               <span className="wk-n">
-                {DN[i]} {d.getDate()}
+                {DN[dow]} {d.getDate()}
               </span>
               <span className="wk-v">{view.label}</span>
               <span className="wk-bar" aria-hidden="true">

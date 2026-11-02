@@ -315,7 +315,7 @@ export default function RecapPeriodHighlightsPanel({
         </div>
       </div>
       </>
-      ) : open ? (
+      ) : open && analyticsProp !== null ? (
         <p className="emp">
           {t('recap.analyse.periodHighlights.empty', 'Pas assez de données sur cette période.')}
         </p>

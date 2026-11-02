@@ -11,6 +11,21 @@ import { P36_KINDS, P36_RIVAL_GROUPS } from './recapP36Kinds';
 
 export { P36_KINDS, P36_RIVAL_GROUPS };
 
+function evidenceLine(evidence = {}) {
+  if (typeof evidence === 'string') return evidence;
+  if (Array.isArray(evidence)) return evidence.filter(Boolean).map(String).join(' · ');
+  if (!evidence || typeof evidence !== 'object') return evidence == null ? '' : String(evidence);
+  const parts = [];
+  for (const [k, v] of Object.entries(evidence)) {
+    if (k === 'phase' || v == null) continue;
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') parts.push(String(v));
+    else if (typeof v === 'object' && (v.name || v.label || v.title)) {
+      parts.push(String(v.name || v.label || v.title));
+    }
+  }
+  return parts.join(' · ');
+}
+
 function card({
   kind,
   title,
@@ -30,7 +45,7 @@ function card({
     nature,
     family: 'p36',
     contentClass,
-    evidence: { phase: 'P3.6', ...evidence },
+    evidence: evidenceLine(evidence),
     weights: {
       importance: Math.min(0.9, Math.max(0.55, informative / 100)),
       reliability: isDescriptive ? 0.84 : 0.9,
@@ -42,7 +57,8 @@ function card({
       phase: 'P3.6',
       contentClass,
       informativeValue: informative,
-      ...metrics
+      ...metrics,
+      evidenceDetail: evidence && typeof evidence === 'object' ? evidence : undefined
     }
   };
 }
@@ -61,7 +77,8 @@ export function buildP36Discoveries({
   todayYmd = null,
   liveActiveProgram = null,
   getExerciseNameById = null,
-  includeP36Discoveries = true
+  includeP36Discoveries = true,
+  dayTableCache = null
 } = {}) {
   if (!includeP36Discoveries) {
     return { discoveries: [], metrics: null, abstentions: ['opt_out'] };
@@ -73,7 +90,8 @@ export function buildP36Discoveries({
   const metrics = computeP36WindowMetrics(snapshot, window, {
     todayYmd,
     liveActiveProgram,
-    getExerciseNameById
+    getExerciseNameById,
+    dayTableCache
   });
 
   const discoveries = [];

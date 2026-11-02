@@ -1,7 +1,7 @@
 /**
  * Construit / met à jour public/wallpaper-bank à partir des dossiers sources.
  * - Rebuild complet depuis « images fond decran acuueil et verrouillage »
- * - Append des « nouvelles bannieres » sans écraser les ids existants
+ * - Append de toutes les sources hors base (nouvelles bannieres, nouvelle banniere v2, …)
  * - Classe chaque image par thème (manifest.theme)
  *
  * Usage:
@@ -15,7 +15,11 @@ import sharp from 'sharp';
 
 const root = path.resolve(import.meta.dirname, '..');
 const classicDir = path.join(root, 'images fond decran acuueil et verrouillage');
-const newDir = path.join(root, 'nouvelles bannieres');
+/** Dossiers hors base : scannés en append (ordre stable). */
+const EXTRA_SOURCE_DIRS = [
+  path.join(root, 'nouvelles bannieres'),
+  path.join(root, 'nouvelle banniere v2'),
+];
 const outDir = path.join(root, 'public', 'wallpaper-bank');
 const fullDir = path.join(outDir, 'full');
 const thumbDir = path.join(outDir, 'thumbs');
@@ -23,26 +27,77 @@ const manifestPath = path.join(outDir, 'manifest.json');
 
 const IMAGE_RE = /\.(jpe?g|png|webp)$/i;
 
+/**
+ * Règles ordonnées : la première qui matche gagne.
+ * Objectif : moins de « Divers » / fourre-tout, catégories lisibles pour l’utilisateur.
+ */
 const THEME_RULES = [
-  { theme: 'Cyberpunk', re: /cyberpunk|n[ée]on|m[ée]gastructure|rooftop|m[ée]galopole|atrium|canal n[ée]on|corridor futuriste|lounge futuriste|salon cyberpunk|salon futuriste|piscine n[ée]on|laboratoire n[ée]on|chambre cyberpunk|bar futuriste|oasis n[ée]on|refuge n[ée]on|int[ée]rieur n[ée]on/i },
-  { theme: 'Japon', re: /japon|sakura|lanterne|cerisier|village c[ôo]ti[eè]re/i },
-  { theme: 'Hiver', re: /neige|enneig|hiver|montagne enneig|parking enneig|tour enneig[ée]/i },
-  { theme: 'Nature', re: /for[eê]t|clairi[eè]re|paysage|mer|plaine|brume|arbres|nuit [ée]toil[ée]e|silhouettes|voyageur/i },
-  { theme: 'Urbain', re: /ville|ruelle|graffiti|nocturne urbaine|m[ée]tropole|parking|port industriel|avion [ée]cras[ée]|panneau/i },
-  { theme: 'Action', re: /guerrier|cavalier|ar[eè]ne|clinch|patrouille|grimpeur|ascension|rituel|gardien|temple industriel/i },
-  { theme: 'Art', re: /atelier|galerie|tableau|mosa[iï]que|impressionniste|baroque|totem|abstrait|surr[ée]aliste|orientaliste|parchemin/i },
-  { theme: 'Intérieurs', re: /bureau|chambre|salon|bar |lounge|entrep[ôo]t|couloir|balcons|temple abstrait|terrasse/i },
-  { theme: 'Sombre', re: /glitch|cerveau|incendie|flammes|ruines|abandonn|interdit|surveillance|œil|oeil|victoire/i },
+  {
+    theme: 'Spatial',
+    re: /astronaute|orbital|plan[eè]te|espace|[eé]toil[eé]|m[eé]gastructure|nuages orbit|terre\b|fus[eé]e|cosmos|galact/i,
+  },
+  {
+    theme: 'Cyberpunk',
+    re: /cyberpunk|n[eé]on|m[eé]galopole|atrium|canal n[eé]on|corridor futuriste|lounge futuriste|salon cyberpunk|salon futuriste|piscine n[eé]on|laboratoire n[eé]on|chambre cyberpunk|bar futuriste|oasis n[eé]on|refuge n[eé]on|int[eé]rieur n[eé]on|biom[eé]canique|halo n[e9]on|futuriste/i,
+  },
+  {
+    theme: 'Fantaisie',
+    re: /dragon|monstre|chevalier|ch[aâ]teau|hant[eé]|spectral|crapaud|saiyan|guerrier masqu|cath[eé]drale biom|boucle infinie|temple|gardien|colossal|rituel|portail|totem|baroque|surr[eé]aliste/i,
+  },
+  {
+    theme: 'Japon',
+    re: /japon|sakura|lanterne|cerisier|village c[ôo]ti[eè]re|orientaliste/i,
+  },
+  {
+    theme: 'Hiver',
+    re: /neige|enneig|hiver|montagne enneig|parking enneig|tour enneig[eé]|hivernal|brume hivern/i,
+  },
+  {
+    theme: 'Action',
+    re: /guerrier|cavalier|ar[eè]ne|clinch|combat|ring|course-poursuite|patrouille|grimpeur|ascension|figures enflamm|incendie|flammes/i,
+  },
+  {
+    theme: 'Art',
+    re: /atelier|pastel|galerie|tableau|mosa[iï]que|impressionniste|abstrait|parchemin|peinture|œuvre|oeuvre|b[aâ]tonnets pastel|table d[’']artiste|ardoise/i,
+  },
+  {
+    theme: 'Nature',
+    re: /for[eê]t|clairi[eè]re|paysage|mer|plaine|brume|arbres|nuit [eé]toil[eé]e|silhouettes|voyageur|collines|prairie|vall[eé]e|haies|horizon|coucher du soleil|femme en blanc/i,
+  },
+  {
+    theme: 'Urbain',
+    re: /ville|ruelle|graffiti|nocturne urbaine|m[eé]tropole|parking|port industriel|avion [eé]cras[eé]|panneau|immeuble|briques|couloir|cour d|fen[eê]tre industrielle|valtess/i,
+  },
+  {
+    theme: 'Intérieurs',
+    re: /bureau|chambre|salon|bar |lounge|entrep[ôo]t|balcons|terrasse|chandelier|tapis|billard|fen[eê]tre|go dans un cadre/i,
+  },
+  {
+    theme: 'Sombre',
+    re: /glitch|cerveau|ruines|abandonn|interdit|surveillance|[oœ]il|victoire|abysses|d[eé]form[eé]|spirale|mosa[iï]que sombre|silhouettes rouges/i,
+  },
+  {
+    theme: 'Scènes',
+    re: /train|village|route|pont|porche|marcheur|poule|vague de verre|cirque|go\b| porsche|voiture/i,
+  },
 ];
 
 export function inferWallpaperTheme(name = '') {
   const label = String(name || '');
-  if (/^ChatGPT Image/i.test(label) || /^instagram/i.test(label)) return 'Divers';
+  const bare = label.replace(/\s*\(\d+\)(\s*\(\d+\))*\s*$/g, '').replace(/\s+\d+\s*$/g, '').trim();
+  // Génératif sans titre descriptif → catégorie dédiée (plus claire que « Divers »)
+  if (/^ChatGPT Image/i.test(label) || /^instagram/i.test(label)) return 'Génératif';
   for (const rule of THEME_RULES) {
     if (rule.re.test(label)) return rule.theme;
   }
-  // UUID / noms techniques de l’ancienne banque
-  if (/^[0-9A-F-]{8,}$/i.test(label) || /^original-/i.test(label)) return 'Classiques';
+  // UUID / noms techniques de l’ancienne banque (avec suffixes « (1) », « 2 », …)
+  if (
+    /^[0-9A-F]{8}-[0-9A-F-]{4,}$/i.test(bare) ||
+    /^[0-9A-F-]{8,}$/i.test(bare) ||
+    /^original-/i.test(label)
+  ) {
+    return 'Classiques';
+  }
   return 'Scènes';
 }
 
@@ -60,6 +115,14 @@ function listImages(dir) {
     .sort((a, b) => a.localeCompare(b, 'fr'));
 }
 
+/** Normalise pour dédup : retire suffixes (1), (1) (1), espaces parasites. */
+function normalizeDisplayKey(displayName) {
+  return String(displayName || '')
+    .replace(/\s*\(\d+\)(\s*\(\d+\))*\s*$/g, '')
+    .trim()
+    .toLocaleLowerCase('fr');
+}
+
 function readManifest() {
   if (!fs.existsSync(manifestPath)) return { version: 1, count: 0, images: [] };
   try {
@@ -72,7 +135,7 @@ function readManifest() {
 function writeManifest(images) {
   const withThemes = images.map((img) => ({
     ...img,
-    theme: img.theme || inferWallpaperTheme(img.name),
+    theme: inferWallpaperTheme(img.name),
   }));
   const themes = [...new Set(withThemes.map((img) => img.theme))].sort((a, b) =>
     a.localeCompare(b, 'fr')
@@ -87,7 +150,7 @@ function writeManifest(images) {
   return manifest;
 }
 
-async function processFile(srcPath, id, displayName) {
+async function processFile(srcPath, id, displayName, meta = {}) {
   const ext = extOf(path.basename(srcPath));
   const fileName = `${id}${ext}`;
   fs.copyFileSync(srcPath, path.join(fullDir, fileName));
@@ -96,13 +159,51 @@ async function processFile(srcPath, id, displayName) {
     .resize({ width: 480, withoutEnlargement: true })
     .webp({ quality: 72 })
     .toFile(path.join(thumbDir, `${id}.webp`));
+  const batch = meta.newBatch || null;
   return {
     id,
     name: displayName,
     theme: inferWallpaperTheme(displayName),
     src: `/wallpaper-bank/full/${fileName}`,
     thumb: `/wallpaper-bank/thumbs/${id}.webp`,
+    source: meta.source || 'classic',
+    isNew: Boolean(meta.isNew),
+    newBatch: batch,
   };
+}
+
+/** Marque isNew / newBatch selon les dossiers « nouvelles bannieres » (+ v2). */
+function markNewFromExtraDirs(images) {
+  const byKey = new Map();
+  for (const dir of EXTRA_SOURCE_DIRS) {
+    if (!fs.existsSync(dir)) continue;
+    const batch = /v2/i.test(path.basename(dir)) ? 'v2' : 'nouvelles';
+    for (const name of listImages(dir)) {
+      const displayName = path.basename(name, path.extname(name));
+      byKey.set(normalizeDisplayKey(displayName), batch);
+    }
+  }
+  let marked = 0;
+  const next = images.map((img) => {
+    const batch = byKey.get(normalizeDisplayKey(img.name));
+    if (!batch) {
+      return {
+        ...img,
+        source: img.source || 'classic',
+        isNew: false,
+        newBatch: null,
+      };
+    }
+    marked += 1;
+    return {
+      ...img,
+      source: batch,
+      isNew: true,
+      newBatch: batch,
+    };
+  });
+  console.log(`Étiquettes « Nouveau » : ${marked} images (nouvelles + v2)`);
+  return next;
 }
 
 function nextId(images) {
@@ -134,47 +235,61 @@ async function rebuildClassic() {
   return images;
 }
 
-async function appendNew(images) {
-  const files = listImages(newDir);
+async function appendFromDir(images, dir, label) {
+  const files = listImages(dir);
   if (!files.length) {
-    console.warn('Aucune nouvelle bannière dans', newDir);
+    console.warn(`[${label}] aucune image dans`, dir);
     return images;
   }
 
-  const existingNames = new Set(
-    images.map((img) => String(img.name || '').trim().toLocaleLowerCase('fr'))
-  );
-  // Aussi dédupliquer si un fichier a déjà été importé sous un nom proche
+  const existingNames = new Set(images.map((img) => normalizeDisplayKey(img.name)));
   const existingBasenames = new Set(
-    images.map((img) => {
-      const base = path.basename(img.src || '', path.extname(img.src || ''));
-      return base;
-    })
+    images.map((img) => path.basename(img.src || '', path.extname(img.src || '')))
   );
 
   let cursor = nextId(images);
   const next = [...images];
   let added = 0;
+  let skipped = 0;
 
   for (const name of files) {
     const displayName = path.basename(name, path.extname(name));
-    const key = displayName.trim().toLocaleLowerCase('fr');
+    const key = normalizeDisplayKey(displayName);
     if (existingNames.has(key)) {
-      console.log(`skip (déjà présent): ${displayName}`);
+      skipped += 1;
       continue;
     }
     const id = `w${String(cursor).padStart(3, '0')}`;
     cursor += 1;
     if (existingBasenames.has(id)) continue;
 
-    const entry = await processFile(path.join(newDir, name), id, displayName);
+    const batch = /v2/i.test(label) ? 'v2' : 'nouvelles';
+    const entry = await processFile(path.join(dir, name), id, displayName, {
+      source: batch,
+      isNew: true,
+      newBatch: batch,
+    });
     next.push(entry);
     existingNames.add(key);
     added += 1;
-    if (added % 10 === 0) console.log(`nouvelles +${added}/${files.length}`);
+    if (added % 10 === 0) console.log(`[${label}] +${added}/${files.length}`);
   }
 
-  console.log(`Append: ${added} nouvelles bannières`);
+  console.log(`[${label}] +${added} (skip ${skipped} déjà présents)`);
+  return next;
+}
+
+async function appendAllExtra(images) {
+  let next = images;
+  for (const dir of EXTRA_SOURCE_DIRS) {
+    const label = path.basename(dir);
+    if (!fs.existsSync(dir)) {
+      console.warn(`Dossier absent (ignoré): ${label}`);
+      continue;
+    }
+    console.log(`Append « ${label} »…`);
+    next = await appendFromDir(next, dir, label);
+  }
   return next;
 }
 
@@ -185,8 +300,14 @@ async function main() {
 
   if (args.has('--themes')) {
     const current = readManifest();
-    const manifest = writeManifest(current.images || []);
-    console.log(`Thèmes mis à jour: ${manifest.count} images, ${manifest.themes.length} thèmes`);
+    const tagged = markNewFromExtraDirs(current.images || []);
+    const manifest = writeManifest(tagged);
+    const counts = {};
+    for (const img of manifest.images) {
+      counts[img.theme] = (counts[img.theme] || 0) + 1;
+    }
+    console.log(`Thèmes mis à jour: ${manifest.count} images`);
+    console.log(counts);
     return;
   }
 
@@ -202,12 +323,17 @@ async function main() {
     images = await rebuildClassic();
   }
 
-  console.log('Append nouvelles bannières…');
-  images = await appendNew(images);
+  images = await appendAllExtra(images);
+  images = markNewFromExtraDirs(images);
   const manifest = writeManifest(images);
+  const counts = {};
+  for (const img of manifest.images) {
+    counts[img.theme] = (counts[img.theme] || 0) + 1;
+  }
   console.log(
     `Banque prête: ${manifest.count} images · thèmes: ${manifest.themes.join(', ')}`
   );
+  console.log(counts);
 }
 
 main().catch((error) => {

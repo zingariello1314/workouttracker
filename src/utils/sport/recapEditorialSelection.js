@@ -14,6 +14,7 @@ import {
   repairDisplayNameFromIdentity,
   displayNameOf
 } from './recapEditorialIdentity';
+import { isFallbackExerciseLabel } from './resolveStorageExerciseIdentity';
 
 /** Kinds descriptifs souvent faibles hors contraste réel. */
 export const WEAK_DESCRIPTIVE_KINDS = Object.freeze([
@@ -24,7 +25,8 @@ export const WEAK_DESCRIPTIVE_KINDS = Object.freeze([
   'disc_quarter_arc',
   'disc_repertoire',
   'disc_volume_shape',
-  'disc_exercise_share'
+  'disc_exercise_share',
+  'disc_cardio_strength'
 ]);
 
 /** Kinds d’épisode exercice (retour / émergence / mémoire). */
@@ -184,8 +186,14 @@ export function isUnresolvedExerciseName(d) {
   if (repaired.status === 'name_repaired_from_historical_id' || repaired.status === 'name_present') {
     return false;
   }
-  const blob = `${d?.title || ''} ${d?.metrics?.name || ''} ${d?.metrics?.f4Narration?.resolvedName || ''}`;
-  return /\bun mouvement\b/i.test(blob);
+  const blob = `${d?.title || ''} ${d?.body || ''} ${d?.metrics?.name || ''} ${d?.metrics?.f4Narration?.resolvedName || ''}`;
+  if (/\bun mouvement\b/i.test(blob)) return true;
+  if (/\bExercice\s+\d{2,}\b/i.test(blob)) return true;
+  if (/\bExercice inconnu\b/i.test(blob)) return true;
+  if (isFallbackExerciseLabel(d?.metrics?.name) || isFallbackExerciseLabel(d?.metrics?.exerciseName)) {
+    return true;
+  }
+  return false;
 }
 
 /** Applique une réparation de nom sur une copie metrics (sans inventer d’alias). */
@@ -216,6 +224,7 @@ export function isWeakDescriptiveCard(d) {
   if (kind === 'disc_calendar_rhythm' && Number(m.quietDays) >= 3 && Number(m.trainedDays) >= 2) {
     return false;
   }
+  if (kind === 'disc_cardio_strength' && m.contrastOnly) return false;
   return true;
 }
 

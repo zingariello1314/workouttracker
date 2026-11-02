@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
+import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { useAppLock } from '../context/AppLockContext';
 import { resolveLockWallpaperUrls } from '../utils/wallpaperTargets';
@@ -78,9 +78,17 @@ const HomePageImageSettings = ({ onClose }) => {
   const [bankThemes, setBankThemes] = useState([]);
   const [bankQuery, setBankQuery] = useState('');
   const [bankTheme, setBankTheme] = useState('all');
+  /** all | in | out — dans / hors collection */
+  const [bankCollectionFilter, setBankCollectionFilter] = useState('all');
+  /** all | new | classic — nouveaux (nouvelles + v2) vs reste */
+  const [bankNewFilter, setBankNewFilter] = useState('all');
   const [bankPreviewId, setBankPreviewId] = useState(null);
   const [bankAddingTheme, setBankAddingTheme] = useState(false);
   const [bankVideos, setBankVideos] = useState([]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }, []);
 
   // Purge hous n fire / streetlife (et autres retirés) de la collection utilisateur
   useEffect(() => {
@@ -129,18 +137,75 @@ const HomePageImageSettings = ({ onClose }) => {
     };
   }, []);
 
+  const collectionIdSet = useMemo(() => {
+    const set = new Set();
+    backgroundImages.forEach((img, i) => {
+      const id = normalizeHomepageImage(img, i).id;
+      if (id) set.add(id);
+    });
+    return set;
+  }, [backgroundImages]);
+
+  const bankNewCount = useMemo(
+    () => bankImages.filter((item) => item.isNew).length,
+    [bankImages]
+  );
+
   const filteredBankImages = useMemo(() => {
     const q = bankQuery.trim().toLowerCase();
     return bankImages.filter((item) => {
       if (bankTheme !== 'all' && (item.theme || 'Scènes') !== bankTheme) return false;
+      const inCollection = collectionIdSet.has(`bank:${item.id}`);
+      if (bankCollectionFilter === 'in' && !inCollection) return false;
+      if (bankCollectionFilter === 'out' && inCollection) return false;
+      if (bankNewFilter === 'new' && !item.isNew) return false;
+      if (bankNewFilter === 'classic' && item.isNew) return false;
       if (!q) return true;
-      return `${item.name || ''} ${item.id} ${item.theme || ''}`.toLowerCase().includes(q);
+      return `${item.name || ''} ${item.id} ${item.theme || ''} ${item.newBatch || ''}`
+        .toLowerCase()
+        .includes(q);
     });
-  }, [bankImages, bankQuery, bankTheme]);
+  }, [
+    bankImages,
+    bankQuery,
+    bankTheme,
+    bankCollectionFilter,
+    bankNewFilter,
+    collectionIdSet
+  ]);
 
   const bankPreviewItem = useMemo(
     () => bankImages.find((item) => item.id === bankPreviewId) || null,
     [bankImages, bankPreviewId]
+  );
+
+  const bankPreviewFilteredIndex = useMemo(() => {
+    if (!bankPreviewId) return -1;
+    return filteredBankImages.findIndex((item) => item.id === bankPreviewId);
+  }, [filteredBankImages, bankPreviewId]);
+
+  const stepCollectionPreview = useCallback(
+    (delta) => {
+      setPreviewIndex((current) => {
+        if (current == null || !backgroundImages.length) return current;
+        const len = backgroundImages.length;
+        return (current + delta + len) % len;
+      });
+    },
+    [backgroundImages.length]
+  );
+
+  const stepBankPreview = useCallback(
+    (delta) => {
+      if (!filteredBankImages.length) return;
+      setBankPreviewId((currentId) => {
+        const idx = filteredBankImages.findIndex((item) => item.id === currentId);
+        const base = idx >= 0 ? idx : 0;
+        const next = (base + delta + filteredBankImages.length) % filteredBankImages.length;
+        return filteredBankImages[next]?.id ?? currentId;
+      });
+    },
+    [filteredBankImages]
   );
 
   // Fonction pour nettoyer le localStorage
@@ -254,6 +319,51 @@ const HomePageImageSettings = ({ onClose }) => {
   const toggleHidden = (index) => {
     patchImage(index, (norm) => ({ hidden: !norm.hidden }));
   };
+
+  // Clavier plein écran : ← →, Escape ; F favori, H masquer, A accueil, L verrou
+  useEffect(() => {
+    if (previewIndex == null && !bankPreviewId) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') {
+        setPreviewIndex(null);
+        setBankPreviewId(null);
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (previewIndex != null) stepCollectionPreview(-1);
+        else stepBankPreview(-1);
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        if (previewIndex != null) stepCollectionPreview(1);
+        else stepBankPreview(1);
+        return;
+      }
+      if (previewIndex == null) return;
+      if (event.key === 'f' || event.key === 'F') {
+        event.preventDefault();
+        toggleLike(previewIndex);
+      } else if (event.key === 'h' || event.key === 'H') {
+        event.preventDefault();
+        toggleHidden(previewIndex);
+      } else if (event.key === 'a' || event.key === 'A') {
+        event.preventDefault();
+        toggleUseOnHome(previewIndex);
+      } else if (event.key === 'l' || event.key === 'L') {
+        event.preventDefault();
+        toggleUseOnLock(previewIndex);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [
+    previewIndex,
+    bankPreviewId,
+    stepCollectionPreview,
+    stepBankPreview
+  ]);
 
   const persistCollection = async (updated) => {
     setBackgroundImages(updated);
@@ -711,16 +821,31 @@ const HomePageImageSettings = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className={`${S.modalPanel} max-w-4xl`}>
-        <div className={`${S.modalHeader} flex-wrap gap-3`}>
-          <h2 className="text-2xl font-bold text-red-100">Fonds d&apos;écran — accueil &amp; verrouillage</h2>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className={`flex items-center gap-2 text-sm text-emerald-400/90`}>
-              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-              <span>Sauvegarde automatique active</span>
+    <div className="min-h-screen w-full bg-gradient-to-b from-zinc-950 via-black to-zinc-950 text-red-50">
+      <div className="sticky top-0 z-40 border-b border-red-900/40 bg-black/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-sm`}
+            >
+              ← Retour aux paramètres
+            </button>
+            <div className="min-w-0">
+              <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${S.muted}`}>
+                Apparence
+              </p>
+              <h1 className="truncate text-lg font-bold text-red-50 md:text-xl">
+                Fonds d&apos;écran — accueil &amp; verrouillage
+              </h1>
             </div>
-
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 text-xs text-emerald-400/90 md:text-sm">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              <span>Sauvegarde automatique</span>
+            </div>
             <button
               type="button"
               onClick={() => setShowDiagnostic(true)}
@@ -728,7 +853,6 @@ const HomePageImageSettings = ({ onClose }) => {
             >
               Diagnostic
             </button>
-
             <button
               type="button"
               onClick={handleManualSave}
@@ -737,45 +861,23 @@ const HomePageImageSettings = ({ onClose }) => {
             >
               {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
             </button>
-
-            {saveStatus === 'success' && (
-              <div className="flex items-center text-sm text-emerald-400">
-                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Sauvegardé !
-              </div>
-            )}
-
-            {saveStatus === 'error' && (
-              <div className="flex items-center text-sm text-red-400">
-                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Erreur
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={onClose}
-              className={`rounded-lg p-2 transition-colors ${S.muted} hover:bg-red-950/40 hover:text-red-100`}
-              aria-label="Fermer"
-            >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            {saveStatus === 'success' ? (
+              <span className="text-sm text-emerald-400">Sauvegardé !</span>
+            ) : null}
+            {saveStatus === 'error' ? (
+              <span className="text-sm text-red-400">Erreur</span>
+            ) : null}
           </div>
         </div>
+      </div>
 
-        <div className="p-6 space-y-8">
-          <div>
-            <h3 className="mb-2 text-lg font-semibold text-red-100">Banque de fonds d&apos;écran</h3>
+      <div className="mx-auto max-w-6xl space-y-10 px-4 py-6 md:px-6 md:py-8">
+          <section className="rounded-2xl border border-red-900/35 bg-zinc-950/80 p-4 shadow-xl shadow-black/40 md:p-6">
+            <h2 className="mb-2 text-lg font-semibold text-red-100">Banque de fonds d&apos;écran</h2>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              {bankImages.length} images disponibles pour tout le monde, classées par thèmes.
-              Cliquez une miniature pour l&apos;agrandir avant de l&apos;ajouter. Les images ajoutées
-              ne sont ni sur l&apos;accueil ni sur le verrouillage tant que vous ne les activez pas.
+              {bankImages.length} images · {bankNewCount} nouvelles (dossiers « nouvelles bannières »
+              + « v2 »). Cliquez une miniature pour l&apos;agrandir. Les ajouts ne passent sur
+              l&apos;accueil / le verrou qu&apos;après activation dans votre collection.
             </p>
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <input
@@ -798,6 +900,42 @@ const HomePageImageSettings = ({ onClose }) => {
                     : `Ajouter tout le thème « ${bankTheme} »`}
                 </button>
               ) : null}
+            </div>
+            <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Collection">
+              {[
+                { id: 'all', label: 'Toutes' },
+                { id: 'out', label: 'Pas dans ma collection' },
+                { id: 'in', label: 'Dans ma collection' }
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setBankCollectionFilter(opt.id)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    bankCollectionFilter === opt.id ? S.btnSm : S.btnSecondary
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Nouveautés">
+              {[
+                { id: 'all', label: 'Tous âges' },
+                { id: 'new', label: `Nouveaux (${bankNewCount})` },
+                { id: 'classic', label: 'Hors nouveaux' }
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setBankNewFilter(opt.id)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    bankNewFilter === opt.id ? S.btnSm : S.btnSecondary
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
             <div
               className="mb-4 flex flex-wrap gap-1.5"
@@ -833,14 +971,18 @@ const HomePageImageSettings = ({ onClose }) => {
                 );
               })}
             </div>
-            <div className="grid max-h-[28rem] grid-cols-3 gap-3 overflow-y-auto pr-1 md:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {filteredBankImages.map((item) => {
                 const id = `bank:${item.id}`;
-                const added = backgroundImages.some(
-                  (img, i) => normalizeHomepageImage(img, i).id === id
-                );
+                const added = collectionIdSet.has(id);
+                const batchLabel =
+                  item.newBatch === 'v2'
+                    ? 'Nouveau · v2'
+                    : item.newBatch === 'nouvelles' || item.isNew
+                      ? 'Nouveau'
+                      : null;
                 return (
-                  <div key={item.id} className="overflow-hidden rounded-lg border border-red-900/40">
+                  <div key={item.id} className="overflow-hidden rounded-xl border border-red-900/40 bg-black/40">
                     <button
                       type="button"
                       onClick={() => setBankPreviewId(item.id)}
@@ -852,7 +994,7 @@ const HomePageImageSettings = ({ onClose }) => {
                         alt={item.name || item.id}
                         loading="lazy"
                         decoding="async"
-                        className="h-24 w-full object-cover transition group-hover:brightness-110"
+                        className="h-28 w-full object-cover transition group-hover:brightness-110 md:h-32"
                       />
                       <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
                         <ZoomIn className="h-6 w-6 text-white/90 drop-shadow" />
@@ -860,6 +1002,11 @@ const HomePageImageSettings = ({ onClose }) => {
                       {item.theme ? (
                         <span className="absolute left-1 top-1 rounded border border-black/40 bg-black/70 px-1 py-0.5 text-[9px] text-red-100/90">
                           {item.theme}
+                        </span>
+                      ) : null}
+                      {batchLabel ? (
+                        <span className="absolute right-1 top-1 rounded border border-amber-400/50 bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-black">
+                          {batchLabel}
                         </span>
                       ) : null}
                     </button>
@@ -879,8 +1026,12 @@ const HomePageImageSettings = ({ onClose }) => {
             </div>
             {filteredBankImages.length === 0 ? (
               <p className={`mt-3 text-sm ${S.muted}`}>Aucune image pour ce filtre.</p>
-            ) : null}
-          </div>
+            ) : (
+              <p className={`mt-3 text-xs ${S.muted}`}>
+                {filteredBankImages.length} résultat{filteredBankImages.length > 1 ? 's' : ''}
+              </p>
+            )}
+          </section>
 
           <div>
             <h3 className="mb-2 text-lg font-semibold text-red-100">Banque de vidéos d&apos;accueil</h3>
@@ -1560,24 +1711,55 @@ const HomePageImageSettings = ({ onClose }) => {
               </p>
             </div>
           </div>
-        </div>
 
-        <div className={S.modalFooter}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-red-900/30 pt-6 pb-10">
           <button type="button" onClick={onClose} className={S.btnSecondary}>
-            Fermer
+            ← Retour aux paramètres
+          </button>
+          <button type="button" onClick={onClose} className={S.btnPrimary}>
+            Terminé
           </button>
         </div>
       </div>
 
       {/* Aperçu agrandi — collection */}
-      {previewIndex != null && backgroundImages[previewIndex] && (
+      {previewIndex != null && backgroundImages[previewIndex] && (() => {
+        const previewNorm = normalizeHomepageImage(backgroundImages[previewIndex], previewIndex);
+        const canNavCollection = backgroundImages.length > 1;
+        return (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setPreviewIndex(null)}
           role="dialog"
           aria-modal="true"
           aria-label="Aperçu image de fond"
         >
+          {canNavCollection ? (
+            <button
+              type="button"
+              aria-label="Bannière précédente"
+              onClick={(e) => {
+                e.stopPropagation();
+                stepCollectionPreview(-1);
+              }}
+              className="absolute left-3 top-1/2 z-[61] -translate-y-1/2 rounded-full border border-red-800/60 bg-black/70 p-3 text-red-100 hover:bg-red-950/80"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          ) : null}
+          {canNavCollection ? (
+            <button
+              type="button"
+              aria-label="Bannière suivante"
+              onClick={(e) => {
+                e.stopPropagation();
+                stepCollectionPreview(1);
+              }}
+              className="absolute right-3 top-1/2 z-[61] -translate-y-1/2 rounded-full border border-red-800/60 bg-black/70 p-3 text-red-100 hover:bg-red-950/80"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          ) : null}
           <div
             className="relative max-h-[90vh] max-w-5xl w-full"
             onClick={(e) => e.stopPropagation()}
@@ -1585,42 +1767,53 @@ const HomePageImageSettings = ({ onClose }) => {
             <img
               src={getHomepageImageFullSrc(backgroundImages[previewIndex])}
               alt={`Aperçu Fond ${previewIndex + 1}`}
-              className="max-h-[85vh] w-full rounded-xl border border-red-900/50 object-contain shadow-2xl"
+              className="max-h-[78vh] w-full rounded-xl border border-red-900/50 object-contain shadow-2xl"
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-red-100/90">
-                Fond {previewIndex + 1}
-                {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).liked
-                  ? ' · Favori (rotation renforcée)'
-                  : ''}
-                {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).hidden
-                  ? ' · Masquée'
-                  : ''}
+                Fond {previewIndex + 1} / {backgroundImages.length}
+                {previewNorm.liked ? ' · Favori' : ''}
+                {previewNorm.hidden ? ' · Masquée' : ''}
+                {previewNorm.useOnHome === false ? ' · Hors accueil' : ''}
+                {previewNorm.useOnLock === false ? ' · Hors verrou' : ''}
+                <span className={`ml-2 text-xs ${S.muted}`}>← → · F · H · A · L · Esc</span>
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => toggleLike(previewIndex)}
                   className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-xs`}
                 >
                   <Heart className="h-3.5 w-3.5" />
-                  {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).liked
-                    ? 'Retirer favori'
-                    : 'Mettre en favori'}
+                  {previewNorm.liked ? 'Retirer favori' : 'Favori'}
                 </button>
                 <button
                   type="button"
                   onClick={() => toggleHidden(previewIndex)}
                   className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-xs`}
                 >
-                  {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).hidden ? (
+                  {previewNorm.hidden ? (
                     <Eye className="h-3.5 w-3.5" />
                   ) : (
                     <EyeOff className="h-3.5 w-3.5" />
                   )}
-                  {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).hidden
-                    ? 'Réafficher'
-                    : 'Masquer'}
+                  {previewNorm.hidden ? 'Réafficher' : 'Masquer'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleUseOnHome(previewIndex)}
+                  className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-xs`}
+                >
+                  <Home className="h-3.5 w-3.5" />
+                  {previewNorm.useOnHome === false ? 'Activer accueil' : 'Retirer accueil'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleUseOnLock(previewIndex)}
+                  className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-xs`}
+                >
+                  <Lock className="h-3.5 w-3.5" />
+                  {previewNorm.useOnLock === false ? 'Activer verrou' : 'Retirer verrou'}
                 </button>
                 <button type="button" onClick={() => setPreviewIndex(null)} className={S.btnPrimary}>
                   Fermer
@@ -1629,17 +1822,44 @@ const HomePageImageSettings = ({ onClose }) => {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Aperçu agrandi — banque (avant sélection) */}
       {bankPreviewItem && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setBankPreviewId(null)}
           role="dialog"
           aria-modal="true"
           aria-label="Aperçu bannière banque"
         >
+          {filteredBankImages.length > 1 ? (
+            <button
+              type="button"
+              aria-label="Bannière précédente"
+              onClick={(e) => {
+                e.stopPropagation();
+                stepBankPreview(-1);
+              }}
+              className="absolute left-3 top-1/2 z-[61] -translate-y-1/2 rounded-full border border-red-800/60 bg-black/70 p-3 text-red-100 hover:bg-red-950/80"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          ) : null}
+          {filteredBankImages.length > 1 ? (
+            <button
+              type="button"
+              aria-label="Bannière suivante"
+              onClick={(e) => {
+                e.stopPropagation();
+                stepBankPreview(1);
+              }}
+              className="absolute right-3 top-1/2 z-[61] -translate-y-1/2 rounded-full border border-red-800/60 bg-black/70 p-3 text-red-100 hover:bg-red-950/80"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          ) : null}
           <div
             className="relative max-h-[90vh] max-w-5xl w-full"
             onClick={(e) => e.stopPropagation()}
@@ -1647,11 +1867,17 @@ const HomePageImageSettings = ({ onClose }) => {
             <img
               src={bankPreviewItem.src}
               alt={bankPreviewItem.name || bankPreviewItem.id}
-              className="max-h-[85vh] w-full rounded-xl border border-red-900/50 object-contain shadow-2xl"
+              className="max-h-[78vh] w-full rounded-xl border border-red-900/50 object-contain shadow-2xl"
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-red-100/90">{bankPreviewItem.name || bankPreviewItem.id}</p>
+                <p className="text-sm text-red-100/90">
+                  {bankPreviewItem.name || bankPreviewItem.id}
+                  {bankPreviewFilteredIndex >= 0
+                    ? ` · ${bankPreviewFilteredIndex + 1} / ${filteredBankImages.length}`
+                    : ''}
+                  <span className={`ml-2 text-xs ${S.muted}`}>← → · Esc</span>
+                </p>
                 {bankPreviewItem.theme ? (
                   <p className={`text-xs ${S.muted}`}>Thème · {bankPreviewItem.theme}</p>
                 ) : null}

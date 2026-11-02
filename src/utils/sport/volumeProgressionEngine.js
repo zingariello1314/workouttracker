@@ -291,7 +291,7 @@ export function computeProgressionInsights(workoutData, window, getExerciseNameB
     const curr = sessions[sessions.length - 1];
     const insight = interpretExerciseProgression(prev, curr);
     if (insight.progressionType === 'neutral' || insight.confidence < 0.6) continue;
-    let exerciseName = `Exercice ${exId}`;
+    let exerciseName = '';
     if (typeof getExerciseNameById === 'function') {
       const n = parseInt(exId, 10);
       if (Number.isFinite(n)) {
@@ -339,7 +339,7 @@ export function isActionableProgressionInsight(insight) {
  */
 export function formatProgressionCoachText(insight) {
   if (!insight?.explanation) return null;
-  const name = insight.exerciseName || `Exercice ${insight.exerciseId}`;
+  const name = insight.exerciseName || '';
   const m = insight.metrics || {};
   const parts = [insight.explanation];
 

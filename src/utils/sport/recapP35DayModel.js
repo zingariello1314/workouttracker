@@ -206,7 +206,27 @@ export function extractDayGtg(workoutData, dateStr) {
  *   syncDeduction: object
  * }}
  */
-export function classicExclusiveRepsForDay(workoutData, dateStr, gtgExtract = null) {
+/** Indexe une fois les clés reps par date — évite O(jours × clés) dans buildP35DayTable. */
+export function indexRepsEntriesByDate(repsMap) {
+  const byDate = new Map();
+  for (const [key, raw] of Object.entries(repsMap || {})) {
+    if (key.length < 11 || key[10] !== '_') continue;
+    const dateStr = key.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
+    const list = byDate.get(dateStr);
+    const row = { key, raw, storageId: key.slice(11) };
+    if (list) list.push(row);
+    else byDate.set(dateStr, [row]);
+  }
+  return byDate;
+}
+
+export function classicExclusiveRepsForDay(
+  workoutData,
+  dateStr,
+  gtgExtract = null,
+  /** @type {Array<{ key: string, raw: unknown, storageId: string }>|null} */ dayRepEntries = null
+) {
   const gtg = normalizeGtgData(workoutData?.enduranceData?.gtg);
   const dayLedger =
     gtg.workoutSync?.[dateStr] && typeof gtg.workoutSync[dateStr] === 'object'
@@ -227,20 +247,16 @@ export function classicExclusiveRepsForDay(workoutData, dateStr, gtgExtract = nu
     );
   }
 
-  const repsMap = workoutData?.reps || {};
-  const prefix = `${dateStr}_`;
   let classicTotal = 0;
   let exclusive = 0;
   let deducted = 0;
   const clampedKeys = [];
   const perKey = [];
 
-  for (const [key, raw] of Object.entries(repsMap)) {
-    if (!key.startsWith(prefix)) continue;
+  const consume = (raw, storageId) => {
     const n = parseInt(String(raw), 10);
-    if (!Number.isFinite(n) || n <= 0) continue;
+    if (!Number.isFinite(n) || n <= 0) return;
     classicTotal += n;
-    const storageId = key.slice(prefix.length);
     const syncAmt = syncedByStorageId.get(String(storageId)) || 0;
     let take = syncAmt;
     if (syncAmt > n) {
@@ -257,6 +273,17 @@ export function classicExclusiveRepsForDay(workoutData, dateStr, gtgExtract = nu
         exclusiveReps: n - take,
         clamped: syncAmt > n
       });
+    }
+  };
+
+  if (dayRepEntries) {
+    for (const { raw, storageId } of dayRepEntries) consume(raw, storageId);
+  } else {
+    const repsMap = workoutData?.reps || {};
+    const prefix = `${dateStr}_`;
+    for (const [key, raw] of Object.entries(repsMap)) {
+      if (!key.startsWith(prefix)) continue;
+      consume(raw, key.slice(prefix.length));
     }
   }
 
@@ -293,7 +320,11 @@ export function classicExclusiveRepsForDay(workoutData, dateStr, gtgExtract = nu
 export function buildP35DayRecord(
   workoutData,
   dateStr,
-  { liveActiveProgram = null, getExerciseNameById = null } = {}
+  {
+    liveActiveProgram = null,
+    getExerciseNameById = null,
+    dayRepEntries = null
+  } = {}
 ) {
   const hist = resolveHistoricalDayPlanFromJournal(workoutData, dateStr, {
     liveActiveProgram
@@ -305,7 +336,7 @@ export function buildP35DayRecord(
   });
   const gtg = extractDayGtg(workoutData, dateStr);
   const feedback = extractDayFeedback(workoutData, dateStr);
-  const volumes = classicExclusiveRepsForDay(workoutData, dateStr, gtg);
+  const volumes = classicExclusiveRepsForDay(workoutData, dateStr, gtg, dayRepEntries);
   const classicActivity = hasPerformanceKeysForDate(workoutData, dateStr);
   // classicActivity peut inclure reps sync GTG — « classic only » = exclusive > 0
   const hasClassicExclusive = volumes.classicExclusiveReps > 0;
@@ -414,7 +445,7 @@ function collectOverlappingMovements(workoutData, dateStr, gtg, volumes) {
 export function buildP35DayTable(
   snapshot,
   window,
-  { liveActiveProgram = null, getExerciseNameById = null } = {}
+  { liveActiveProgram = null, getExerciseNameById = null, dayTableCache = null } = {}
 ) {
   const start = window?.start;
   const end = window?.end;
@@ -425,15 +456,26 @@ export function buildP35DayTable(
       coverage: emptyCoverage()
     };
   }
+  const cacheKey = `${start}|${end}|${liveActiveProgram?.id || liveActiveProgram?.name || ''}`;
+  if (dayTableCache instanceof Map && dayTableCache.has(cacheKey)) {
+    return dayTableCache.get(cacheKey);
+  }
   const dates = enumerateYmds(start, end);
+  const repsByDate = indexRepsEntriesByDate(snapshot?.reps);
   const days = dates.map((d) =>
-    buildP35DayRecord(snapshot, d, { liveActiveProgram, getExerciseNameById })
+    buildP35DayRecord(snapshot, d, {
+      liveActiveProgram,
+      getExerciseNameById,
+      dayRepEntries: repsByDate.get(d) || null
+    })
   );
-  return {
+  const result = {
     window: { start, end },
     days,
     coverage: summarizeCoverage(days)
   };
+  if (dayTableCache instanceof Map) dayTableCache.set(cacheKey, result);
+  return result;
 }
 
 function emptyCoverage() {

@@ -34,7 +34,7 @@ export const P35_THRESHOLDS = Object.freeze({
 export function computeP35WindowMetrics(
   snapshot,
   window,
-  { liveActiveProgram = null, getExerciseNameById = null } = {}
+  { liveActiveProgram = null, getExerciseNameById = null, dayTableCache = null } = {}
 ) {
   const t0 =
     typeof performance !== 'undefined' && performance.now
@@ -42,7 +42,8 @@ export function computeP35WindowMetrics(
       : Date.now();
   const table = buildP35DayTable(snapshot, window, {
     liveActiveProgram,
-    getExerciseNameById
+    getExerciseNameById,
+    dayTableCache
   });
   const days = table.days || [];
   const coverage = table.coverage;

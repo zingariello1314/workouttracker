@@ -48,7 +48,8 @@ function exerciseDisplayName(exId, getExerciseNameById) {
       if (label && String(label).trim() && !/^Exercice\s+\d+$/i.test(label)) return String(label).trim();
     }
   }
-  return `Exercice ${exId}`;
+  // Ne jamais publier un identifiant technique — carte filtrée plus bas si nom absent.
+  return '';
 }
 
 /** Reps jambes sur la fenêtre (groupes musculaires). */

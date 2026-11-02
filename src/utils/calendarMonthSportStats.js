@@ -117,7 +117,8 @@ export function computeCalendarMonthSportStats(
   workoutData,
   garminData,
   getDateStrFn,
-  precomputed = null
+  precomputed = null,
+  { skipStreak = false } = {}
 ) {
   const cache = precomputed || getCalendarSportStatsCache(workoutData, garminData);
   const { liftMap, kmByDate, minByDate, runRows, otherMinutesFor, isTrainingDay } = cache;
@@ -130,17 +131,25 @@ export function computeCalendarMonthSportStats(
   let trainingDays = 0;
   let totalSteps = 0;
 
-  const currentMonthDays = (monthDays || []).filter((d) => d.isCurrentMonth);
+  const currentMonthDays = (monthDays || []).filter((d) => d.isCurrentMonth !== false);
   let year = new Date().getFullYear();
   let monthIndex = 0;
-  if (currentMonthDays[0]?.date) {
-    year = currentMonthDays[0].date.getFullYear();
-    monthIndex = currentMonthDays[0].date.getMonth();
+  const firstDate = currentMonthDays[0]?.date;
+  if (typeof firstDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(firstDate)) {
+    year = Number(firstDate.slice(0, 4));
+    monthIndex = Number(firstDate.slice(5, 7)) - 1;
+  } else if (firstDate) {
+    year = firstDate.getFullYear();
+    monthIndex = firstDate.getMonth();
   }
 
   const monthDates = new Set();
   currentMonthDays.forEach((day) => {
-    const dateStr = getDateStrFn(day.date);
+    const dateStr =
+      (typeof day.ymd === 'string' && day.ymd) ||
+      (typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date)
+        ? day.date
+        : getDateStrFn(day.date));
     if (!dateStr) return;
     monthDates.add(dateStr);
     const intensity = day.intensity || {};
@@ -177,7 +186,9 @@ export function computeCalendarMonthSportStats(
     totalMinutes: runningMinutes + otherExerciseMinutes,
     totalKg,
     activeKcal,
-    longestStreak: calculateLongestTrainingStreakInMonth(workoutData, year, monthIndex),
+    longestStreak: skipStreak
+      ? 0
+      : calculateLongestTrainingStreakInMonth(workoutData, year, monthIndex),
     trainingDays,
     runningSessionCount,
     totalSteps

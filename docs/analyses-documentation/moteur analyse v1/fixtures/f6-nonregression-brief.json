@@ -1,19 +1,18 @@
 {
-  "generatedAt": "2026-11-01T23:04:17.006Z",
+  "generatedAt": "2026-11-02T01:32:14.665Z",
   "periods": {
     "7d": {
       "equal": true,
-      "selected": 11,
+      "selected": 10,
       "kinds": [
         "disc_density",
         "disc_vs_habit",
+        "disc_ms_pr",
         "disc_structural_memory",
         "disc_emergence",
-        "disc_exercise_share",
         "disc_rest_assoc",
         "disc_exercise_progress",
         "disc_freq_continuity",
-        "disc_muscle_share_shift",
         "disc_muscle_reorient",
         "disc_push_pull"
       ],
@@ -39,6 +38,16 @@
           "attribution": null
         },
         {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12",
+          "body": "Meilleure série observée : 12 . Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent 10).",
+          "informativeValue": 77,
+          "exerciseId": null,
+          "composedOk": false,
+          "continuity": null,
+          "attribution": null
+        },
+        {
           "kind": "disc_structural_memory",
           "title": "Relevés de genoux à la barre reviennent après une interruption",
           "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
@@ -56,16 +65,6 @@
           "exerciseId": "504",
           "composedOk": true,
           "continuity": "punctual_return",
-          "attribution": null
-        },
-        {
-          "kind": "disc_exercise_share",
-          "title": "3 mouvements concentrent une part importante de ton travail récent",
-          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 40 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (80 reps). Ces 7 jours pèse beaucoup plus lourd dans ton historique récent que ses 1 371 reps totales ne le laissent penser.",
-          "informativeValue": 64,
-          "exerciseId": null,
-          "composedOk": false,
-          "continuity": null,
           "attribution": null
         },
         {
@@ -93,16 +92,6 @@
           "title": "Ces 7 jours s'inscrit dans une pratique déjà documentée",
           "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 4 jours sur les 7 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 57 % sur ces 7 jours. Ces 7 jours n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement.",
           "informativeValue": 45,
-          "exerciseId": null,
-          "composedOk": false,
-          "continuity": null,
-          "attribution": null
-        },
-        {
-          "kind": "disc_muscle_share_shift",
-          "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global",
-          "body": "Les gainage/tronc représentent actuellement 11,9 % du volume musculaire attribué (indicatif), contre 5,8 % sur les 30 jours précédents. Sa part a donc augmenté de 105,4 % relativement, alors que le volume global est −63,2 %. un mouvement comptait 100 répétitions sur la période précédente et n'apparaît plus ici. Une partie du changement de part vient de cette disparition, pas seulement d'une baisse générale. Lecture de structure de parts conventionnelles, pas une mesure anatomique exacte.",
-          "informativeValue": 21,
           "exerciseId": null,
           "composedOk": false,
           "continuity": null,
@@ -297,8 +286,8 @@
       "selected": 17,
       "kinds": [
         "disc_gtg_unplanned_now",
-        "disc_volume_shape",
         "disc_vs_habit",
+        "disc_ms_pr",
         "disc_p35_gtg_coexistence",
         "disc_p36_weekday_regularity",
         "disc_emergence",
@@ -307,8 +296,8 @@
         "disc_freq_progress_low",
         "disc_structural_memory",
         "disc_muscle_exposure_shift",
+        "disc_monthly_volume_arc",
         "disc_best_month",
-        "disc_quarter_arc",
         "disc_exercise_progress",
         "disc_ms_sessions",
         "disc_ms_first_exercise",
@@ -326,21 +315,21 @@
           "attribution": null
         },
         {
-          "kind": "disc_volume_shape",
-          "title": "Le trimestre a un volume et un rythme, pas seulement un total",
-          "body": "Cette période totalise 13 533 répétitions en 41 jours entraînés, soit environ 294 reps par séance. La question n'est pas « tu manques de régularité » : c'est comment ce volume se construit. Aucune course : la charge est entièrement du renforcement. Les 30 derniers jours (4 367 reps) représentent 32,3 % de cette période : ils ne résument pas toute la fenêtre.",
-          "informativeValue": 63,
-          "exerciseId": null,
-          "composedOk": false,
-          "continuity": null,
-          "attribution": null
-        },
-        {
           "kind": "disc_vs_habit",
           "title": "Face pull : cette période est au-dessus de ton niveau habituel",
           "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur cette période, tu as accumulé 210 répétitions de ce mouvement (4 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.",
           "informativeValue": 36,
           "exerciseId": "306",
+          "composedOk": false,
+          "continuity": null,
+          "attribution": null
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12",
+          "body": "Meilleure série observée : 12 . Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent 10).",
+          "informativeValue": 77,
+          "exerciseId": null,
           "composedOk": false,
           "continuity": null,
           "attribution": null
@@ -426,20 +415,20 @@
           "attribution": null
         },
         {
-          "kind": "disc_best_month",
-          "title": "août 2026 concentre la part la plus productive de la période",
-          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition.",
-          "informativeValue": 65,
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis août 2026",
+          "body": "août 2026 : 5 438 reps en 17 jours entraînés (≈320 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour actif), soit -32 % de volume, -29 % de jours, -4 % de volume par jour actif. La baisse vient surtout d’une diminution des jours entraînés, plus que d’un effondrement du volume par journée active. octobre 2026 remonte à 4 301 reps en 12 jours (≈358 / jour actif, +16 % vs septembre 2026), sans retrouver le sommet de août 2026 (5 438 reps).",
+          "informativeValue": 118,
           "exerciseId": null,
           "composedOk": false,
           "continuity": null,
           "attribution": null
         },
         {
-          "kind": "disc_quarter_arc",
-          "title": "Le trimestre a une trajectoire interne, pas seulement un total",
-          "body": "Les 30 derniers jours totalisent 4 367 reps en 12 jours, contre 5 344 reps en 17 jours au début du trimestre (−18,3 %, fréquence −29,4 %). Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxième version du court terme.",
-          "informativeValue": 56,
+          "kind": "disc_best_month",
+          "title": "août 2026 concentre la part la plus productive de la période",
+          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition.",
+          "informativeValue": 65,
           "exerciseId": null,
           "composedOk": false,
           "continuity": null,
@@ -467,8 +456,8 @@
         },
         {
           "kind": "disc_ms_first_exercise",
-          "title": "Première apparition : Exercice 728134920",
-          "body": "Première apparition de exercice 728134920 dans ton historique. Ils représentent déjà 23 % de ton volume de séance ce jour-là.",
+          "title": "Première apparition :",
+          "body": "Première apparition de dans ton historique. Ils représentent déjà 23 % de ton volume de séance ce jour-là.",
           "informativeValue": 74,
           "exerciseId": null,
           "composedOk": false,

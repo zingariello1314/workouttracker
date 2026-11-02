@@ -208,13 +208,24 @@ function schedulePersistRecapBundles() {
   if (persistTimer) window.clearTimeout(persistTimer);
   persistTimer = window.setTimeout(() => {
     persistTimer = 0;
-    const rows = [];
+    // Persister les hits exacts (fullKey = période + fingerprints), pas seulement
+    // la dernière entrée par fingerprint workout — sinon 7j/30j/3m s’écrasent.
+    const workoutOfFull = new Map();
     for (const [workout, row] of bundlesByWorkout) {
-      rows.push({ workout, full: row.fullKey, bundle: row.bundle });
+      if (row?.fullKey) workoutOfFull.set(row.fullKey, workout);
+    }
+    const rows = [];
+    for (const [full, bundle] of bundlesByFull) {
+      rows.push({
+        workout: workoutOfFull.get(full) || '',
+        full,
+        bundle
+      });
     }
     let latest;
     try {
-      latest = structuredClone(stripForCache(rows.slice(-3)));
+      // 8 périodes × ~3 révisions récentes ; au-delà = éviction FIFO mémoire déjà bornée.
+      latest = structuredClone(stripForCache(rows.slice(-24)));
     } catch {
       return;
     }
@@ -450,9 +461,9 @@ function buildRecapMetricsKey({
   isGymMode,
   accountScope = ''
 }) {
-  // span8-f70k : fingerprint contenu + arcs mensuels / sélection éditoriale.
+  // span8-f70l2 : arcs numérateur cohérent + mutualisation P35/P36/calendarLoad.
   const workoutKey = [
-    'span8-f70k',
+    'span8-f70l2',
     RECAP_ADAPTIVE_WORKER_CONTRACT,
     accountScope || (isAuthenticated ? 'auth' : 'guest'),
     deferredPeriod || '',

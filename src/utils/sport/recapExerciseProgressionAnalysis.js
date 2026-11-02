@@ -28,7 +28,7 @@ function resolveExerciseName(exerciseId, getExerciseNameById) {
     const label = getExerciseNameById(n);
     if (label && String(label).trim()) return String(label).trim();
   }
-  return `Exercice ${exerciseId}`;
+  return '';
 }
 
 function pctDelta(prev, curr) {

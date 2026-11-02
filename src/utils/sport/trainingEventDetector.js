@@ -43,7 +43,7 @@ function exerciseDisplayName(exId, getExerciseNameById) {
       if (label && String(label).trim()) return String(label).trim();
     }
   }
-  return `Exercice ${exId}`;
+  return '';
 }
 
 function collectTrainingDates(snapshot, window) {

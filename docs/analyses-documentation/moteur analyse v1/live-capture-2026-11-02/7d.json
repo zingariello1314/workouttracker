@@ -1,0 +1,24 @@
+{
+  "pressed": "7 days",
+  "header": "7 days · mardi 27 octobre 2026 → lundi 2 novembre 2026",
+  "count": "ALL 10",
+  "families": [
+    "ALL 10",
+    "ACTIVITÉ 3",
+    "PROGRESSION 3",
+    "SOMMEIL 2",
+    "RYTHME 2"
+  ],
+  "cards": [
+    "ACTIVITÉ\nLa séance du 1 novembre 2026 concentre une part importante de ces 7 jours\n\nLa séance du 1 novembre 2026 concentre 418 reps, soit 38,0 % de la fenêtre; les autres jours cumulent 683 reps. Elle mêle 60, 60, 60. La médiane des séances est 351 reps. Ce pic fausse une moyenne: il décrit un point haut, pas l’habitude de séance de la fenêtre.\n\n1\nNOVEMBRE 2026 ·\n418 REPS\n·\n38,0 %",
+    "PROGRESSION\naprès 28 jours d'absence revient après un long silence\n\nIl y a 3 jours, tu as enregistré ta première séance depuis 28 jours sur. L'écart dépasse 4 fois ton intervalle habituel. Avec 36 répétitions, tu reviens à 79 % de ton volume moyen avant l'interruption. D'habitude, 5 séries de 10 répétitions. Cette séance: 4 séries (10, 10, 10, 6 répétitions). Le nombre de séries baisse. Les répétitions dans chaque série restent du même ordre. Un seul paramètre a bougé. Le répéter avant d'en changer un autre garde la mesure lisible. Reproduire ce format sur la prochaine séance confirme le retour; en faire tout de suite une nouvelle norme va plus vite que les données.\n\n28\nJ. ·\n36 RÉPÉTITIONS",
+    "ACTIVITÉ\n\nLes séances sont regroupées en début de fenêtre\n\n2 des 3 séances tiennent sur les quatre premiers jours. Le volume existe, mais il laisse la fin de fenêtre presque vide.",
+    "ACTIVITÉ\n50 %\n\nLe réalisé est inférieur au prévu (~50 %) avec des séances souvent incomplètes (alignement ~39/100). La différence vient surtout de séances commencées mais raccourcies, plutôt que de journées entièrement sautées.",
+    "SOMMEIL\nJalon sous une de tes meilleures nuits (9 h 39)\n\nLe 30 octobre 2026, un jalon d'entraînement arrive après une nuit de 9 h 39 — parmi tes meilleures configurations de récupération. Elle coïncide avec tu reprends après 28 jours d'absence. Ce n'est pas une corrélation statistique: c'est la rencontre, le même jour, d'un événement et d'une récupération haute.\n\n9 H 39",
+    "PROGRESSION\nLes pas de ces 7 jours sont au-dessus de ton niveau des 30 jours d'avant\n\nLes jours avec un compte de pas se situent autour de 9 026 pas (médiane, 6 jours). Sur les 30 jours d'avant, la médiane est 6 806 pas (27 jours), soit environ 33 % de plus. Ce n'est pas une séance: c'est le déplacement quotidien, à côté de l'entraînement.\n\n9 026 VS 6 806 PAS",
+    "SOMMEIL\nLes journées lourdes suivent plus souvent une nuit longue\n\nSur 7 séances dépassant 300 reps, 6 ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, 4 des 9 séances sous 250 reps ont suivi une nuit plus courte. L'écart porte sur 16 séances: assez pour être suivi, pas assez pour en faire une règle. L'écart entre les deux proportions est d'environ 30 points. Cette fenêtre a aussi des jours sans séance: une nuit plus longue peut venir de ces jours-là, pas seulement précéder le volume. Le phénomène concerne surtout la quantité de travail réalisée: le sommeil semble davantage associé à ta capacité à maintenir une séance longue et volumineuse qu'à une augmentation automatique de chaque série.\n\n6/7\n≥ 300 ·\n4/9\n< 250",
+    "PROGRESSION\nPompes inclinées pieds sur banc : recul puis retour près du niveau de départ\n\nEn lisant les 8 dernières séances jusqu’à la fin de la fenêtre (contexte hors fenêtre inclus), Pompes inclinées pieds sur banc est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Cette lecture s’appuie aussi sur 8 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.\n\nARC\n8\n(FENÊTRE\n0\n) · RECOVERED ·\n-7.3 %\n· 3×12→3×12",
+    "RYTHME\n100 %\n\nLes séances d'exercices sont bien plus tenues (~100 %) que les étirements (~0 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacité : la mobilité prévue n'entre presque pas dans l'exposition réelle.",
+    "RYTHME\nRelevés de genoux à la barre reviennent après une interruption\n\nRelevés de genoux à la barre: Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.\n\n2 SÉANCES\n· UNCLEAR ·\n0 %\n· 3×20→3×20"
+  ]
+}

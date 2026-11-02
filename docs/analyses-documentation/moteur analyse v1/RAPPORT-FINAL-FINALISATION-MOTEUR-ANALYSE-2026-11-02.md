@@ -1,237 +1,227 @@
-# RAPPORT FINAL — Finalisation du moteur d’Analyse
+# Rapport consolidé — reprise de finalisation du moteur d’Analyse
 
-**Date :** 2 novembre 2026  
-**Profil live lecture seule :** `zingariello1314`  
-**Pas de commit Git. F7.1–F7.5 non engagés.**  
-**Companion live (timings + textes cartes) :** `AVANT-APRES-ANALYSES-LIVE-2026-11-02.md`
-
----
-
-## 15.1. Modifications réalisées
-
-### A. Fingerprint & cache
-
-| | |
-|---|---|
-| **Cause** | Empreinte trop agrégée (totaux) → collisions possibles (swap d’exos, sets, charges structurées, GTG contenu). |
-| **Modification** | `checkedVolumeFingerprint` : hash des clés cochées, setCount / setRepSum / setWeightSum, GTG checks+reps, empreinte légère des dates de course. Export pour tests. Clé cache `span7-f70j` → **`span8-f70k`**. Contrat Worker **`f70k-shell-adaptive-v1`**. |
-| **Fichiers** | `src/hooks/useRecapTabMetrics.js`, `src/utils/sport/recapAdaptiveWorkerContract.js`, `src/hooks/__tests__/checkedVolumeFingerprint.test.js` |
-| **Effet** | Invalidation volontaire des bundles obsolètes ; deux jeux analytiquement différents ne partagent plus la même clé par accident de totaux. |
-| **Preuve** | 4 tests Vitest fingerprint verts ; live : clés `span8-f70k\|f70k-…` dans `__f70iPub`. |
-
-### B. Arcs multi-mois + course
-
-| | |
-|---|---|
-| **Cause** | Calendrier montrait juin→sept (−46 % reps, surtout jours) et reprise oct ; le moteur ne racontait que des portraits « pas seulement un total ». |
-| **Modification** | Nouveau module `monthlyVolumeArcDiscoveries.js` : détection `prolonged_decline` / `partial_recovery` / …, décomposition fréquence vs densité, exclusion mois courant incomplet. `buildRunningGapDiscoveries`. Branché dans `detectDiscoveries`. Priorités + `discoveryInformativeValue` (+16 / +12). Rivalités vs `disc_volume_shape` / `disc_quarter_arc`. |
-| **Fichiers** | `src/utils/sport/monthlyVolumeArcDiscoveries.js`, `recapPeriodDiscoveries.js`, `__tests__/monthlyVolumeArc.test.js` |
-| **Effet** | Carte live exacte : *« octobre 2026 interrompt la baisse depuis juin 2026 »* avec −46 % / −41 % jours / −9 % rpd / 82 % fréquence. |
-| **Preuve** | Tests fixtures (4) verts ; capture after 6m/1y/2y/all. |
-
-### C. Sélection éditoriale
-
-| | |
-|---|---|
-| **Cause** | Cartes sommeil / portraits génériques évincaiment des arcs historiques. |
-| **Modification** | `TOTAL_SLEEP_BUDGET` month/long/year : **2 → 1**. Boost informativeValue arcs. Dépriorisation titres « pas seulement un total ». |
-| **Fichiers** | `recapInsightNature.js`, `recapPeriodDiscoveries.js`, test sélection mis à jour |
-| **Effet** | Pack Toujours : 10 → **13** cartes avec arc + habitudes ; sommeil plafonné. |
-| **Preuve** | Live + test `recapAnalysisSelectionQuality`. |
-
-### D. Réconciliation juillet / calendrier
-
-| | |
-|---|---|
-| **Cause** | Écart documenté 6 017 (tuile) vs 5 827 (somme cochée). |
-| **Modification** | Audit IDB `WorkoutTrackerDB/workouts/main` + alignement `calendarRepsByDate` pour **ne plus rejouer** les `ENDURANCE_REP_ACTIVITIES` déjà mirorées en `complementary_endurance_pushups`. |
-| **Fichiers** | `src/utils/calendarWeekLeaders.js` (+ import `ENDURANCE_REP_ACTIVITIES`) |
-| **Effet / conventions** | Voir §15.3. |
-| **Preuve** | Décomposition numérique live ci-dessous. |
-
-### E. Non modifié volontairement (préservé)
-
-- Conventions tonnage / perArm (`exerciseLoadVolume`) — correctif F7.0j conservé.  
-- Publication atomique, Worker shell, isolation comptes.  
-- Identité exercices (pas de fusion homonyme).  
+**Date :** 2026-11-02  
+**Contrat cache / Worker :** `span8-f70l2` · `f70l2-shell-adaptive-v1`  
+**Commit :** aucun (arrêt pour validation humaine)  
+**Aucune micro-phase F7.0m+ / aucune ouverture F7.1–F7.5**
 
 ---
 
-## 15.2. Performance avant / après
+## G. Verdict
 
-Mesures **navigateur live uniquement** (pas Node).
+| Critère | État |
+|---|---|
+| Fiabilité chiffres arcs (Approche A + `calendar_training`) | **Corrigé et testé** |
+| Perf producteurs P35 / P36 | **Fortement réduit** (fixture ~1 an) |
+| Perf P32b / adhérence / calendrier | **Partiellement réduit** ; P32b reste le goulot n°1 |
+| Éditorial (noms vides, carte course générique, libellés séances) | **Corrigé dans le code** ; preuve navigateur partielle |
+| Cache IDB multi-périodes | **Code corrigé** ; **preuve reload navigateur non obtenue** cette passe |
+| Recette navigateur A–G complète | **Non aboutie** — obstacle auth documenté |
+| Tests identité / coop / non-régression | **OK** (commandes ci-dessous) |
 
-| Période | Avant froid | Après froid | Après cache | LT max avant / après | Worker relancé sur hit ? |
-|---|---:|---:|---:|---|---|
-| 7 jours | 6,0 s | 8,3 s | **0,99 s** | 1092 / 1234 | Non |
-| 30 jours | 14,8 s | **8,6 s** | **1,74 s** | 1189 / 1104 | Non |
-| 3 mois | **timeout / 0** | **13,0 s** | — | 1196 / 1139 | — |
-| 6 mois | 10,5 s | 15,4 s | — | 805 / 1176 | — |
-| 1 an | 13,4 s | 18,6 s | — | 773 / 1167 | — |
-| 2 ans | 15,4 s | 22,5 s | — | 802 / 1164 | — |
-| Toujours | ~18 s puis 1,2 s exact | exact **0,7–1,3 s** | exact | — / ≤1240 | Non |
-
-**Lecture :** fluidité cache démontrée ; 3 mois réparé ; froid long encore coûteux (Worker 10–20 s) — UI utilisable, LT ~1 s résiduelles (nameMap / React), pas de gels multi-secondes shell sync.
+**Ce n’est pas une clôture « finalisé / validé ».**  
+Le moteur est **réellement plus rapide et plus cohérent** qu’avant cette reprise, avec des cartes plus propres sur fixture et une session live partielle, mais **sans preuve navigateur complète post-correctifs** (auth cassée dans l’environnement agent).
 
 ---
 
-## 15.3. Réconciliation des chiffres (juillet 2026)
+## A. Performance avant / après
 
-### Décomposition exacte (IDB `main`, lecture seule)
+### Producteurs (fixture `workout-main-jul-oct-2026`, fenêtre ~1 an)
 
-| Composante | Valeur |
+Référence rapportée avant optimisation algorithmique (passe précédente, même fixture lourde) :
+
+| Producteur | Avant (ordre de grandeur) | Après (`f70l2`, mesuré) | Cause dominante | Correction |
+|---|---:|---:|---|---|
+| P36 | ~47 s | **~236 ms** | rebuilds table jour + agrégats répétés | `dayTableCache` partagé P35→P36 + index reps/date |
+| P35 | ~21–27 s | **~240–270 ms** | idem | même cache + `indexRepsEntriesByDate` |
+| `computeCalendarMonthSportStats` (×N) | ~31 s cumulés | **~425 ms / 7 appels** | chemins Date + streaks | cache sport + `skipStreak` + ymd string |
+| programAdherence | ~21–27 s | **~450 ms** | matrice plan/réalisé | inchangé fonctionnellement ; mutualisé |
+| P32b | ~21–27 s | **~1 245 ms** | 3 ledgers W/C/H + matrice | reverseIndex partagé + **matrice partagée** avec adhérence |
+| Bundle complet `buildPeriodDiscoveryBundle` | non mesuré proprement | **~3,3 s** | somme ci-dessus | — |
+
+Commande : `npx vite-node scripts/f70l-perf-benchmark.mjs`  
+Artefact : `docs/analyses-documentation/moteur analyse v1/f70l2-perf-bench.txt`
+
+**Identité sync vs worker (fixture)** — `npx vite-node scripts/f7-worker-identity.mjs` :
+
+| Période | equal | sync | workerPath |
+|---|---|---:|---:|
+| today | true | 1,1 s | 0,7 s |
+| 7d | true | 1,2 s | 1,2 s |
+| 30d | true | 2,5 s | 2,2 s |
+| 3m | true | 2,7 s | 2,6 s |
+| 6m | true | 2,7 s | 2,7 s |
+| 1y | true | 3,2 s | 3,0 s |
+| 2y | true | 4,7 s | 4,2 s |
+| all | true | 11,6 s | 8,5 s |
+
+### Mesures navigateur froides (références F7.0k vs cette passe)
+
+| Période | Froid F7.0k | Cette passe (navigateur) |
+|---|---:|---|
+| 7 jours | 8,3 s | **Non re-mesuré à froid après f70l2** (session auth perdue) |
+| 30 jours | 8,6 s | **~6,7 s** observés une fois (session live antérieure, Worker déjà chaud possible) |
+| 3 / 6 / 1 an / 2 ans | 13–22,5 s | **Timeouts / mesures invalides** dans le script auto (attente « Preparing » + flash empty) |
+| All time (session live) | — | Cartes publiées ; LT max observée **~1,5–10 s** sur thread principal (sérialisation / nameMap / analytics) |
+
+**Long Tasks :** toujours hors cible (< quelques centaines de ms). Causes candidates inchangées : payload Worker ~1,5–2 Mo, `buildExerciseNameMapAsync`, analytics calendrier header/full, publication React. **Non éliminées** dans cette passe.
+
+**Cibles produit :**
+- Réaction < 100 ms : **observée** sur clic période lorsque le strip réagit (session live).
+- Cache mémoire < 200 ms : **non prouvé** après reload.
+- Gel UI : **non atteint** (LT encore élevées).
+- Réduction froids 6m/1y/2y : **probable côté Worker** (bundle ~3 s fixture 1y) mais **non re-prouvé navigateur froid**.
+
+---
+
+## B. Cache
+
+### Code
+
+- `schedulePersistRecapBundles` : conservation **jusqu’à 24 clés** (plus `slice(-3)`).
+- Empreinte / contrat : `f70l2`.
+- Isolation compte : `accountScope` + clear au changement.
+
+### Preuves
+
+| Vérification | Résultat |
+|---|---|
+| Hit mémoire entre périodes (session live partielle) | Observé qualitativement (Today renvoyant contenu All time = **bug d’attente de mesure**, pas preuve de hit) |
+| IndexedDB après reload multi-périodes | **Non prouvé** — reload a fait perdre la session authentifiée |
+| Invalidations mutations | **Non rejouées** sur profil réel (interdit) ; pas de harness isolé exécuté cette passe |
+| Annulation navigation rapide | Couverture tests existants ; **pas de recette D navigateur** |
+
+Obstacle : au reload, `WorkoutTrackerAuthDB.users` contient des enregistrements **corrompus** (objet indexé caractère par caractère autour de l’id). `rememberMe` pointe vers `87d06f9f…` / `zingariello1314`, mais la restauration de session échoue. Aucun mot de passe n’a été contourné ni inventé.
+
+---
+
+## C. Cohérence des chiffres
+
+### Convention retenue — Approche A
+
+- **Dénominateur** des arcs mensuels : jours `calendar_training`.
+- **Numérateur** : répétitions **uniquement** sur ces jours (exclut les reps des journées GTG sync partielles non créditées).
+- Libellé catalogue `phase_months` : « jours avec reps » (ne prétend plus « séances = jours entraînés »).
+
+### Octobre
+
+| Indicateur | Valeur |
 |---|---:|
-| Somme reps **toutes clés cochées** juillet | **5 827** |
-| dont `complementary_endurance_pushups` | **500** (5 × 100) |
-| hors complémentaire | **5 327** |
-| Sessions endurance `pushups` (miroir) | **500** |
-| GTG juillet | **0** |
-| Reps non cochées juillet | **0** |
-| Autres types endurance avec reps | **0** |
+| Jours `positive_reps` | 16 |
+| Jours `calendar_training` | **12** |
+| Jours GTG partiels (1, 3, 6, 15) | 4 |
+| Reps Approche A (sur 12 jours) | **~4 301** (carte arc live) |
+| Ratio | ~358 reps / jour entraîné (cohérent A) |
+| Chiffre Calendrier « 14 » | **Non reproduit** sur snapshot actuel ; cause exacte inconnue (ancien cache / ancien algo / autre état) |
 
-### Ce que fait le code actuel
+### Juillet
 
-1. **`getIntensityForDate`** : coche classiques + adhoc **incluant** `complementary_endurance_pushups` ; `computeEnduranceDayMetricsForCalendar` **ignore** `pushups` (`ENDURANCE_REP_ACTIVITIES`) → total attendu **5 827**.  
-2. **`calendarLoad` / Analyse** : `aggregateCheckedRepsByDateAndExerciseId` inclut aussi `complementary_endurance_pushups` + endurance hors activités mirorées → **5 827**.  
-3. **`calendarRepsByDate` (avant correctif)** : agrégat (5 827) **+** rejouait les sessions pushups (+500) → **double compte potentiel 6 327**. **Corrigé** pour skip `ENDURANCE_REP_ACTIVITIES`.
+- Chemins actuels : **5 827** reps.
+- **6 017** : historique non reproduit — **non inventé**.
 
-### Origine des « +190 » (6 017 − 5 827)
+### 1er novembre
 
-**Non retrouvée dans l’IDB actuel + chemins canoniques ci-dessus.**  
-Hypothèses restantes (ouvertes) :
-- tuile UI historique / cache d’intensité obsolète au moment du chiffre 6 017 ;  
-- autre snapshot temporairement différent ;  
-- agrégat UI non aligné (à re-lire sur tuile Calendrier après hard refresh).
-
-**Interdiction respectée :** on n’a **pas** forcé 6 017 = 5 827.  
-**Convention retenue pour Analyse & calendrier intensité :**
-
-| Libellé | Périmètre |
-|---|---|
-| Répétitions musculation cochées | clés cochées hors `complementary_*` (sauf pushups endurance mirorées) |
-| Pompes endurance | `complementary_endurance_pushups` **ou** session, **pas les deux** |
-| Total calendrier / banner Analyse | = agrégat unique ci-dessus (**5 827** sur juillet live actuel) |
-
-Tonnage 1er nov. préservé : **418 reps** dont charge mesurable → **1 792 kg×reps** (F7.0j).
+- Live : **418** reps (présentes dans les arcs).
+- Tonnage 1 792 kg×reps : non re-vérifié tuile Calendrier cette passe (auth).
 
 ---
 
-## 15.4. Qualité des découvertes — exemples avant / après
+## D. Qualité des analyses
 
-### 1. Arc multi-mois (NOUVEAU)
-- **Avant :** absent (remplacé par « pas seulement un total »).  
-- **Problème :** aucun mécanisme.  
-- **Après :** titre/corps §2.2 du companion live.  
-- **Preuves :** 6947→3728→4367 ; jours 22→13→16 ; freqShare ≈ 0,82.  
-- **Valeur :** l’utilisateur voit *pourquoi* le volume a bougé.
+### Correctifs éditoriaux effectués
 
-### 2. Sommet juin
-- **Avant :** « juin 2026 concentre… » (part) sans trajectoire.  
-- **Après :** conservé **et** complété par l’arc.  
-- **Valeur :** sommet + histoire complète.
+1. Horizon « exposition vs reps » : plus de phrases cassées (`Pourtant … continuent`, `a encore marqué`) quand les noms sont vides → skip ou noms filtrés.
+2. « Exercice inconnu (202…) » : exclus de la liste `leastChecked` affichée ; pénalité éditoriale `Exercice inconnu`.
+3. Densité séances : plus de `contre — auparavant`.
+4. Carte générique « Course et renforcement se lisent ensemble » : **ne sort plus** sans contraste réel ; kind marqué faible sinon.
+5. `disc_running_gap` : narration **mois par mois (km + sorties)** + trou éventuel (mai→juin→juillet→absence).
+6. Flash « Not enough data for this period » : masqué tant que `analyticsProp === null` (chargement).
 
-### 3. Reprise octobre
-- **Avant :** non qualifiée.  
-- **Après :** « interrompt la baisse… sans retrouver le sommet ».  
-- **Valeur :** pas de faux « retour au max ».
+### Session live (avant perte d’auth) — All time / aperçu
 
-### 4. Course
-- **Avant :** « Course et renforcement se lisent ensemble ».  
-- **Après (Toujours 1ʳᵉ pub) :** « La course a glissé hors de ta routine, pas toute ton activité » (+ gap producteur).  
-- **Limite :** la carte coexistence apparaît encore sur certains packs longs.
+Cartes notables vues : arc octobre (Approche A), trajectoire pompes inclinées, tractions australiennes format, interruption course (horizon), sommeil J-2.  
+Faiblesses alors présentes (depuis corrigées dans le code, **non re-vérifiées DOM**) : Exercice inconnu, carte course générique, libellés « 16 séances » octobre, grammaire horizon.
 
-### 5. Volume 30 j
-- **Avant / Après :** « Le volume du mois dépasse la période précédente » (+20,7 %, densités) — déjà utile ; conservé.
+### Replay fixture (`scripts/f5-replay-periods.mjs`) — titres sélectionnés
 
-### 6. Trajectoire exercice (mécanisme séries)
-- **Après 30 j :** « Pompes inclinées sur support : moins de répétitions par séance » — séries stables, reps/série ↓.  
-- **Valeur :** distingue fréquence de séance vs reps/série.
+| Période | # | Points forts |
+|---|---:|---|
+| 7d | 10 | PR série 12, pompes déclinées vs habitus, push/pull |
+| 30d | 14 | GTG hors planning, volume vs période préc., coexistence GTG, régularité weekday |
+| 3m | 17 | **arc mensuel**, best month, progressions face pull / élévations |
+| 6m | 14 | **arc mensuel**, dips/pompes recul, australiennes format, freq≠volume weekday |
 
-### 7. Habitude jours
-- **Après :** « Mer tient mieux que Jeu » / « Jours habituellement actifs ».  
-- **Limite :** artefact `[OBJECT OBJECT]` encore dans certains corps P36.
+Candidats rejetés : traçables dans `f5-replay-periods.json` (`editorialDecisions` / `blockedBy` autour de `disc_monthly_volume_arc`).
 
-### 8. Identité / artefact
-- **Avant & Après 7 j :** « Exercice 504… » — **encore ouvert** (résolution de nom).
+### Avant / après texte (extrait)
 
-### 9. GTG
-- Conservé : « Certains jours, le Grease the Groove ne tient que par un passage hors planning ».
+**Avant (live All time) — carte faible :**  
+« L’ensemble du suivi combine 83 km de course… La course réapparaît à côté du renforcement. »  
+Titre : *Course et renforcement se lisent ensemble*
 
-### 10. 3 mois
-- **Avant :** aucune carte.  
-- **Après :** 14 cartes (expositions, push/pull, progressions…).
+**Après (code) :** cette carte **n’est plus émise** sans contraste km↔reps ; la trajectoire course privilégie `disc_running_gap` chiffrée.
+
+**Avant — arc :** ratio potentiellement 4367/12 (numérateur élargi).  
+**Après — Approche A :** 4301 reps / 12 jours entraînés, mécanisme fréquence vs densité explicite.
 
 ---
 
-## 15.5. Sélection éditoriale
+## E. Tests
 
-| Candidat | Statut typique longues périodes | Motif |
+| Suite | Commande | Résultat |
 |---|---|---|
-| `disc_monthly_volume_arc` | **Sélectionné** | informativeValue boost + priorité journey |
-| `disc_volume_shape` « pas seulement un total » | Dépriorisé / rival | −14 info + rivals |
-| `disc_quarter_arc` | Dépriorisé si arc mensuel | rival |
-| Sommeil | Cap total month/long **1** | `TOTAL_SLEEP_BUDGET` |
-| `disc_best_month` | Peut coexister avec arc | complementary (sommet vs trajectoire) |
+| Arcs mensuels + course | `npx vitest run src/utils/sport/__tests__/monthlyVolumeArc.test.js` | **5/5 OK** |
+| Identité Worker | `npx vite-node scripts/f7-worker-identity.mjs` | **8/8 equal** |
+| Identité coop | `npx vite-node scripts/f7-coop-identity.mjs` | **allEqual true** (7d, 30d, 2y) |
+| F6 non-régression | `npx vite-node scripts/f6-nonregression.mjs` | **allEqual true** |
+| Replay éditorial F5 | `npx vite-node scripts/f5-replay-periods.mjs` | OK (écrit fixtures) |
+| Bench perf | `npx vite-node scripts/f70l-perf-benchmark.mjs` | OK (~3,3 s bundle 1y) |
 
-Traces : titres dans `__f70iPub` ; kinds inspectables via console diagnostic existante.
+Échecs : **aucun** sur ces suites.  
+Non exécutés exhaustivement ici : toute la batterie fraîcheur / tonnage / cancel / account-split (hors scripts ci-dessus) — à relancer au besoin.
 
 ---
 
-## 15.6. Tests
+## F. Limites restantes
 
-| Commande | Résultat |
+| Item | Classification |
 |---|---|
-| `npx vitest run src/utils/sport/__tests__/monthlyVolumeArc.test.js` | **4/4 OK** |
-| `npx vitest run src/hooks/__tests__/checkedVolumeFingerprint.test.js` | **4/4 OK** |
-| `npx vitest run src/utils/sport/__tests__/recapAnalysisSelectionQuality.test.js` | **3/3 OK** (attente budget sommeil mise à jour) |
-| `node scripts/f7-worker-identity.mjs` | **Échec préexistant** : module manquant `userTrainingState` (hors scope de cette passe) |
-
-Non rejoués ici (temps / dépendance cassée) : `f6-perf-vs-identity`, `f6-nonregression`, `f7-coop-identity` — à relancer quand l’import `userTrainingState` est rétabli.
-
----
-
-## 15.7. Limites restantes
-
-| Point | Statut |
-|---|---|
-| Arc multi-mois + mécanisme fréquence | **Corrigé et prouvé live** |
-| Cache exact re-clic 7j/30j/all | **Corrigé et prouvé live** |
-| 3 mois publication | **Corrigé et prouvé live** |
-| Fingerprint collisions totaux | **Corrigé + tests** ; pas fuzz exhaustif de tous les cas Garmin/nutrition |
-| Double compte calendarRepsByDate pushups | **Corrigé code** ; tuile 6017 **non reproduite** sur IDB actuel |
-| Écart 190 vs tuile 6017 | **Encore ouvert** (non forcé) |
-| « Exercice 504 » / `[OBJECT OBJECT]` / codes type PUSHPULL | **Encore ouvert** (gate à renforcer) |
-| Froid 1–2 ans 18–22 s | **Partiellement** (Worker) — pas encore au niveau « instantané » |
-| nameMap premier miss ~1,7 s | **Partiellement** (cache inter-périodes OK ensuite) |
-| Payload sideJson ~1,5–2 Mo | **Encore ouvert** |
-| Suites f6/f7 identity Node | **Bloquées** par module manquant hors périmètre |
-| F7.0 formal closure | **Non déclaré** — critères essentiels améliorés mais artefacts + froid long restent |
+| Approche A arcs + tests octobre 16→12 | Corrigé et prouvé (tests + live partiel) |
+| P35/P36 perf | Corrigé et prouvé (fixture) |
+| Partage matrice adhérence↔P32b | Corrigé ; gain ~0,15–0,2 s ; P32b encore ~1,2 s |
+| Textes éditoriaux listés §D | Corrigés dans le code ; **DOM post-fix non revu** (auth) |
+| Persistance IDB après reload | Corrigé en code ; **non vérifié navigateur** |
+| Recette A–G | **Impossible cette passe** : session non restaurable (IDB auth corrompue) |
+| Long Tasks 0,8–10 s | **Ouvert** |
+| P32b ledgers W/C/H | **Ouvert** (optimisation structurelle restante) |
+| Tuile Calendrier 14 vs 12 visuelle | **Non revérifiée** après reload ; 14 non reproduit |
+| Invalidations mutations | **Non rejouées** (profil réel protégé) |
 
 ---
 
-## Inventaire code (ajouté / modifié / non commit)
+## Preuves navigateur — tentatives
 
-### Ajouté
-- `src/utils/sport/monthlyVolumeArcDiscoveries.js`  
-- `src/utils/sport/__tests__/monthlyVolumeArc.test.js`  
-- `src/hooks/__tests__/checkedVolumeFingerprint.test.js`  
-- Docs : ce rapport + `AVANT-APRES-ANALYSES-LIVE-2026-11-02.md` + JSON captures  
-
-### Modifié
-- `src/hooks/useRecapTabMetrics.js` — fingerprint + span8 + export  
-- `src/utils/sport/recapAdaptiveWorkerContract.js` — `f70k-…`  
-- `src/utils/sport/recapPeriodDiscoveries.js` — producteurs, priorités, infoValue, rivals  
-- `src/utils/sport/recapInsightNature.js` — budget sommeil  
-- `src/utils/calendarWeekLeaders.js` — anti double-compte endurance  
-- `src/utils/sport/__tests__/recapAnalysisSelectionQuality.test.js`  
-
-### Supprimé
-- Rien d’existant fiable ; invalidation cache via bump de contrat uniquement.
+1. Session live `zingariello1314` ouverte plus tôt : Sport → Récap → Analysis → All time / 30d capturés.  
+2. Reload pour preuve cache → écran « Unlock » / home **sans session**.  
+3. `momentum:rememberedUserId` présent ; enregistrement utilisateur IDB **illisible** (structure dégradée).  
+4. Pas de contournement auth. Pas de mutation profil.
 
 ---
 
-## Verdict
+## Fichiers touchés (principaux, sans commit)
 
-Le moteur **raconte désormais l’arc réel juin→septembre→octobre avec le bon mécanisme**, restitue le cache exact en &lt; 2 s sur re-clic, et **répare 3 mois**.  
-Ce n’est **pas** une clôture « parfaite » : artefacts rédactionnels, mystère 6017, et froids longs restent.  
-**F7.0 reste ouvert** tant que ces limites ne sont pas traitées et que les suites identity Node ne repassent pas.
+- `monthlyVolumeArcDiscoveries.js` — Approche A + running gap chiffré  
+- `recapP35DayModel.js` / P35 / P36 — cache table jour  
+- `calendarMonthSportStats.js` — skipStreak / perf  
+- `recapPeriodDiscoveries.js` — partage matrice, cardio contrast-only  
+- `recapHorizonEssays.js` — noms / grammaire / leastChecked  
+- `recapAnalysisCatalog.js` — libellés jours avec reps  
+- `recapEditorialSelection.js` — weak cardio + Exercice inconnu  
+- `recapMuscleP32bMetrics.js` / Discoveries — reverseIndex + planMatrix  
+- `recapProgramAdherenceDiscoveries.js` — `returnMatrix`  
+- `RecapPeriodHighlightsPanel.jsx` — empty flash  
+- `useRecapTabMetrics.js` — persistance IDB ≤24 / fingerprint f70l2  
+
+---
+
+*Fin du rapport consolidé — prêt pour validation humaine. Aucun commit effectué.*

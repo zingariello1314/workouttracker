@@ -406,13 +406,15 @@ export function buildP32bMuscleDiscoveries({
   window,
   getExerciseNameById = null,
   nameById = null,
-  publishPlanVsActual = true
+  publishPlanVsActual = true,
+  planMatrix = null
 } = {}) {
   const metrics = buildP32bMuscleMetrics({
     snapshot,
     window,
     getExerciseNameById,
-    nameById
+    nameById,
+    planMatrix
   });
   const rejected = [];
   const discoveries = [];

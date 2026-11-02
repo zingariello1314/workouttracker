@@ -65,7 +65,8 @@ export function computeP36WindowMetrics(
     todayYmd = null,
     liveActiveProgram = null,
     getExerciseNameById = null,
-    comparisonWindow = null
+    comparisonWindow = null,
+    dayTableCache = null
   } = {}
 ) {
   const t0 =
@@ -73,17 +74,21 @@ export function computeP36WindowMetrics(
       ? performance.now()
       : Date.now();
 
+  const sharedDayCache = dayTableCache instanceof Map ? dayTableCache : new Map();
+
   const occasions = buildP36OccasionTable(snapshot, window, {
     todayYmd,
     liveActiveProgram,
-    getExerciseNameById
+    getExerciseNameById,
+    dayTableCache: sharedDayCache
   });
   const cWin = comparisonWindow || occasions.comparisonWindow;
   const occasionsC = cWin
     ? buildP36OccasionTable(snapshot, cWin, {
         todayYmd,
         liveActiveProgram,
-        getExerciseNameById
+        getExerciseNameById,
+        dayTableCache: sharedDayCache
       })
     : null;
 

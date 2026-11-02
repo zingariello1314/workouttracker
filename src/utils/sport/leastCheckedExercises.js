@@ -277,7 +277,7 @@ export function computeLeastCheckedExercises(snapshot, window, ctx = {}, limit =
       const name =
         exercise.name ||
         (typeof getExerciseNameById === 'function' ? getExerciseNameById(id) : null) ||
-        `Exercice ${id}`;
+        '';
       const checked = isExerciseChecked(snapshot, dateStr, exercise) ? 1 : 0;
       bumpBucket(
         bucket,

@@ -1,0 +1,93 @@
+﻿--- isolated producers ---
+{
+  "p35TableCold": 347,
+  "p35TableCached1": 272,
+  "p35TableCached2Hit": 0,
+  "days": 365
+}
+{
+  "p35WithSharedCache": 263,
+  "p36WithSharedCacheAfterP35": 236,
+  "p36OccasionMs": 1.17
+}
+--- full bundle 1y-like ---
+[recapReject] internal_chip disc_th_rhythm_now { voiceKey: 'year', period: '1y' }
+[recapReject] internal_chip disc_th_pushPull_now { voiceKey: 'year', period: '1y' }
+{
+  "totalMs": 3332,
+  "selected": 14,
+  "topExclusive": [
+    {
+      "name": "p32b",
+      "exclusiveMs": 1245,
+      "inclusiveMs": 1245,
+      "calls": 1
+    },
+    {
+      "name": "programAdherence",
+      "exclusiveMs": 453,
+      "inclusiveMs": 453,
+      "calls": 1
+    },
+    {
+      "name": "computeCalendarMonthSportStats",
+      "exclusiveMs": 425,
+      "inclusiveMs": 425,
+      "calls": 7
+    },
+    {
+      "name": "p35",
+      "exclusiveMs": 266,
+      "inclusiveMs": 266,
+      "calls": 1
+    },
+    {
+      "name": "p36",
+      "exclusiveMs": 236,
+      "inclusiveMs": 236,
+      "calls": 1
+    },
+    {
+      "name": "calendarDayMap",
+      "exclusiveMs": 135,
+      "inclusiveMs": 135,
+      "calls": 7
+    },
+    {
+      "name": "detectDiscoveries",
+      "exclusiveMs": 117,
+      "inclusiveMs": 212,
+      "calls": 1
+    },
+    {
+      "name": "measureRecapWindow:period",
+      "exclusiveMs": 95,
+      "inclusiveMs": 379,
+      "calls": 1
+    },
+    {
+      "name": "buildExerciseTrajectory",
+      "exclusiveMs": 94,
+      "inclusiveMs": 94,
+      "calls": 10
+    },
+    {
+      "name": "comparisons",
+      "exclusiveMs": 46,
+      "inclusiveMs": 815,
+      "calls": 1
+    },
+    {
+      "name": "measureRecapWindow:d90",
+      "exclusiveMs": 45,
+      "inclusiveMs": 58,
+      "calls": 1
+    },
+    {
+      "name": "gtgUnplanned",
+      "exclusiveMs": 30,
+      "inclusiveMs": 30,
+      "calls": 1
+    }
+  ]
+}

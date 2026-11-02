@@ -321,11 +321,11 @@ export function summarizeLedgerExposure(ledger, lines = []) {
   };
 }
 
-function buildLedgerBundle({ snapshot, window, getExerciseNameById, nameById }) {
+function buildLedgerBundle({ snapshot, window, getExerciseNameById, nameById, reverseIndex = null }) {
   if (!snapshot || !window?.start || !window?.end) {
     return { ledger: null, lines: [], summary: null };
   }
-  const reverseIndex = buildReverseStableIdIndex({ ...(nameById || {}) });
+  const rev = reverseIndex || buildReverseStableIdIndex({ ...(nameById || {}) });
   const ledger = buildMuscleAccountingLedger({
     snapshot,
     window,
@@ -337,7 +337,7 @@ function buildLedgerBundle({ snapshot, window, getExerciseNameById, nameById }) 
     window,
     getExerciseNameById,
     nameById,
-    reverseIndex
+    reverseIndex: rev
   });
   return { ledger, lines, summary: summarizeLedgerExposure(ledger, lines) };
 }
@@ -350,28 +350,33 @@ export function buildP32bMuscleMetrics({
   window,
   getExerciseNameById = null,
   nameById = null,
-  historyLookbackDays = null
+  historyLookbackDays = null,
+  /** Matrice plan/réalisé déjà calculée (évite un 2e parcours avec l’adhérence). */
+  planMatrix = null
 } = {}) {
   const W = window?.start && window?.end ? { start: window.start, end: window.end } : null;
   const C = W ? comparisonWindow(W) : null;
   const lookback = historyLookbackDays == null && W ? historyLookbackForWindow(W) : historyLookbackDays;
   const H = W ? historyWindow(W, lookback) : null;
 
-  const wPack = buildLedgerBundle({ snapshot, window: W, getExerciseNameById, nameById });
+  const reverseIndex = buildReverseStableIdIndex({ ...(nameById || {}) });
+  const wPack = buildLedgerBundle({ snapshot, window: W, getExerciseNameById, nameById, reverseIndex });
   const cPack = C
-    ? buildLedgerBundle({ snapshot, window: C, getExerciseNameById, nameById })
+    ? buildLedgerBundle({ snapshot, window: C, getExerciseNameById, nameById, reverseIndex })
     : { ledger: null, lines: [], summary: null };
   const hPack = H
-    ? buildLedgerBundle({ snapshot, window: H, getExerciseNameById, nameById })
+    ? buildLedgerBundle({ snapshot, window: H, getExerciseNameById, nameById, reverseIndex })
     : { ledger: null, lines: [], summary: null };
 
-  const matrix = W
-    ? buildPlanRealizationMatrix({
-        workoutData: snapshot,
-        window: W,
-        getExerciseNameById
-      })
-    : null;
+  const matrix =
+    planMatrix ||
+    (W
+      ? buildPlanRealizationMatrix({
+          workoutData: snapshot,
+          window: W,
+          getExerciseNameById
+        })
+      : null);
   const planMuscle = summarizePlanMuscleGaps(matrix, { getExerciseNameById });
 
   const comparability = assessWindowComparability(wPack.summary, cPack.summary, W, C);

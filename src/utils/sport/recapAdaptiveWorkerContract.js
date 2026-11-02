@@ -4,7 +4,7 @@
  */
 
 /** F7.0j — shell (assessment/enrichment/coach) + adaptive dans le même Worker. */
-export const RECAP_ADAPTIVE_WORKER_CONTRACT = 'f70k-shell-adaptive-v1';
+export const RECAP_ADAPTIVE_WORKER_CONTRACT = 'f70l2-shell-adaptive-v1';
 
 export const WORKER_MSG = {
   COMPUTE: 'compute',

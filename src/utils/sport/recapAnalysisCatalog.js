@@ -443,11 +443,27 @@ const ANALYSES = [
     run(ctx) {
       if (ctx.months.length < 3) return null;
       const shown = ctx.months.slice(-Math.min(6, ctx.months.length));
-      const lines = shown.map((m) => `${monthLabel(m.ym)} : ${m.days} séance${m.days > 1 ? 's' : ''}, ${fmtInt(m.reps)} reps`);
+      // m.days = jours avec répétitions positives (pas les jours calendar_training).
+      const lines = shown.map(
+        (m) =>
+          `${monthLabel(m.ym)} : ${m.days} jour${m.days > 1 ? 's' : ''} avec reps, ${fmtInt(m.reps)} reps`
+      );
+      const peak = shown.reduce((a, b) => (b.reps > a.reps ? b : a), shown[0]);
+      const trough = shown.reduce((a, b) => (b.reps < a.reps ? b : a), shown[0]);
+      const first = shown[0];
+      const last = shown[shown.length - 1];
+      let title;
+      if (ctx.band === 'all') {
+        title = `De ${monthLabel(first.ym)} à ${monthLabel(last.ym)} : ${fmtInt(ctx.reps)} reps sur ${ctx.dates.length} jours avec reps`;
+      } else if (peak.ym !== trough.ym && peak.reps >= trough.reps * 1.25) {
+        title = `${monthLabel(peak.ym)} domine, ${monthLabel(trough.ym)} est le plus bas`;
+      } else {
+        title = `${shown.length} mois distincts : ${fmtInt(first.reps)} → ${fmtInt(last.reps)} reps`;
+      }
       return {
         strength: 84,
-        title: ctx.band === 'all' ? 'Le parcours se lit en mois, pas en semaine' : 'La période n’est pas un seul total',
-        body: `${lines.join('. ')}. Ensemble : ${ctx.dates.length} jours entraînés, ${fmtInt(ctx.reps)} répétitions, environ ${ctx.rate} séances par semaine.`
+        title,
+        body: `${lines.join('. ')}. Ensemble : ${ctx.dates.length} jours avec répétitions enregistrées, ${fmtInt(ctx.reps)} répétitions, environ ${ctx.rate} jours actifs par semaine.`
       };
     }
   },

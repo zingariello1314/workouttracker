@@ -1,70 +1,70 @@
 {
-  "generatedAt": "2026-11-01T23:00:55.874Z",
+  "generatedAt": "2026-11-02T01:30:58.941Z",
   "allEqual": true,
   "rows": [
     {
       "period": "today",
       "equal": true,
-      "syncMs": 864,
-      "workerPathMs": 616,
-      "syncSelected": 13,
-      "fpPreview": "today|2026-10-30|2026-10-30|0|0||||13|3207491899"
+      "syncMs": 1117,
+      "workerPathMs": 730,
+      "syncSelected": 14,
+      "fpPreview": "today|2026-10-30|2026-10-30|0|0||||14|3259674859"
     },
     {
       "period": "7d",
       "equal": true,
-      "syncMs": 859,
-      "workerPathMs": 811,
-      "syncSelected": 18,
-      "fpPreview": "7d|2026-10-24|2026-10-30|0|0||||18|627356701"
+      "syncMs": 1192,
+      "workerPathMs": 1237,
+      "syncSelected": 17,
+      "fpPreview": "7d|2026-10-24|2026-10-30|0|0||||17|2219769095"
     },
     {
       "period": "30d",
       "equal": true,
-      "syncMs": 1875,
-      "workerPathMs": 2373,
-      "syncSelected": 19,
-      "fpPreview": "30d|2026-09-30|2026-10-30|0|0||||23|41781655"
+      "syncMs": 2515,
+      "workerPathMs": 2168,
+      "syncSelected": 20,
+      "fpPreview": "30d|2026-09-30|2026-10-30|0|0||||24|1421384107"
     },
     {
       "period": "3m",
       "equal": true,
-      "syncMs": 3213,
-      "workerPathMs": 3468,
+      "syncMs": 2701,
+      "workerPathMs": 2578,
       "syncSelected": 22,
-      "fpPreview": "3m|2026-07-30|2026-10-30|0|0||||25|1187557553"
+      "fpPreview": "3m|2026-07-30|2026-10-30|0|0||||25|498254538"
     },
     {
       "period": "6m",
       "equal": true,
-      "syncMs": 3458,
-      "workerPathMs": 3297,
+      "syncMs": 2677,
+      "workerPathMs": 2669,
       "syncSelected": 19,
-      "fpPreview": "6m|2026-04-30|2026-10-30|54.73|13||||21|2000152342"
+      "fpPreview": "6m|2026-04-30|2026-10-30|54.73|13||||21|3511344656"
     },
     {
       "period": "1y",
       "equal": true,
-      "syncMs": 4207,
-      "workerPathMs": 4209,
+      "syncMs": 3247,
+      "workerPathMs": 3037,
       "syncSelected": 21,
-      "fpPreview": "1y|2025-10-30|2026-10-30|82.99|23||||23|4065819233"
+      "fpPreview": "1y|2025-10-30|2026-10-30|82.99|23||||23|2723391972"
     },
     {
       "period": "2y",
       "equal": true,
-      "syncMs": 5918,
-      "workerPathMs": 5325,
+      "syncMs": 4704,
+      "workerPathMs": 4235,
       "syncSelected": 21,
-      "fpPreview": "2y|2024-10-30|2026-10-30|82.99|23||||23|4065819233"
+      "fpPreview": "2y|2024-10-30|2026-10-30|82.99|23||||23|2723391972"
     },
     {
       "period": "all",
       "equal": true,
-      "syncMs": 13719,
-      "workerPathMs": 11550,
+      "syncMs": 11629,
+      "workerPathMs": 8461,
       "syncSelected": 21,
-      "fpPreview": "all|2020-01-01|2026-10-30|82.99|23||||23|4065819233"
+      "fpPreview": "all|2020-01-01|2026-10-30|82.99|23||||23|2723391972"
     }
   ]
 }

@@ -76,7 +76,12 @@ function emptyDowBucket(dow) {
 export function buildP36OccasionTable(
   snapshot,
   window,
-  { todayYmd = null, liveActiveProgram = null, getExerciseNameById = null } = {}
+  {
+    todayYmd = null,
+    liveActiveProgram = null,
+    getExerciseNameById = null,
+    dayTableCache = null
+  } = {}
 ) {
   const t0 =
     typeof performance !== 'undefined' && performance.now
@@ -92,7 +97,8 @@ export function buildP36OccasionTable(
 
   const p35 = buildP35DayTable(snapshot, window, {
     liveActiveProgram,
-    getExerciseNameById
+    getExerciseNameById,
+    dayTableCache
   });
   const buckets = Array.from({ length: 7 }, (_, i) => emptyDowBucket(i));
   const days = p35.days || [];

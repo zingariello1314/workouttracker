@@ -376,9 +376,10 @@ export function detectRecapMilestones({
     const n = parseInt(String(id), 10);
     if (typeof getExerciseNameById === 'function') {
       const label = getExerciseNameById(Number.isFinite(n) ? n : id);
-      if (label?.trim()) return label.trim();
+      if (label?.trim() && !/^Exercice\s+\d+$/i.test(label)) return label.trim();
     }
-    return fallback || `Exercice ${id}`;
+    if (fallback && !/^Exercice\s+\d+$/i.test(String(fallback))) return fallback;
+    return '';
   };
 
   if (sessions[0] && eligible(sessions[0].date, window, voiceKey, { firstAbsolute: true })) {

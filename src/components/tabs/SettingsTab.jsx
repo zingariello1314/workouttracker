@@ -362,6 +362,12 @@ const SettingsTab = () => {
     }
   };
 
+  if (showHomePageSettings) {
+    return (
+      <HomePageImageSettings onClose={() => setShowHomePageSettings(false)} />
+    );
+  }
+
   return (
     <div className="settings-page relative min-h-screen">
       <div className="relative z-10 flex items-start gap-5 p-4 md:p-6">
@@ -875,11 +881,6 @@ const SettingsTab = () => {
         </div>
         )}
         </SettingsGroupFrame>
-
-        {/* Modals */}
-        {showHomePageSettings && (
-          <HomePageImageSettings onClose={() => setShowHomePageSettings(false)} />
-        )}
 
         <ProfileCardSettings
           username={currentUser?.username || 'guest'}

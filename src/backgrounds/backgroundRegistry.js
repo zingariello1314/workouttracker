@@ -135,6 +135,30 @@ const animatedBackgroundOptions = [
     loadThumbnail: () => import('./thumbnails/RainPuddleThumbnail'),
     fallbackBackground: 'linear-gradient(180deg, #000000 0%, #021008 100%)',
   },
+  {
+    id: 'snowfall',
+    name: 'Chute de neige',
+    type: 'animated',
+    load: () => import('./SnowfallBackground'),
+    loadThumbnail: () => import('./thumbnails/SnowfallThumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #050505 0%, #000000 100%)',
+  },
+  {
+    id: 'toon-fireball',
+    name: 'Boule de feu toon',
+    type: 'animated',
+    load: () => import('./ToonFireballBackground'),
+    loadThumbnail: () => import('./thumbnails/ToonFireballThumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #1a0505 0%, #000000 100%)',
+  },
+  {
+    id: 'wire-terrain',
+    name: 'Terrain filaire',
+    type: 'animated',
+    load: () => import('./WireTerrainBackground'),
+    loadThumbnail: () => import('./thumbnails/WireTerrainThumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #1a0800 0%, #000000 100%)',
+  },
 ];
 
 /** @type {BackgroundOption[]} */

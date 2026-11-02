@@ -1,7 +1,13 @@
 /**
  * Arcs de volume multi-mois : détection + rédaction.
- * Calcule depuis repsByDate (pas de constantes historiques hardcodées).
+ * Jours = jours entraînés calendrier (DAY_CONTRACT.CALENDAR_TRAINING) lorsque
+ * snapshot fourni — même périmètre que les tuiles Calendrier.
+ * Reps = somme des répétitions journalières (intensité / repsByDate).
  */
+
+import DateHelper from '../dateHelper';
+import { getCalendarSportStatsCache } from '../calendarMonthSportStats';
+import { dayCountsAsCalendarTrainingDay } from './recapTrainingDayTruth';
 
 function ymOf(ymd) {
   return String(ymd || '').slice(0, 7);
@@ -37,32 +43,87 @@ function daysInMonth(ym) {
   return new Date(y, m, 0).getDate();
 }
 
+function monthEndYmd(ym) {
+  return `${ym}-${String(daysInMonth(ym)).padStart(2, '0')}`;
+}
+
 /**
  * Agrège repsByDate en mois chronologiques.
+ * Si `isTrainingDay` (ou snapshot) est fourni :
+ * - `days` = jours calendrier entraînés
+ * - `reps` = somme des reps **uniquement sur ces jours** (périmètre cohérent,
+ *   Approche A — pas de numérateur élargi aux journées GTG sync hors crédit)
+ *
  * @param {Record<string, number>|Map} repsByDate
- * @returns {{ ym: string, reps: number, days: number, repsPerDay: number|null }[]}
+ * @param {{ isTrainingDay?: (ymd: string) => boolean, snapshot?: object, garminData?: object|null }} [opts]
+ * @returns {{ ym: string, reps: number, days: number, repsPerDay: number|null, dayBasis: string, excludedPositiveRepDays?: number }[]}
  */
-export function buildChronologicalMonths(repsByDate) {
-  const by = {};
+export function buildChronologicalMonths(repsByDate, opts = {}) {
+  const repsLookup = (ymd) => {
+    if (repsByDate instanceof Map) return Number(repsByDate.get(ymd)) || 0;
+    return Number(repsByDate?.[ymd]) || 0;
+  };
   const entries =
     repsByDate instanceof Map
       ? [...repsByDate.entries()]
       : Object.entries(repsByDate || {});
+  const monthsTouched = new Set();
   for (const [ymd, reps] of entries) {
-    const r = Number(reps) || 0;
-    if (r <= 0) continue;
+    if ((Number(reps) || 0) <= 0) continue;
     const ym = ymOf(ymd);
-    if (!/^\d{4}-\d{2}$/.test(ym)) continue;
-    if (!by[ym]) by[ym] = { ym, reps: 0, days: 0 };
-    by[ym].reps += r;
-    by[ym].days += 1;
+    if (/^\d{4}-\d{2}$/.test(ym)) monthsTouched.add(ym);
   }
-  return Object.values(by)
-    .sort((a, b) => a.ym.localeCompare(b.ym))
-    .map((m) => ({
-      ...m,
-      repsPerDay: m.days > 0 ? m.reps / m.days : null
-    }));
+
+  let isTrainingDay = typeof opts.isTrainingDay === 'function' ? opts.isTrainingDay : null;
+  if (!isTrainingDay && opts.snapshot) {
+    const sportCache = getCalendarSportStatsCache(opts.snapshot, opts.garminData || null);
+    isTrainingDay = (ymd) =>
+      sportCache?.isTrainingDay
+        ? sportCache.isTrainingDay(ymd)
+        : dayCountsAsCalendarTrainingDay(opts.snapshot, ymd, opts.garminData || null);
+  }
+
+  const months = [...monthsTouched].sort().map((ym) => {
+    if (isTrainingDay) {
+      const start = `${ym}-01`;
+      const end = monthEndYmd(ym);
+      let days = 0;
+      let reps = 0;
+      let positiveOnly = 0;
+      for (const d of DateHelper.getDateRange(start, end)) {
+        const r = repsLookup(d);
+        if (r > 0) positiveOnly += 1;
+        if (!isTrainingDay(d)) continue;
+        days += 1;
+        reps += r;
+      }
+      return {
+        ym,
+        reps,
+        days,
+        dayBasis: 'calendar_training',
+        excludedPositiveRepDays: Math.max(0, positiveOnly - days),
+        repsPerDay: days > 0 ? reps / days : null
+      };
+    }
+    let reps = 0;
+    let days = 0;
+    for (const [ymd, r0] of entries) {
+      if (ymOf(ymd) !== ym) continue;
+      const r = Number(r0) || 0;
+      if (r <= 0) continue;
+      reps += r;
+      days += 1;
+    }
+    return {
+      ym,
+      reps,
+      days,
+      dayBasis: 'positive_reps',
+      repsPerDay: days > 0 ? reps / days : null
+    };
+  });
+  return months;
 }
 
 /**
@@ -78,21 +139,45 @@ export function isIncompleteRecentMonth(month, windowEndYmd, { minCoveredDays = 
   return covered < minCoveredDays;
 }
 
+/**
+ * Décompose une baisse : deltas séparés (jours, densité), sans % de contribution
+ * additive inventé (freqShare/densityShare restent à titre de signal interne
+ * approximatif — ne pas publier comme précision).
+ */
 function decomposeDrop(from, to) {
   if (!from || !to || from.reps <= 0) {
-    return { freqShare: null, densityShare: null, repsPct: null, daysPct: null, rpdPct: null };
+    return {
+      freqShare: null,
+      densityShare: null,
+      repsPct: null,
+      daysPct: null,
+      rpdPct: null,
+      freqLed: false,
+      densityLed: false,
+      mixed: false
+    };
   }
   const repsPct = pct(to.reps, from.reps);
   const daysPct = pct(to.days, from.days);
   const rpdPct =
     from.repsPerDay != null && to.repsPerDay != null ? pct(to.repsPerDay, from.repsPerDay) : null;
-  // Approximation additive des contributions log : |Δjours| vs |Δrpd| sur la baisse de volume.
   const absDays = Math.abs(daysPct || 0);
   const absRpd = Math.abs(rpdPct || 0);
   const denom = absDays + absRpd;
   const freqShare = denom > 0 ? absDays / denom : null;
   const densityShare = denom > 0 ? absRpd / denom : null;
-  return { freqShare, densityShare, repsPct, daysPct, rpdPct };
+  const freqLed = freqShare != null && freqShare >= 0.55 && (repsPct || 0) < -15;
+  const densityLed = densityShare != null && densityShare >= 0.55 && (repsPct || 0) < -15;
+  return {
+    freqShare,
+    densityShare,
+    repsPct,
+    daysPct,
+    rpdPct,
+    freqLed,
+    densityLed,
+    mixed: !freqLed && !densityLed && (repsPct || 0) < -15
+  };
 }
 
 /**
@@ -116,7 +201,6 @@ export function detectMonthlyVolumeArcShape(months, { windowEndYmd = null } = {}
   }
   const peak = series[peakIdx];
 
-  // Creux après le sommet
   let troughIdx = peakIdx;
   for (let i = peakIdx + 1; i < series.length; i += 1) {
     if (series[i].reps < series[troughIdx].reps) troughIdx = i;
@@ -124,8 +208,6 @@ export function detectMonthlyVolumeArcShape(months, { windowEndYmd = null } = {}
   const trough = series[troughIdx];
   const dropFromPeak = pct(trough.reps, peak.reps);
   if (dropFromPeak == null || dropFromPeak > -20 || troughIdx <= peakIdx) {
-    // Pas de baisse multi-mois nette après sommet
-    // Essayer stabilité / progression simple fin de série
     const a = series[series.length - 3];
     const b = series[series.length - 2];
     const c = series[series.length - 1];
@@ -154,10 +236,9 @@ export function detectMonthlyVolumeArcShape(months, { windowEndYmd = null } = {}
   }
 
   const mechFrom = peak;
-  const mechTo = arcKind === 'prolonged_decline' ? trough : trough;
+  const mechTo = trough;
   const mechanism = decomposeDrop(mechFrom, mechTo);
 
-  // Si reprise : mécanisme du creux → récent aussi
   if (arcKind === 'partial_recovery' || arcKind === 'full_recovery') {
     mechanism.recovery = decomposeDrop(trough, recent);
   }
@@ -167,11 +248,6 @@ export function detectMonthlyVolumeArcShape(months, { windowEndYmd = null } = {}
 
 function titleForArc(shape) {
   const { arcKind, peak, trough, recent, mechanism } = shape;
-  const freqLed =
-    mechanism.freqShare != null &&
-    mechanism.densityShare != null &&
-    mechanism.freqShare >= 0.55 &&
-    (mechanism.repsPct || 0) < -15;
 
   if (arcKind === 'partial_recovery') {
     return `${monthLabelFr(recent.ym)} interrompt la baisse depuis ${monthLabelFr(peak.ym)}`;
@@ -182,10 +258,24 @@ function titleForArc(shape) {
   if (arcKind === 'stabilization_after_rise') {
     return `Stabilisation après la hausse de ${monthLabelFr(peak.ym)}`;
   }
-  if (freqLed) {
+  if (mechanism.freqLed) {
     return 'La fréquence explique l’essentiel du recul';
   }
   return `Recul prolongé de ${monthLabelFr(peak.ym)} à ${monthLabelFr(trough.ym)}`;
+}
+
+function mechanismSentence(mechanism) {
+  if (!mechanism) return '';
+  if (mechanism.freqLed) {
+    return ' La baisse vient surtout d’une diminution des jours entraînés, plus que d’un effondrement du volume par journée active.';
+  }
+  if (mechanism.densityLed) {
+    return ' La baisse vient surtout du volume par journée active ; la fréquence joue un rôle moindre.';
+  }
+  if (mechanism.mixed) {
+    return ' Fréquence et volume par jour actif contribuent tous les deux au recul.';
+  }
+  return '';
 }
 
 function bodyForArc(shape) {
@@ -194,17 +284,7 @@ function bodyForArc(shape) {
   const troughL = monthLabelFr(trough.ym);
   const recentL = monthLabelFr(recent.ym);
   const dropBits = `${peakL} : ${fmtInt(peak.reps)} reps en ${peak.days} jours entraînés (≈${fmtInt(peak.repsPerDay)} / jour actif) → ${troughL} : ${fmtInt(trough.reps)} reps en ${trough.days} jours (≈${fmtInt(trough.repsPerDay)} / jour actif), soit ${fmtSignedPct(mechanism.repsPct)} de volume, ${fmtSignedPct(mechanism.daysPct)} de jours, ${fmtSignedPct(mechanism.rpdPct)} de volume par jour actif.`;
-
-  let mech = '';
-  if (mechanism.freqShare != null && mechanism.densityShare != null) {
-    if (mechanism.freqShare >= 0.55) {
-      mech = ` La baisse vient surtout de la fréquence (environ ${Math.round(mechanism.freqShare * 100)} % du mouvement mesurable), pas d’un effondrement du volume par journée active.`;
-    } else if (mechanism.densityShare >= 0.55) {
-      mech = ` La baisse vient surtout du volume par journée active (environ ${Math.round(mechanism.densityShare * 100)} % du mouvement mesurable), la fréquence jouant un rôle moindre.`;
-    } else {
-      mech = ' Fréquence et volume par jour actif contribuent tous les deux au recul.';
-    }
-  }
+  const mech = mechanismSentence(mechanism);
 
   if (arcKind === 'partial_recovery') {
     const rec = mechanism.recovery || {};
@@ -224,7 +304,11 @@ function bodyForArc(shape) {
  * @returns {object[]} partials compatibles avec discovery()
  */
 export function buildMonthlyVolumeArcDiscoveries(repsByDate, opts = {}) {
-  const months = buildChronologicalMonths(repsByDate);
+  const months = buildChronologicalMonths(repsByDate, {
+    snapshot: opts.snapshot || null,
+    garminData: opts.garminData || null,
+    isTrainingDay: opts.isTrainingDay || null
+  });
   const shape = detectMonthlyVolumeArcShape(months, {
     windowEndYmd: opts.windowEndYmd || null
   });
@@ -257,6 +341,7 @@ export function buildMonthlyVolumeArcDiscoveries(repsByDate, opts = {}) {
         peakRepsPerDay: peak.repsPerDay,
         troughRepsPerDay: trough.repsPerDay,
         recentRepsPerDay: recent.repsPerDay,
+        dayBasis: peak.dayBasis || months[0]?.dayBasis || 'positive_reps',
         freqShareOfDrop: mechanism.freqShare,
         densityShareOfDrop: mechanism.densityShare,
         repsPct: mechanism.repsPct,
@@ -282,7 +367,8 @@ export function buildMonthlyVolumeArcDiscoveries(repsByDate, opts = {}) {
 }
 
 /**
- * Interruption de course : sorties présentes puis absentes ≥ 2 mois calendaires complets.
+ * Trajectoire mensuelle de course (km + sorties) puis interruption éventuelle.
+ * Préfère une narration chiffrée mois par mois à un simple constat d’absence.
  * @param {{ date: string, km?: number }[]} runDays
  */
 export function buildRunningGapDiscoveries(runDays, opts = {}) {
@@ -302,14 +388,12 @@ export function buildRunningGapDiscoveries(runDays, opts = {}) {
     byMonth[ym].km += r.km;
   });
 
-  // Mois de la fenêtre avec activité course
   const activeMonths = Object.values(byMonth).sort((a, b) => a.ym.localeCompare(b.ym));
   if (activeMonths.length < 1) return [];
 
   const lastActive = activeMonths[activeMonths.length - 1];
   if (!windowEnd) return [];
   const endYm = ymOf(windowEnd);
-  // Compter les mois calendaires strictement après lastActive jusqu’à endYm (hors mois courant incomplet)
   const gapMonths = [];
   let [y, m] = lastActive.ym.split('-').map(Number);
   for (let guard = 0; guard < 36; guard += 1) {
@@ -323,12 +407,31 @@ export function buildRunningGapDiscoveries(runDays, opts = {}) {
     if (ym === endYm && isIncompleteRecentMonth({ ym }, windowEnd)) break;
     if (!byMonth[ym]) gapMonths.push(ym);
   }
-  if (gapMonths.length < 2) return [];
 
   const first = activeMonths[0];
-  const peak = activeMonths.reduce((a, b) => (b.sessions > a.sessions ? b : a), activeMonths[0]);
-  const title = `Aucune sortie de course enregistrée après ${monthLabelFr(lastActive.ym)}`;
-  const body = `Des sorties sont documentées de ${monthLabelFr(first.ym)} à ${monthLabelFr(lastActive.ym)} (${activeMonths.reduce((s, x) => s + x.sessions, 0)} sorties, dont un pic de ${peak.sessions} en ${monthLabelFr(peak.ym)}). Sur ${gapMonths.length} mois calendaires suivants comparables (${monthLabelFr(gapMonths[0])} → ${monthLabelFr(gapMonths[gapMonths.length - 1])}), aucune sortie enregistrée n’apparaît. Absence de données de course — pas une affirmation sur l’activité physique globale.`;
+  const peak = activeMonths.reduce((a, b) => (b.km > a.km ? b : a), activeMonths[0]);
+  const totalSessions = activeMonths.reduce((s, x) => s + x.sessions, 0);
+  const totalKm = activeMonths.reduce((s, x) => s + x.km, 0);
+  const monthLines = activeMonths
+    .slice(-6)
+    .map(
+      (x) =>
+        `${monthLabelFr(x.ym)} : ${Math.round(x.km * 10) / 10} km sur ${x.sessions} sortie${x.sessions > 1 ? 's' : ''}`
+    );
+  const gapBit =
+    gapMonths.length >= 2
+      ? ` Puis ${gapMonths.length} mois calendaires comparables sans sortie enregistrée (${monthLabelFr(gapMonths[0])} → ${monthLabelFr(gapMonths[gapMonths.length - 1])}).`
+      : gapMonths.length === 1
+        ? ` Aucune sortie enregistrée en ${monthLabelFr(gapMonths[0])} (mois complet sans course).`
+        : '';
+
+  if (gapMonths.length < 1 && activeMonths.length < 3) return [];
+
+  const title =
+    gapMonths.length >= 2
+      ? `La course a monté puis disparu des enregistrements après ${monthLabelFr(lastActive.ym)}`
+      : `La course se lit en mois : pic en ${monthLabelFr(peak.ym)}`;
+  const body = `${monthLines.join('. ')}. Ensemble sur la phase active : ${Math.round(totalKm * 10) / 10} km en ${totalSessions} sorties (pic ${Math.round(peak.km * 10) / 10} km en ${monthLabelFr(peak.ym)}).${gapBit} Absence de données de course — pas une affirmation sur l’activité physique globale.`;
 
   return [
     {
@@ -337,17 +440,27 @@ export function buildRunningGapDiscoveries(runDays, opts = {}) {
       family: 'running_gap',
       title,
       body,
-      evidence: `dernière ${monthLabelFr(lastActive.ym)} · trou ${gapMonths.length} mois`,
-      weights: { importance: 0.93, reliability: 0.9, novelty: 0.92, fit: 0.95 },
+      evidence:
+        gapMonths.length >= 1
+          ? `dernière ${monthLabelFr(lastActive.ym)} · trou ${gapMonths.length} mois · pic ${Math.round(peak.km * 10) / 10} km`
+          : `pic ${monthLabelFr(peak.ym)} · ${Math.round(totalKm * 10) / 10} km`,
+      weights: { importance: 0.95, reliability: 0.92, novelty: 0.94, fit: 0.97 },
       metrics: {
         lastActiveYm: lastActive.ym,
         gapMonths,
-        sessionCount: activeMonths.reduce((s, x) => s + x.sessions, 0),
+        sessionCount: totalSessions,
+        totalKm: Math.round(totalKm * 10) / 10,
         peakYm: peak.ym,
         peakSessions: peak.sessions,
+        peakKm: Math.round(peak.km * 10) / 10,
+        months: activeMonths.map((x) => ({
+          ym: x.ym,
+          sessions: x.sessions,
+          km: Math.round(x.km * 10) / 10
+        })),
         trajectoryOk: true,
-        trajectoryRichness: 7,
-        trajectoryPrimaryStory: 'net_decline',
+        trajectoryRichness: 9,
+        trajectoryPrimaryStory: gapMonths.length >= 2 ? 'net_decline' : 'net_rise',
         temporalScope: { interpretingWithHistory: true }
       }
     }

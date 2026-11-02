@@ -5,7 +5,8 @@
 
 import { logRecapReject } from './recapRejectLog';
 
-const RAW_ID_RE = /\bExercice\s+\d{4,}\b|\b#\d{6,}\b|\b\d{9,}\b/;
+const RAW_ID_RE = /\bExercice\s+\d{2,}\b|\b#\d{6,}\b|\b\d{9,}\b/;
+const OBJECT_OBJECT_RE = /\[object\s+Object\]/i;
 const INTERNAL_CHIP_RE = /\b(rhythm|repertoire|concentration|composition|continuity|pushPull|series)\b/i;
 const PACE_RE =
   /(\d+(?:[.,]\d+)?)\s*(?:→|->|à|a)\s*(\d+(?:[.,]\d+)?)\s*min\/\s*km|de\s+(\d+(?:[.,]\d+)?)\s*à\s+(\d+(?:[.,]\d+)?)\s*min\/\s*km|(\d+(?:[.,]\d+)?)\s*min\/\s*km/i;
@@ -16,10 +17,20 @@ const LEFT_WINDOW_RE = /a quitt[ée] cette fenêtre|dispara[iî]t du journal/i;
  * Texte utilisateur uniquement — metrics / ids techniques hors prose ne doivent
  * jamais déclencher raw_exercise_id (une découverte valide peut porter exerciseId en metrics).
  */
+function asText(value) {
+  if (value == null || value === '') return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(asText).filter(Boolean).join(' · ');
+  if (typeof value === 'object') return '[object Object]';
+  return String(value);
+}
+
 function blob(card) {
   if (!card) return '';
   if (typeof card === 'string') return card;
   return [card.title, card.body, card.text, card.evidence, card.context?.title, card.context?.body]
+    .map(asText)
     .filter(Boolean)
     .join('\n');
 }
@@ -57,6 +68,10 @@ export function insightRejectReason(card, ctx = {}) {
   const metrics = card.metrics || {};
 
   if (!title && !text.trim()) return 'empty';
+
+  if (OBJECT_OBJECT_RE.test(text) || typeof card.evidence === 'object') {
+    return 'non_textual_evidence';
+  }
 
   if (RAW_ID_RE.test(text) || RAW_ID_RE.test(title)) return 'raw_exercise_id';
 

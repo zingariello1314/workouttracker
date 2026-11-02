@@ -255,7 +255,7 @@ export function buildAthleteTrainingIdentity(opts = {}) {
     const n = parseInt(id, 10);
     const name = Number.isFinite(n) && typeof getExerciseNameById === 'function'
       ? getExerciseNameById(n)
-      : `Exercice ${id}`;
+      : '';
     const key = qualityKeyFor(id, name, getExerciseNameById);
     if (!key) return;
     const bucket = buckets.get(key) || { dates: new Set(), reps: [] };

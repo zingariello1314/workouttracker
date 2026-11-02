@@ -55,7 +55,7 @@ function exerciseDisplayName(exId, getExerciseNameById) {
       if (label && String(label).trim() && !/^Exercice\s+\d+$/i.test(label)) return String(label).trim();
     }
   }
-  return `Exercice ${exId}`;
+  return '';
 }
 
 function findExercisesByPattern(byEx, pattern, getExerciseNameById) {

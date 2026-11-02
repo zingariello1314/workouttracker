@@ -462,7 +462,10 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const currRate = weeklyRate(current.sessions, wins.currentLen);
   const habitRate = weeklyRate(habit.sessions, wins.habitLen);
   const longRate = weeklyRate(longTerm.sessions, 90);
-  const least = (enrichment?.leastCheckedExercises || []).slice(0, 3).map((x) => x.name).filter(Boolean);
+  const least = (enrichment?.leastCheckedExercises || [])
+    .map((x) => String(x?.name || '').trim())
+    .filter((n) => n && !/^Exercice inconnu/i.test(n) && !/^Exercice\s+\d/i.test(n) && n !== 'un mouvement')
+    .slice(0, 3);
   const pushPct = f.pushPct ?? currP.pushPct;
   const pullPct = f.pullPct ?? currP.pullPct;
   const ratioEnr = f.pushPullRatio ?? currP.ratio;
@@ -596,9 +599,11 @@ export function buildHorizonEssayCandidates(opts = {}) {
         : idFreqNote;
       const densBit = denser
         ? ` Quand une séance a lieu, elle reste dans le même ordre de grandeur (environ ${current.avgExercisesPerSession} exercices).`
-        : current.avgExercisesPerSession
-          ? ` Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession || '—'}).`
-          : '';
+        : current.avgExercisesPerSession && habit.avgExercisesPerSession
+          ? ` Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession}).`
+          : current.avgExercisesPerSession
+            ? ` Tes séances comptent environ ${current.avgExercisesPerSession} exercices ; la densité antérieure n’est pas assez claire pour comparer.`
+            : '';
       const close = rebound
         ? ` Le principal changement est une contraction récente de l'exposition, déjà en reprise — pas une perte de capacité démontrée.`
         : ` Tant que le rythme court reste orienté à la baisse, le signal concerne encore la pratique, pas forcément le niveau.`;
@@ -631,11 +636,17 @@ export function buildHorizonEssayCandidates(opts = {}) {
         '. ',
         denser
           ? identity?.ready && idStatus === 'inside'
-            ? `Quand une séance a lieu, elle reste dans le même ordre de grandeur qu'avant (environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession}).`
-            : `En revanche, quand une séance a lieu, elle reste proche de ton habitude : environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant. Tu n'as donc pas « allégé » tes entraînements : tu en as simplement fait moins.`
-          : current.avgExercisesPerSession
-            ? `Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession || '—'} auparavant). Fréquence et contenu baissent ensemble.`
-            : 'Le rythme des séances a changé ; la densité par séance n’est pas assez claire pour en dire plus.',
+            ? habit.avgExercisesPerSession
+              ? `Quand une séance a lieu, elle reste dans le même ordre de grandeur qu'avant (environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession}).`
+              : `Quand une séance a lieu, elle reste dans le même ordre de grandeur (environ ${current.avgExercisesPerSession} exercices).`
+            : habit.avgExercisesPerSession
+              ? `En revanche, quand une séance a lieu, elle reste proche de ton habitude : environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant. Tu n'as donc pas « allégé » tes entraînements : tu en as simplement fait moins.`
+              : `Quand une séance a lieu, elle compte environ ${current.avgExercisesPerSession} exercices ; la densité antérieure n’est pas assez claire pour conclure à un allègement.`
+          : current.avgExercisesPerSession && habit.avgExercisesPerSession
+            ? `Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant). Fréquence et contenu baissent ensemble.`
+            : current.avgExercisesPerSession
+              ? `Tes séances comptent environ ${current.avgExercisesPerSession} exercices ; la densité antérieure n’est pas assez claire pour comparer. Le rythme des séances a changé.`
+              : 'Le rythme des séances a changé ; la densité par séance n’est pas assez claire pour en dire plus.',
         idFreqNote
       ].join(''),
       rates.source === 'recap_window'
@@ -896,28 +907,43 @@ export function buildHorizonEssayCandidates(opts = {}) {
         : mom != null && mom > 8
           ? `En moyenne, tes répétitions récentes montent encore (${pctPhrase(mom)}).`
           : 'Le momentum global des répétitions ne bascule pas clairement.';
-    const prBit = prEvents.length
-      ? ` Dans le même temps, ${fmtList(prEvents.map((e) => e.exerciseName))} a encore marqué un meilleur niveau : ce n'est donc pas une baisse uniforme.`
+    const risingNamed = risingNames.map((n) => String(n || '').trim()).filter((n) => n && !/^exercice\s/i.test(n) && n !== 'un mouvement');
+    const prNamed = prEvents
+      .map((e) => String(e.exerciseName || '').trim())
+      .filter((n) => n && !/^exercice\s/i.test(n) && n !== 'un mouvement');
+    const replaceNamed = shifts.replacements
+      .map((e) => String(e.name || '').trim())
+      .filter((n) => n && !/^exercice\s/i.test(n));
+    const dropNamed = shifts.performanceDrops
+      .map((e) => String(e.name || '').trim())
+      .filter((n) => n && !/^exercice\s/i.test(n));
+    const prBit = prNamed.length
+      ? ` Dans le même temps, ${fmtList(prNamed)} a encore marqué un meilleur niveau : ce n'est donc pas une baisse uniforme.`
       : '';
-    const holdBit = risingNames.length
-      ? ` Pourtant ${fmtList(risingNames)} continue${risingNames.length > 1 ? 'nt' : ''} de progresser.`
+    const holdBit = risingNamed.length
+      ? ` Pourtant ${fmtList(risingNamed)} continue${risingNamed.length > 1 ? 'nt' : ''} de progresser.`
       : '';
-    const varBit = shifts.replacements.length
-      ? ` Sur ${fmtList(shifts.replacements.map((e) => e.name))}, la baisse de reps ressemble surtout à un changement de variante, pas à une perte de niveau.`
-      : shifts.performanceDrops.length
-        ? ` ${fmtList(shifts.performanceDrops.map((e) => e.name))} baissent tout en restant pratiqués : signal local, trop étroit pour une perte générale de force.`
+    const varBit = replaceNamed.length
+      ? ` Sur ${fmtList(replaceNamed)}, la baisse de reps ressemble surtout à un changement de variante, pas à une perte de niveau.`
+      : dropNamed.length
+        ? ` ${fmtList(dropNamed)} baissent tout en restant pratiqués : signal local, trop étroit pour une perte générale de force.`
         : '';
+    // Sans nom résolu, la carte devient du bruit grammatical (« Pourtant continuent »).
+    if (!holdBit && !prBit && !varBit && !(mom != null && Math.abs(mom) >= 12)) {
+      /* skip */
+    } else {
     short(
       'performance',
       mom != null && mom < -12
         ? 'La production de répétitions observée recule — le niveau n’est pas encore lisible'
         : 'Les répétitions observées et l’exposition ne racontent pas la même chose',
       `${momBit}${holdBit}${prBit}${varBit}${identityPerfParagraph(unusualPerfQ)} Sans le même exercice, la même variante et assez de séances comparables, on ne peut pas parler de baisse de performance : seulement d'une production observée en retrait.`,
-      [mom != null ? `reps observées ${Math.round(mom)} %` : null, prEvents[0]?.exerciseName || risingNames[0] || null]
+      [mom != null ? `reps observées ${Math.round(mom)} %` : null, prNamed[0] || risingNamed[0] || null]
         .filter(Boolean)
         .join(' · '),
       0.92
     );
+    }
   }
 
   if (
