@@ -76,7 +76,10 @@ import {
   computeVolumeKgForWorkoutKey
 } from '../../utils/exerciseLoadVolume';
 import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
-import { buildSetLogFromPrescription } from '../../utils/exerciseSetLogUtils';
+import {
+  buildSetLogFromPrescription,
+  syncExerciseSetLogWeightsFromLegacy
+} from '../../utils/exerciseSetLogUtils';
 import {
   evaluateVolumeCompletion,
   getPlannedTotalFromPrescription
@@ -961,7 +964,20 @@ const TodayTab = () => {
   };
 
   const updateLocalExerciseWeight = (storageKey, weightStr) => {
-    patchDraftField('exerciseWeights', storageKey, weightStr);
+    if (!storageKey) return;
+    pauseLastExerciseWeightIndex();
+    patchSessionExerciseDraft((draft) => {
+      if (!draft.exerciseWeights || typeof draft.exerciseWeights !== 'object') {
+        draft.exerciseWeights = {};
+      }
+      draft.exerciseWeights[storageKey] = weightStr;
+      if (draft.exerciseSetLogs?.[storageKey]?.sets?.length) {
+        const synced = syncExerciseSetLogWeightsFromLegacy(draft, storageKey);
+        draft.exerciseSetLogs[storageKey] = synced.exerciseSetLogs[storageKey];
+      }
+      return true;
+    });
+    noteLastExerciseWeightFromKey(storageKey, weightStr);
   };
 
   const updateLocalExerciseMarkedWeighted = (storageKey, checked, exerciseId) => {
@@ -981,6 +997,10 @@ const TodayTab = () => {
       }
       if (checked) draft.exerciseWeightPerArm[storageKey] = true;
       else delete draft.exerciseWeightPerArm[storageKey];
+      if (draft.exerciseSetLogs?.[storageKey]?.sets?.length) {
+        const synced = syncExerciseSetLogWeightsFromLegacy(draft, storageKey);
+        draft.exerciseSetLogs[storageKey] = synced.exerciseSetLogs[storageKey];
+      }
     }, { exerciseId });
   };
 
@@ -1003,6 +1023,10 @@ const TodayTab = () => {
         draft.exerciseSetWeights = {};
       }
       draft.exerciseSetWeights[storageKey] = prevRow;
+      if (draft.exerciseSetLogs?.[storageKey]?.sets?.length) {
+        const synced = syncExerciseSetLogWeightsFromLegacy(draft, storageKey);
+        draft.exerciseSetLogs[storageKey] = synced.exerciseSetLogs[storageKey];
+      }
       return true;
     }, { silent: true });
   };

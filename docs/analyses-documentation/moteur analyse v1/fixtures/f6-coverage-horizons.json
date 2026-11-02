@@ -1,0 +1,523 @@
+{
+  "generatedAt": "2026-11-01T16:49:58.553Z",
+  "coverage": {
+    "source": "fixture workout-main-jul-oct-2026.json",
+    "liveProfile": "non accessible — non mesuré",
+    "firstTrainingDate": "2026-07-02",
+    "lastTrainingDate": "2026-10-30",
+    "daysWithActivity": 67,
+    "distinctExercisesInRepsKeys": 103,
+    "lifetimeExercises": 101,
+    "sessionExerciseDays": 430,
+    "repsKeys": 450,
+    "checkedTrueKeys": 449,
+    "gtgDayKeys": 6,
+    "enduranceSessions": 6,
+    "manualSleepDays": 0,
+    "garminInThisFixture": false,
+    "spanDaysInclusive": 121
+  },
+  "horizons": {
+    "7d": {
+      "requestedWindow": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-10-24",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 4,
+      "emptyCalendarDaysInWindow": 3,
+      "computeMs": 813.92,
+      "allDiscoveries": 31,
+      "selected": 11,
+      "trajectoryMisses": 4,
+      "trajectoryHits": 0,
+      "lifetimeHits": 2,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 32,
+        "repsKeysBeforeWindowStart": 418,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 8.77,
+          "exclusiveMs": 8.77
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 1.78,
+          "exclusiveMs": 1.78
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 103.52,
+          "exclusiveMs": 103.52
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 4.36,
+          "exclusiveMs": 4.36
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 1.31,
+          "exclusiveMs": 1.31
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 5.37,
+          "exclusiveMs": 5.37
+        }
+      },
+      "selectedKinds": [
+        "disc_density",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_freq_continuity",
+        "disc_muscle_share_shift",
+        "disc_muscle_reorient",
+        "disc_push_pull"
+      ]
+    },
+    "30d": {
+      "requestedWindow": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-10-01",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 16,
+      "emptyCalendarDaysInWindow": 14,
+      "computeMs": 1325.93,
+      "allDiscoveries": 43,
+      "selected": 14,
+      "trajectoryMisses": 40,
+      "trajectoryHits": 2,
+      "lifetimeHits": 2,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 110,
+        "repsKeysBeforeWindowStart": 340,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 6.07,
+          "exclusiveMs": 6.07
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.65,
+          "exclusiveMs": 0.65
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 49.42,
+          "exclusiveMs": 49.42
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 2.06,
+          "exclusiveMs": 2.06
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 1,
+          "exclusiveMs": 1
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 3.07,
+          "exclusiveMs": 3.07
+        }
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_muscle_exposure_shift",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_rest_assoc",
+        "disc_p35_gtg_outside_classic"
+      ]
+    },
+    "3m": {
+      "requestedWindow": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-08-01",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 47,
+      "emptyCalendarDaysInWindow": 44,
+      "computeMs": 2000.51,
+      "allDiscoveries": 52,
+      "selected": 17,
+      "trajectoryMisses": 85,
+      "trajectoryHits": 1,
+      "lifetimeHits": 2,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 325,
+        "repsKeysBeforeWindowStart": 125,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 8.24,
+          "exclusiveMs": 8.24
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.69,
+          "exclusiveMs": 0.69
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 86.04,
+          "exclusiveMs": 86.04
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 1.31,
+          "exclusiveMs": 1.31
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 1.08,
+          "exclusiveMs": 1.08
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 2.89,
+          "exclusiveMs": 2.89
+        }
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_freq_progress_low",
+        "disc_structural_memory",
+        "disc_muscle_exposure_shift",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_ms_sessions",
+        "disc_ms_first_exercise",
+        "disc_th_pushPull_trajectory"
+      ]
+    },
+    "6m": {
+      "requestedWindow": {
+        "start": "2026-05-01",
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-07-02",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 67,
+      "emptyCalendarDaysInWindow": 116,
+      "computeMs": 1932.23,
+      "allDiscoveries": 54,
+      "selected": 14,
+      "trajectoryMisses": 89,
+      "trajectoryHits": 1,
+      "lifetimeHits": 2,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 450,
+        "repsKeysBeforeWindowStart": 0,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 7.19,
+          "exclusiveMs": 7.19
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.61,
+          "exclusiveMs": 0.61
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 96.81,
+          "exclusiveMs": 96.81
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 1.03,
+          "exclusiveMs": 1.03
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.62,
+          "exclusiveMs": 0.62
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 2.34,
+          "exclusiveMs": 2.34
+        }
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_quarter_arc",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ]
+    },
+    "1y": {
+      "requestedWindow": {
+        "start": "2025-10-30",
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-07-02",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 67,
+      "emptyCalendarDaysInWindow": 299,
+      "computeMs": 2402.63,
+      "allDiscoveries": 54,
+      "selected": 14,
+      "trajectoryMisses": 89,
+      "trajectoryHits": 1,
+      "lifetimeHits": 2,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 450,
+        "repsKeysBeforeWindowStart": 0,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 5.63,
+          "exclusiveMs": 5.63
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.72,
+          "exclusiveMs": 0.72
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 94.36,
+          "exclusiveMs": 94.36
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 0.96,
+          "exclusiveMs": 0.96
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.66,
+          "exclusiveMs": 0.66
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 1.74,
+          "exclusiveMs": 1.74
+        }
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_quarter_arc",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ]
+    },
+    "2y": {
+      "requestedWindow": {
+        "start": "2024-10-30",
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-07-02",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 67,
+      "emptyCalendarDaysInWindow": 664,
+      "computeMs": 3237.27,
+      "allDiscoveries": 49,
+      "selected": 14,
+      "trajectoryMisses": 89,
+      "trajectoryHits": 1,
+      "lifetimeHits": 2,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 450,
+        "repsKeysBeforeWindowStart": 0,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 7.12,
+          "exclusiveMs": 7.12
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.52,
+          "exclusiveMs": 0.52
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 100.36,
+          "exclusiveMs": 100.36
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 0.91,
+          "exclusiveMs": 0.91
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.89,
+          "exclusiveMs": 0.89
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 3.46,
+          "exclusiveMs": 3.46
+        }
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_quarter_arc",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ]
+    },
+    "all": {
+      "requestedWindow": {
+        "start": null,
+        "end": "2026-10-30"
+      },
+      "firstDataInWindow": "2026-07-02",
+      "lastDataInWindow": "2026-10-30",
+      "daysWithDataInWindow": 67,
+      "emptyCalendarDaysInWindow": null,
+      "computeMs": 3170.74,
+      "allDiscoveries": 27,
+      "selected": 11,
+      "trajectoryMisses": 10,
+      "trajectoryHits": 0,
+      "lifetimeHits": 1,
+      "emptyDayProbe": {
+        "repsKeysTotal": 450,
+        "repsKeysInRequestedWindow": 450,
+        "repsKeysBeforeWindowStart": 0,
+        "lifetimeSessionsUpToEnd": 430,
+        "note": "Pas d’énumération calendaire jour-par-jour des trous : parcours des clés reps/checked existantes + filtre date."
+      },
+      "steps": {
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 6.95,
+          "exclusiveMs": 6.95
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.49,
+          "exclusiveMs": 0.49
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 77.68,
+          "exclusiveMs": 77.68
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 0.67,
+          "exclusiveMs": 0.67
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.33,
+          "exclusiveMs": 0.33
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 1.5,
+          "exclusiveMs": 1.5
+        }
+      },
+      "selectedKinds": [
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_rest_assoc",
+        "disc_quarter_arc",
+        "disc_muscle_share_shift",
+        "disc_muscle_reorient"
+      ]
+    }
+  },
+  "emptyDaysConclusion": {
+    "enumeratesEmptyCalendarDays": false,
+    "evidence": "collectLifetimeRepHistory et catalog parcourent les clés snapshot, pas chaque jour du calendrier 2 ans. Les « journées vides » n’ajoutent pas de lignes lifetime.",
+    "caveat": "La fenêtre demandée 2y élargit quand même les bornes logiques (voix, comparaisons) ; le volume de clés scannées reste celui de l’historique réel jusqu’à end."
+  },
+  "liveProfile": "non vérifié",
+  "browserGuest": "voir rapport clôture — mesure séparée"
+}

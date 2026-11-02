@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, startTransition } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
@@ -207,10 +207,12 @@ const RecapTab = ({ isActive = true }) => {
     return 'today';
   });
 
-  const deferredPeriod = useDeferredValue(period);
+  // F7.0 : ne plus double-différer (startTransition + useDeferredValue).
+  // Le décalage faisait afficher « 7 days » avec une fenêtre 2 ans et retardait le cache hit.
+  const deferredPeriod = period;
 
   const handlePeriodChange = useCallback((next) => {
-    startTransition(() => setPeriod(next));
+    setPeriod(next);
   }, []);
 
   const openEndurance = useCallback((id) => {
@@ -264,11 +266,14 @@ const RecapTab = ({ isActive = true }) => {
     contentReady,
     cacheReady,
     loadMode,
+    computing,
     recapAssessment,
     recapState,
     enduranceDigest,
     enrichment,
-    programCoachAnalysis
+    programCoachAnalysis,
+    analysisStatus,
+    analysisPeriod
   } = useRecapTabMetrics({
     snapshot: snapshotForRecap,
     deferredPeriod,
@@ -285,7 +290,8 @@ const RecapTab = ({ isActive = true }) => {
     garminDataForMetrics: garminBundle,
     periodWindow,
     programs,
-    enabled: liveMetricsEnabled
+    enabled: liveMetricsEnabled,
+    accountScope: currentUser?.id ? `u:${currentUser.id}` : isAuthenticated ? 'auth' : 'guest'
   });
 
   const synthesisCoach = useRecapSynthesisCoach({
@@ -344,6 +350,9 @@ const RecapTab = ({ isActive = true }) => {
 
   const buildPaneProps = (id) => {
     if (id === RECAP_VIEW_IDS.ANALYSE) {
+      const analysisLoading =
+        analysisStatus === 'loading' ||
+        (Boolean(computing) && analysisStatus !== 'ready' && analysisStatus !== 'refreshing');
       return {
         assessment: recapAssessment,
         synthesisCoach,
@@ -355,7 +364,10 @@ const RecapTab = ({ isActive = true }) => {
         period: deferredPeriod,
         garminData: garminBundle,
         periodWindow,
-        isAdmin
+        isAdmin,
+        analysisLoading,
+        analysisStatus: analysisStatus || (analysisLoading ? 'loading' : null),
+        analysisPeriod: analysisPeriod || deferredPeriod
       };
     }
     if (id === RECAP_VIEW_IDS.CORPS) {
@@ -397,10 +409,16 @@ const RecapTab = ({ isActive = true }) => {
     };
   };
 
-  const propsEpoch = `${deferredPeriod}:${hasMetrics}:${Boolean(garminBundle)}:${Boolean(recapAssessment)}:${Boolean(enrichment)}`;
-  const propsEpochRef = useRef(propsEpoch);
-  const propsEpochChanged = propsEpochRef.current !== propsEpoch;
-  propsEpochRef.current = propsEpoch;
+  // F7.0f : ne pas reconstruire toutes les vues à chaque flip `computing`.
+  // Analyse suit le statut d’analyse ; les autres vues suivent métriques/période.
+  const analyseEpoch = `${deferredPeriod}:${analysisStatus || ''}:${analysisPeriod || ''}:${Boolean(recapAssessment?.insightsPublication?.complete)}:${computing ? 1 : 0}`;
+  const metricsEpoch = `${deferredPeriod}:${hasMetrics}:${Boolean(garminBundle)}:${Boolean(recapAssessment)}:${Boolean(enrichment)}`;
+  const analyseEpochRef = useRef(analyseEpoch);
+  const metricsEpochRef = useRef(metricsEpoch);
+  const analyseEpochChanged = analyseEpochRef.current !== analyseEpoch;
+  const metricsEpochChanged = metricsEpochRef.current !== metricsEpoch;
+  analyseEpochRef.current = analyseEpoch;
+  metricsEpochRef.current = metricsEpoch;
 
   if (activeView === RECAP_VIEW_IDS.ANALYSE && !visitedRef.current.has(RECAP_VIEW_IDS.ANALYSE)) {
     visitedRef.current.add(RECAP_VIEW_IDS.ANALYSE);
@@ -408,7 +426,9 @@ const RecapTab = ({ isActive = true }) => {
 
   visitedRef.current.forEach((id) => {
     if (id === RECAP_VIEW_IDS.GRADES) return;
-    if (id === activeView || propsEpochChanged || !panePropsRef.current[id]) {
+    const epochChanged =
+      id === RECAP_VIEW_IDS.ANALYSE ? analyseEpochChanged : metricsEpochChanged;
+    if (id === activeView || epochChanged || !panePropsRef.current[id]) {
       panePropsRef.current[id] = buildPaneProps(id);
     }
   });

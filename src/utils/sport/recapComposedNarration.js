@@ -1,6 +1,8 @@
 /**
- * F4 — Narration fondée sur composedEvidence (preuves structurées).
+ * F4 / F4.1 — Narration fondée sur composedEvidence (preuves structurées).
  * Ne parse jamais le body existant pour en déduire un mécanisme.
+ * F4.1 : cohérence titre↔chiffres, mécanismes démontrables, préservation F3,
+ * français utilisateur (pas de jargon de fenêtres).
  */
 
 import { composeAnalyticalReading } from './recapAnalyticalReading';
@@ -12,7 +14,30 @@ function cleanName(name, exerciseId, getExerciseNameById) {
   if ((!n || n === 'un mouvement') && exerciseId != null && getExerciseNameById) {
     n = resolveExerciseNameForRecap(exerciseId, getExerciseNameById) || n;
   }
+  if ((!n || n === 'un mouvement') && exerciseId != null) {
+    n = resolveExerciseNameForRecap(exerciseId, null) || n;
+  }
   return userFacingExerciseLabel(n, exerciseId);
+}
+
+/** Typographie FR : 53,3 */
+export function formatFrNumber(n, digits = 1) {
+  if (n == null || !Number.isFinite(Number(n))) return '';
+  const v = Number(n);
+  const rounded = Math.round(v * 10 ** digits) / 10 ** digits;
+  if (Number.isInteger(rounded) || digits === 0) return String(Math.round(rounded));
+  return String(rounded).replace('.', ',');
+}
+
+export function isPluralExerciseLabel(name) {
+  const n = String(name || '').trim();
+  if (!n) return false;
+  if (/^(les|des)\s/i.test(n)) return true;
+  return /\b(pompes|dips|tractions|relevés|extensions|hyperextensions|oiseaux|développés)\b/i.test(n);
+}
+
+function returnVerb(name) {
+  return isPluralExerciseLabel(name) ? 'reviennent' : 'revient';
 }
 
 function schemePhrase(before, after) {
@@ -26,14 +51,75 @@ function volumeDeltaPhrase(pct) {
   if (pct == null || !Number.isFinite(Number(pct))) return null;
   const n = Number(pct);
   const abs = Math.abs(n);
-  const rounded = Math.round(abs * 10) / 10;
+  const rounded = formatFrNumber(abs, 1);
   if (n > 0) return `hausse d’environ ${rounded} %`;
   if (n < 0) return `baisse d’environ ${rounded} %`;
   return 'volume inchangé';
 }
 
 /**
- * Titre-thèse à partir des faits composés (pas un code technique).
+ * Direction numérique unique pour titre + observation (évite les contradictions).
+ * @returns {{ early: number|null, late: number|null, deltaPct: number|null, direction: 'up'|'down'|'flat'|'unknown', nSessions: number|null, source: string }}
+ */
+export function resolveVolumeDirection(composed) {
+  const early = composed?.primaryPhenomenon?.earlyMean;
+  const late = composed?.primaryPhenomenon?.lateMean;
+  const deltaShape = composed?.primaryPhenomenon?.deltaPct;
+
+  if (early != null && late != null && Number.isFinite(Number(early)) && Number.isFinite(Number(late))) {
+    const deltaPct =
+      deltaShape != null && Number.isFinite(Number(deltaShape))
+        ? Number(deltaShape)
+        : early > 0
+          ? Math.round(((late - early) / early) * 1000) / 10
+          : null;
+    let direction = 'flat';
+    if (deltaPct != null && deltaPct >= 8) direction = 'up';
+    else if (deltaPct != null && deltaPct <= -8) direction = 'down';
+    else if (Number(late) > Number(early) + 1) direction = 'up';
+    else if (Number(late) < Number(early) - 1) direction = 'down';
+    return {
+      early: Number(early),
+      late: Number(late),
+      deltaPct,
+      direction,
+      nSessions: (composed.observations || []).filter((o) => o.totalReps != null).length || null,
+      source: 'shape'
+    };
+  }
+
+  const obs = (composed?.observations || []).filter(
+    (o) => o.totalReps != null && Number.isFinite(Number(o.totalReps))
+  );
+  if (obs.length >= 2) {
+    const first = Number(obs[0].totalReps);
+    const last = Number(obs[obs.length - 1].totalReps);
+    const deltaPct = first > 0 ? Math.round(((last - first) / first) * 1000) / 10 : null;
+    let direction = 'flat';
+    if (deltaPct != null && deltaPct >= 8) direction = 'up';
+    else if (deltaPct != null && deltaPct <= -8) direction = 'down';
+    return {
+      early: first,
+      late: last,
+      deltaPct,
+      direction,
+      nSessions: obs.length,
+      source: 'observations'
+    };
+  }
+
+  return {
+    early: null,
+    late: null,
+    deltaPct: null,
+    direction: 'unknown',
+    nSessions: null,
+    source: 'none'
+  };
+}
+
+/**
+ * Titre-thèse cohérent avec la direction numérique réelle.
  */
 export function titleFromComposedEvidence(composed, { name } = {}) {
   if (!composed?.ok) return null;
@@ -43,6 +129,7 @@ export function titleFromComposedEvidence(composed, { name } = {}) {
   const attrib = composed.volumeAttribution?.kind;
   const story = composed.primaryPhenomenon?.primaryStory;
   const peers = composed.comparators?.verdict;
+  const dir = resolveVolumeDirection(composed);
 
   if (cont === 'consolidated_format' || (mech === 'more_sets_same_reps' && composed.decomposition?.maintained)) {
     return `${label} : un format plus volumineux se maintient`;
@@ -50,107 +137,166 @@ export function titleFromComposedEvidence(composed, { name } = {}) {
   if (cont === 'punctual_format_spike') {
     return `${label} : une séance plus chargée, sans consolidation`;
   }
-  if (attrib === 'frequency_driven_total_rise') {
+
+  // Attribution fréquence : uniquement si métriques de séances présentes
+  const attrM = composed.volumeAttribution?.metrics;
+  if (attrib === 'frequency_driven_total_rise' && attrM?.prevSessionCount != null && attrM?.windowSessionCount != null) {
     return `${label} : le total monte surtout parce que tu t’entraînes plus souvent`;
   }
-  if (attrib === 'frequency_driven_total_decline') {
+  if (attrib === 'frequency_driven_total_decline' && attrM?.prevSessionCount != null && attrM?.windowSessionCount != null) {
     return `${label} : le total baisse surtout parce que tu t’entraînes moins souvent`;
   }
-  if (attrib === 'per_session_driven_decline' || mech === 'same_sets_fewer_reps') {
+
+  if (
+    (attrib === 'per_session_driven_decline' || mech === 'same_sets_fewer_reps') &&
+    dir.direction !== 'up'
+  ) {
     if (peers === 'localized') {
       return `${label} : moins de répétitions par séance, sans recul comparable ailleurs`;
     }
     return `${label} : moins de répétitions par séance`;
   }
-  if (attrib === 'per_session_driven_rise' || mech === 'same_sets_more_reps') {
+  if (
+    (attrib === 'per_session_driven_rise' || mech === 'same_sets_more_reps') &&
+    dir.direction !== 'down'
+  ) {
     return `${label} : davantage de répétitions par séance`;
   }
+
   if (cont === 'decline_then_recovery' || story === 'recovered' || story === 'partial_recovery') {
     return `${label} : recul puis retour près du niveau de départ`;
   }
+
+  // Recul / hausse : imposer cohérence avec dir
   if (cont === 'confirmed_decline' || story === 'net_decline') {
+    if (dir.direction === 'up') {
+      return `${label} : volume par séance en hausse`;
+    }
+    if (dir.direction === 'flat') {
+      return `${label} : volume par séance récemment stable`;
+    }
     return `${label} : recul confirmé sur plusieurs séances`;
   }
+  if (story === 'net_rise') {
+    if (dir.direction === 'down') {
+      return `${label} : moins de répétitions par séance`;
+    }
+    return `${label} : volume par séance en hausse`;
+  }
+
   if (cont === 'stable_plateau' || story === 'plateau') {
     return `${label} : volume par séance stable`;
   }
   if (cont === 'confirmed_return') {
-    return `${label} revient et se réinstalle`;
+    return `${label} ${returnVerb(label)} et se réinstalle`;
   }
   if (cont === 'punctual_return') {
-    return `${label} revient après une interruption`;
+    return `${label} ${returnVerb(label)} après une interruption`;
   }
   if (cont === 'isolated_outlier') {
     return `${label} : une séance atypique, pas encore une tendance`;
   }
-  if (story === 'net_rise') {
-    return `${label} : volume par séance en hausse`;
-  }
+
+  // Directionnel générique aligné sur les chiffres
+  if (dir.direction === 'down') return `${label} : moins de répétitions par séance`;
+  if (dir.direction === 'up') return `${label} : volume par séance en hausse`;
+  if (dir.direction === 'flat') return `${label} : volume par séance stable`;
+
   return null;
 }
 
-function buildObservation(composed, name, lexicon) {
+function enrichMainWithLexicon(main, lexicon) {
+  if (!main) return null;
+  if (!lexicon?.maySayPerformance) {
+    return String(main)
+      .replace(/\btes performances\b/gi, 'le volume de répétitions enregistré')
+      .replace(/\bperformances\b/gi, 'volume de répétitions');
+  }
+  return main;
+}
+
+/**
+ * Observation : privilégie le constat F3 riche (creux, dates) quand pertinent ;
+ * sinon moyennes early/late avec décimales FR.
+ */
+function buildObservation(composed, name, lexicon, discovery = {}) {
   const positions = composed.proof?.positions || [];
-  const main = composed.levels?.observed?.text || positions.find((p) => p.claim === 'main')?.text;
-  const obs = composed.observations || [];
-  const inWin = obs.filter((o) => o.inSelectedWindow !== false);
-  const usable = (inWin.length >= 2 ? inWin : obs).filter(
-    (o) => o.totalReps != null && Number.isFinite(Number(o.totalReps))
+  const main = enrichMainWithLexicon(
+    composed.levels?.observed?.text || positions.find((p) => p.claim === 'main')?.text,
+    lexicon
   );
-  if (usable.length >= 2) {
-    const first = usable[0];
-    const last = usable[usable.length - 1];
-    const changed = Number(first.totalReps) !== Number(last.totalReps);
-    if (changed) {
-      const noun = lexicon?.maySayPerformance ? 'tes performances' : 'le volume de répétitions enregistré';
-      const verb = lexicon?.maySayPerformance ? 'passent' : 'passe';
-      const nSessions = usable.length;
-      const pct =
-        first.totalReps > 0
-          ? Math.round(((last.totalReps - first.totalReps) / first.totalReps) * 1000) / 10
-          : null;
-      const pctBit = pct != null && Math.abs(pct) >= 8 ? `, soit une ${volumeDeltaPhrase(pct)}` : '';
-      const hist = composed.windows?.historical;
-      let scopeLead = '';
-      if (hist?.role === 'historicalContextWindow' && composed.windows?.primary) {
-        scopeLead = `Sur la période sélectionnée, et en tenant compte du contexte des séances précédentes, `;
-      } else {
-        scopeLead = nSessions >= 3 ? `Sur ${nSessions} séances comparables, ` : '';
-      }
-      return `${scopeLead}${noun} sur ${name} ${verb} d’environ ${first.totalReps} à ${last.totalReps} répétitions par séance${pctBit}`;
-    }
-  }
-  // early/late structurés (shape) si présents sur le phénomène / proof
-  const early = composed.primaryPhenomenon?.earlyMean;
-  const late = composed.primaryPhenomenon?.lateMean;
-  if (early != null && late != null && Number(early) !== Number(late)) {
-    const noun = lexicon?.maySayPerformance ? 'tes performances' : 'le volume de répétitions enregistré';
-    const verb = lexicon?.maySayPerformance ? 'passent' : 'passe';
-    const pct = early > 0 ? Math.round(((late - early) / early) * 1000) / 10 : null;
-    const pctBit = pct != null && Math.abs(pct) >= 8 ? `, soit une ${volumeDeltaPhrase(pct)}` : '';
-    return `${noun} sur ${name} ${verb} d’environ ${early} à ${late} répétitions par séance${pctBit}`;
-  }
-  if (main) {
-    // Strip forbidden performance wording if lexicon forbids
-    if (!lexicon?.maySayPerformance) {
-      return String(main)
-        .replace(/\btes performances\b/gi, 'le volume de répétitions enregistré')
-        .replace(/\bperformances\b/gi, 'volume de répétitions');
-    }
+  const story = composed.primaryPhenomenon?.primaryStory;
+  const cont = composed.continuity?.kind;
+  const dir = resolveVolumeDirection(composed);
+
+  // Préservation F3 : chronologie creux/reprise déjà rédigée dans le fait principal
+  if (
+    main &&
+    (cont === 'decline_then_recovery' ||
+      story === 'recovered' ||
+      story === 'partial_recovery' ||
+      /creux|revenu|dernière séance|arc/i.test(main))
+  ) {
     return main;
   }
+
+  // Retour : garder le constat d’installation / réapparition s’il est précis
+  if (main && (cont === 'punctual_return' || cont === 'confirmed_return') && /réapparition|revient|jours/i.test(main)) {
+    return main;
+  }
+
+  if (dir.early != null && dir.late != null && dir.direction !== 'flat') {
+    const noun = lexicon?.maySayPerformance ? 'tes performances' : 'le volume moyen de répétitions enregistré';
+    const verb = lexicon?.maySayPerformance
+      ? isPluralExerciseLabel(name)
+        ? 'passent'
+        : 'passent'
+      : 'passe';
+    const nBit =
+      dir.nSessions >= 3 ? `Sur ${dir.nSessions} séances, ` : '';
+    const pctBit =
+      dir.deltaPct != null && Math.abs(dir.deltaPct) >= 8
+        ? `, soit une ${volumeDeltaPhrase(dir.deltaPct)}`
+        : '';
+    return `${nBit}${noun} pour ${name} ${verb} d’environ ${formatFrNumber(dir.early)} à ${formatFrNumber(dir.late)} répétitions par séance${pctBit}`;
+  }
+
+  if (main) return main;
+
+  // Fallback draft F3 si observation structurée trop pauvre
+  const draft = discovery.metrics?.draftBodyBeforeF4;
+  if (draft && String(draft).length > 40) {
+    return String(draft).split(/(?<=[.!?…])\s+/)[0];
+  }
   return null;
 }
 
-function buildMechanism(composed) {
+function buildMechanism(composed, dir) {
   const dec = composed.decomposition;
+  const attrib = composed.volumeAttribution;
+
+  // Attribution fréquence : toujours démontrer les comptes de séances
+  if (attrib?.kind?.startsWith('frequency_driven_') && attrib.metrics) {
+    const m = attrib.metrics;
+    const per =
+      m.perSessionPct != null && Math.abs(m.perSessionPct) <= 12
+        ? `alors que le volume par séance reste proche`
+        : `tandis que le volume par séance évolue aussi`;
+    if (m.prevSessionCount != null && m.windowSessionCount != null) {
+      return `Tu es passé de ${m.prevSessionCount} à ${m.windowSessionCount} séances sur la période comparable, ${per}`;
+    }
+  }
+
   if (!dec || dec.available === false) {
+    if (attrib?.detail && !/fenêtre|contrat|primaryWindow/i.test(attrib.detail)) {
+      return attrib.detail;
+    }
     return null;
   }
+
   const kind = dec.kind;
   const before = dec.before;
   const after = dec.after;
-  const scheme = schemePhrase(before, after);
   const maintained = dec.maintained === true;
 
   if (kind === 'same_sets_fewer_reps' && before && after) {
@@ -165,25 +311,45 @@ function buildMechanism(composed) {
         ? Math.round(((after.setCount - before.setCount) / before.setCount) * 1000) / 10
         : null;
     const base = `Le format passe de ${before.setCount} × ${before.perSet} à ${after.setCount} × ${after.perSet}${
-      deltaPct != null ? `, soit une hausse d’environ ${deltaPct} % des répétitions par séance` : ''
+      deltaPct != null ? `, soit une hausse d’environ ${formatFrNumber(deltaPct)} % des répétitions par séance` : ''
     }`;
     return maintained
       ? `${base}. Ce nouveau format a ensuite été reproduit sur les séances suivantes`
-      : `${base}`;
+      : base;
   }
   if (kind === 'fewer_sets_same_reps' && before && after) {
     return `Tu fais moins de séries (environ ${before.setCount} → ${after.setCount}), avec des répétitions par série du même ordre`;
   }
-  if (kind === 'stable_format' && scheme) {
-    return `Sur les séances où le détail de séries est connu, le format reste du même ordre (${scheme.replace(' → ', ' comme ')})`;
+
+  if (kind === 'stable_format' && before && after) {
+    const same =
+      before.setCount === after.setCount && Number(before.perSet) === Number(after.perSet);
+    // Moyenne qui bouge + format stable : clarifier les deux lectures
+    if (dir && dir.direction !== 'flat' && same) {
+      return `Sur les séances où les séries sont détaillées, le format reste identique (${before.setCount} × ${before.perSet}) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées`;
+    }
+    if (same) {
+      // Stabilité de format seule : utile seulement si on parle de plateau / retour
+      if (
+        composed.continuity?.kind === 'stable_plateau' ||
+        composed.continuity?.kind === 'punctual_return' ||
+        composed.continuity?.kind === 'confirmed_return'
+      ) {
+        return `Le format de séries observé est resté identique (${before.setCount} × ${before.perSet})`;
+      }
+      return null; // ne pas afficher « 3×20 comme 3×20 » inutile
+    }
   }
-  if (composed.volumeAttribution?.detail) {
-    return composed.volumeAttribution.detail;
+
+  if (attrib?.detail && !/fenêtre|contrat|primaryWindow/i.test(attrib.detail)) {
+    return attrib.detail;
   }
   if (composed.levels?.interpreted?.text) {
-    return composed.levels.interpreted.text;
+    const t = composed.levels.interpreted.text;
+    if (/fenêtre|contrat|primaryWindow|historicalContext/i.test(t)) return null;
+    return t;
   }
-  return dec.detail || null;
+  return null;
 }
 
 function buildContinuityNote(composed) {
@@ -197,7 +363,7 @@ function buildContinuityNote(composed) {
     case 'confirmed_decline':
       return 'Le recul se confirme sur plusieurs séances, pas sur un seul point isolé';
     case 'decline_then_recovery':
-      return 'Après un creux, les séances récentes reviennent près du niveau de départ';
+      return null; // déjà dans le constat F3 riche
     case 'stable_plateau':
       return 'Le volume par séance reste récemment stable';
     case 'punctual_return':
@@ -224,28 +390,30 @@ function buildComparatorNote(composed) {
   if (c.verdict === 'shared') {
     return 'Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique';
   }
-  // Prefer structured peer phrase over raw detail if detail claims "stables" wrongly — use detail when localized*
-  if (c.detail) return c.detail;
-  return null;
+  // Ne pas affirmer « stables » si mixed — localized* OK via detail
+  if (c.verdict === 'localized' || c.verdict === 'localized_rise' || c.verdict === 'localized_recovery') {
+    return c.detail || null;
+  }
+  if (c.detail && !/restent du même ordre|restent stables/i.test(c.detail)) return c.detail;
+  return c.detail || null;
 }
 
+/** Plus de jargon « fenêtre / contrat / historicalContext » pour l’utilisateur. */
 function buildHistoricalNote(composed) {
   const h = composed.windows?.historical;
   if (!h || h.role !== 'historicalContextWindow') return null;
   if (h.contextBefore > 0) {
-    return `Le contexte historique (${h.contextBefore} séance${h.contextBefore > 1 ? 's' : ''} avant la fenêtre) sert uniquement à situer cette évolution, pas à remplacer la période sélectionnée`;
+    return `Cette lecture s’appuie aussi sur ${h.contextBefore} séance${h.contextBefore > 1 ? 's' : ''} antérieure${h.contextBefore > 1 ? 's' : ''} pour situer l’évolution`;
   }
   return null;
 }
 
 function buildImplication(composed) {
   const forbidden = new Set(composed.forbiddenConclusions || []);
-  if (forbidden.has('adaptation_physiologique')) {
-    // Never imply physio
-  }
   const cont = composed.continuity?.kind;
   const peers = composed.comparators?.verdict;
   const mech = composed.decomposition?.kind;
+  const dir = resolveVolumeDirection(composed);
 
   if (cont === 'consolidated_format') {
     return 'Cela montre une augmentation maintenue du volume réalisé, sans suffire à démontrer à elle seule une progression physiologique';
@@ -253,19 +421,17 @@ function buildImplication(composed) {
   if (
     (mech === 'same_sets_fewer_reps' || composed.volumeAttribution?.kind === 'per_session_driven_decline') &&
     peers === 'localized' &&
+    dir.direction !== 'up' &&
     !forbidden.has('recul_isole_a_cet_exercice')
   ) {
     return 'Avant d’augmenter la difficulté de cette variante, retrouver un volume régulier sur les prochaines séances peut constituer un repère utile';
   }
-  if (cont === 'punctual_return') {
-    return null;
-  }
+  if (cont === 'punctual_return') return null;
   if (cont === 'confirmed_return' || cont === 'decline_then_recovery') {
     return 'Maintenir ce niveau sur les prochaines séances dira s’il se stabilise';
   }
-  // Prefer structured implication from levels if present and not forbidden
   const impl = composed.levels?.implication?.text;
-  if (impl && !/physiolog|surentraînement|force générale intacte/i.test(impl)) {
+  if (impl && !/physiolog|surentraînement|force générale intacte|fenêtre|contrat/i.test(impl)) {
     return impl;
   }
   return null;
@@ -278,10 +444,9 @@ function buildLimit(composed) {
   if (forbidden.includes('decomposition_series_vs_reps')) {
     parts.push('Sans détail de séries fiable, on lit le volume par séance, pas la structure interne');
   }
-  // Ne pas transformer l’absence de témoins en phrase parasite en fin de carte
   for (const c of caveats) {
     if (typeof c !== 'string' || c.length < 12 || /^[a-z_]+$/.test(c)) continue;
-    if (/pas assez de témoins|témoins comparables/i.test(c)) continue;
+    if (/pas assez de témoins|témoins comparables|fenêtre|contrat|primaryWindow/i.test(c)) continue;
     if (/^Famille de mouvement/i.test(c)) continue;
     parts.push(c);
   }
@@ -295,8 +460,86 @@ function capitalizeSentence(s) {
 }
 
 /**
+ * Contrôles sémantiques F4.1 — exploitent faits structurés + texte produit.
+ * @returns {{ ok: boolean, issues: string[] }}
+ */
+const HARD_CONSISTENCY = new Set([
+  'title_down_vs_values_up',
+  'title_up_vs_values_down',
+  'frequency_claim_without_session_counts',
+  'frequency_title_without_frequency_in_body',
+  'tautological_format_comparison',
+  'consolidation_vs_punctual_spike',
+  'durable_return_vs_punctual',
+  'mixed_peers_called_stable',
+  'developer_jargon_in_prose'
+]);
+
+export function assertNarrationConsistency({ title, body, composed } = {}) {
+  const issues = [];
+  const soft = [];
+  const t = String(title || '');
+  const b = String(body || '');
+  const text = `${t}\n${b}`;
+  const dir = resolveVolumeDirection(composed || {});
+
+  if (/recul confirmé|moins de répétitions|baisse/i.test(t) && dir.direction === 'up') {
+    issues.push('title_down_vs_values_up');
+  }
+  if (/en hausse|davantage de répétitions|monte surtout/i.test(t) && dir.direction === 'down') {
+    issues.push('title_up_vs_values_down');
+  }
+  if (/s’entraînes plus souvent|plus souvent/i.test(t)) {
+    const m = composed?.volumeAttribution?.metrics;
+    if (!(m?.prevSessionCount != null && m?.windowSessionCount != null)) {
+      issues.push('frequency_claim_without_session_counts');
+    }
+    if (!/\d+\s*.*\d+\s*séances/i.test(b) && !/de \d+ à \d+ séances/i.test(b)) {
+      issues.push('frequency_title_without_frequency_in_body');
+    }
+  }
+  if (/comme \d+\s*×\s*\d+/i.test(b)) {
+    issues.push('tautological_format_comparison');
+  }
+  if (/consolidation|se maintient/i.test(t) && composed?.continuity?.kind === 'punctual_format_spike') {
+    issues.push('consolidation_vs_punctual_spike');
+  }
+  if (/reprise durable|se réinstalle/i.test(t) && composed?.continuity?.kind === 'punctual_return') {
+    issues.push('durable_return_vs_punctual');
+  }
+  if (
+    /restent stables|reste stable/i.test(b) &&
+    composed?.comparators?.verdict === 'mixed' &&
+    !/ne permettent pas d’isoler/i.test(b)
+  ) {
+    issues.push('mixed_peers_called_stable');
+  }
+  if (/\b20\d{2}-\d{2}-\d{2}\b/.test(text)) soft.push('iso_date_in_prose');
+  if (/\d+\.\d+\s*répétitions|\d+\.\d+\s*à\s*\d+/i.test(text)) {
+    soft.push('ascii_decimal_in_prose');
+  }
+  if (/primaryWindow|historicalContext|composedEvidence|trajectoryOk/i.test(text)) {
+    issues.push('developer_jargon_in_prose');
+  }
+  if (/\bun mouvement\b/i.test(t)) {
+    soft.push('unresolved_exercise_name');
+  }
+  // Jargon utilisateur encore trop technique
+  if (/avant la fenêtre sélectionnée|fenêtre sélectionnée/i.test(text)) {
+    soft.push('window_jargon_in_prose');
+  }
+
+  const hardIssues = issues.filter((i) => HARD_CONSISTENCY.has(i));
+  return {
+    ok: hardIssues.length === 0,
+    issues: [...hardIssues, ...soft],
+    hardIssues,
+    softIssues: soft
+  };
+}
+
+/**
  * Produit title/body depuis composedEvidence.
- * @returns {{ title: string|null, body: string|null, usedComposedNarration: boolean, depth: string, beats: object }|null}
  */
 export function narrateFromComposedEvidence(composed, discovery = {}, { getExerciseNameById = null } = {}) {
   if (!composed?.ok || !composed.composed) {
@@ -308,30 +551,42 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
     discovery.metrics?.exerciseId ||
     null;
   const name = cleanName(
-    composed.primaryPhenomenon?.name || discovery.metrics?.name || discovery.metrics?.exerciseName,
+    composed.primaryPhenomenon?.name ||
+      discovery.metrics?.name ||
+      discovery.metrics?.exerciseName ||
+      discovery.metrics?.resolvedName,
     exerciseId,
     getExerciseNameById
   );
 
   const lexicon = composed.lexicon || { maySayPerformance: false };
-  const title =
+  const dir = resolveVolumeDirection(composed);
+
+  let title =
     titleFromComposedEvidence(composed, { name }) ||
     discovery.title ||
     name;
 
-  const constat = buildObservation(composed, name, lexicon);
-  const mechanism = buildMechanism(composed);
+  // Accords pluriels sur « revient »
+  if (name && name !== 'un mouvement') {
+    const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    title = String(title).replace(
+      new RegExp(`^(${esc})\\s+revient\\b`, 'i'),
+      (_, lab) => `${lab} ${returnVerb(lab)}`
+    );
+  }
+
+  const constat = buildObservation(composed, name, lexicon, discovery);
+  const mechanism = buildMechanism(composed, dir);
   const continuity = buildContinuityNote(composed);
   const comparators = buildComparatorNote(composed);
   const historical = buildHistoricalNote(composed);
   const implication = buildImplication(composed);
   const limit = buildLimit(composed);
 
-  // Deduplicate: if mechanism already equals volumeAttribution detail and continuity repeats, skip
   const scopeParts = [continuity, comparators, historical].filter(Boolean);
-  // Drop scope parts that duplicate mechanism text ; joindre en phrases complètes
   const scope = scopeParts
-    .filter((s) => !mechanism || !s.includes(mechanism.slice(0, 40)))
+    .filter((s) => !mechanism || !s.includes(String(mechanism).slice(0, 40)))
     .map((s) => (/[.!?…]$/.test(s) ? s : `${s}.`))
     .join(' ')
     .replace(/\.\s*\./g, '.')
@@ -346,6 +601,31 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
     limit: limit ? capitalizeSentence(limit) : null
   });
 
+  const consistency = assertNarrationConsistency({
+    title: reading.title,
+    body: reading.body,
+    composed
+  });
+
+  // Si contradiction dure titre↔direction : ne pas publier cette narration
+  const hard = consistency.issues.filter((i) =>
+    /title_down_vs_values_up|title_up_vs_values_down|consolidation_vs_punctual|durable_return_vs_punctual|frequency_claim_without_session_counts/.test(
+      i
+    )
+  );
+  if (hard.length) {
+    return {
+      title: null,
+      body: null,
+      usedComposedNarration: false,
+      depth: 'none',
+      beats: null,
+      consistency,
+      abstained: true,
+      abstainReasons: hard
+    };
+  }
+
   let depth = 'explanatory';
   if (mechanism && (continuity || comparators)) depth = 'composed';
   if (mechanism && continuity && comparators && implication) depth = 'deep';
@@ -357,19 +637,37 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
     usedComposedNarration: Boolean(reading.body),
     depth,
     beats: reading.beats,
-    resolvedName: name
+    resolvedName: name,
+    consistency,
+    volumeDirection: dir
   };
 }
 
-/**
- * Applique la narration F4 sur une discovery déjà enrichie F3.
- */
 export function applyComposedNarrationToDiscovery(discovery, { getExerciseNameById = null } = {}) {
   if (!discovery?.metrics?.composedEvidence?.composed) return discovery;
+  const draftTitle = discovery.metrics?.draftTitleBeforeF4 || discovery.title;
+  const draftBody = discovery.metrics?.draftBodyBeforeF4 || discovery.body;
+
   const narrated = narrateFromComposedEvidence(discovery.metrics.composedEvidence, discovery, {
     getExerciseNameById
   });
-  if (!narrated.usedComposedNarration || !narrated.body) return discovery;
+
+  if (!narrated.usedComposedNarration || !narrated.body) {
+    return {
+      ...discovery,
+      metrics: {
+        ...(discovery.metrics || {}),
+        f4Narration: {
+          used: false,
+          abstained: Boolean(narrated.abstained),
+          abstainReasons: narrated.abstainReasons || narrated.consistency?.issues || [],
+          depth: 'none'
+        },
+        draftTitleBeforeF4: draftTitle,
+        draftBodyBeforeF4: draftBody
+      }
+    };
+  }
 
   return {
     ...discovery,
@@ -381,11 +679,15 @@ export function applyComposedNarrationToDiscovery(discovery, { getExerciseNameBy
         used: true,
         depth: narrated.depth,
         resolvedName: narrated.resolvedName || null,
-        beats: narrated.beats
+        beats: narrated.beats,
+        consistencyOk: narrated.consistency?.ok !== false,
+        consistencyIssues: narrated.consistency?.issues || [],
+        consistencyHard: narrated.consistency?.hardIssues || [],
+        consistencySoft: narrated.consistency?.softIssues || [],
+        volumeDirection: narrated.volumeDirection || null
       },
-      // Conserver brouillon pré-F4 pour audits avant/après
-      draftTitleBeforeF4: discovery.metrics?.draftTitleBeforeF4 || discovery.title,
-      draftBodyBeforeF4: discovery.metrics?.draftBodyBeforeF4 || discovery.body
+      draftTitleBeforeF4: draftTitle,
+      draftBodyBeforeF4: draftBody
     }
   };
 }
@@ -394,7 +696,6 @@ export function applyComposedNarrationToDiscoveries(discoveries = [], opts = {})
   return (discoveries || []).map((d) => applyComposedNarrationToDiscovery(d, opts));
 }
 
-/** Exposé pour tests / dates dans narration historique. */
 export function formatObservationDateFr(ymd) {
   return formatDayFr(ymd, true);
 }

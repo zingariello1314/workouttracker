@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-11-01T23:03:37.245Z",
+  "allEqual": true,
+  "rows": [
+    {
+      "period": "7d",
+      "equal": true,
+      "syncSelected": 11,
+      "asyncSelected": 11,
+      "syncAll": 31,
+      "asyncAll": 31
+    },
+    {
+      "period": "30d",
+      "equal": true,
+      "syncSelected": 14,
+      "asyncSelected": 14,
+      "syncAll": 43,
+      "asyncAll": 43
+    },
+    {
+      "period": "2y",
+      "equal": true,
+      "syncSelected": 14,
+      "asyncSelected": 14,
+      "syncAll": 49,
+      "asyncAll": 49
+    }
+  ]
+}

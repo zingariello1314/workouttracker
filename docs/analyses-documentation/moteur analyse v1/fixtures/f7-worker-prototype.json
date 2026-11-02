@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-11-01T18:13:33.064Z",
+  "note": "Prototype isolé — pas un Worker navigateur branché",
+  "transfer": {
+    "snapshotJsonBytes": 205473,
+    "serializeParseMs": 1.19,
+    "comment": "Ordre de grandeur du coût postMessage(structured clone) côté Worker"
+  },
+  "compute": {
+    "syncMs": 3707.64,
+    "afterJsonRoundtripMs": 3340.05,
+    "selected": 14,
+    "identityAfterRoundtrip": true,
+    "calendarLoadInclusiveMs": 762.82,
+    "calendarLoadCalls": 7,
+    "calendarMemoHits": 0,
+    "topExclusive": [
+      {
+        "name": "p32b",
+        "calls": 1,
+        "inclusiveMs": 1218.62,
+        "exclusiveMs": 1218.62
+      },
+      {
+        "name": "p36",
+        "calls": 1,
+        "inclusiveMs": 610.59,
+        "exclusiveMs": 610.59
+      },
+      {
+        "name": "computeCalendarMonthSportStats",
+        "calls": 7,
+        "inclusiveMs": 606.48,
+        "exclusiveMs": 606.48
+      },
+      {
+        "name": "programAdherence",
+        "calls": 1,
+        "inclusiveMs": 384.82,
+        "exclusiveMs": 384.82
+      },
+      {
+        "name": "p35",
+        "calls": 1,
+        "inclusiveMs": 319.31,
+        "exclusiveMs": 319.31
+      },
+      {
+        "name": "calendarDayMap",
+        "calls": 7,
+        "inclusiveMs": 151.61,
+        "exclusiveMs": 151.61
+      },
+      {
+        "name": "detectDiscoveries",
+        "calls": 1,
+        "inclusiveMs": 151.79,
+        "exclusiveMs": 100.59
+      },
+      {
+        "name": "measureRecapWindow:period",
+        "calls": 1,
+        "inclusiveMs": 440.49,
+        "exclusiveMs": 66.16
+      }
+    ]
+  },
+  "workerDesign": {
+    "entry": "src/workers/recapPeriodDiscovery.worker.js (à créer à l’intégration)",
+    "messageIn": [
+      "requestId",
+      "accountScope",
+      "period",
+      "window",
+      "snapshot",
+      "nameMap"
+    ],
+    "messageOut": [
+      "requestId",
+      "ok",
+      "bundleFingerprint",
+      "selected",
+      "error"
+    ],
+    "cancel": "ignore results with stale requestId; terminate optional",
+    "keepSyncPath": true,
+    "risks": [
+      "structured clone coût mémoire",
+      "imports Vite worker",
+      "pas de DOM dans le worker",
+      "double RAM snapshot pendant transfert"
+    ]
+  },
+  "recommendation": "Mesures live : Long Tasks encore 3–15s. Mémo calendaire locale d’abord. Worker justifié si max sync producteur >~2s sur profil réel après mémo — prototype navigateur après validation humaine."
+}

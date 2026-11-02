@@ -71,18 +71,26 @@ for (const [period, window] of Object.entries(windows)) {
 
   const narratedSelected = selected.filter((d) => d.metrics?.f4Narration?.used);
   const composedSelected = selected.filter((d) => d.metrics?.composedOk);
-  const beforeAfter = narratedSelected.map((d) => ({
-    kind: d.kind,
-    depth: depthVisible(d),
-    factsUsed: factsUsed(d),
-    titleBefore: d.metrics?.draftTitleBeforeF4 || null,
-    titleAfter: d.title,
-    bodyBefore: d.metrics?.draftBodyBeforeF4 || null,
-    bodyAfter: d.body,
-    continuity: d.metrics?.composedEvidence?.continuity?.kind || null,
-    attribution: d.metrics?.composedEvidence?.volumeAttribution?.kind || null,
-    setMechanism: d.metrics?.trajectorySetMechanism || null
-  }));
+  const beforeAfter = selected
+    .filter((d) => d.metrics?.composedOk || d.metrics?.f4Narration)
+    .map((d) => ({
+      kind: d.kind,
+      depth: depthVisible(d),
+      narrated: Boolean(d.metrics?.f4Narration?.used),
+      consistencyOk: d.metrics?.f4Narration?.consistencyOk !== false && d.metrics?.f4Narration?.used,
+      consistencyIssues: d.metrics?.f4Narration?.consistencyIssues || [],
+      abstained: Boolean(d.metrics?.f4Narration?.abstained),
+      factsUsed: factsUsed(d),
+      titleBefore: d.metrics?.draftTitleBeforeF4 || null,
+      titleAfter: d.title,
+      bodyBefore: d.metrics?.draftBodyBeforeF4 || null,
+      bodyAfter: d.body,
+      continuity: d.metrics?.composedEvidence?.continuity?.kind || null,
+      attribution: d.metrics?.composedEvidence?.volumeAttribution?.kind || null,
+      setMechanism: d.metrics?.trajectorySetMechanism || null,
+      volumeDirection: d.metrics?.f4Narration?.volumeDirection || null
+    }));
+  const narratedOk = beforeAfter.filter((x) => x.narrated && x.consistencyOk);
 
   out.periods[period] = {
     ms,
@@ -92,6 +100,8 @@ for (const [period, window] of Object.entries(windows)) {
     selectedKinds: selected.map((d) => d.kind),
     composedOkSelected: composedSelected.length,
     narratedSelected: narratedSelected.length,
+    narrationCoherent: narratedOk.length,
+    abstainedNarration: beforeAfter.filter((x) => x.abstained).length,
     depthCounts: narratedSelected.reduce((acc, d) => {
       const k = depthVisible(d);
       acc[k] = (acc[k] || 0) + 1;
@@ -100,9 +110,10 @@ for (const [period, window] of Object.entries(windows)) {
     visibleDepthScore: {
       compositionAvailable: composedSelected.length,
       compositionUsedInText: narratedSelected.length,
-      withMechanism: beforeAfter.filter((x) => x.factsUsed.includes('decomposition') || x.factsUsed.includes('volumeAttribution')).length,
-      withContinuity: beforeAfter.filter((x) => x.factsUsed.includes('continuity')).length,
-      withComparator: beforeAfter.filter((x) => x.factsUsed.includes('comparators')).length
+      narrationCoherentVerified: narratedOk.length,
+      withMechanism: beforeAfter.filter((x) => x.narrated && (x.factsUsed.includes('decomposition') || x.factsUsed.includes('volumeAttribution'))).length,
+      withContinuity: beforeAfter.filter((x) => x.narrated && x.factsUsed.includes('continuity')).length,
+      withComparator: beforeAfter.filter((x) => x.narrated && x.factsUsed.includes('comparators')).length
     },
     f4Debug: bundle.debug?.f4 || null,
     beforeAfter,
@@ -127,13 +138,15 @@ const brief = {
         selected: v.selectedSize,
         kinds: v.selectedKinds,
         narrated: v.narratedSelected,
+        coherent: v.narrationCoherent,
         composed: v.composedOkSelected,
         depthCounts: v.depthCounts,
         visibleDepthScore: v.visibleDepthScore,
-        sampleTitles: v.beforeAfter.slice(0, 5).map((x) => ({
+        sampleTitles: v.beforeAfter.filter((x) => x.narrated).slice(0, 6).map((x) => ({
           before: x.titleBefore,
           after: x.titleAfter,
-          depth: x.depth
+          depth: x.depth,
+          consistencyOk: x.consistencyOk
         }))
       }
     ])

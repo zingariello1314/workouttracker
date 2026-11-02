@@ -89,7 +89,8 @@ export default function RecapPeriodHighlightsPanel({
   garminData = null,
   recapState = null,
   part = 'head',
-  analytics: analyticsProp = null
+  /** undefined = calculer localement ; null = pas encore cohérent (F7.0e). */
+  analytics: analyticsProp
 }) {
   const t = useTranslation();
   const { getCurrentData, data, getExerciseNameById } = useWorkout();
@@ -97,7 +98,8 @@ export default function RecapPeriodHighlightsPanel({
   const [picked, setPicked] = useState(null);
 
   const analytics = useMemo(() => {
-    if (analyticsProp) return analyticsProp;
+    // Parent contrôle la cohérence période/fenêtre — ne pas recalculer un stale.
+    if (analyticsProp !== undefined) return analyticsProp;
     if (part === 'head' && !open) return null;
     const snap = getCurrentData();
     if (!periodWindow?.start || !periodWindow?.end) return null;
@@ -131,8 +133,16 @@ export default function RecapPeriodHighlightsPanel({
   const weekStrip = analytics?.weekStrip || [];
 
   const periodLabel = t(`recap.period.${period}`, period);
-  const windowStart = analytics?.window?.start || periodWindow?.start;
-  const windowEnd = analytics?.window?.end || periodWindow?.end;
+  // F7.0e : dates affichées = fenêtre demandée ; analytics seulement si cohérentes.
+  const analyticsMatchesWindow =
+    analytics?.window?.start &&
+    analytics?.window?.end &&
+    periodWindow?.start &&
+    periodWindow?.end &&
+    analytics.window.start === periodWindow.start &&
+    analytics.window.end === periodWindow.end;
+  const windowStart = periodWindow?.start || (analyticsMatchesWindow ? analytics.window.start : null);
+  const windowEnd = periodWindow?.end || (analyticsMatchesWindow ? analytics.window.end : null);
   const tailMetricKeys = RECAP_CALENDAR_SPORT_METRIC_KEYS.filter(
     (metric) => !HEADER_METRIC_KEYS.includes(metric)
   );

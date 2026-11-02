@@ -29,12 +29,31 @@ export function fixKnownGrammarInProse(text) {
   s = s.replace(/\b(1|une)\s+séance([^.]{0,80}?)\bn[’']ont\b/gi, (_, one, mid) => {
     return `${one} séance${mid}n’a`;
   });
-  // « 1 séance du creux n’ont » déjà couvert
   // Pluriel séances + a → ont (prudence : seulement pattern explicite)
   s = s.replace(/\b(\d+)\s+séances([^.]{0,60}?)\bn[’']a\b/gi, (full, n, mid) => {
     if (Number(n) <= 1) return full;
     return `${n} séances${mid}n’ont`;
   });
+  // Exercices pluriels + revient → reviennent
+  s = s.replace(
+    /\b((?:[Pp]ompes|[Dd]ips|[Tt]ractions|[Rr]elevés|[Hh]yperextensions)[^:.]{0,40}?)\s+revient\b/g,
+    '$1 reviennent'
+  );
+  // Décimales ASCII dans contextes volume (53.3 → 53,3) — pas les versions/ids
+  s = s.replace(
+    /\b(\d+)\.(\d+)\s*(répétitions|reps|%|à\s+\d)/gi,
+    (_, a, b, rest) => `${a},${b} ${rest}`
+  );
+  s = s.replace(/\bd’environ (\d+)\.(\d+)\b/gi, 'd’environ $1,$2');
+  s = s.replace(/\bà (\d+)\.(\d+)\s+répétitions/gi, 'à $1,$2 répétitions');
+  s = s.replace(/≈(\d+)\.(\d+)/g, '≈$1,$2');
+  // Jargon de fenêtre → formulation naturelle
+  s = s.replace(
+    /dont (\d+) avant la fenêtre sélectionnée, (\d+) dedans/gi,
+    'dont $1 avant la période affichée, $2 dedans'
+  );
+  s = s.replace(/avant la fenêtre sélectionnée/gi, 'avant la période affichée');
+  s = s.replace(/fenêtre sélectionnée/gi, 'période affichée');
   return s;
 }
 

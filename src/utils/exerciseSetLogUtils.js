@@ -261,6 +261,49 @@ export function syncExerciseSetLogTotalReps(workoutData, storageKey, exercise, n
 }
 
 /**
+ * Réinjecte exerciseWeights / exerciseSetWeights / perArm dans un exerciseSetLogs existant
+ * (évite weight:null + weightMode bodyweight alors que la charge legacy est renseignée).
+ * @param {object} workoutData
+ * @param {string} storageKey
+ * @returns {object}
+ */
+export function syncExerciseSetLogWeightsFromLegacy(workoutData, storageKey) {
+  if (!workoutData || !storageKey) return workoutData;
+  const existing = normalizeExerciseSetLog(workoutData?.exerciseSetLogs?.[storageKey]);
+  if (!existing?.sets?.length) return workoutData;
+
+  const perArm = workoutData?.exerciseWeightPerArm?.[storageKey] === true;
+  const { weights, weightInference } = resolveSetWeightsForLog(
+    workoutData,
+    storageKey,
+    existing.sets.length,
+    perArm
+  );
+
+  const sets = existing.sets.map((set, i) => {
+    const weight = weights[i] ?? null;
+    return {
+      reps: Math.max(0, Math.floor(Number(set?.reps) || 0)),
+      weight,
+      weightMode: normalizeWeightMode(perArm, weight != null)
+    };
+  });
+
+  return {
+    ...workoutData,
+    exerciseSetLogs: {
+      ...(workoutData.exerciseSetLogs || {}),
+      [storageKey]: {
+        ...existing,
+        sets,
+        weightInference,
+        loggedAt: new Date().toISOString()
+      }
+    }
+  };
+}
+
+/**
  * Construit un log structuré depuis la prescription programme (meta Cycle 3+1 ou series parsée).
  * @param {object} exercise
  * @param {{ totalReps?: number, workoutData?: object, storageKey?: string }} [opts]

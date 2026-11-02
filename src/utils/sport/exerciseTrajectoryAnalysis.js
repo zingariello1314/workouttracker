@@ -1011,7 +1011,8 @@ export function buildExerciseTrajectory({
   exerciseName,
   window,
   getExerciseNameById = null,
-  mode = 'progress'
+  mode = 'progress',
+  computeScope = null
 } = {}) {
   const id = String(exerciseId || '');
   const name = userFacingExerciseLabel(
@@ -1030,6 +1031,45 @@ export function buildExerciseTrajectory({
       diagnostics
     };
   }
+
+  if (computeScope?.memoTrajectory) {
+    const key = computeScope.trajectoryKey?.(id, window, mode);
+    if (key) {
+      return computeScope.memoTrajectory(key, () =>
+        buildExerciseTrajectoryUncached({
+          snapshot,
+          exerciseId: id,
+          exerciseName: name,
+          window,
+          getExerciseNameById,
+          mode
+        })
+      );
+    }
+  }
+
+  return buildExerciseTrajectoryUncached({
+    snapshot,
+    exerciseId: id,
+    exerciseName: name,
+    window,
+    getExerciseNameById,
+    mode
+  });
+}
+
+function buildExerciseTrajectoryUncached({
+  snapshot,
+  exerciseId,
+  exerciseName,
+  window,
+  getExerciseNameById = null,
+  mode = 'progress'
+}) {
+  const id = String(exerciseId || '');
+  const name = String(exerciseName || '');
+  const exclusions = [];
+  const diagnostics = { missing: [], contradictions: [] };
 
   const allSessions = buildSessionList(snapshot, id, window);
   const windowSessions = allSessions.filter((s) => isDateInRecapWindow(s.date, window));
@@ -1210,6 +1250,31 @@ export function buildExerciseTrajectory({
   return trajectory;
 }
 
+/** Preuve lisible (jamais de codes internes type LOCALIZED_RECOVERY dans l’UI). */
+function formatPeerVerdictEvidenceFr(verdict) {
+  const v = String(verdict || '');
+  switch (v) {
+    case 'LOCALIZED_RECOVERY':
+    case 'localized_recovery':
+      return 'autres mouvements stables';
+    case 'LOCALIZED_DECLINE':
+    case 'localized_decline':
+      return 'recul localisé vs témoins';
+    case 'SHARED_RISE':
+    case 'shared_rise':
+      return 'hausse partagée avec des mouvements proches';
+    case 'SHARED_DECLINE':
+    case 'shared_decline':
+      return 'baisse partagée avec des mouvements proches';
+    case 'INSUFFICIENT':
+    case 'insufficient':
+      return null;
+    default:
+      // Ne pas exposer un code technique brut.
+      return /^[A-Z0-9_]+$/.test(v) ? null : v;
+  }
+}
+
 /**
  * Rédige titre/body/evidence à partir d’une trajectoire structurée.
  * Aucun recalcul statistique ici.
@@ -1295,7 +1360,7 @@ export function renderExerciseTrajectoryCopy(trajectory, { legacyBits = {} } = {
       ? `${trajectory.setMechanism.before?.setCount}×${trajectory.setMechanism.before?.perSet}→${trajectory.setMechanism.after?.setCount}×${trajectory.setMechanism.after?.perSet}`
       : null,
     trajectory.peers?.verdict && trajectory.peers.verdict !== 'insufficient'
-      ? `témoins:${trajectory.peers.verdict}`
+      ? formatPeerVerdictEvidenceFr(trajectory.peers.verdict)
       : null
   ].filter(Boolean);
 

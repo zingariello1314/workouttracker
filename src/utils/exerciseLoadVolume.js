@@ -215,6 +215,32 @@ export function computeVolumeKgForWorkoutKey(key, workoutData) {
  * @param {string} storageKey — YYYY-MM-DD_exId[_variant]
  * @returns {ExerciseVolumeFromLog}
  */
+function hasUsableLegacyWeight(workoutData, storageKey) {
+  const single = workoutData?.exerciseWeights?.[storageKey];
+  if (single != null && String(single).trim() !== '' && parseKg(single) > 0) return true;
+  const setArr = workoutData?.exerciseSetWeights?.[storageKey];
+  if (!Array.isArray(setArr)) return false;
+  return setArr.some((x) => x != null && String(x).trim() !== '' && parseKg(x) > 0);
+}
+
+function computeLegacyVolumeForKey(workoutData, storageKey, exercise, totalRepsFallback) {
+  const repsRaw = workoutData?.reps?.[storageKey];
+  const r =
+    Math.max(0, parseInt(String(repsRaw), 10) || 0) ||
+    Math.max(0, Math.floor(Number(totalRepsFallback) || 0));
+  if (r <= 0) return 0;
+  const single = workoutData.exerciseWeights?.[storageKey];
+  const perArm = workoutData.exerciseWeightPerArm?.[storageKey] === true;
+  const setArr = workoutData.exerciseSetWeights?.[storageKey];
+  return computeVolumeKgReps({
+    exercise,
+    totalReps: r,
+    singleWeightStr: single,
+    perArm,
+    setWeightStrs: Array.isArray(setArr) ? setArr : null
+  });
+}
+
 export function getExerciseVolumeFromLog(workoutData, storageKey) {
   const empty = { sets: [], volumeKgReps: 0, source: 'legacy' };
   if (!storageKey || !workoutData || typeof workoutData !== 'object') return empty;
@@ -232,7 +258,15 @@ export function getExerciseVolumeFromLog(workoutData, storageKey) {
       weight: set?.weight != null && Number.isFinite(Number(set.weight)) ? Number(set.weight) : null,
       weightMode: set?.weightMode
     }));
-    const volumeKgReps = computeVolumeKgRepsFromStructuredSets(sets, exercise);
+    let volumeKgReps = computeVolumeKgRepsFromStructuredSets(sets, exercise);
+    // F7.0j : logs structurés créés avant saisie de charge (weight null / bodyweight)
+    // alors que exerciseWeights|exerciseSetWeights portent la charge affichée → volume 0
+    // alors que Calendrier/Analyse lisent ce resolveur commun. Repli legacy cohérent.
+    if (volumeKgReps <= 0 && hasUsableLegacyWeight(workoutData, storageKey)) {
+      const structuredReps = sets.reduce((s, x) => s + x.reps, 0);
+      volumeKgReps = computeLegacyVolumeForKey(workoutData, storageKey, exercise, structuredReps);
+      return { sets, volumeKgReps, source: 'legacy' };
+    }
     return { sets, volumeKgReps, source: 'structured' };
   }
 
@@ -247,16 +281,7 @@ export function getExerciseVolumeFromLog(workoutData, storageKey) {
     weightMode: set?.weightMode
   }));
 
-  const single = workoutData.exerciseWeights?.[storageKey];
-  const perArm = workoutData.exerciseWeightPerArm?.[storageKey] === true;
-  const setArr = workoutData.exerciseSetWeights?.[storageKey];
-  const volumeKgReps = computeVolumeKgReps({
-    exercise,
-    totalReps: r,
-    singleWeightStr: single,
-    perArm,
-    setWeightStrs: Array.isArray(setArr) ? setArr : null
-  });
+  const volumeKgReps = computeLegacyVolumeForKey(workoutData, storageKey, exercise, r);
 
   return { sets, volumeKgReps, source: 'legacy' };
 }

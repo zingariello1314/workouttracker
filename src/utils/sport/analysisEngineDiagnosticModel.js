@@ -20,14 +20,16 @@ export const DIAG_STATUS = {
 
 export const DIAG_STATUS_META = {
   [DIAG_STATUS.SHOWN_NOW]: {
-    label: 'Affichée (run actuel)',
+    label: 'Sélectionnée (pack diagnostic)',
     tone: 'green',
-    meaning: 'Présente dans le pack final de cette exécution — pas un historique ancien.'
+    // F7.0h — ne pas lire « affichée » comme « visible dans l’onglet Analyse ».
+    meaning:
+      'Retenue dans le pack final de CE run diagnostic (selectNarrativeColumns). Ce n’est pas une preuve de rendu UI Analyse.'
   },
   [DIAG_STATUS.INTERMEDIATE]: {
     label: 'Candidate intermédiaire',
     tone: 'blue',
-    meaning: 'Générée et retenue à une étape, mais pas affichée dans ce run.'
+    meaning: 'Générée et retenue à une étape, mais pas dans le pack final de ce run.'
   },
   [DIAG_STATUS.DEMOTED]: {
     label: 'Déclassée / filtrée',

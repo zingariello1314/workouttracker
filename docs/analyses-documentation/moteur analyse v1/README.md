@@ -13,7 +13,7 @@ La **v0** (P0 → E0 → P3.0…P3.6) est **archivée et figée** dans
 | --- | --- |
 | **[Fichier numero 1.md](./Fichier%20numero%201.md)** | **Lead v1.** Brief F1–F7. **Prime** en cas de conflit. |
 
-> **État au 1er nov. 2026 :** **F1–F3** acceptés (réserves). **F4** livré — en attente validation. F5+ bloqués.
+> **État au 1er nov. 2026 :** **F1–F3** acceptés (réserves). **F4** livré + **F4.1** correctifs cohérence — en attente validation. F5+ bloqués.
 
 ---
 
@@ -45,6 +45,8 @@ La **v0** (P0 → E0 → P3.0…P3.6) est **archivée et figée** dans
 | Replay JSON | [fixtures/f4-replay-brief.json](./fixtures/f4-replay-brief.json) |
 
 **Verdict F4 :** `composedEvidence` désormais **écrit** dans les cartes concernées ; score visible compositionAvailable = compositionUsedInText ; E0 non retuné.
+
+**F4.1 :** [RAPPORT-F4.1-COHERENCE-2026-11-01.md](./RAPPORT-F4.1-COHERENCE-2026-11-01.md) — cohérence titre↔chiffres, mécanismes démontrables, préservation F3 ; indicateur `narrationCoherentVerified`.
 
 ---
 

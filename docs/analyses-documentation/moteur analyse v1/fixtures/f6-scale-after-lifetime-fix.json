@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-11-01T16:35:53.119Z",
+  "note": "après Map date O(n)",
+  "rows": [
+    {
+      "label": "6w",
+      "days": 42,
+      "exercises": 8,
+      "ms": 403.07,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1ujnw_on43p",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 16,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 6,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic"
+    },
+    {
+      "label": "6m",
+      "days": 180,
+      "exercises": 12,
+      "ms": 3713.85,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1ujz8_my65p",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 20,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 5,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic"
+    },
+    {
+      "label": "1y",
+      "days": 365,
+      "exercises": 16,
+      "ms": 19998.04,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1umum_3pycf",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 24,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 4,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic"
+    },
+    {
+      "label": "2y",
+      "days": 730,
+      "exercises": 20,
+      "ms": 111682.16,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1v2aq_b5gu8",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 28,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 3,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic"
+    }
+  ]
+}

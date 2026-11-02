@@ -1,0 +1,971 @@
+{
+  "generatedAt": "2026-11-01T16:28:10.329Z",
+  "method": "vite-node ; performance.now ; froid = 1er passage ; chaud = 5 passages ; médiane + p95",
+  "liveProfile": "non accessible — non mesuré",
+  "browserGuest": "non mesuré dans ce script Node",
+  "periods": {
+    "today": {
+      "period": "today",
+      "window": {
+        "start": "2026-10-29",
+        "end": "2026-10-30",
+        "note": "approx 24h glissante (borne fixture)"
+      },
+      "historyLimit": null,
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 644.74,
+        "withScopeMs": 420.86,
+        "absoluteGainMs": 223.88,
+        "relativeGainPct": 35,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1njvj_2aybo",
+          "trajectoryHits": 0,
+          "trajectoryMisses": 4,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 0,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 6.75,
+            "exclusiveMs": 6.75
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.77,
+            "exclusiveMs": 0.77
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 40.3,
+            "exclusiveMs": 40.3
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 0.64,
+            "exclusiveMs": 0.64
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.28,
+            "exclusiveMs": 0.28
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 0.88,
+            "exclusiveMs": 0.88
+          }
+        },
+        "all": 23,
+        "selected": 9,
+        "composedOk": 4
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            422.92,
+            407.45,
+            392.54
+          ],
+          "medianMs": 407.45,
+          "p95Ms": 422.92
+        },
+        "withScope": {
+          "samplesMs": [
+            415.29,
+            448.74,
+            396.89
+          ],
+          "medianMs": 415.29,
+          "p95Ms": 448.74
+        },
+        "absoluteGainMedianMs": -7.84,
+        "relativeGainMedianPct": -2
+      },
+      "nonRegressionFingerprint": [
+        "disc_vs_habit|Pompes déclinées : cette séance est en retrait de ton niveau habituel|504",
+        "disc_exercise_share|3 mouvements concentrent une part importante de ton travail récent|null",
+        "disc_composition_not_volume|Le signal actuel est davantage une modification de la composition qu'une modification du volume|null",
+        "disc_structural_memory|Relevés de genoux à la barre reviennent après une interruption|505",
+        "disc_emergence|Pompes déclinées reviennent après une interruption|504",
+        "disc_comparable|Pompes déclinées : recul confirmé sur plusieurs séances|504",
+        "disc_rest_assoc|Tes données montrent une association entre repos et volume de séance|null",
+        "disc_exercise_progress|Pompes déclinées : recul puis retour près du niveau de départ|104",
+        "disc_freq_continuity|Cette séance s'inscrit dans une pratique déjà documentée|null"
+      ]
+    },
+    "7d": {
+      "period": "7d",
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "historyLimit": null,
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 508.63,
+        "withScopeMs": 510.57,
+        "absoluteGainMs": -1.94,
+        "relativeGainPct": 0,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1nmid_hzatx",
+          "trajectoryHits": 0,
+          "trajectoryMisses": 4,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 0,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 5.58,
+            "exclusiveMs": 5.58
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.74,
+            "exclusiveMs": 0.74
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 37.2,
+            "exclusiveMs": 37.2
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 0.41,
+            "exclusiveMs": 0.41
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.37,
+            "exclusiveMs": 0.37
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 0.78,
+            "exclusiveMs": 0.78
+          }
+        },
+        "all": 31,
+        "selected": 11,
+        "composedOk": 3
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            502.18,
+            515.68,
+            496.48
+          ],
+          "medianMs": 502.18,
+          "p95Ms": 515.68
+        },
+        "withScope": {
+          "samplesMs": [
+            516.48,
+            519.99,
+            498.28
+          ],
+          "medianMs": 516.48,
+          "p95Ms": 519.99
+        },
+        "absoluteGainMedianMs": -14.3,
+        "relativeGainMedianPct": -3
+      },
+      "nonRegressionFingerprint": [
+        "disc_density|Ces 7 jours concentre le travail sur moins de temps|null",
+        "disc_vs_habit|Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel|504",
+        "disc_structural_memory|Relevés de genoux à la barre reviennent après une interruption|505",
+        "disc_emergence|Pompes déclinées reviennent après une interruption|504",
+        "disc_exercise_share|3 mouvements concentrent une part importante de ton travail récent|null",
+        "disc_rest_assoc|Tes données montrent une association entre repos et volume de séance|null",
+        "disc_exercise_progress|Pompes déclinées : recul puis retour près du niveau de départ|104",
+        "disc_freq_continuity|Ces 7 jours s'inscrit dans une pratique déjà documentée|null",
+        "disc_muscle_share_shift|La part attribuée aux gainage/tronc a augmenté plus vite que le volume global|null",
+        "disc_muscle_reorient|Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre|null",
+        "disc_push_pull|La poussée domine nettement le tirage de ces 7 jours|null"
+      ]
+    },
+    "30d": {
+      "period": "30d",
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "historyLimit": null,
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 1171.67,
+        "withScopeMs": 1177.15,
+        "absoluteGainMs": -5.48,
+        "relativeGainPct": 0,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1nq5t_tv23r",
+          "trajectoryHits": 2,
+          "trajectoryMisses": 40,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 5,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 5.4,
+            "exclusiveMs": 5.4
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.97,
+            "exclusiveMs": 0.97
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 34.98,
+            "exclusiveMs": 34.98
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 1.01,
+            "exclusiveMs": 1.01
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.87,
+            "exclusiveMs": 0.87
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 2.31,
+            "exclusiveMs": 2.31
+          }
+        },
+        "all": 43,
+        "selected": 14,
+        "composedOk": 4
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            1201.75,
+            1185.11,
+            1160.72
+          ],
+          "medianMs": 1185.11,
+          "p95Ms": 1201.75
+        },
+        "withScope": {
+          "samplesMs": [
+            1169.45,
+            1177.08,
+            1160.27
+          ],
+          "medianMs": 1169.45,
+          "p95Ms": 1177.08
+        },
+        "absoluteGainMedianMs": 15.66,
+        "relativeGainMedianPct": 1
+      },
+      "nonRegressionFingerprint": [
+        "disc_gtg_unplanned_now|Certains jours, le Grease the Groove ne tient que par un passage hors planning|null",
+        "disc_volume_shape|Le volume du mois dépasse la période précédente|null",
+        "disc_vs_habit|Face pull : ces 30 jours sont au-dessus de ton niveau habituel|306",
+        "disc_ms_return|Relevés de genoux aux parallèles revient après un long silence|107",
+        "disc_p35_gtg_coexistence|GTG et séances classiques|null",
+        "disc_p36_weekday_regularity|Jours habituellement actifs|null",
+        "disc_freq_decline_low_exposure|Pompes déclinées : moins de répétitions par séance|202",
+        "disc_emergence|Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent|106",
+        "disc_emergence|Relevés de genoux à la barre reviennent après une interruption|505",
+        "disc_muscle_exposure_shift|Triceps : davantage de jours d’exposition qu’en période précédente|null",
+        "disc_exercise_progress|Pompes déclinées : recul puis retour près du niveau de départ|104",
+        "disc_anchor|Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique|null",
+        "disc_rest_assoc|Tes données montrent une association entre repos et volume de séance|null",
+        "disc_p35_gtg_outside_classic|GTG hors séances classiques|null"
+      ]
+    },
+    "3m": {
+      "period": "3m",
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30"
+      },
+      "historyLimit": null,
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 1781.95,
+        "withScopeMs": 1697.42,
+        "absoluteGainMs": 84.53,
+        "relativeGainPct": 5,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1nxvy_wo0sc",
+          "trajectoryHits": 1,
+          "trajectoryMisses": 85,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 1,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 5.75,
+            "exclusiveMs": 5.75
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.38,
+            "exclusiveMs": 0.38
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 46.33,
+            "exclusiveMs": 46.33
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 1.13,
+            "exclusiveMs": 1.13
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.97,
+            "exclusiveMs": 0.97
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 2.02,
+            "exclusiveMs": 2.02
+          }
+        },
+        "all": 52,
+        "selected": 17,
+        "composedOk": 6
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            1674.18,
+            1744.21,
+            1697.92
+          ],
+          "medianMs": 1697.92,
+          "p95Ms": 1744.21
+        },
+        "withScope": {
+          "samplesMs": [
+            1740.54,
+            1694.68,
+            1682.93
+          ],
+          "medianMs": 1694.68,
+          "p95Ms": 1740.54
+        },
+        "absoluteGainMedianMs": 3.24,
+        "relativeGainMedianPct": 0
+      },
+      "nonRegressionFingerprint": [
+        "disc_gtg_unplanned_now|Certains jours, le Grease the Groove ne tient que par un passage hors planning|null",
+        "disc_volume_shape|Le trimestre a un volume et un rythme, pas seulement un total|null",
+        "disc_vs_habit|Face pull : cette période est au-dessus de ton niveau habituel|306",
+        "disc_p35_gtg_coexistence|GTG et séances classiques|null",
+        "disc_p36_weekday_regularity|Jours habituellement actifs|null",
+        "disc_emergence|Pompes déclinées : moins de répétitions par séance|202",
+        "disc_emergence|Relevés de genoux aux parallèles : volume par séance stable|107",
+        "disc_freq_progress_low|Face pull : progression malgré une exposition faible|306",
+        "disc_freq_progress_low|Élévations latérales : davantage de répétitions par séance|304",
+        "disc_structural_memory|Relevés de genoux à la barre : volume par séance stable|505",
+        "disc_muscle_exposure_shift|Pectoraux : davantage de jours d’exposition qu’en période précédente|null",
+        "disc_best_month|août 2026 concentre la part la plus productive de la période|null",
+        "disc_quarter_arc|Le trimestre a une trajectoire interne, pas seulement un total|null",
+        "disc_exercise_progress|Pompes déclinées : recul puis retour près du niveau de départ|104",
+        "disc_ms_sessions|50e séance enregistrée|null",
+        "disc_ms_first_exercise|Première apparition : Exercice 728134920|null",
+        "disc_th_pushPull_trajectory|Le haut du corps travaille surtout en poussée|null"
+      ]
+    },
+    "6m": {
+      "period": "6m",
+      "window": {
+        "start": "2026-05-01",
+        "end": "2026-10-30",
+        "historyLimit": "fixture commence ~2026-07 — données avant manquantes"
+      },
+      "historyLimit": "fixture commence ~2026-07 — données avant manquantes",
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 1717.13,
+        "withScopeMs": 1675.72,
+        "absoluteGainMs": 41.41,
+        "relativeGainPct": 2,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1o8f4_n7r5z",
+          "trajectoryHits": 1,
+          "trajectoryMisses": 89,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 1,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 5.34,
+            "exclusiveMs": 5.34
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.36,
+            "exclusiveMs": 0.36
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 93.14,
+            "exclusiveMs": 93.14
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 0.84,
+            "exclusiveMs": 0.84
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.63,
+            "exclusiveMs": 0.63
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 1.37,
+            "exclusiveMs": 1.37
+          }
+        },
+        "all": 54,
+        "selected": 14,
+        "composedOk": 5
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            1674.39,
+            1688,
+            1678.43
+          ],
+          "medianMs": 1678.43,
+          "p95Ms": 1688
+        },
+        "withScope": {
+          "samplesMs": [
+            1660.3,
+            1700.7,
+            1644.49
+          ],
+          "medianMs": 1660.3,
+          "p95Ms": 1700.7
+        },
+        "absoluteGainMedianMs": 18.13,
+        "relativeGainMedianPct": 1
+      },
+      "nonRegressionFingerprint": [
+        "disc_gtg_unplanned_now|Certains jours, le Grease the Groove ne tient que par un passage hors planning|null",
+        "disc_volume_shape|Ces six mois ont un volume et un rythme, pas seulement un total|null",
+        "disc_vs_habit|Face pull : ces derniers mois sont au-dessus de ton niveau habituel|306",
+        "disc_p35_gtg_coexistence|GTG et séances classiques|null",
+        "disc_p36_weekday_regularity|Jours habituellement actifs|null",
+        "disc_cardio_strength|Course et renforcement se lisent ensemble|null",
+        "disc_emergence|Tractions australiennes — prise large pronation : un format plus volumineux se maintient|102",
+        "disc_emergence|Dips : recul confirmé sur plusieurs séances|103",
+        "disc_emergence|Pompes déclinées : recul confirmé sur plusieurs séances|104",
+        "disc_emergence|Dips : volume par séance stable|503",
+        "disc_freq_progress_low|Face pull : progression malgré une exposition faible|306",
+        "disc_quarter_arc|Les trois derniers mois ont une trajectoire interne|null",
+        "disc_ms_sessions|50e séance enregistrée|null",
+        "disc_ms_week_freq|Première semaine à 5 entraînements|null"
+      ]
+    },
+    "1y": {
+      "period": "1y",
+      "window": {
+        "start": "2025-10-30",
+        "end": "2026-10-30",
+        "historyLimit": "fixture juil–oct 2026 seulement"
+      },
+      "historyLimit": "fixture juil–oct 2026 seulement",
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 2136.71,
+        "withScopeMs": 2083.8,
+        "absoluteGainMs": 52.91,
+        "relativeGainPct": 2,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1oj43_pplur",
+          "trajectoryHits": 1,
+          "trajectoryMisses": 89,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 1,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 5.8,
+            "exclusiveMs": 5.8
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.34,
+            "exclusiveMs": 0.34
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 82,
+            "exclusiveMs": 82
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 0.83,
+            "exclusiveMs": 0.83
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.6,
+            "exclusiveMs": 0.6
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 1.53,
+            "exclusiveMs": 1.53
+          }
+        },
+        "all": 54,
+        "selected": 14,
+        "composedOk": 5
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            2020.52,
+            1996.9,
+            2027.57
+          ],
+          "medianMs": 2020.52,
+          "p95Ms": 2027.57
+        },
+        "withScope": {
+          "samplesMs": [
+            2001.02,
+            2065.92,
+            1999.46
+          ],
+          "medianMs": 2001.02,
+          "p95Ms": 2065.92
+        },
+        "absoluteGainMedianMs": 19.5,
+        "relativeGainMedianPct": 1
+      },
+      "nonRegressionFingerprint": [
+        "disc_gtg_unplanned_now|Certains jours, le Grease the Groove ne tient que par un passage hors planning|null",
+        "disc_volume_shape|L'année suivie a un volume et un rythme, pas seulement un total|null",
+        "disc_vs_habit|Face pull : cette année est au-dessus de ton niveau habituel|306",
+        "disc_p35_gtg_coexistence|GTG et séances classiques|null",
+        "disc_p36_weekday_regularity|Jours habituellement actifs|null",
+        "disc_cardio_strength|Course et renforcement se lisent ensemble|null",
+        "disc_emergence|Tractions australiennes — prise large pronation : un format plus volumineux se maintient|102",
+        "disc_emergence|Dips : recul confirmé sur plusieurs séances|103",
+        "disc_emergence|Pompes déclinées : recul confirmé sur plusieurs séances|104",
+        "disc_emergence|Dips : volume par séance stable|503",
+        "disc_freq_progress_low|Face pull : progression malgré une exposition faible|306",
+        "disc_quarter_arc|Les trois derniers mois ont une trajectoire interne|null",
+        "disc_ms_sessions|50e séance enregistrée|null",
+        "disc_ms_week_freq|Première semaine à 5 entraînements|null"
+      ]
+    },
+    "2y": {
+      "period": "2y",
+      "window": {
+        "start": "2024-10-30",
+        "end": "2026-10-30",
+        "historyLimit": "fixture juil–oct 2026 seulement"
+      },
+      "historyLimit": "fixture juil–oct 2026 seulement",
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 2903.22,
+        "withScopeMs": 2636,
+        "absoluteGainMs": 267.22,
+        "relativeGainPct": 9,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1owb1_29whn",
+          "trajectoryHits": 1,
+          "trajectoryMisses": 89,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 2,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 1,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 9.44,
+            "exclusiveMs": 9.44
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.65,
+            "exclusiveMs": 0.65
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 91.63,
+            "exclusiveMs": 91.63
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 0.69,
+            "exclusiveMs": 0.69
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.55,
+            "exclusiveMs": 0.55
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 1.36,
+            "exclusiveMs": 1.36
+          }
+        },
+        "all": 49,
+        "selected": 14,
+        "composedOk": 5
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            2713.85,
+            2662.14,
+            2726.13
+          ],
+          "medianMs": 2713.85,
+          "p95Ms": 2726.13
+        },
+        "withScope": {
+          "samplesMs": [
+            2733.35,
+            2679.88,
+            2657.32
+          ],
+          "medianMs": 2679.88,
+          "p95Ms": 2733.35
+        },
+        "absoluteGainMedianMs": 33.97,
+        "relativeGainMedianPct": 1
+      },
+      "nonRegressionFingerprint": [
+        "disc_gtg_unplanned_now|Certains jours, le Grease the Groove ne tient que par un passage hors planning|null",
+        "disc_volume_shape|L'année suivie a un volume et un rythme, pas seulement un total|null",
+        "disc_vs_habit|Face pull : ces deux années sont au-dessus de ton niveau habituel|306",
+        "disc_p35_gtg_coexistence|GTG et séances classiques|null",
+        "disc_p36_weekday_regularity|Jours habituellement actifs|null",
+        "disc_cardio_strength|Course et renforcement se lisent ensemble|null",
+        "disc_emergence|Tractions australiennes — prise large pronation : un format plus volumineux se maintient|102",
+        "disc_emergence|Dips : recul confirmé sur plusieurs séances|103",
+        "disc_emergence|Pompes déclinées : recul confirmé sur plusieurs séances|104",
+        "disc_emergence|Dips : volume par séance stable|503",
+        "disc_freq_progress_low|Face pull : progression malgré une exposition faible|306",
+        "disc_quarter_arc|Les trois derniers mois ont une trajectoire interne|null",
+        "disc_ms_sessions|50e séance enregistrée|null",
+        "disc_ms_week_freq|Première semaine à 5 entraînements|null"
+      ]
+    },
+    "all": {
+      "period": "all",
+      "window": {
+        "start": null,
+        "end": "2026-10-30",
+        "historyLimit": "fixture juil–oct 2026 seulement"
+      },
+      "historyLimit": "fixture juil–oct 2026 seulement",
+      "fixture": "workout-main-jul-oct-2026",
+      "environment": {
+        "runtime": "node/vite-node",
+        "note": "Pas un navigateur réel ni un profil live"
+      },
+      "cold": {
+        "withoutScopeMs": 2930.09,
+        "withScopeMs": 826.28,
+        "absoluteGainMs": 2103.81,
+        "relativeGainPct": 72,
+        "scopeCounters": {
+          "scopeId": "scope_mvy1pd2w_wtm3w",
+          "trajectoryHits": 0,
+          "trajectoryMisses": 10,
+          "catalogHits": 0,
+          "catalogMisses": 1,
+          "baselinesHits": 0,
+          "baselinesMisses": 1,
+          "trainingStateHits": 0,
+          "trainingStateMisses": 0,
+          "lifetimeHits": 1,
+          "lifetimeMisses": 1,
+          "trajectoryReusePct": 0,
+          "catalogReusePct": 0
+        },
+        "steps": {
+          "catalog": {
+            "calls": 1,
+            "inclusiveMs": 5.39,
+            "exclusiveMs": 5.39
+          },
+          "baselines": {
+            "calls": 1,
+            "inclusiveMs": 0.33,
+            "exclusiveMs": 0.33
+          },
+          "detectDiscoveries": {
+            "calls": 1,
+            "inclusiveMs": 70.91,
+            "exclusiveMs": 70.91
+          },
+          "f3Enrich": {
+            "calls": 1,
+            "inclusiveMs": 0.49,
+            "exclusiveMs": 0.49
+          },
+          "f4Polish": {
+            "calls": 1,
+            "inclusiveMs": 0.32,
+            "exclusiveMs": 0.32
+          },
+          "e0f5Select": {
+            "calls": 1,
+            "inclusiveMs": 1.03,
+            "exclusiveMs": 1.03
+          }
+        },
+        "all": 27,
+        "selected": 11,
+        "composedOk": 4
+      },
+      "warm": {
+        "passes": 3,
+        "withoutScope": {
+          "samplesMs": [
+            820.73,
+            843.32,
+            845.46
+          ],
+          "medianMs": 843.32,
+          "p95Ms": 845.46
+        },
+        "withScope": {
+          "samplesMs": [
+            843.03,
+            829.67,
+            871.76
+          ],
+          "medianMs": 843.03,
+          "p95Ms": 871.76
+        },
+        "absoluteGainMedianMs": 0.29,
+        "relativeGainMedianPct": 0
+      },
+      "nonRegressionFingerprint": [
+        "disc_volume_shape|Le trimestre a un volume et un rythme, pas seulement un total|null",
+        "disc_vs_habit|Face pull : l’ensemble du suivi est au-dessus de ton niveau habituel|306",
+        "disc_cardio_strength|Course et renforcement se lisent ensemble|null",
+        "disc_emergence|Tractions australiennes — prise large pronation : un format plus volumineux se maintient|102",
+        "disc_emergence|Dips : recul confirmé sur plusieurs séances|103",
+        "disc_emergence|Pompes déclinées : recul confirmé sur plusieurs séances|104",
+        "disc_emergence|Dips : volume par séance stable|503",
+        "disc_rest_assoc|Tes données montrent une association entre repos et volume de séance|null",
+        "disc_quarter_arc|Les trois derniers mois ont une trajectoire interne|null",
+        "disc_muscle_share_shift|La part attribuée aux gainage/tronc a augmenté plus vite que le volume global|null",
+        "disc_muscle_reorient|Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre|null"
+      ]
+    }
+  },
+  "scaleSynthetic": [
+    {
+      "label": "6w",
+      "days": 42,
+      "exercises": 8,
+      "ms": 305.77,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1phma_g6rro",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 16,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 6,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic",
+      "note": "Pas un profil réel"
+    },
+    {
+      "label": "6m",
+      "days": 180,
+      "exercises": 12,
+      "ms": 3708.52,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1phuw_ravne",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 20,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 5,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic",
+      "note": "Pas un profil réel"
+    },
+    {
+      "label": "1y",
+      "days": 365,
+      "exercises": 16,
+      "ms": 20335.77,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1pkqa_yha82",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 24,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 4,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic",
+      "note": "Pas un profil réel"
+    },
+    {
+      "label": "2y",
+      "days": 730,
+      "exercises": 20,
+      "ms": 108793.89,
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy1q0fv_azylo",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 28,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 3,
+        "catalogReusePct": 0
+      },
+      "fixture": "synthetic-deterministic",
+      "note": "Pas un profil réel"
+    }
+  ]
+}

@@ -1,0 +1,2955 @@
+{
+  "generatedAt": "2026-11-01T17:36:19.173Z",
+  "purpose": "F7.0 — isolation coût sync buildPeriodDiscoveryBundle",
+  "liveBrowser": "non — profil live verrouillé ; mesures fixture + synthétiques",
+  "rows": [
+    {
+      "label": "hist-7d",
+      "ms": 1224.3,
+      "spanDays": 7,
+      "repKeysInWindow": 32,
+      "all": 32,
+      "selected": 10,
+      "trajMisses": 4,
+      "trajHits": 0,
+      "topExclusive": [
+        {
+          "name": "measureRecapWindow:d90",
+          "exclusiveMs": 411.09,
+          "inclusiveMs": 448.42,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "exclusiveMs": 216.18,
+          "inclusiveMs": 216.18,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "exclusiveMs": 163.08,
+          "inclusiveMs": 208.58,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "exclusiveMs": 93.31,
+          "inclusiveMs": 114.1,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "exclusiveMs": 93.1,
+          "inclusiveMs": 93.1,
+          "calls": 7
+        },
+        {
+          "name": "detectDiscoveries",
+          "exclusiveMs": 57.83,
+          "inclusiveMs": 83.21,
+          "calls": 1
+        },
+        {
+          "name": "catalog",
+          "exclusiveMs": 29.84,
+          "inclusiveMs": 29.84,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "exclusiveMs": 26.62,
+          "inclusiveMs": 26.62,
+          "calls": 7
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "exclusiveMs": 25.38,
+          "inclusiveMs": 25.38,
+          "calls": 4
+        },
+        {
+          "name": "p36",
+          "exclusiveMs": 14.97,
+          "inclusiveMs": 14.97,
+          "calls": 1
+        }
+      ],
+      "topInclusive": [
+        {
+          "name": "comparisons",
+          "inclusiveMs": 819.1,
+          "exclusiveMs": 0.54,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "inclusiveMs": 448.42,
+          "exclusiveMs": 411.09,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "inclusiveMs": 216.18,
+          "exclusiveMs": 216.18,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "inclusiveMs": 208.58,
+          "exclusiveMs": 163.08,
+          "calls": 1
+        },
+        {
+          "name": "calendarLoad",
+          "inclusiveMs": 122.53,
+          "exclusiveMs": 2.28,
+          "calls": 7
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "inclusiveMs": 114.1,
+          "exclusiveMs": 93.31,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "inclusiveMs": 93.1,
+          "exclusiveMs": 93.1,
+          "calls": 7
+        },
+        {
+          "name": "detectDiscoveries",
+          "inclusiveMs": 83.21,
+          "exclusiveMs": 57.83,
+          "calls": 1
+        },
+        {
+          "name": "catalog",
+          "inclusiveMs": 29.84,
+          "exclusiveMs": 29.84,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "inclusiveMs": 26.62,
+          "exclusiveMs": 26.62,
+          "calls": 7
+        }
+      ],
+      "note": "fixture juil–oct"
+    },
+    {
+      "label": "hist-30d",
+      "ms": 766.42,
+      "spanDays": 30,
+      "repKeysInWindow": 110,
+      "all": 44,
+      "selected": 13,
+      "trajMisses": 40,
+      "trajHits": 2,
+      "topExclusive": [
+        {
+          "name": "p32b",
+          "exclusiveMs": 398.67,
+          "inclusiveMs": 398.67,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "exclusiveMs": 101.98,
+          "inclusiveMs": 101.98,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "exclusiveMs": 36.05,
+          "inclusiveMs": 47.62,
+          "calls": 1
+        },
+        {
+          "name": "p36",
+          "exclusiveMs": 35.68,
+          "inclusiveMs": 35.68,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "exclusiveMs": 33.25,
+          "inclusiveMs": 44.71,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "exclusiveMs": 25.19,
+          "inclusiveMs": 25.19,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "exclusiveMs": 18.2,
+          "inclusiveMs": 18.2,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "exclusiveMs": 15.96,
+          "inclusiveMs": 15.96,
+          "calls": 7
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "exclusiveMs": 14.03,
+          "inclusiveMs": 19.92,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "exclusiveMs": 13.14,
+          "inclusiveMs": 18.66,
+          "calls": 1
+        }
+      ],
+      "topInclusive": [
+        {
+          "name": "p32b",
+          "inclusiveMs": 398.67,
+          "exclusiveMs": 398.67,
+          "calls": 1
+        },
+        {
+          "name": "comparisons",
+          "inclusiveMs": 134.96,
+          "exclusiveMs": 0.17,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "inclusiveMs": 101.98,
+          "exclusiveMs": 101.98,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "inclusiveMs": 47.62,
+          "exclusiveMs": 36.05,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "inclusiveMs": 44.71,
+          "exclusiveMs": 33.25,
+          "calls": 1
+        },
+        {
+          "name": "calendarLoad",
+          "inclusiveMs": 43.63,
+          "exclusiveMs": 2.03,
+          "calls": 7
+        },
+        {
+          "name": "p36",
+          "inclusiveMs": 35.68,
+          "exclusiveMs": 35.68,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "inclusiveMs": 25.19,
+          "exclusiveMs": 25.19,
+          "calls": 7
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "inclusiveMs": 19.92,
+          "exclusiveMs": 14.03,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "inclusiveMs": 18.66,
+          "exclusiveMs": 13.14,
+          "calls": 1
+        }
+      ],
+      "note": "fixture juil–oct"
+    },
+    {
+      "label": "hist-window-as-2y",
+      "ms": 2674.42,
+      "spanDays": 731,
+      "repKeysInWindow": 450,
+      "all": 49,
+      "selected": 14,
+      "trajMisses": 89,
+      "trajHits": 1,
+      "topExclusive": [
+        {
+          "name": "p36",
+          "exclusiveMs": 662.61,
+          "inclusiveMs": 662.61,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "exclusiveMs": 599.24,
+          "inclusiveMs": 599.24,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "exclusiveMs": 358.8,
+          "inclusiveMs": 358.8,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "exclusiveMs": 327.74,
+          "inclusiveMs": 327.74,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "exclusiveMs": 318.99,
+          "inclusiveMs": 318.99,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "exclusiveMs": 153.88,
+          "inclusiveMs": 153.88,
+          "calls": 7
+        },
+        {
+          "name": "detectDiscoveries",
+          "exclusiveMs": 52.51,
+          "inclusiveMs": 102.27,
+          "calls": 1
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "exclusiveMs": 49.76,
+          "inclusiveMs": 49.76,
+          "calls": 10
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "exclusiveMs": 38.39,
+          "inclusiveMs": 393.45,
+          "calls": 1
+        },
+        {
+          "name": "gtgUnplanned",
+          "exclusiveMs": 35.51,
+          "inclusiveMs": 35.51,
+          "calls": 1
+        }
+      ],
+      "topInclusive": [
+        {
+          "name": "comparisons",
+          "inclusiveMs": 848.94,
+          "exclusiveMs": 0.13,
+          "calls": 1
+        },
+        {
+          "name": "calendarLoad",
+          "inclusiveMs": 756.46,
+          "exclusiveMs": 1.68,
+          "calls": 7
+        },
+        {
+          "name": "p36",
+          "inclusiveMs": 662.61,
+          "exclusiveMs": 662.61,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "inclusiveMs": 599.24,
+          "exclusiveMs": 599.24,
+          "calls": 7
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "inclusiveMs": 393.45,
+          "exclusiveMs": 38.39,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "inclusiveMs": 372.64,
+          "exclusiveMs": 1.66,
+          "calls": 1
+        },
+        {
+          "name": "p35",
+          "inclusiveMs": 358.8,
+          "exclusiveMs": 358.8,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "inclusiveMs": 327.74,
+          "exclusiveMs": 327.74,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "inclusiveMs": 318.99,
+          "exclusiveMs": 318.99,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "inclusiveMs": 153.88,
+          "exclusiveMs": 153.88,
+          "calls": 7
+        }
+      ],
+      "note": "fenêtre 2y mais données fixture ~juil–oct seulement — mesure coût calendaire"
+    },
+    {
+      "label": "synth-6m",
+      "ms": 4190.33,
+      "spanDays": 180,
+      "repKeysInWindow": 1080,
+      "all": 26,
+      "selected": 11,
+      "trajMisses": 20,
+      "trajHits": 1,
+      "topExclusive": [
+        {
+          "name": "p36",
+          "exclusiveMs": 1013.21,
+          "inclusiveMs": 1013.21,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "exclusiveMs": 1004.43,
+          "inclusiveMs": 1004.43,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "exclusiveMs": 689.1,
+          "inclusiveMs": 689.1,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "exclusiveMs": 600.39,
+          "inclusiveMs": 600.39,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "exclusiveMs": 537.56,
+          "inclusiveMs": 537.56,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "exclusiveMs": 121.62,
+          "inclusiveMs": 437.74,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "exclusiveMs": 72.65,
+          "inclusiveMs": 133.1,
+          "calls": 1
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "exclusiveMs": 60.45,
+          "inclusiveMs": 60.45,
+          "calls": 9
+        },
+        {
+          "name": "calendarDayMap",
+          "exclusiveMs": 20.34,
+          "inclusiveMs": 20.34,
+          "calls": 7
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "exclusiveMs": 18.05,
+          "inclusiveMs": 37.67,
+          "calls": 1
+        }
+      ],
+      "topInclusive": [
+        {
+          "name": "p36",
+          "inclusiveMs": 1013.21,
+          "exclusiveMs": 1013.21,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "inclusiveMs": 1004.43,
+          "exclusiveMs": 1004.43,
+          "calls": 1
+        },
+        {
+          "name": "comparisons",
+          "inclusiveMs": 886.25,
+          "exclusiveMs": 0.13,
+          "calls": 1
+        },
+        {
+          "name": "calendarLoad",
+          "inclusiveMs": 714.05,
+          "exclusiveMs": 3.97,
+          "calls": 7
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "inclusiveMs": 689.1,
+          "exclusiveMs": 689.1,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "inclusiveMs": 600.39,
+          "exclusiveMs": 600.39,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "inclusiveMs": 537.56,
+          "exclusiveMs": 537.56,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "inclusiveMs": 437.74,
+          "exclusiveMs": 121.62,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "inclusiveMs": 315.83,
+          "exclusiveMs": 2.67,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "inclusiveMs": 133.1,
+          "exclusiveMs": 72.65,
+          "calls": 1
+        }
+      ],
+      "note": "synthetic-deterministic — pas un profil réel"
+    },
+    {
+      "label": "synth-1y",
+      "ms": 21937.09,
+      "spanDays": 365,
+      "repKeysInWindow": 2928,
+      "all": 26,
+      "selected": 11,
+      "trajMisses": 24,
+      "trajHits": 1,
+      "topExclusive": [
+        {
+          "name": "p36",
+          "exclusiveMs": 6472.47,
+          "inclusiveMs": 6472.47,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "exclusiveMs": 4075.86,
+          "inclusiveMs": 4075.86,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "exclusiveMs": 3824.12,
+          "inclusiveMs": 3824.12,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "exclusiveMs": 3701.15,
+          "inclusiveMs": 3701.15,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "exclusiveMs": 3075.67,
+          "inclusiveMs": 3075.67,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "exclusiveMs": 335.91,
+          "inclusiveMs": 436.18,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "exclusiveMs": 118.17,
+          "inclusiveMs": 1900.29,
+          "calls": 1
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "exclusiveMs": 100.27,
+          "inclusiveMs": 100.27,
+          "calls": 9
+        },
+        {
+          "name": "calendarDayMap",
+          "exclusiveMs": 95.54,
+          "inclusiveMs": 95.54,
+          "calls": 7
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "exclusiveMs": 35.61,
+          "inclusiveMs": 103.23,
+          "calls": 1
+        }
+      ],
+      "topInclusive": [
+        {
+          "name": "p36",
+          "inclusiveMs": 6472.47,
+          "exclusiveMs": 6472.47,
+          "calls": 1
+        },
+        {
+          "name": "comparisons",
+          "inclusiveMs": 4146.82,
+          "exclusiveMs": 0.19,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "inclusiveMs": 4075.86,
+          "exclusiveMs": 4075.86,
+          "calls": 1
+        },
+        {
+          "name": "calendarLoad",
+          "inclusiveMs": 3932.81,
+          "exclusiveMs": 12.18,
+          "calls": 7
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "inclusiveMs": 3824.12,
+          "exclusiveMs": 3824.12,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "inclusiveMs": 3701.15,
+          "exclusiveMs": 3701.15,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "inclusiveMs": 3075.67,
+          "exclusiveMs": 3075.67,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "inclusiveMs": 1900.29,
+          "exclusiveMs": 118.17,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "inclusiveMs": 1841.87,
+          "exclusiveMs": 6.23,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "inclusiveMs": 436.18,
+          "exclusiveMs": 335.91,
+          "calls": 1
+        }
+      ],
+      "note": "synthetic-deterministic — pas un profil réel"
+    },
+    {
+      "label": "synth-2y",
+      "ms": 109235.66,
+      "spanDays": 730,
+      "repKeysInWindow": 7300,
+      "all": 26,
+      "selected": 11,
+      "trajMisses": 28,
+      "trajHits": 1,
+      "topExclusive": [
+        {
+          "name": "p36",
+          "exclusiveMs": 34973.41,
+          "inclusiveMs": 34973.41,
+          "calls": 1
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "exclusiveMs": 19499.01,
+          "inclusiveMs": 19499.01,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "exclusiveMs": 19139.22,
+          "inclusiveMs": 19139.22,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "exclusiveMs": 17888.01,
+          "inclusiveMs": 17888.01,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "exclusiveMs": 15209.52,
+          "inclusiveMs": 15209.52,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "exclusiveMs": 1503.33,
+          "inclusiveMs": 1734.44,
+          "calls": 1
+        },
+        {
+          "name": "calendarDayMap",
+          "exclusiveMs": 343.88,
+          "inclusiveMs": 343.88,
+          "calls": 7
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "exclusiveMs": 231.11,
+          "inclusiveMs": 231.11,
+          "calls": 9
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "exclusiveMs": 201.75,
+          "inclusiveMs": 9584.82,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "exclusiveMs": 36.17,
+          "inclusiveMs": 190.76,
+          "calls": 1
+        }
+      ],
+      "topInclusive": [
+        {
+          "name": "p36",
+          "inclusiveMs": 34973.41,
+          "exclusiveMs": 34973.41,
+          "calls": 1
+        },
+        {
+          "name": "comparisons",
+          "inclusiveMs": 20223.48,
+          "exclusiveMs": 0.14,
+          "calls": 1
+        },
+        {
+          "name": "calendarLoad",
+          "inclusiveMs": 19879.66,
+          "exclusiveMs": 35.13,
+          "calls": 7
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "inclusiveMs": 19499.01,
+          "exclusiveMs": 19499.01,
+          "calls": 7
+        },
+        {
+          "name": "p35",
+          "inclusiveMs": 19139.22,
+          "exclusiveMs": 19139.22,
+          "calls": 1
+        },
+        {
+          "name": "p32b",
+          "inclusiveMs": 17888.01,
+          "exclusiveMs": 17888.01,
+          "calls": 1
+        },
+        {
+          "name": "programAdherence",
+          "inclusiveMs": 15209.52,
+          "exclusiveMs": 15209.52,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "inclusiveMs": 9775.94,
+          "exclusiveMs": 17.93,
+          "calls": 1
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "inclusiveMs": 9584.82,
+          "exclusiveMs": 201.75,
+          "calls": 1
+        },
+        {
+          "name": "detectDiscoveries",
+          "inclusiveMs": 1734.44,
+          "exclusiveMs": 1503.33,
+          "calls": 1
+        }
+      ],
+      "note": "synthetic-deterministic — pas un profil réel"
+    }
+  ],
+  "full": [
+    {
+      "label": "hist-7d",
+      "period": "7d",
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30"
+      },
+      "ms": 1224.3,
+      "volume": {
+        "repKeysTotal": 450,
+        "repKeysInWindow": 32,
+        "checkedKeys": 453,
+        "spanDays": 7
+      },
+      "all": 32,
+      "selected": 10,
+      "scope": {
+        "scopeId": "scope_mvy406ab_64bph",
+        "trajectoryHits": 0,
+        "trajectoryMisses": 4,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 0,
+        "catalogReusePct": 0
+      },
+      "stepsRanked": [
+        {
+          "name": "comparisons",
+          "calls": 1,
+          "inclusiveMs": 819.1,
+          "exclusiveMs": 0.54
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "calls": 1,
+          "inclusiveMs": 448.42,
+          "exclusiveMs": 411.09
+        },
+        {
+          "name": "p32b",
+          "calls": 1,
+          "inclusiveMs": 216.18,
+          "exclusiveMs": 216.18
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "calls": 1,
+          "inclusiveMs": 208.58,
+          "exclusiveMs": 163.08
+        },
+        {
+          "name": "calendarLoad",
+          "calls": 7,
+          "inclusiveMs": 122.53,
+          "exclusiveMs": 2.28
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "calls": 1,
+          "inclusiveMs": 114.1,
+          "exclusiveMs": 93.31
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "calls": 7,
+          "inclusiveMs": 93.1,
+          "exclusiveMs": 93.1
+        },
+        {
+          "name": "detectDiscoveries",
+          "calls": 1,
+          "inclusiveMs": 83.21,
+          "exclusiveMs": 57.83
+        },
+        {
+          "name": "catalog",
+          "calls": 1,
+          "inclusiveMs": 29.84,
+          "exclusiveMs": 29.84
+        },
+        {
+          "name": "calendarDayMap",
+          "calls": 7,
+          "inclusiveMs": 26.62,
+          "exclusiveMs": 26.62
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "calls": 4,
+          "inclusiveMs": 25.38,
+          "exclusiveMs": 25.38
+        },
+        {
+          "name": "measureRecapWindow:prev30",
+          "calls": 1,
+          "inclusiveMs": 16.07,
+          "exclusiveMs": 10.12
+        },
+        {
+          "name": "p36",
+          "calls": 1,
+          "inclusiveMs": 14.97,
+          "exclusiveMs": 14.97
+        },
+        {
+          "name": "measureRecapWindow:first30",
+          "calls": 1,
+          "inclusiveMs": 13.94,
+          "exclusiveMs": 8.61
+        },
+        {
+          "name": "p35",
+          "calls": 1,
+          "inclusiveMs": 12.19,
+          "exclusiveMs": 12.19
+        },
+        {
+          "name": "measureRecapWindow:d7",
+          "calls": 1,
+          "inclusiveMs": 9.99,
+          "exclusiveMs": 5.61
+        },
+        {
+          "name": "programAdherence",
+          "calls": 1,
+          "inclusiveMs": 9.56,
+          "exclusiveMs": 9.56
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "calls": 1,
+          "inclusiveMs": 7.45,
+          "exclusiveMs": 4.21
+        },
+        {
+          "name": "gtgUnplanned",
+          "calls": 1,
+          "inclusiveMs": 5.2,
+          "exclusiveMs": 5.2
+        },
+        {
+          "name": "e0f5Select",
+          "calls": 1,
+          "inclusiveMs": 4.79,
+          "exclusiveMs": 4.79
+        },
+        {
+          "name": "extrasSetup",
+          "calls": 1,
+          "inclusiveMs": 3.95,
+          "exclusiveMs": 3.95
+        },
+        {
+          "name": "f3Enrich",
+          "calls": 1,
+          "inclusiveMs": 3.22,
+          "exclusiveMs": 3.22
+        },
+        {
+          "name": "threads",
+          "calls": 1,
+          "inclusiveMs": 2.29,
+          "exclusiveMs": 2.29
+        },
+        {
+          "name": "baselines",
+          "calls": 1,
+          "inclusiveMs": 1.73,
+          "exclusiveMs": 1.73
+        },
+        {
+          "name": "f4Polish",
+          "calls": 1,
+          "inclusiveMs": 1.32,
+          "exclusiveMs": 1.32
+        },
+        {
+          "name": "p34",
+          "calls": 1,
+          "inclusiveMs": 1.17,
+          "exclusiveMs": 1.17
+        },
+        {
+          "name": "enumerateDatesInclusive",
+          "calls": 7,
+          "inclusiveMs": 0.54,
+          "exclusiveMs": 0.54
+        },
+        {
+          "name": "sleepRhythm",
+          "calls": 1,
+          "inclusiveMs": 0.33,
+          "exclusiveMs": 0.33
+        },
+        {
+          "name": "rewriteSleep",
+          "calls": 1,
+          "inclusiveMs": 0.18,
+          "exclusiveMs": 0.18
+        }
+      ],
+      "steps": {
+        "enumerateDatesInclusive": {
+          "calls": 7,
+          "inclusiveMs": 0.54,
+          "exclusiveMs": 0.54
+        },
+        "calendarLoad": {
+          "calls": 7,
+          "inclusiveMs": 122.53,
+          "exclusiveMs": 2.28
+        },
+        "calendarDayMap": {
+          "calls": 7,
+          "inclusiveMs": 26.62,
+          "exclusiveMs": 26.62
+        },
+        "computeCalendarMonthSportStats": {
+          "calls": 7,
+          "inclusiveMs": 93.1,
+          "exclusiveMs": 93.1
+        },
+        "measureRecapWindow:period": {
+          "calls": 1,
+          "inclusiveMs": 208.58,
+          "exclusiveMs": 163.08
+        },
+        "comparisons": {
+          "calls": 1,
+          "inclusiveMs": 819.1,
+          "exclusiveMs": 0.54
+        },
+        "measureRecapWindow:d7": {
+          "calls": 1,
+          "inclusiveMs": 9.99,
+          "exclusiveMs": 5.61
+        },
+        "measureRecapWindow:d30": {
+          "calls": 1,
+          "inclusiveMs": 114.1,
+          "exclusiveMs": 93.31
+        },
+        "measureRecapWindow:d90": {
+          "calls": 1,
+          "inclusiveMs": 448.42,
+          "exclusiveMs": 411.09
+        },
+        "measureRecapWindow:prev30": {
+          "calls": 1,
+          "inclusiveMs": 16.07,
+          "exclusiveMs": 10.12
+        },
+        "measureRecapWindow:prevSameLength": {
+          "calls": 1,
+          "inclusiveMs": 7.45,
+          "exclusiveMs": 4.21
+        },
+        "measureRecapWindow:first30": {
+          "calls": 1,
+          "inclusiveMs": 13.94,
+          "exclusiveMs": 8.61
+        },
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 29.84,
+          "exclusiveMs": 29.84
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 1.73,
+          "exclusiveMs": 1.73
+        },
+        "extrasSetup": {
+          "calls": 1,
+          "inclusiveMs": 3.95,
+          "exclusiveMs": 3.95
+        },
+        "sleepRhythm": {
+          "calls": 1,
+          "inclusiveMs": 0.33,
+          "exclusiveMs": 0.33
+        },
+        "programAdherence": {
+          "calls": 1,
+          "inclusiveMs": 9.56,
+          "exclusiveMs": 9.56
+        },
+        "p32b": {
+          "calls": 1,
+          "inclusiveMs": 216.18,
+          "exclusiveMs": 216.18
+        },
+        "p34": {
+          "calls": 1,
+          "inclusiveMs": 1.17,
+          "exclusiveMs": 1.17
+        },
+        "p35": {
+          "calls": 1,
+          "inclusiveMs": 12.19,
+          "exclusiveMs": 12.19
+        },
+        "p36": {
+          "calls": 1,
+          "inclusiveMs": 14.97,
+          "exclusiveMs": 14.97
+        },
+        "buildExerciseTrajectory": {
+          "calls": 4,
+          "inclusiveMs": 25.38,
+          "exclusiveMs": 25.38
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 83.21,
+          "exclusiveMs": 57.83
+        },
+        "rewriteSleep": {
+          "calls": 1,
+          "inclusiveMs": 0.18,
+          "exclusiveMs": 0.18
+        },
+        "threads": {
+          "calls": 1,
+          "inclusiveMs": 2.29,
+          "exclusiveMs": 2.29
+        },
+        "gtgUnplanned": {
+          "calls": 1,
+          "inclusiveMs": 5.2,
+          "exclusiveMs": 5.2
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 3.22,
+          "exclusiveMs": 3.22
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 1.32,
+          "exclusiveMs": 1.32
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 4.79,
+          "exclusiveMs": 4.79
+        }
+      },
+      "note": "fixture juil–oct"
+    },
+    {
+      "label": "hist-30d",
+      "period": "30d",
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30"
+      },
+      "ms": 766.42,
+      "volume": {
+        "repKeysTotal": 450,
+        "repKeysInWindow": 110,
+        "checkedKeys": 453,
+        "spanDays": 30
+      },
+      "all": 44,
+      "selected": 13,
+      "scope": {
+        "scopeId": "scope_mvy4078c_o584m",
+        "trajectoryHits": 2,
+        "trajectoryMisses": 40,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 5,
+        "catalogReusePct": 0
+      },
+      "stepsRanked": [
+        {
+          "name": "p32b",
+          "calls": 1,
+          "inclusiveMs": 398.67,
+          "exclusiveMs": 398.67
+        },
+        {
+          "name": "comparisons",
+          "calls": 1,
+          "inclusiveMs": 134.96,
+          "exclusiveMs": 0.17
+        },
+        {
+          "name": "programAdherence",
+          "calls": 1,
+          "inclusiveMs": 101.98,
+          "exclusiveMs": 101.98
+        },
+        {
+          "name": "detectDiscoveries",
+          "calls": 1,
+          "inclusiveMs": 47.62,
+          "exclusiveMs": 36.05
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "calls": 1,
+          "inclusiveMs": 44.71,
+          "exclusiveMs": 33.25
+        },
+        {
+          "name": "calendarLoad",
+          "calls": 7,
+          "inclusiveMs": 43.63,
+          "exclusiveMs": 2.03
+        },
+        {
+          "name": "p36",
+          "calls": 1,
+          "inclusiveMs": 35.68,
+          "exclusiveMs": 35.68
+        },
+        {
+          "name": "calendarDayMap",
+          "calls": 7,
+          "inclusiveMs": 25.19,
+          "exclusiveMs": 25.19
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "calls": 1,
+          "inclusiveMs": 19.92,
+          "exclusiveMs": 14.03
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "calls": 1,
+          "inclusiveMs": 18.66,
+          "exclusiveMs": 13.14
+        },
+        {
+          "name": "p35",
+          "calls": 1,
+          "inclusiveMs": 18.2,
+          "exclusiveMs": 18.2
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "calls": 7,
+          "inclusiveMs": 15.96,
+          "exclusiveMs": 15.96
+        },
+        {
+          "name": "measureRecapWindow:first30",
+          "calls": 1,
+          "inclusiveMs": 15.44,
+          "exclusiveMs": 10.41
+        },
+        {
+          "name": "measureRecapWindow:prev30",
+          "calls": 1,
+          "inclusiveMs": 13.96,
+          "exclusiveMs": 7.76
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "calls": 1,
+          "inclusiveMs": 13.54,
+          "exclusiveMs": 7.99
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "calls": 11,
+          "inclusiveMs": 11.57,
+          "exclusiveMs": 11.57
+        },
+        {
+          "name": "measureRecapWindow:d7",
+          "calls": 1,
+          "inclusiveMs": 8.57,
+          "exclusiveMs": 4.59
+        },
+        {
+          "name": "catalog",
+          "calls": 1,
+          "inclusiveMs": 7.35,
+          "exclusiveMs": 7.35
+        },
+        {
+          "name": "gtgUnplanned",
+          "calls": 1,
+          "inclusiveMs": 5.26,
+          "exclusiveMs": 5.26
+        },
+        {
+          "name": "e0f5Select",
+          "calls": 1,
+          "inclusiveMs": 2.29,
+          "exclusiveMs": 2.29
+        },
+        {
+          "name": "f3Enrich",
+          "calls": 1,
+          "inclusiveMs": 2.25,
+          "exclusiveMs": 2.25
+        },
+        {
+          "name": "extrasSetup",
+          "calls": 1,
+          "inclusiveMs": 2.13,
+          "exclusiveMs": 2.13
+        },
+        {
+          "name": "threads",
+          "calls": 1,
+          "inclusiveMs": 1.9,
+          "exclusiveMs": 1.9
+        },
+        {
+          "name": "f4Polish",
+          "calls": 1,
+          "inclusiveMs": 1.14,
+          "exclusiveMs": 1.14
+        },
+        {
+          "name": "baselines",
+          "calls": 1,
+          "inclusiveMs": 0.7,
+          "exclusiveMs": 0.7
+        },
+        {
+          "name": "enumerateDatesInclusive",
+          "calls": 7,
+          "inclusiveMs": 0.45,
+          "exclusiveMs": 0.45
+        },
+        {
+          "name": "p34",
+          "calls": 1,
+          "inclusiveMs": 0.18,
+          "exclusiveMs": 0.18
+        },
+        {
+          "name": "sleepRhythm",
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        {
+          "name": "rewriteSleep",
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        }
+      ],
+      "steps": {
+        "enumerateDatesInclusive": {
+          "calls": 7,
+          "inclusiveMs": 0.45,
+          "exclusiveMs": 0.45
+        },
+        "calendarLoad": {
+          "calls": 7,
+          "inclusiveMs": 43.63,
+          "exclusiveMs": 2.03
+        },
+        "calendarDayMap": {
+          "calls": 7,
+          "inclusiveMs": 25.19,
+          "exclusiveMs": 25.19
+        },
+        "computeCalendarMonthSportStats": {
+          "calls": 7,
+          "inclusiveMs": 15.96,
+          "exclusiveMs": 15.96
+        },
+        "measureRecapWindow:period": {
+          "calls": 1,
+          "inclusiveMs": 19.92,
+          "exclusiveMs": 14.03
+        },
+        "comparisons": {
+          "calls": 1,
+          "inclusiveMs": 134.96,
+          "exclusiveMs": 0.17
+        },
+        "measureRecapWindow:d7": {
+          "calls": 1,
+          "inclusiveMs": 8.57,
+          "exclusiveMs": 4.59
+        },
+        "measureRecapWindow:d30": {
+          "calls": 1,
+          "inclusiveMs": 18.66,
+          "exclusiveMs": 13.14
+        },
+        "measureRecapWindow:d90": {
+          "calls": 1,
+          "inclusiveMs": 44.71,
+          "exclusiveMs": 33.25
+        },
+        "measureRecapWindow:prev30": {
+          "calls": 1,
+          "inclusiveMs": 13.96,
+          "exclusiveMs": 7.76
+        },
+        "measureRecapWindow:prevSameLength": {
+          "calls": 1,
+          "inclusiveMs": 13.54,
+          "exclusiveMs": 7.99
+        },
+        "measureRecapWindow:first30": {
+          "calls": 1,
+          "inclusiveMs": 15.44,
+          "exclusiveMs": 10.41
+        },
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 7.35,
+          "exclusiveMs": 7.35
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.7,
+          "exclusiveMs": 0.7
+        },
+        "extrasSetup": {
+          "calls": 1,
+          "inclusiveMs": 2.13,
+          "exclusiveMs": 2.13
+        },
+        "sleepRhythm": {
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        "programAdherence": {
+          "calls": 1,
+          "inclusiveMs": 101.98,
+          "exclusiveMs": 101.98
+        },
+        "p32b": {
+          "calls": 1,
+          "inclusiveMs": 398.67,
+          "exclusiveMs": 398.67
+        },
+        "p34": {
+          "calls": 1,
+          "inclusiveMs": 0.18,
+          "exclusiveMs": 0.18
+        },
+        "p35": {
+          "calls": 1,
+          "inclusiveMs": 18.2,
+          "exclusiveMs": 18.2
+        },
+        "p36": {
+          "calls": 1,
+          "inclusiveMs": 35.68,
+          "exclusiveMs": 35.68
+        },
+        "buildExerciseTrajectory": {
+          "calls": 11,
+          "inclusiveMs": 11.57,
+          "exclusiveMs": 11.57
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 47.62,
+          "exclusiveMs": 36.05
+        },
+        "rewriteSleep": {
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        "threads": {
+          "calls": 1,
+          "inclusiveMs": 1.9,
+          "exclusiveMs": 1.9
+        },
+        "gtgUnplanned": {
+          "calls": 1,
+          "inclusiveMs": 5.26,
+          "exclusiveMs": 5.26
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 2.25,
+          "exclusiveMs": 2.25
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 1.14,
+          "exclusiveMs": 1.14
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 2.29,
+          "exclusiveMs": 2.29
+        }
+      },
+      "note": "fixture juil–oct"
+    },
+    {
+      "label": "hist-window-as-2y",
+      "period": "2y",
+      "window": {
+        "start": "2024-10-30",
+        "end": "2026-10-30"
+      },
+      "ms": 2674.42,
+      "volume": {
+        "repKeysTotal": 450,
+        "repKeysInWindow": 450,
+        "checkedKeys": 453,
+        "spanDays": 731
+      },
+      "all": 49,
+      "selected": 14,
+      "scope": {
+        "scopeId": "scope_mvy407tn_agvmn",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 89,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 1,
+        "catalogReusePct": 0
+      },
+      "stepsRanked": [
+        {
+          "name": "comparisons",
+          "calls": 1,
+          "inclusiveMs": 848.94,
+          "exclusiveMs": 0.13
+        },
+        {
+          "name": "calendarLoad",
+          "calls": 7,
+          "inclusiveMs": 756.46,
+          "exclusiveMs": 1.68
+        },
+        {
+          "name": "p36",
+          "calls": 1,
+          "inclusiveMs": 662.61,
+          "exclusiveMs": 662.61
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "calls": 7,
+          "inclusiveMs": 599.24,
+          "exclusiveMs": 599.24
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "calls": 1,
+          "inclusiveMs": 393.45,
+          "exclusiveMs": 38.39
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "calls": 1,
+          "inclusiveMs": 372.64,
+          "exclusiveMs": 1.66
+        },
+        {
+          "name": "p35",
+          "calls": 1,
+          "inclusiveMs": 358.8,
+          "exclusiveMs": 358.8
+        },
+        {
+          "name": "p32b",
+          "calls": 1,
+          "inclusiveMs": 327.74,
+          "exclusiveMs": 327.74
+        },
+        {
+          "name": "programAdherence",
+          "calls": 1,
+          "inclusiveMs": 318.99,
+          "exclusiveMs": 318.99
+        },
+        {
+          "name": "calendarDayMap",
+          "calls": 7,
+          "inclusiveMs": 153.88,
+          "exclusiveMs": 153.88
+        },
+        {
+          "name": "detectDiscoveries",
+          "calls": 1,
+          "inclusiveMs": 102.27,
+          "exclusiveMs": 52.51
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "calls": 10,
+          "inclusiveMs": 49.76,
+          "exclusiveMs": 49.76
+        },
+        {
+          "name": "gtgUnplanned",
+          "calls": 1,
+          "inclusiveMs": 35.51,
+          "exclusiveMs": 35.51
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "calls": 1,
+          "inclusiveMs": 33.36,
+          "exclusiveMs": 22.54
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "calls": 1,
+          "inclusiveMs": 16.32,
+          "exclusiveMs": 10.76
+        },
+        {
+          "name": "measureRecapWindow:prev30",
+          "calls": 1,
+          "inclusiveMs": 14.25,
+          "exclusiveMs": 7.82
+        },
+        {
+          "name": "measureRecapWindow:first30",
+          "calls": 1,
+          "inclusiveMs": 12.37,
+          "exclusiveMs": 7.7
+        },
+        {
+          "name": "catalog",
+          "calls": 1,
+          "inclusiveMs": 6.61,
+          "exclusiveMs": 6.61
+        },
+        {
+          "name": "measureRecapWindow:d7",
+          "calls": 1,
+          "inclusiveMs": 6.42,
+          "exclusiveMs": 3.47
+        },
+        {
+          "name": "e0f5Select",
+          "calls": 1,
+          "inclusiveMs": 2.67,
+          "exclusiveMs": 2.67
+        },
+        {
+          "name": "extrasSetup",
+          "calls": 1,
+          "inclusiveMs": 1.85,
+          "exclusiveMs": 1.85
+        },
+        {
+          "name": "p34",
+          "calls": 1,
+          "inclusiveMs": 1.67,
+          "exclusiveMs": 1.67
+        },
+        {
+          "name": "enumerateDatesInclusive",
+          "calls": 7,
+          "inclusiveMs": 1.66,
+          "exclusiveMs": 1.66
+        },
+        {
+          "name": "f3Enrich",
+          "calls": 1,
+          "inclusiveMs": 1.18,
+          "exclusiveMs": 1.18
+        },
+        {
+          "name": "f4Polish",
+          "calls": 1,
+          "inclusiveMs": 0.86,
+          "exclusiveMs": 0.86
+        },
+        {
+          "name": "baselines",
+          "calls": 1,
+          "inclusiveMs": 0.64,
+          "exclusiveMs": 0.64
+        },
+        {
+          "name": "rewriteSleep",
+          "calls": 1,
+          "inclusiveMs": 0.05,
+          "exclusiveMs": 0.05
+        },
+        {
+          "name": "sleepRhythm",
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        {
+          "name": "threads",
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        }
+      ],
+      "steps": {
+        "enumerateDatesInclusive": {
+          "calls": 7,
+          "inclusiveMs": 1.66,
+          "exclusiveMs": 1.66
+        },
+        "calendarLoad": {
+          "calls": 7,
+          "inclusiveMs": 756.46,
+          "exclusiveMs": 1.68
+        },
+        "calendarDayMap": {
+          "calls": 7,
+          "inclusiveMs": 153.88,
+          "exclusiveMs": 153.88
+        },
+        "computeCalendarMonthSportStats": {
+          "calls": 7,
+          "inclusiveMs": 599.24,
+          "exclusiveMs": 599.24
+        },
+        "measureRecapWindow:period": {
+          "calls": 1,
+          "inclusiveMs": 393.45,
+          "exclusiveMs": 38.39
+        },
+        "comparisons": {
+          "calls": 1,
+          "inclusiveMs": 848.94,
+          "exclusiveMs": 0.13
+        },
+        "measureRecapWindow:d7": {
+          "calls": 1,
+          "inclusiveMs": 6.42,
+          "exclusiveMs": 3.47
+        },
+        "measureRecapWindow:d30": {
+          "calls": 1,
+          "inclusiveMs": 16.32,
+          "exclusiveMs": 10.76
+        },
+        "measureRecapWindow:d90": {
+          "calls": 1,
+          "inclusiveMs": 33.36,
+          "exclusiveMs": 22.54
+        },
+        "measureRecapWindow:prev30": {
+          "calls": 1,
+          "inclusiveMs": 14.25,
+          "exclusiveMs": 7.82
+        },
+        "measureRecapWindow:prevSameLength": {
+          "calls": 1,
+          "inclusiveMs": 372.64,
+          "exclusiveMs": 1.66
+        },
+        "measureRecapWindow:first30": {
+          "calls": 1,
+          "inclusiveMs": 12.37,
+          "exclusiveMs": 7.7
+        },
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 6.61,
+          "exclusiveMs": 6.61
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.64,
+          "exclusiveMs": 0.64
+        },
+        "extrasSetup": {
+          "calls": 1,
+          "inclusiveMs": 1.85,
+          "exclusiveMs": 1.85
+        },
+        "sleepRhythm": {
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        "programAdherence": {
+          "calls": 1,
+          "inclusiveMs": 318.99,
+          "exclusiveMs": 318.99
+        },
+        "p32b": {
+          "calls": 1,
+          "inclusiveMs": 327.74,
+          "exclusiveMs": 327.74
+        },
+        "p34": {
+          "calls": 1,
+          "inclusiveMs": 1.67,
+          "exclusiveMs": 1.67
+        },
+        "p35": {
+          "calls": 1,
+          "inclusiveMs": 358.8,
+          "exclusiveMs": 358.8
+        },
+        "p36": {
+          "calls": 1,
+          "inclusiveMs": 662.61,
+          "exclusiveMs": 662.61
+        },
+        "buildExerciseTrajectory": {
+          "calls": 10,
+          "inclusiveMs": 49.76,
+          "exclusiveMs": 49.76
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 102.27,
+          "exclusiveMs": 52.51
+        },
+        "rewriteSleep": {
+          "calls": 1,
+          "inclusiveMs": 0.05,
+          "exclusiveMs": 0.05
+        },
+        "threads": {
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        },
+        "gtgUnplanned": {
+          "calls": 1,
+          "inclusiveMs": 35.51,
+          "exclusiveMs": 35.51
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 1.18,
+          "exclusiveMs": 1.18
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.86,
+          "exclusiveMs": 0.86
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 2.67,
+          "exclusiveMs": 2.67
+        }
+      },
+      "note": "fenêtre 2y mais données fixture ~juil–oct seulement — mesure coût calendaire"
+    },
+    {
+      "label": "synth-6m",
+      "period": "all",
+      "window": {
+        "start": "2024-01-01",
+        "end": "2024-06-28"
+      },
+      "ms": 4190.33,
+      "volume": {
+        "repKeysTotal": 1080,
+        "repKeysInWindow": 1080,
+        "checkedKeys": 4320,
+        "spanDays": 180
+      },
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy409vz_jj5k3",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 20,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 5,
+        "catalogReusePct": 0
+      },
+      "stepsRanked": [
+        {
+          "name": "p36",
+          "calls": 1,
+          "inclusiveMs": 1013.21,
+          "exclusiveMs": 1013.21
+        },
+        {
+          "name": "p32b",
+          "calls": 1,
+          "inclusiveMs": 1004.43,
+          "exclusiveMs": 1004.43
+        },
+        {
+          "name": "comparisons",
+          "calls": 1,
+          "inclusiveMs": 886.25,
+          "exclusiveMs": 0.13
+        },
+        {
+          "name": "calendarLoad",
+          "calls": 7,
+          "inclusiveMs": 714.05,
+          "exclusiveMs": 3.97
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "calls": 7,
+          "inclusiveMs": 689.1,
+          "exclusiveMs": 689.1
+        },
+        {
+          "name": "p35",
+          "calls": 1,
+          "inclusiveMs": 600.39,
+          "exclusiveMs": 600.39
+        },
+        {
+          "name": "programAdherence",
+          "calls": 1,
+          "inclusiveMs": 537.56,
+          "exclusiveMs": 537.56
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "calls": 1,
+          "inclusiveMs": 437.74,
+          "exclusiveMs": 121.62
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "calls": 1,
+          "inclusiveMs": 315.83,
+          "exclusiveMs": 2.67
+        },
+        {
+          "name": "detectDiscoveries",
+          "calls": 1,
+          "inclusiveMs": 133.1,
+          "exclusiveMs": 72.65
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "calls": 9,
+          "inclusiveMs": 60.45,
+          "exclusiveMs": 60.45
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "calls": 1,
+          "inclusiveMs": 37.67,
+          "exclusiveMs": 18.05
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "calls": 1,
+          "inclusiveMs": 25.84,
+          "exclusiveMs": 9.17
+        },
+        {
+          "name": "measureRecapWindow:first30",
+          "calls": 1,
+          "inclusiveMs": 24.69,
+          "exclusiveMs": 8.54
+        },
+        {
+          "name": "measureRecapWindow:prev30",
+          "calls": 1,
+          "inclusiveMs": 24.64,
+          "exclusiveMs": 8.12
+        },
+        {
+          "name": "calendarDayMap",
+          "calls": 7,
+          "inclusiveMs": 20.34,
+          "exclusiveMs": 20.34
+        },
+        {
+          "name": "measureRecapWindow:d7",
+          "calls": 1,
+          "inclusiveMs": 19.72,
+          "exclusiveMs": 3.9
+        },
+        {
+          "name": "extrasSetup",
+          "calls": 1,
+          "inclusiveMs": 4.09,
+          "exclusiveMs": 4.09
+        },
+        {
+          "name": "catalog",
+          "calls": 1,
+          "inclusiveMs": 2.03,
+          "exclusiveMs": 2.03
+        },
+        {
+          "name": "f3Enrich",
+          "calls": 1,
+          "inclusiveMs": 1.23,
+          "exclusiveMs": 1.23
+        },
+        {
+          "name": "e0f5Select",
+          "calls": 1,
+          "inclusiveMs": 0.91,
+          "exclusiveMs": 0.91
+        },
+        {
+          "name": "baselines",
+          "calls": 1,
+          "inclusiveMs": 0.66,
+          "exclusiveMs": 0.66
+        },
+        {
+          "name": "enumerateDatesInclusive",
+          "calls": 7,
+          "inclusiveMs": 0.64,
+          "exclusiveMs": 0.64
+        },
+        {
+          "name": "p34",
+          "calls": 1,
+          "inclusiveMs": 0.44,
+          "exclusiveMs": 0.44
+        },
+        {
+          "name": "f4Polish",
+          "calls": 1,
+          "inclusiveMs": 0.25,
+          "exclusiveMs": 0.25
+        },
+        {
+          "name": "sleepRhythm",
+          "calls": 1,
+          "inclusiveMs": 0.04,
+          "exclusiveMs": 0.04
+        },
+        {
+          "name": "rewriteSleep",
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        {
+          "name": "gtgUnplanned",
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        {
+          "name": "threads",
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        }
+      ],
+      "steps": {
+        "enumerateDatesInclusive": {
+          "calls": 7,
+          "inclusiveMs": 0.64,
+          "exclusiveMs": 0.64
+        },
+        "calendarLoad": {
+          "calls": 7,
+          "inclusiveMs": 714.05,
+          "exclusiveMs": 3.97
+        },
+        "calendarDayMap": {
+          "calls": 7,
+          "inclusiveMs": 20.34,
+          "exclusiveMs": 20.34
+        },
+        "computeCalendarMonthSportStats": {
+          "calls": 7,
+          "inclusiveMs": 689.1,
+          "exclusiveMs": 689.1
+        },
+        "measureRecapWindow:period": {
+          "calls": 1,
+          "inclusiveMs": 437.74,
+          "exclusiveMs": 121.62
+        },
+        "comparisons": {
+          "calls": 1,
+          "inclusiveMs": 886.25,
+          "exclusiveMs": 0.13
+        },
+        "measureRecapWindow:d7": {
+          "calls": 1,
+          "inclusiveMs": 19.72,
+          "exclusiveMs": 3.9
+        },
+        "measureRecapWindow:d30": {
+          "calls": 1,
+          "inclusiveMs": 25.84,
+          "exclusiveMs": 9.17
+        },
+        "measureRecapWindow:d90": {
+          "calls": 1,
+          "inclusiveMs": 37.67,
+          "exclusiveMs": 18.05
+        },
+        "measureRecapWindow:prev30": {
+          "calls": 1,
+          "inclusiveMs": 24.64,
+          "exclusiveMs": 8.12
+        },
+        "measureRecapWindow:prevSameLength": {
+          "calls": 1,
+          "inclusiveMs": 315.83,
+          "exclusiveMs": 2.67
+        },
+        "measureRecapWindow:first30": {
+          "calls": 1,
+          "inclusiveMs": 24.69,
+          "exclusiveMs": 8.54
+        },
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 2.03,
+          "exclusiveMs": 2.03
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 0.66,
+          "exclusiveMs": 0.66
+        },
+        "extrasSetup": {
+          "calls": 1,
+          "inclusiveMs": 4.09,
+          "exclusiveMs": 4.09
+        },
+        "sleepRhythm": {
+          "calls": 1,
+          "inclusiveMs": 0.04,
+          "exclusiveMs": 0.04
+        },
+        "programAdherence": {
+          "calls": 1,
+          "inclusiveMs": 537.56,
+          "exclusiveMs": 537.56
+        },
+        "p32b": {
+          "calls": 1,
+          "inclusiveMs": 1004.43,
+          "exclusiveMs": 1004.43
+        },
+        "p34": {
+          "calls": 1,
+          "inclusiveMs": 0.44,
+          "exclusiveMs": 0.44
+        },
+        "p35": {
+          "calls": 1,
+          "inclusiveMs": 600.39,
+          "exclusiveMs": 600.39
+        },
+        "p36": {
+          "calls": 1,
+          "inclusiveMs": 1013.21,
+          "exclusiveMs": 1013.21
+        },
+        "buildExerciseTrajectory": {
+          "calls": 9,
+          "inclusiveMs": 60.45,
+          "exclusiveMs": 60.45
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 133.1,
+          "exclusiveMs": 72.65
+        },
+        "rewriteSleep": {
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        "threads": {
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        },
+        "gtgUnplanned": {
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 1.23,
+          "exclusiveMs": 1.23
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.25,
+          "exclusiveMs": 0.25
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 0.91,
+          "exclusiveMs": 0.91
+        }
+      },
+      "note": "synthetic-deterministic — pas un profil réel"
+    },
+    {
+      "label": "synth-1y",
+      "period": "all",
+      "window": {
+        "start": "2024-01-01",
+        "end": "2024-12-30"
+      },
+      "ms": 21937.09,
+      "volume": {
+        "repKeysTotal": 2928,
+        "repKeysInWindow": 2928,
+        "checkedKeys": 11712,
+        "spanDays": 365
+      },
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy40d4i_mhfu2",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 24,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 4,
+        "catalogReusePct": 0
+      },
+      "stepsRanked": [
+        {
+          "name": "p36",
+          "calls": 1,
+          "inclusiveMs": 6472.47,
+          "exclusiveMs": 6472.47
+        },
+        {
+          "name": "comparisons",
+          "calls": 1,
+          "inclusiveMs": 4146.82,
+          "exclusiveMs": 0.19
+        },
+        {
+          "name": "p32b",
+          "calls": 1,
+          "inclusiveMs": 4075.86,
+          "exclusiveMs": 4075.86
+        },
+        {
+          "name": "calendarLoad",
+          "calls": 7,
+          "inclusiveMs": 3932.81,
+          "exclusiveMs": 12.18
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "calls": 7,
+          "inclusiveMs": 3824.12,
+          "exclusiveMs": 3824.12
+        },
+        {
+          "name": "p35",
+          "calls": 1,
+          "inclusiveMs": 3701.15,
+          "exclusiveMs": 3701.15
+        },
+        {
+          "name": "programAdherence",
+          "calls": 1,
+          "inclusiveMs": 3075.67,
+          "exclusiveMs": 3075.67
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "calls": 1,
+          "inclusiveMs": 1900.29,
+          "exclusiveMs": 118.17
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "calls": 1,
+          "inclusiveMs": 1841.87,
+          "exclusiveMs": 6.23
+        },
+        {
+          "name": "detectDiscoveries",
+          "calls": 1,
+          "inclusiveMs": 436.18,
+          "exclusiveMs": 335.91
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "calls": 1,
+          "inclusiveMs": 103.23,
+          "exclusiveMs": 35.61
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "calls": 9,
+          "inclusiveMs": 100.27,
+          "exclusiveMs": 100.27
+        },
+        {
+          "name": "calendarDayMap",
+          "calls": 7,
+          "inclusiveMs": 95.54,
+          "exclusiveMs": 95.54
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "calls": 1,
+          "inclusiveMs": 86.06,
+          "exclusiveMs": 19.12
+        },
+        {
+          "name": "measureRecapWindow:prev30",
+          "calls": 1,
+          "inclusiveMs": 79.52,
+          "exclusiveMs": 12.48
+        },
+        {
+          "name": "measureRecapWindow:first30",
+          "calls": 1,
+          "inclusiveMs": 70.53,
+          "exclusiveMs": 12.22
+        },
+        {
+          "name": "measureRecapWindow:d7",
+          "calls": 1,
+          "inclusiveMs": 65.12,
+          "exclusiveMs": 9.97
+        },
+        {
+          "name": "extrasSetup",
+          "calls": 1,
+          "inclusiveMs": 9.64,
+          "exclusiveMs": 9.64
+        },
+        {
+          "name": "catalog",
+          "calls": 1,
+          "inclusiveMs": 4.53,
+          "exclusiveMs": 4.53
+        },
+        {
+          "name": "baselines",
+          "calls": 1,
+          "inclusiveMs": 1.68,
+          "exclusiveMs": 1.68
+        },
+        {
+          "name": "p34",
+          "calls": 1,
+          "inclusiveMs": 1.25,
+          "exclusiveMs": 1.25
+        },
+        {
+          "name": "f3Enrich",
+          "calls": 1,
+          "inclusiveMs": 1.06,
+          "exclusiveMs": 1.06
+        },
+        {
+          "name": "enumerateDatesInclusive",
+          "calls": 7,
+          "inclusiveMs": 0.98,
+          "exclusiveMs": 0.98
+        },
+        {
+          "name": "e0f5Select",
+          "calls": 1,
+          "inclusiveMs": 0.92,
+          "exclusiveMs": 0.92
+        },
+        {
+          "name": "f4Polish",
+          "calls": 1,
+          "inclusiveMs": 0.26,
+          "exclusiveMs": 0.26
+        },
+        {
+          "name": "rewriteSleep",
+          "calls": 1,
+          "inclusiveMs": 0.04,
+          "exclusiveMs": 0.04
+        },
+        {
+          "name": "sleepRhythm",
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        {
+          "name": "gtgUnplanned",
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        {
+          "name": "threads",
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        }
+      ],
+      "steps": {
+        "enumerateDatesInclusive": {
+          "calls": 7,
+          "inclusiveMs": 0.98,
+          "exclusiveMs": 0.98
+        },
+        "calendarLoad": {
+          "calls": 7,
+          "inclusiveMs": 3932.81,
+          "exclusiveMs": 12.18
+        },
+        "calendarDayMap": {
+          "calls": 7,
+          "inclusiveMs": 95.54,
+          "exclusiveMs": 95.54
+        },
+        "computeCalendarMonthSportStats": {
+          "calls": 7,
+          "inclusiveMs": 3824.12,
+          "exclusiveMs": 3824.12
+        },
+        "measureRecapWindow:period": {
+          "calls": 1,
+          "inclusiveMs": 1900.29,
+          "exclusiveMs": 118.17
+        },
+        "comparisons": {
+          "calls": 1,
+          "inclusiveMs": 4146.82,
+          "exclusiveMs": 0.19
+        },
+        "measureRecapWindow:d7": {
+          "calls": 1,
+          "inclusiveMs": 65.12,
+          "exclusiveMs": 9.97
+        },
+        "measureRecapWindow:d30": {
+          "calls": 1,
+          "inclusiveMs": 86.06,
+          "exclusiveMs": 19.12
+        },
+        "measureRecapWindow:d90": {
+          "calls": 1,
+          "inclusiveMs": 103.23,
+          "exclusiveMs": 35.61
+        },
+        "measureRecapWindow:prev30": {
+          "calls": 1,
+          "inclusiveMs": 79.52,
+          "exclusiveMs": 12.48
+        },
+        "measureRecapWindow:prevSameLength": {
+          "calls": 1,
+          "inclusiveMs": 1841.87,
+          "exclusiveMs": 6.23
+        },
+        "measureRecapWindow:first30": {
+          "calls": 1,
+          "inclusiveMs": 70.53,
+          "exclusiveMs": 12.22
+        },
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 4.53,
+          "exclusiveMs": 4.53
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 1.68,
+          "exclusiveMs": 1.68
+        },
+        "extrasSetup": {
+          "calls": 1,
+          "inclusiveMs": 9.64,
+          "exclusiveMs": 9.64
+        },
+        "sleepRhythm": {
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        "programAdherence": {
+          "calls": 1,
+          "inclusiveMs": 3075.67,
+          "exclusiveMs": 3075.67
+        },
+        "p32b": {
+          "calls": 1,
+          "inclusiveMs": 4075.86,
+          "exclusiveMs": 4075.86
+        },
+        "p34": {
+          "calls": 1,
+          "inclusiveMs": 1.25,
+          "exclusiveMs": 1.25
+        },
+        "p35": {
+          "calls": 1,
+          "inclusiveMs": 3701.15,
+          "exclusiveMs": 3701.15
+        },
+        "p36": {
+          "calls": 1,
+          "inclusiveMs": 6472.47,
+          "exclusiveMs": 6472.47
+        },
+        "buildExerciseTrajectory": {
+          "calls": 9,
+          "inclusiveMs": 100.27,
+          "exclusiveMs": 100.27
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 436.18,
+          "exclusiveMs": 335.91
+        },
+        "rewriteSleep": {
+          "calls": 1,
+          "inclusiveMs": 0.04,
+          "exclusiveMs": 0.04
+        },
+        "threads": {
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        },
+        "gtgUnplanned": {
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 1.06,
+          "exclusiveMs": 1.06
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.26,
+          "exclusiveMs": 0.26
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 0.92,
+          "exclusiveMs": 0.92
+        }
+      },
+      "note": "synthetic-deterministic — pas un profil réel"
+    },
+    {
+      "label": "synth-2y",
+      "period": "all",
+      "window": {
+        "start": "2024-01-01",
+        "end": "2025-12-30"
+      },
+      "ms": 109235.66,
+      "volume": {
+        "repKeysTotal": 7300,
+        "repKeysInWindow": 7300,
+        "checkedKeys": 29200,
+        "spanDays": 730
+      },
+      "all": 26,
+      "selected": 11,
+      "scope": {
+        "scopeId": "scope_mvy40u23_f3xw6",
+        "trajectoryHits": 1,
+        "trajectoryMisses": 28,
+        "catalogHits": 0,
+        "catalogMisses": 1,
+        "baselinesHits": 0,
+        "baselinesMisses": 1,
+        "trainingStateHits": 0,
+        "trainingStateMisses": 0,
+        "lifetimeHits": 2,
+        "lifetimeMisses": 1,
+        "trajectoryReusePct": 3,
+        "catalogReusePct": 0
+      },
+      "stepsRanked": [
+        {
+          "name": "p36",
+          "calls": 1,
+          "inclusiveMs": 34973.41,
+          "exclusiveMs": 34973.41
+        },
+        {
+          "name": "comparisons",
+          "calls": 1,
+          "inclusiveMs": 20223.48,
+          "exclusiveMs": 0.14
+        },
+        {
+          "name": "calendarLoad",
+          "calls": 7,
+          "inclusiveMs": 19879.66,
+          "exclusiveMs": 35.13
+        },
+        {
+          "name": "computeCalendarMonthSportStats",
+          "calls": 7,
+          "inclusiveMs": 19499.01,
+          "exclusiveMs": 19499.01
+        },
+        {
+          "name": "p35",
+          "calls": 1,
+          "inclusiveMs": 19139.22,
+          "exclusiveMs": 19139.22
+        },
+        {
+          "name": "p32b",
+          "calls": 1,
+          "inclusiveMs": 17888.01,
+          "exclusiveMs": 17888.01
+        },
+        {
+          "name": "programAdherence",
+          "calls": 1,
+          "inclusiveMs": 15209.52,
+          "exclusiveMs": 15209.52
+        },
+        {
+          "name": "measureRecapWindow:prevSameLength",
+          "calls": 1,
+          "inclusiveMs": 9775.94,
+          "exclusiveMs": 17.93
+        },
+        {
+          "name": "measureRecapWindow:period",
+          "calls": 1,
+          "inclusiveMs": 9584.82,
+          "exclusiveMs": 201.75
+        },
+        {
+          "name": "detectDiscoveries",
+          "calls": 1,
+          "inclusiveMs": 1734.44,
+          "exclusiveMs": 1503.33
+        },
+        {
+          "name": "calendarDayMap",
+          "calls": 7,
+          "inclusiveMs": 343.88,
+          "exclusiveMs": 343.88
+        },
+        {
+          "name": "buildExerciseTrajectory",
+          "calls": 9,
+          "inclusiveMs": 231.11,
+          "exclusiveMs": 231.11
+        },
+        {
+          "name": "measureRecapWindow:d90",
+          "calls": 1,
+          "inclusiveMs": 190.76,
+          "exclusiveMs": 36.17
+        },
+        {
+          "name": "measureRecapWindow:prev30",
+          "calls": 1,
+          "inclusiveMs": 171.15,
+          "exclusiveMs": 20.84
+        },
+        {
+          "name": "measureRecapWindow:d30",
+          "calls": 1,
+          "inclusiveMs": 169.24,
+          "exclusiveMs": 20.83
+        },
+        {
+          "name": "measureRecapWindow:first30",
+          "calls": 1,
+          "inclusiveMs": 166.74,
+          "exclusiveMs": 25.37
+        },
+        {
+          "name": "measureRecapWindow:d7",
+          "calls": 1,
+          "inclusiveMs": 164.69,
+          "exclusiveMs": 20.79
+        },
+        {
+          "name": "extrasSetup",
+          "calls": 1,
+          "inclusiveMs": 23.69,
+          "exclusiveMs": 23.69
+        },
+        {
+          "name": "catalog",
+          "calls": 1,
+          "inclusiveMs": 13.18,
+          "exclusiveMs": 13.18
+        },
+        {
+          "name": "baselines",
+          "calls": 1,
+          "inclusiveMs": 2.92,
+          "exclusiveMs": 2.92
+        },
+        {
+          "name": "enumerateDatesInclusive",
+          "calls": 7,
+          "inclusiveMs": 1.64,
+          "exclusiveMs": 1.64
+        },
+        {
+          "name": "f3Enrich",
+          "calls": 1,
+          "inclusiveMs": 1.2,
+          "exclusiveMs": 1.2
+        },
+        {
+          "name": "p34",
+          "calls": 1,
+          "inclusiveMs": 1.19,
+          "exclusiveMs": 1.19
+        },
+        {
+          "name": "e0f5Select",
+          "calls": 1,
+          "inclusiveMs": 0.96,
+          "exclusiveMs": 0.96
+        },
+        {
+          "name": "f4Polish",
+          "calls": 1,
+          "inclusiveMs": 0.28,
+          "exclusiveMs": 0.28
+        },
+        {
+          "name": "sleepRhythm",
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        {
+          "name": "rewriteSleep",
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        {
+          "name": "gtgUnplanned",
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        {
+          "name": "threads",
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        }
+      ],
+      "steps": {
+        "enumerateDatesInclusive": {
+          "calls": 7,
+          "inclusiveMs": 1.64,
+          "exclusiveMs": 1.64
+        },
+        "calendarLoad": {
+          "calls": 7,
+          "inclusiveMs": 19879.66,
+          "exclusiveMs": 35.13
+        },
+        "calendarDayMap": {
+          "calls": 7,
+          "inclusiveMs": 343.88,
+          "exclusiveMs": 343.88
+        },
+        "computeCalendarMonthSportStats": {
+          "calls": 7,
+          "inclusiveMs": 19499.01,
+          "exclusiveMs": 19499.01
+        },
+        "measureRecapWindow:period": {
+          "calls": 1,
+          "inclusiveMs": 9584.82,
+          "exclusiveMs": 201.75
+        },
+        "comparisons": {
+          "calls": 1,
+          "inclusiveMs": 20223.48,
+          "exclusiveMs": 0.14
+        },
+        "measureRecapWindow:d7": {
+          "calls": 1,
+          "inclusiveMs": 164.69,
+          "exclusiveMs": 20.79
+        },
+        "measureRecapWindow:d30": {
+          "calls": 1,
+          "inclusiveMs": 169.24,
+          "exclusiveMs": 20.83
+        },
+        "measureRecapWindow:d90": {
+          "calls": 1,
+          "inclusiveMs": 190.76,
+          "exclusiveMs": 36.17
+        },
+        "measureRecapWindow:prev30": {
+          "calls": 1,
+          "inclusiveMs": 171.15,
+          "exclusiveMs": 20.84
+        },
+        "measureRecapWindow:prevSameLength": {
+          "calls": 1,
+          "inclusiveMs": 9775.94,
+          "exclusiveMs": 17.93
+        },
+        "measureRecapWindow:first30": {
+          "calls": 1,
+          "inclusiveMs": 166.74,
+          "exclusiveMs": 25.37
+        },
+        "catalog": {
+          "calls": 1,
+          "inclusiveMs": 13.18,
+          "exclusiveMs": 13.18
+        },
+        "baselines": {
+          "calls": 1,
+          "inclusiveMs": 2.92,
+          "exclusiveMs": 2.92
+        },
+        "extrasSetup": {
+          "calls": 1,
+          "inclusiveMs": 23.69,
+          "exclusiveMs": 23.69
+        },
+        "sleepRhythm": {
+          "calls": 1,
+          "inclusiveMs": 0.03,
+          "exclusiveMs": 0.03
+        },
+        "programAdherence": {
+          "calls": 1,
+          "inclusiveMs": 15209.52,
+          "exclusiveMs": 15209.52
+        },
+        "p32b": {
+          "calls": 1,
+          "inclusiveMs": 17888.01,
+          "exclusiveMs": 17888.01
+        },
+        "p34": {
+          "calls": 1,
+          "inclusiveMs": 1.19,
+          "exclusiveMs": 1.19
+        },
+        "p35": {
+          "calls": 1,
+          "inclusiveMs": 19139.22,
+          "exclusiveMs": 19139.22
+        },
+        "p36": {
+          "calls": 1,
+          "inclusiveMs": 34973.41,
+          "exclusiveMs": 34973.41
+        },
+        "buildExerciseTrajectory": {
+          "calls": 9,
+          "inclusiveMs": 231.11,
+          "exclusiveMs": 231.11
+        },
+        "detectDiscoveries": {
+          "calls": 1,
+          "inclusiveMs": 1734.44,
+          "exclusiveMs": 1503.33
+        },
+        "rewriteSleep": {
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        "threads": {
+          "calls": 1,
+          "inclusiveMs": 0.01,
+          "exclusiveMs": 0.01
+        },
+        "gtgUnplanned": {
+          "calls": 1,
+          "inclusiveMs": 0.02,
+          "exclusiveMs": 0.02
+        },
+        "f3Enrich": {
+          "calls": 1,
+          "inclusiveMs": 1.2,
+          "exclusiveMs": 1.2
+        },
+        "f4Polish": {
+          "calls": 1,
+          "inclusiveMs": 0.28,
+          "exclusiveMs": 0.28
+        },
+        "e0f5Select": {
+          "calls": 1,
+          "inclusiveMs": 0.96,
+          "exclusiveMs": 0.96
+        }
+      },
+      "note": "synthetic-deterministic — pas un profil réel"
+    }
+  ]
+}

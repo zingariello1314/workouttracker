@@ -140,7 +140,10 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     recapState = null,
     isAdmin = false,
     isAuthenticated = false,
-    getTodayWorkout = null
+    getTodayWorkout = null,
+    /** F7.0h — injecté depuis le thread UI (Worker n’a pas localStorage). */
+    insightHistory: insightHistoryIn = null,
+    lastInsightSignature: lastInsightSignatureIn = null
   } = opts;
 
   const t0 = nowMs();
@@ -275,7 +278,10 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       profileQuestionnaireRaw,
       activeProgram,
       programs: Array.isArray(programs) ? programs : [],
-      collectDiagnostic: true
+      collectDiagnostic: true,
+      persistHistory: false,
+      insightHistory: insightHistoryIn,
+      lastInsightSignature: lastInsightSignatureIn
     });
     const shownN =
       (adaptive?.insights?.shortTerm?.length || 0) +
@@ -435,8 +441,12 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       mode: 'diagnostic',
       samePipeline: true,
       sideEffectsSuppressed: true,
+      insightHistoryInjected: Array.isArray(insightHistoryIn?.entries),
+      insightHistoryEntryCount: Array.isArray(insightHistoryIn?.entries)
+        ? insightHistoryIn.entries.length
+        : null,
       displayScopeNote:
-        'shown = pack final de CE run diagnostic uniquement (pas l’historique d’affichages passés).'
+        'Sélectionnée = pack final de CE run diagnostic (même pipeline qu’Analyse si insightHistory injecté). Ne signifie pas « carte rendue dans l’onglet Analyse ».'
     },
     overview,
     stages: [...stages, ...(diag.pipelineSteps || [])],

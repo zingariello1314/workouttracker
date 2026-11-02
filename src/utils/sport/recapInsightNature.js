@@ -61,15 +61,17 @@ export const SIGNAL_FAMILY_CAPS = {
 export const TOTAL_SLEEP_BUDGET = {
   today: 1,
   week: 2,
-  month: 2,
-  long: 2,
-  year: 2
+  month: 1,
+  long: 1,
+  year: 1
 };
 
 export function signalFamilyOfKind(kind) {
   const k = String(kind || '');
   if (k.startsWith('disc_ms_')) return 'milestone';
-  if (k.startsWith('disc_sleep_') || k === 'disc_rest_assoc') return 'sleep';
+  // F5 : rest_assoc = lien charge×repos (sport), pas une observation sommeil —
+  // ne doit pas consommer le budget sleep réservé aux nuits datées.
+  if (k.startsWith('disc_sleep_')) return 'sleep';
   return 'sport';
 }
 

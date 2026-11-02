@@ -7,7 +7,6 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../utils/accessControl';
 import {
-  buildAnalysisEngineDiagnosticReport,
   compareDiagnosticOverviews,
   DIAGNOSTIC_PERIODS
 } from '../../utils/sport/analysisEngineDiagnostic';
@@ -22,6 +21,11 @@ import { analysisFamilyLabel } from '../../utils/sport/recapSelectionDiagnostics
 import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useRecapCrossCoachGarmin } from '../../hooks/useRecapCrossCoachGarmin';
+import { browserYieldFrame } from '../../utils/sport/recapComputeCoop';
+import {
+  requestDiagnosticViaWorker,
+  cancelDiagnosticWorker
+} from '../../utils/sport/recapDiagnosticWorkerClient';
 import DateHelper from '../../utils/dateHelper';
 import AnalysisEnginePipelinePanel from './AnalysisEnginePipelinePanel';
 import './AnalysisEngineConsole.css';
@@ -94,7 +98,7 @@ const PERIOD_LABELS = {
 
 const QUICK_FILTERS = [
   { id: 'all', label: 'Toutes' },
-  { id: 'shown_now', label: 'Affichées' },
+  { id: 'shown_now', label: 'Sélectionnées' },
   { id: 'intermediate', label: 'Intermédiaires' },
   { id: 'demoted', label: 'Déclassées' },
   { id: 'rejected', label: 'Rejetées' },
@@ -1031,7 +1035,6 @@ export default function AnalysisEngineConsole() {
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
   const [garminBundle, setGarminBundle] = useState(null);
-  const [autoGarminPass, setAutoGarminPass] = useState(false);
   const [pipelineStep, setPipelineStep] = useState(null);
   const [sortKey, setSortKey] = useState('diagStatus');
   const [sortDir, setSortDir] = useState('asc');
@@ -1087,14 +1090,16 @@ export default function AnalysisEngineConsole() {
 
   const run = useCallback(async () => {
     if (!canAccess) return;
+    // F7.0f — diagnostic hors thread ; UI reste interactive.
     setBusy(true);
     setError(null);
     setSelected(null);
     setPage(0);
+    await browserYieldFrame();
     try {
       const snapshot = getCurrentData() || {};
       const window = getRecapDateWindow(period, new Date());
-      const base = {
+      const payload = {
         snapshot,
         period,
         window,
@@ -1105,21 +1110,31 @@ export default function AnalysisEngineConsole() {
         activeProgram,
         programs: Array.isArray(programs) ? programs : [],
         isAdmin,
-        isAuthenticated,
-        getTodayWorkout
+        isAuthenticated
       };
-      const next = buildAnalysisEngineDiagnosticReport(base);
-      setReport(next);
+      const primary = await requestDiagnosticViaWorker(payload);
+      // F7.0h — céder le thread avant d’hydrater le gros rapport (évite long message handler).
+      await browserYieldFrame();
+      setReport(primary.report);
       if (comparePeriod && comparePeriod !== period) {
+        await browserYieldFrame();
         const w2 = getRecapDateWindow(comparePeriod, new Date());
-        setCompareReport(
-          buildAnalysisEngineDiagnosticReport({ ...base, period: comparePeriod, window: w2 })
-        );
+        const secondary = await requestDiagnosticViaWorker({
+          ...payload,
+          period: comparePeriod,
+          window: w2
+        });
+        setCompareReport(secondary.report);
       } else {
         setCompareReport(null);
       }
     } catch (e) {
-      setError(String(e?.message || e));
+      if (e?.code === 'cancelled') return;
+      setError(
+        e?.code === 'unavailable'
+          ? 'Worker diagnostic indisponible — relancez après rechargement.'
+          : String(e?.message || e)
+      );
       setReport(null);
     } finally {
       setBusy(false);
@@ -1136,24 +1151,12 @@ export default function AnalysisEngineConsole() {
     activeProgram,
     programs,
     isAdmin,
-    isAuthenticated,
-    getTodayWorkout
+    isAuthenticated
   ]);
 
-  useEffect(() => {
-    if (!canAccess) return;
-    if (garminPartial?.status === 'loading') return;
-    if (!report) {
-      void run();
-      if (garminPartial?.status === 'ready') setAutoGarminPass(true);
-      return;
-    }
-    if (!autoGarminPass && garminPartial?.status === 'ready') {
-      setAutoGarminPass(true);
-      void run();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canAccess, garminPartial?.status, garminBundle]);
+  useEffect(() => () => cancelDiagnosticWorker(), []);
+
+  // F7.0e : aucun recalcul automatique à l’ouverture — diagnostic explicite via « Relancer ».
 
   const comparison = useMemo(
     () => (report && compareReport ? compareDiagnosticOverviews(report, compareReport) : null),
@@ -1314,7 +1317,7 @@ export default function AnalysisEngineConsole() {
       `# Diagnostic moteur — ${period}`,
       '',
       `- Généré : ${report.meta?.generatedAt}`,
-      `- Affichées (run) : ${c.shown_now}`,
+      `- Sélectionnées (pack diagnostic) : ${c.shown_now}`,
       `- Intermédiaires : ${c.intermediate}`,
       `- Déclassées : ${c.demoted}`,
       `- Rejetées : ${c.rejected}`,
@@ -1402,7 +1405,7 @@ export default function AnalysisEngineConsole() {
               </label>
             </div>
             <button type="button" className="aec-btn aec-btn-primary" onClick={run} disabled={busy}>
-              {busy ? 'Analyse…' : 'Relancer'}
+              {busy ? 'Analyse…' : report ? 'Relancer' : 'Lancer le diagnostic'}
             </button>
             <button type="button" className="aec-btn aec-btn-ghost" onClick={exportJson} disabled={!report}>
               JSON
@@ -1446,7 +1449,10 @@ export default function AnalysisEngineConsole() {
             <div className="aec-main-scroll">
               {error ? <div className="aec-banner aec-banner-error">{error}</div> : null}
               {!report && !busy ? (
-                <div className="aec-banner aec-banner-empty">En attente du premier run…</div>
+                <div className="aec-banner aec-banner-empty">
+                  Console prête — lancez un diagnostic explicite (« Relancer ») pour calculer le
+                  rapport complet. Aucun recalcul automatique à l’ouverture.
+                </div>
               ) : null}
               {busy && !report ? (
                 <div className="aec-banner aec-banner-empty">Exécution du pipeline…</div>
@@ -1467,9 +1473,14 @@ export default function AnalysisEngineConsole() {
                       </div>
                     </div>
                     <div className="aec-kpi is-accent">
-                      <div className="aec-kpi-label">Affichées</div>
+                      <div className="aec-kpi-label">Sélectionnées</div>
                       <div className="aec-kpi-value">{counts?.shown_now ?? 0}</div>
-                      <div className="aec-kpi-hint">ce run · pack final</div>
+                      <div className="aec-kpi-hint">
+                        pack diagnostic
+                        {report.meta?.insightHistoryEntryCount != null
+                          ? ` · hist. ${report.meta.insightHistoryEntryCount}`
+                          : ''}
+                      </div>
                     </div>
                     <div className="aec-kpi">
                       <div className="aec-kpi-label">Interméd.</div>
@@ -1523,15 +1534,20 @@ export default function AnalysisEngineConsole() {
                             ))}
                           </div>
                           <p style={{ margin: '0 0 4px', fontSize: 13 }}>
-                            Pack affiché <strong>{counts?.shown_now}</strong> · hors écran{' '}
+                            Pack sélectionné <strong>{counts?.shown_now}</strong> · hors pack{' '}
                             <strong>
                               {(counts?.intermediate || 0) +
                                 (counts?.demoted || 0) +
                                 (counts?.rejected || 0) +
                                 (counts?.unknown || 0)}
                             </strong>
-                            .
+                            . Ce compteur n’est pas le nombre de cartes rendues dans Analyse.
                           </p>
+                          {report.meta?.displayScopeNote ? (
+                            <p className="aec-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>
+                              {report.meta.displayScopeNote}
+                            </p>
+                          ) : null}
                           {comparison ? (
                             <p className="aec-muted" style={{ fontSize: 12 }}>
                               Comparaison {comparison.periodA} → {comparison.periodB} : Δ affichés{' '}
@@ -1704,7 +1720,7 @@ export default function AnalysisEngineConsole() {
                         <div style={{ padding: '10px 14px 0' }}>
                           <div className="aec-legend">
                             <span>
-                              {filteredRows.length} visibles · {counts?.shown_now} affichées ce run ·{' '}
+                              {filteredRows.length} visibles · {counts?.shown_now} sélectionnées ·{' '}
                               {counts?.intermediate} intermédiaires · {counts?.demoted} déclassées
                             </span>
                           </div>

@@ -48,7 +48,8 @@ function exerciseName(id, getExerciseNameById) {
 export function collectLifetimeRepHistory(snapshot, endYmd = null) {
   const reps = snapshot?.reps || {};
   const checked = snapshot?.checkedExercises || {};
-  const byEx = new Map();
+  /** @type {Map<string, Map<string, number>>} */
+  const byExDates = new Map();
 
   for (const key of Object.keys(reps)) {
     if (checked[key] !== true) continue;
@@ -59,15 +60,21 @@ export function collectLifetimeRepHistory(snapshot, endYmd = null) {
     if (!exId || String(exId).includes('complementary')) continue;
     const val = parseInt(String(reps[key]), 10);
     if (!Number.isFinite(val) || val <= 0) continue;
-    if (!byEx.has(exId)) byEx.set(exId, []);
-    const list = byEx.get(exId);
-    const existing = list.find((s) => s.date === dateStr);
-    if (existing) existing.reps = Math.max(existing.reps, val);
-    else list.push({ date: dateStr, reps: val });
+    let dates = byExDates.get(exId);
+    if (!dates) {
+      dates = new Map();
+      byExDates.set(exId, dates);
+    }
+    const prev = dates.get(dateStr);
+    dates.set(dateStr, prev == null ? val : Math.max(prev, val));
   }
 
-  for (const list of byEx.values()) {
+  /** @type {Map<string, { date: string, reps: number }[]>} */
+  const byEx = new Map();
+  for (const [exId, dates] of byExDates.entries()) {
+    const list = [...dates.entries()].map(([date, repsVal]) => ({ date, reps: repsVal }));
     list.sort((a, b) => a.date.localeCompare(b.date));
+    byEx.set(exId, list);
   }
   return byEx;
 }

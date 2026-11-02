@@ -13,6 +13,8 @@ import { computeNonRunningExerciseMinutesForDate } from '../calendarPhysicalSess
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 
+/** F6 — mémo requête via `computeScope` (pas de cache global). */
+
 export function percentile(nums, p) {
   const v = (nums || []).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -139,24 +141,36 @@ export function baselineTraceMetrics(baseline, extra = {}) {
   };
 }
 
-export function buildExerciseBaselines({ snapshot, endYmd, getExerciseNameById } = {}) {
-  const byEx = collectLifetimeRepHistory(snapshot, endYmd);
-  const out = [];
-  byEx.forEach((sessions, exId) => {
-    const baseline = buildExerciseBaseline(sessions);
-    if (!baseline) return;
-    const n = parseInt(String(exId), 10);
-    const name =
-      typeof getExerciseNameById === 'function'
-        ? String(getExerciseNameById(Number.isFinite(n) ? n : exId) || '').trim()
-        : '';
-    out.push({
-      id: String(exId),
-      name: name || `Exercice ${exId}`,
-      ...baseline
+export function buildExerciseBaselines({
+  snapshot,
+  endYmd,
+  getExerciseNameById,
+  computeScope = null
+} = {}) {
+  const run = () => {
+    const byEx = resolveLifetimeRepHistory(snapshot, endYmd, computeScope);
+    const out = [];
+    byEx.forEach((sessions, exId) => {
+      const baseline = buildExerciseBaseline(sessions);
+      if (!baseline) return;
+      const n = parseInt(String(exId), 10);
+      const name =
+        typeof getExerciseNameById === 'function'
+          ? String(getExerciseNameById(Number.isFinite(n) ? n : exId) || '').trim()
+          : '';
+      out.push({
+        id: String(exId),
+        name: name || `Exercice ${exId}`,
+        ...baseline
+      });
     });
-  });
-  return out.sort((a, b) => (b.sessions || 0) - (a.sessions || 0));
+    return out.sort((a, b) => (b.sessions || 0) - (a.sessions || 0));
+  };
+  if (computeScope?.memoBaselines) {
+    const key = computeScope.baselinesKey?.(endYmd);
+    if (key) return computeScope.memoBaselines(key, run);
+  }
+  return run();
 }
 
 function rhrOn(garminData, ymd) {
@@ -169,8 +183,46 @@ function rhrOn(garminData, ymd) {
 /**
  * Catalogue de jours entraînés (signature de séance).
  */
-export function buildSessionCatalog({ snapshot, getExerciseNameById, garminData = null, endYmd = null } = {}) {
-  const byEx = collectLifetimeRepHistory(snapshot, endYmd);
+export function buildSessionCatalog({
+  snapshot,
+  getExerciseNameById,
+  garminData = null,
+  endYmd = null,
+  computeScope = null
+} = {}) {
+  const run = () =>
+    buildSessionCatalogUncached({
+      snapshot,
+      getExerciseNameById,
+      garminData,
+      endYmd,
+      computeScope
+    });
+  if (computeScope?.memoCatalog) {
+    const key = computeScope.catalogKey?.(endYmd, Boolean(garminData));
+    if (key) return computeScope.memoCatalog(key, run);
+  }
+  return run();
+}
+
+function resolveLifetimeRepHistory(snapshot, endYmd, computeScope = null) {
+  if (computeScope?.memoLifetime) {
+    const key = computeScope.lifetimeKey?.(endYmd);
+    if (key) {
+      return computeScope.memoLifetime(key, () => collectLifetimeRepHistory(snapshot, endYmd));
+    }
+  }
+  return collectLifetimeRepHistory(snapshot, endYmd);
+}
+
+function buildSessionCatalogUncached({
+  snapshot,
+  getExerciseNameById,
+  garminData = null,
+  endYmd = null,
+  computeScope = null
+}) {
+  const byEx = resolveLifetimeRepHistory(snapshot, endYmd, computeScope);
   const byDate = new Map();
   byEx.forEach((sessions, exId) => {
     const n = parseInt(String(exId), 10);

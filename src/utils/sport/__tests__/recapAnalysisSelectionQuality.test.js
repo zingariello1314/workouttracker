@@ -25,9 +25,10 @@ describe('qualité sélection — règles généralisées', () => {
     expect(sleepPerceivedEffort(pairSessionsWithNights(catalog), diffs)).toBeNull();
   });
 
-  it('cap sommeil ≤ 1 par angle et budget total ≤ 2 sur month', () => {
+  it('cap sommeil ≤ 1 par angle et budget total ≤ 1 sur month/long', () => {
     expect(SIGNAL_FAMILY_CAPS.month.trajectory.sleep).toBe(1);
-    expect(TOTAL_SLEEP_BUDGET.month).toBe(2);
+    expect(TOTAL_SLEEP_BUDGET.month).toBe(1);
+    expect(TOTAL_SLEEP_BUDGET.long).toBe(1);
     expect(TOTAL_SLEEP_BUDGET.today).toBe(1);
   });
 

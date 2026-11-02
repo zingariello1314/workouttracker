@@ -266,7 +266,8 @@ export function buildFrequencyProgressFindings({
   snapshot,
   window,
   getExerciseNameById = null,
-  matrix = null
+  matrix = null,
+  computeScope = null
 } = {}) {
   const findings = [];
   if (!snapshot || !window?.start || !window?.end) {
@@ -275,7 +276,12 @@ export function buildFrequencyProgressFindings({
 
   const spanDays = inclusiveCalendarSpanDays(window.start, window.end) || 1;
   const weeks = spanDays / 7;
-  const lifetime = collectLifetimeRepHistory(snapshot, window.end);
+  const lifetime =
+    computeScope?.memoLifetime && computeScope.lifetimeKey
+      ? computeScope.memoLifetime(computeScope.lifetimeKey(window.end), () =>
+          collectLifetimeRepHistory(snapshot, window.end)
+        )
+      : collectLifetimeRepHistory(snapshot, window.end);
   const gtgConfig = normalizeGtgData(snapshot?.enduranceData?.gtg)?.config || {};
 
   /** Jours GTG par storage id (certain only) */
@@ -344,7 +350,8 @@ export function buildFrequencyProgressFindings({
       exerciseName: name,
       window,
       getExerciseNameById,
-      mode: 'progress'
+      mode: 'progress',
+      computeScope
     });
 
     const plannedOcc = plannedFreq.get(String(exId)) || plannedFreq.get(name) || null;
@@ -664,7 +671,8 @@ export function buildProgramAdherenceDiscoveries({
   snapshot = null,
   window = null,
   getExerciseNameById = null,
-  liveExercisesByDate = null
+  liveExercisesByDate = null,
+  computeScope = null
 } = {}) {
   if (!snapshot || !window?.start || !window?.end) return [];
 
@@ -680,7 +688,8 @@ export function buildProgramAdherenceDiscoveries({
     snapshot,
     window,
     getExerciseNameById,
-    matrix
+    matrix,
+    computeScope
   });
 
   const trajById = new Map();

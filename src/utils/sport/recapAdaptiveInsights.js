@@ -1338,22 +1338,32 @@ function stripTitleEcho(title, body) {
 
 function toInsightCard(p) {
   const ctx = p.interpretation?.context || {};
-  const kind = ctx.kind || '';
+  const kind = ctx.kind || p.kind || '';
   const rewardTone = ctx.rewardTone || rewardToneForKind(kind);
-  if (ctx.title && ctx.body) {
+  const title = ctx.title || p.title || '';
+  const rawBody = ctx.body || p.body || (typeof p.text === 'string' ? p.text : '');
+  const evidence =
+    ctx.evidenceLine ||
+    (typeof p.evidence === 'string' ? p.evidence : '') ||
+    '';
+  // F7.0h : ne jamais renvoyer un objet brut (casse le DOM : titres vides / [object Object]).
+  if (title || rawBody) {
     return {
-      title: ctx.title,
-      body: stripTitleEcho(ctx.title, ctx.body),
-      evidence: ctx.evidenceLine || '',
+      title,
+      body: title ? stripTitleEcho(title, rawBody) : rawBody,
+      evidence,
       confidence: ctx.confidenceLabel
         ? `Confiance : ${ctx.confidenceLabel}${ctx.sampleDays ? ` · Échantillon : ${ctx.sampleDays} j` : ''}`
         : '',
-      text: p.text,
+      text: typeof p.text === 'string' ? p.text : rawBody,
       kind,
       rewardTone
     };
   }
-  return typeof p.text === 'string' ? { body: p.text, text: p.text, kind, rewardTone } : p.text;
+  if (typeof p.text === 'string') {
+    return { body: p.text, text: p.text, kind, rewardTone };
+  }
+  return { title: '', body: '', evidence: '', text: '', kind, rewardTone };
 }
 
 /**
@@ -1382,7 +1392,21 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     activeProgram = null,
     programs = null,
     /** Si true : n’écrit pas l’historique d’insights et attache `diagnostic`. */
-    collectDiagnostic = false
+    collectDiagnostic = false,
+    /** F6 : timer perf + mémo requête (portée courte). */
+    collectPerf = false,
+    computeScope = null,
+    /** F7.0 : pipeline déjà calculé (coop) — évite un second passage. */
+    precomputedComposed = null,
+    /** F7.0e : historique injecté (Worker) — sinon loadInsightHistory(). */
+    insightHistory: insightHistoryIn = null,
+    /** F7.0e : signature précédente injectée (Worker). */
+    lastInsightSignature: lastInsightSignatureIn = null,
+    /**
+     * F7.0e : si false, n’écrit pas localStorage ; expose `historyUpdate` pour le thread UI.
+     * @default true
+     */
+    persistHistory = true
   } = opts;
 
   const gtgEnd = window?.end || DateHelper.getTodayLocal();
@@ -1402,27 +1426,31 @@ export function buildAdaptiveRecapInsights(opts = {}) {
       }
     : null;
 
-  const insightHistory = loadInsightHistory();
+  const insightHistory = insightHistoryIn || loadInsightHistory();
   const mergedGarmin = mergeGarminDataForRecap(garminData, garminPartial, garminDailyMetrics);
   const diagNow =
     typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
   const tComposed0 = diagNow();
-  const composed = buildComposedInterpretationPipeline({
-    snapshot,
-    window,
-    enrichment,
-    assessment: assessmentForPipeline,
-    garminData: mergedGarmin,
-    garminPartial,
-    garminDailyMetrics,
-    getExerciseNameById,
-    profileQuestionnaireRaw,
-    period,
-    activeProgram,
-    programs,
-    insightHistory,
-    recapState
-  });
+  const composed =
+    precomputedComposed ||
+    buildComposedInterpretationPipeline({
+      snapshot,
+      window,
+      enrichment,
+      assessment: assessmentForPipeline,
+      garminData: mergedGarmin,
+      garminPartial,
+      garminDailyMetrics,
+      getExerciseNameById,
+      profileQuestionnaireRaw,
+      period,
+      activeProgram,
+      programs,
+      insightHistory,
+      recapState,
+      collectPerf: collectPerf || collectDiagnostic,
+      computeScope
+    });
   const msComposed = Math.round(diagNow() - tComposed0);
 
   const tSpan0 = diagNow();
@@ -1573,7 +1601,11 @@ export function buildAdaptiveRecapInsights(opts = {}) {
   }
   const msSelect = Math.round(diagNow() - tSelect0);
 
-  const prevSig = loadLastInsightSignature();
+  const prevSig =
+    lastInsightSignatureIn !== undefined && lastInsightSignatureIn !== null
+      ? lastInsightSignatureIn
+      : loadLastInsightSignature();
+  let historyUpdate = null;
   if (!collectDiagnostic && prevSig !== signature && allPicked.length > 0) {
     const nextHistory = recordShownInsights(
       insightHistory,
@@ -1583,8 +1615,12 @@ export function buildAdaptiveRecapInsights(opts = {}) {
         claim: claimFromCandidate(c)
       }))
     );
-    saveInsightHistory(nextHistory);
-    saveLastInsightSignature(signature);
+    if (persistHistory) {
+      saveInsightHistory(nextHistory);
+      saveLastInsightSignature(signature);
+    } else {
+      historyUpdate = { nextHistory, signature };
+    }
   }
 
   const result = {
@@ -1603,6 +1639,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
       gtgDays: gtgSum.daysWithAny,
       gtgReps: gtgSum.totalReps
     },
+    historyUpdate,
     signature,
     trainingState: composed.trainingState,
     priorState: composed.priorState,
@@ -1617,7 +1654,15 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     periodDiscoveries: composed.periodDiscoveries,
     selectionDiagnostics,
     starvedFamilies,
-    rescuedFamilies
+    rescuedFamilies,
+    f6Perf:
+      collectPerf || collectDiagnostic
+        ? {
+            composedMs: msComposed,
+            scope: composed.computeScopeStats || null,
+            steps: composed.perf || null
+          }
+        : undefined
   };
 
   if (collectDiagnostic) {

@@ -1,0 +1,485 @@
+{
+  "generatedAt": "2026-11-01T16:10:55.673Z",
+  "note": "F5.1 identity-safe selection",
+  "periods": {
+    "7d": {
+      "selected": 11,
+      "selectedKinds": [
+        "disc_density",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_freq_continuity",
+        "disc_muscle_share_shift",
+        "disc_muscle_reorient",
+        "disc_push_pull"
+      ],
+      "titles": [
+        "Ces 7 jours concentre le travail sur moins de temps",
+        "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+        "Relevés de genoux à la barre reviennent après une interruption",
+        "Pompes déclinées reviennent après une interruption",
+        "3 mouvements concentrent une part importante de ton travail récent",
+        "Tes données montrent une association entre repos et volume de séance",
+        "Pompes déclinées : recul puis retour près du niveau de départ",
+        "Ces 7 jours s'inscrit dans une pratique déjà documentée",
+        "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global",
+        "Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre",
+        "La poussée domine nettement le tirage de ces 7 jours"
+      ],
+      "f5BeforeSelected": 11,
+      "f5BeforeTitles": [
+        "Ces 7 jours concentre le travail sur moins de temps",
+        "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+        "Relevés de genoux à la barre reviennent après une interruption",
+        "Pompes déclinées reviennent après une interruption",
+        "3 mouvements concentrent une part importante de ton travail récent",
+        "Tes données montrent une association entre repos et volume de séance",
+        "Pompes déclinées : recul puis retour près du niveau de départ",
+        "Ces 7 jours s'inscrit dans une pratique déjà documentée",
+        "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global",
+        "Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre",
+        "La poussée domine nettement le tirage de ces 7 jours"
+      ],
+      "focusIdCards": [
+        {
+          "kind": "disc_vs_habit",
+          "exerciseId": "504",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "name": "Pompes déclinées"
+        },
+        {
+          "kind": "disc_emergence",
+          "exerciseId": "504",
+          "title": "Pompes déclinées reviennent après une interruption",
+          "name": "Pompes déclinées"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "exerciseId": "104",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "name": "Pompes déclinées"
+        }
+      ],
+      "nonDistinctPairs": [
+        {
+          "a": {
+            "kind": "disc_vs_habit",
+            "id": "504",
+            "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel"
+          },
+          "b": {
+            "kind": "disc_emergence",
+            "id": "504",
+            "title": "Pompes déclinées reviennent après une interruption"
+          },
+          "relation": "sameExerciseIdentity",
+          "proof": "same_storage_id"
+        },
+        {
+          "a": {
+            "kind": "disc_vs_habit",
+            "id": "504",
+            "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel"
+          },
+          "b": {
+            "kind": "disc_exercise_progress",
+            "id": "104",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          "relation": "sameDisplayName",
+          "proof": "display_name_only_not_identity"
+        },
+        {
+          "a": {
+            "kind": "disc_emergence",
+            "id": "504",
+            "title": "Pompes déclinées reviennent après une interruption"
+          },
+          "b": {
+            "kind": "disc_exercise_progress",
+            "id": "104",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          "relation": "sameDisplayName",
+          "proof": "display_name_only_not_identity"
+        }
+      ],
+      "unresolvedNames": 0,
+      "nameRepairs": 0,
+      "rejectedByReason": {
+        "rival": 3,
+        "episode_cap": 1,
+        "abstain_low_value": 2,
+        "cap": 4,
+        "score": 2,
+        "methodology_demoted": 3
+      }
+    },
+    "30d": {
+      "selected": 14,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_muscle_exposure_shift",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_rest_assoc",
+        "disc_p35_gtg_outside_classic"
+      ],
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Le volume du mois dépasse la période précédente",
+        "Face pull : ces 30 jours sont au-dessus de ton niveau habituel",
+        "Relevés de genoux aux parallèles revient après un long silence",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Pompes déclinées : moins de répétitions par séance",
+        "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+        "Relevés de genoux à la barre reviennent après une interruption",
+        "Biceps : davantage de jours d’exposition qu’en période précédente",
+        "Pompes déclinées : recul puis retour près du niveau de départ",
+        "Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique",
+        "Tes données montrent une association entre repos et volume de séance",
+        "GTG hors séances classiques"
+      ],
+      "f5BeforeSelected": 14,
+      "f5BeforeTitles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Le volume du mois dépasse la période précédente",
+        "Face pull : ces 30 jours sont au-dessus de ton niveau habituel",
+        "Relevés de genoux aux parallèles revient après un long silence",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Pompes déclinées : moins de répétitions par séance",
+        "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+        "Relevés de genoux à la barre reviennent après une interruption",
+        "Biceps : davantage de jours d’exposition qu’en période précédente",
+        "Pompes déclinées : recul puis retour près du niveau de départ",
+        "Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique",
+        "Tes données montrent une association entre repos et volume de séance",
+        "GTG hors séances classiques"
+      ],
+      "focusIdCards": [
+        {
+          "kind": "disc_exercise_progress",
+          "exerciseId": "104",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "name": "Pompes déclinées"
+        }
+      ],
+      "nonDistinctPairs": [
+        {
+          "a": {
+            "kind": "disc_freq_decline_low_exposure",
+            "id": "202",
+            "title": "Pompes déclinées : moins de répétitions par séance"
+          },
+          "b": {
+            "kind": "disc_exercise_progress",
+            "id": "104",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          "relation": "sameDisplayName",
+          "proof": "display_name_only_not_identity"
+        },
+        {
+          "a": {
+            "kind": "disc_emergence",
+            "id": "106",
+            "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent"
+          },
+          "b": {
+            "kind": "disc_emergence",
+            "id": "505",
+            "title": "Relevés de genoux à la barre reviennent après une interruption"
+          },
+          "relation": "sameDisplayName",
+          "proof": "display_name_only_not_identity"
+        }
+      ],
+      "unresolvedNames": 0,
+      "nameRepairs": 0,
+      "rejectedByReason": {
+        "unresolved_exercise_name": 8,
+        "phenomenon_rival": 1,
+        "rival": 2,
+        "cap": 7,
+        "abstain_low_value": 3,
+        "score": 2,
+        "methodology_demoted": 3
+      }
+    },
+    "3m": {
+      "selected": 17,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_freq_progress_low",
+        "disc_structural_memory",
+        "disc_muscle_exposure_shift",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_ms_sessions",
+        "disc_ms_first_exercise",
+        "disc_th_pushPull_trajectory"
+      ],
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Le trimestre a un volume et un rythme, pas seulement un total",
+        "Face pull : cette période est au-dessus de ton niveau habituel",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Pompes déclinées : moins de répétitions par séance",
+        "Relevés de genoux aux parallèles : volume par séance stable",
+        "Face pull : progression malgré une exposition faible",
+        "Élévations latérales : davantage de répétitions par séance",
+        "Relevés de genoux à la barre : volume par séance stable",
+        "Pectoraux : davantage de jours d’exposition qu’en période précédente",
+        "août 2026 concentre la part la plus productive de la période",
+        "Le trimestre a une trajectoire interne, pas seulement un total",
+        "Pompes déclinées : recul puis retour près du niveau de départ",
+        "50e séance enregistrée",
+        "Première apparition : Exercice 728134920",
+        "Le haut du corps travaille surtout en poussée"
+      ],
+      "f5BeforeSelected": 17,
+      "f5BeforeTitles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Le trimestre a un volume et un rythme, pas seulement un total",
+        "Face pull : cette période est au-dessus de ton niveau habituel",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Pompes déclinées : moins de répétitions par séance",
+        "Relevés de genoux aux parallèles : volume par séance stable",
+        "Face pull : progression malgré une exposition faible",
+        "Élévations latérales : davantage de répétitions par séance",
+        "Relevés de genoux à la barre : volume par séance stable",
+        "Pectoraux : davantage de jours d’exposition qu’en période précédente",
+        "août 2026 concentre la part la plus productive de la période",
+        "Le trimestre a une trajectoire interne, pas seulement un total",
+        "Pompes déclinées : recul puis retour près du niveau de départ",
+        "50e séance enregistrée",
+        "Première apparition : Exercice 728134920",
+        "Le haut du corps travaille surtout en poussée"
+      ],
+      "focusIdCards": [
+        {
+          "kind": "disc_exercise_progress",
+          "exerciseId": "104",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "name": "Pompes déclinées"
+        }
+      ],
+      "nonDistinctPairs": [
+        {
+          "a": {
+            "kind": "disc_vs_habit",
+            "id": "306",
+            "title": "Face pull : cette période est au-dessus de ton niveau habituel"
+          },
+          "b": {
+            "kind": "disc_freq_progress_low",
+            "id": "306",
+            "title": "Face pull : progression malgré une exposition faible"
+          },
+          "relation": "sameExerciseIdentity",
+          "proof": "same_storage_id"
+        },
+        {
+          "a": {
+            "kind": "disc_emergence",
+            "id": "202",
+            "title": "Pompes déclinées : moins de répétitions par séance"
+          },
+          "b": {
+            "kind": "disc_exercise_progress",
+            "id": "104",
+            "title": "Pompes déclinées : recul puis retour près du niveau de départ"
+          },
+          "relation": "sameDisplayName",
+          "proof": "display_name_only_not_identity"
+        }
+      ],
+      "unresolvedNames": 0,
+      "nameRepairs": 0,
+      "rejectedByReason": {
+        "episode_cap": 10,
+        "rival": 3,
+        "unresolved_exercise_name": 1,
+        "cap": 11,
+        "abstain_low_value": 3,
+        "score": 2,
+        "methodology_demoted": 3
+      }
+    },
+    "6m": {
+      "selected": 14,
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_quarter_arc",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ],
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Ces six mois ont un volume et un rythme, pas seulement un total",
+        "Face pull : ces derniers mois sont au-dessus de ton niveau habituel",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Course et renforcement se lisent ensemble",
+        "Tractions australiennes — prise large pronation : un format plus volumineux se maintient",
+        "Dips : recul confirmé sur plusieurs séances",
+        "Pompes déclinées : recul confirmé sur plusieurs séances",
+        "Dips : volume par séance stable",
+        "Face pull : progression malgré une exposition faible",
+        "Les trois derniers mois ont une trajectoire interne",
+        "50e séance enregistrée",
+        "Première semaine à 5 entraînements"
+      ],
+      "f5BeforeSelected": 14,
+      "f5BeforeTitles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Ces six mois ont un volume et un rythme, pas seulement un total",
+        "Face pull : ces derniers mois sont au-dessus de ton niveau habituel",
+        "GTG et séances classiques",
+        "Jours habituellement actifs",
+        "Course et renforcement se lisent ensemble",
+        "Tractions australiennes — prise large pronation : un format plus volumineux se maintient",
+        "Dips : recul confirmé sur plusieurs séances",
+        "Pompes déclinées : recul confirmé sur plusieurs séances",
+        "Dips : volume par séance stable",
+        "Face pull : progression malgré une exposition faible",
+        "Les trois derniers mois ont une trajectoire interne",
+        "50e séance enregistrée",
+        "Première semaine à 5 entraînements"
+      ],
+      "focusIdCards": [
+        {
+          "kind": "disc_emergence",
+          "exerciseId": "103",
+          "title": "Dips : recul confirmé sur plusieurs séances",
+          "name": "Dips"
+        },
+        {
+          "kind": "disc_emergence",
+          "exerciseId": "104",
+          "title": "Pompes déclinées : recul confirmé sur plusieurs séances",
+          "name": "Pompes déclinées"
+        },
+        {
+          "kind": "disc_emergence",
+          "exerciseId": "503",
+          "title": "Dips : volume par séance stable",
+          "name": "Dips"
+        }
+      ],
+      "nonDistinctPairs": [
+        {
+          "a": {
+            "kind": "disc_vs_habit",
+            "id": "306",
+            "title": "Face pull : ces derniers mois sont au-dessus de ton niveau habituel"
+          },
+          "b": {
+            "kind": "disc_freq_progress_low",
+            "id": "306",
+            "title": "Face pull : progression malgré une exposition faible"
+          },
+          "relation": "sameExerciseIdentity",
+          "proof": "same_storage_id"
+        },
+        {
+          "a": {
+            "kind": "disc_emergence",
+            "id": "103",
+            "title": "Dips : recul confirmé sur plusieurs séances"
+          },
+          "b": {
+            "kind": "disc_emergence",
+            "id": "503",
+            "title": "Dips : volume par séance stable"
+          },
+          "relation": "sameDisplayName",
+          "proof": "display_name_only_not_identity"
+        }
+      ],
+      "unresolvedNames": 0,
+      "nameRepairs": 0,
+      "rejectedByReason": {
+        "episode_cap": 6,
+        "volume_contradiction": 1,
+        "cap": 20,
+        "abstain_low_value": 3,
+        "rival": 2,
+        "score": 1,
+        "methodology_demoted": 3
+      }
+    }
+  },
+  "identityAudit": {
+    "dips": {
+      "label": "Dips",
+      "idA": "103",
+      "idB": "503",
+      "nameA": "Dips",
+      "nameB": "Dips",
+      "sessionsA": 19,
+      "sessionsB": 13,
+      "dateOverlap": 0,
+      "classification": "same_display_name_distinct_storage_no_proven_alias",
+      "verdict": "DO_NOT_MERGE_ON_NAME_ALONE"
+    },
+    "pompesDeclinees": {
+      "label": "Pompes déclinées",
+      "idA": "104",
+      "idB": "504",
+      "nameA": "Pompes déclinées",
+      "nameB": "Pompes déclinées",
+      "sessionsA": 16,
+      "sessionsB": 9,
+      "dateOverlap": 0,
+      "classification": "same_display_name_distinct_storage_no_proven_alias",
+      "verdict": "DO_NOT_MERGE_ON_NAME_ALONE"
+    },
+    "releves": {
+      "label": "Relevés de genoux à la barre",
+      "idA": "106",
+      "idB": "505",
+      "nameA": "Relevés de genoux à la barre",
+      "nameB": "Relevés de genoux à la barre",
+      "sessionsA": 11,
+      "sessionsB": 7,
+      "dateOverlap": 0,
+      "classification": "same_display_name_distinct_storage_no_proven_alias",
+      "verdict": "DO_NOT_MERGE_ON_NAME_ALONE"
+    }
+  }
+}

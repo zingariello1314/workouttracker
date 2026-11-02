@@ -112,18 +112,46 @@ export default function RecapAnalyseView({
   garminData = null,
   periodWindow = null,
   recapState = null,
-  isAdmin = false
+  isAdmin = false,
+  /** F7.0c — true tant que les cartes d’analyse finales ne sont pas publiées. */
+  analysisLoading = false,
+  analysisStatus = null
 }) {
   const t = useTranslation();
   const { getCurrentData, data, getExerciseNameById } = useWorkout();
   const [family, setFamily] = useState('all');
   const [detailsOn, setDetailsOn] = useState(false);
   const [periodAnalytics, setPeriodAnalytics] = useState(null);
-  const resolvedWindow = periodWindow ?? enrichment?.window ?? null;
+  // F7.0e : dates = fenêtre demandée (periodWindow), jamais enrichment d’une autre période.
+  const resolvedWindow = periodWindow || null;
+  const publicationReady = assessment?.insightsPublication?.status === 'ready';
+  const legacyReady =
+    assessment?.insightsPublication == null &&
+    !analysisLoading &&
+    analysisStatus !== 'loading' &&
+    Boolean(assessment);
+  const showInsightCards =
+    analysisStatus === 'refreshing' || publicationReady || legacyReady;
+  // Ne jamais afficher des analytics dont la fenêtre ≠ période sélectionnée.
+  const coherentAnalytics =
+    periodAnalytics &&
+    resolvedWindow?.start &&
+    resolvedWindow?.end &&
+    periodAnalytics.window?.start === resolvedWindow.start &&
+    periodAnalytics.window?.end === resolvedWindow.end
+      ? periodAnalytics
+      : null;
 
   useEffect(() => {
+    // Invalider immédiatement l’ancien header (évite libellé 2y + dates 30j).
+    setPeriodAnalytics(null);
+    setDetailsOn(false);
     if (!resolvedWindow?.start || !resolvedWindow?.end) {
-      setPeriodAnalytics(null);
+      return undefined;
+    }
+    // F7.0f : pendant le loading insights, dates via periodWindow uniquement —
+    // pas d’agrégation calendaire sync (source de saccades au changement de période).
+    if (analysisLoading || analysisStatus === 'loading') {
       return undefined;
     }
     const snap = getCurrentData();
@@ -135,23 +163,44 @@ export default function RecapAnalyseView({
       getExerciseNameById,
       recapState
     };
-    setDetailsOn(false);
-    setPeriodAnalytics(buildRecapPeriodCalendarAnalytics({ ...base, phase: 'header' }));
     let cancelled = false;
-    const finish = () => {
+    const runHeader = () => {
+      if (cancelled) return;
+      setPeriodAnalytics(buildRecapPeriodCalendarAnalytics({ ...base, phase: 'header' }));
+    };
+    const runFull = () => {
       if (cancelled) return;
       setPeriodAnalytics(buildRecapPeriodCalendarAnalytics({ ...base, phase: 'full' }));
       setDetailsOn(true);
     };
-    const handle = window.requestIdleCallback
-      ? window.requestIdleCallback(finish, { timeout: 900 })
-      : window.setTimeout(finish, 80);
+    const headerHandle = window.requestIdleCallback
+      ? window.requestIdleCallback(runHeader, { timeout: 400 })
+      : window.setTimeout(runHeader, 0);
+    const fullHandle = window.requestIdleCallback
+      ? window.requestIdleCallback(runFull, { timeout: 1600 })
+      : window.setTimeout(runFull, 200);
     return () => {
       cancelled = true;
-      if (window.requestIdleCallback) window.cancelIdleCallback(handle);
-      else window.clearTimeout(handle);
+      if (window.requestIdleCallback) {
+        window.cancelIdleCallback(headerHandle);
+        window.cancelIdleCallback(fullHandle);
+      } else {
+        window.clearTimeout(headerHandle);
+        window.clearTimeout(fullHandle);
+      }
     };
-  }, [data, getCurrentData, garminData, resolvedWindow, period, getExerciseNameById, recapState]);
+  }, [
+    data,
+    getCurrentData,
+    garminData,
+    resolvedWindow?.start,
+    resolvedWindow?.end,
+    period,
+    getExerciseNameById,
+    recapState,
+    analysisLoading,
+    analysisStatus
+  ]);
 
   const groups = useMemo(
     () => [
@@ -161,24 +210,27 @@ export default function RecapAnalyseView({
     ],
     [assessment?.insights, t]
   );
-  const cards = groups.flatMap((group) =>
-    group.items.map((item, index) => {
-      const base = asCard(item);
-      const cls = motifClass(base, FAMILIES[group.key].cls);
-      return {
-        ...base,
-        key: `${group.key}-${index}`,
-        family: cls,
-        cls,
-        badge: FAMILY_META[cls]?.label || group.title
-      };
-    })
-  );
+  const cards = showInsightCards
+    ? groups.flatMap((group) =>
+        group.items.map((item, index) => {
+          const base = asCard(item);
+          const cls = motifClass(base, FAMILIES[group.key].cls);
+          return {
+            ...base,
+            key: `${group.key}-${index}`,
+            family: cls,
+            cls,
+            badge: FAMILY_META[cls]?.label || group.title
+          };
+        })
+      )
+    : [];
   const familyCounts = cards.reduce((acc, card) => {
     acc[card.family] = (acc[card.family] || 0) + 1;
     return acc;
   }, {});
   const visible = family === 'all' ? cards : cards.filter((card) => card.family === family);
+  const waitingInsights = analysisLoading || analysisStatus === 'loading' || !showInsightCards;
 
   return (
     <div className="rb-analyse">
@@ -188,12 +240,12 @@ export default function RecapAnalyseView({
         periodWindow={resolvedWindow}
         garminData={garminData}
         recapState={recapState}
-        analytics={periodAnalytics}
+        analytics={coherentAnalytics}
       />
 
       <div className="dist" role="tablist">
         <button type="button" className={family === 'all' ? 'on all' : 'all'} onClick={() => setFamily('all')}>
-          {t('recap.analyse.filterAll', 'Toutes')} <b>{cards.length}</b>
+          {t('recap.analyse.filterAll', 'Toutes')} <b>{waitingInsights ? '…' : cards.length}</b>
         </button>
         {Object.entries(FAMILY_META).map(([id, meta]) =>
           familyCounts[id] ? (
@@ -210,7 +262,11 @@ export default function RecapAnalyseView({
         )}
       </div>
 
-      {visible.length === 0 ? (
+      {waitingInsights ? (
+        <p className="emp" role="status" aria-live="polite">
+          {t('recap.analyse.loadingInsights', 'Préparation des analyses…')}
+        </p>
+      ) : visible.length === 0 ? (
         <p className="emp">{t('recap.analyse.emptyWindow', 'Pas assez de signal fiable sur cette fenêtre.')}</p>
       ) : (
         <div className="igrid">
@@ -229,7 +285,7 @@ export default function RecapAnalyseView({
         </div>
       )}
 
-      {detailsOn ? (
+      {detailsOn && !waitingInsights ? (
         <RecapAnalyseDetails
           assessment={assessment}
           synthesisCoach={synthesisCoach}
@@ -243,14 +299,14 @@ export default function RecapAnalyseView({
         />
       ) : null}
 
-      {periodAnalytics?.phase === 'full' ? (
+      {coherentAnalytics?.phase === 'full' ? (
         <RecapPeriodHighlightsPanel
           part="tail"
           period={period}
           periodWindow={resolvedWindow}
           garminData={garminData}
           recapState={recapState}
-          analytics={periodAnalytics}
+          analytics={coherentAnalytics}
         />
       ) : null}
     </div>

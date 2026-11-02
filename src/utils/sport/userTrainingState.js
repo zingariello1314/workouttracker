@@ -230,11 +230,56 @@ export function buildUserTrainingState(opts = {}) {
     garminDailyMetrics = null,
     garminData = null,
     getExerciseNameById = null,
-    profileQuestionnaireRaw = null
+    profileQuestionnaireRaw = null,
+    computeScope = null,
+    period = ''
   } = opts;
 
   if (!window?.end) return null;
 
+  if (computeScope?.memoTrainingState) {
+    const key = computeScope.trainingStateKey?.(window, period);
+    if (key) {
+      return computeScope.memoTrainingState(key, () =>
+        buildUserTrainingStateUncached({
+          snapshot,
+          window,
+          enrichment,
+          assessment,
+          garminPartial,
+          garminDailyMetrics,
+          garminData,
+          getExerciseNameById,
+          profileQuestionnaireRaw
+        })
+      );
+    }
+  }
+
+  return buildUserTrainingStateUncached({
+    snapshot,
+    window,
+    enrichment,
+    assessment,
+    garminPartial,
+    garminDailyMetrics,
+    garminData,
+    getExerciseNameById,
+    profileQuestionnaireRaw
+  });
+}
+
+function buildUserTrainingStateUncached({
+  snapshot = {},
+  window = null,
+  enrichment = null,
+  assessment = null,
+  garminPartial = null,
+  garminDailyMetrics = null,
+  garminData = null,
+  getExerciseNameById = null,
+  profileQuestionnaireRaw = null
+}) {
   const profile = normalizeProfileQuestionnaire(profileQuestionnaireRaw);
   const answers = profile?.answers || {};
   const goal = answers.goalPhysique || answers.streetSkillGoal || null;

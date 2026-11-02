@@ -9,7 +9,10 @@
  */
 
 import { getDateStr } from '../dateUtils';
-import { computeCalendarMonthSportStats } from '../calendarMonthSportStats';
+import {
+  computeCalendarMonthSportStats,
+  getCalendarSportStatsCache
+} from '../calendarMonthSportStats';
 import { normalizeDateString, isMockEnduranceSession, computeEnduranceDayMetricsForCalendar } from '../calendarUtils';
 import { aggregateCheckedRepsByDateAndExerciseId, enduranceRepsForSession } from '../trainingLoadUtils';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
@@ -65,6 +68,7 @@ import { buildP35Discoveries } from './recapP35Discoveries';
 import { P35_KINDS, P35_RIVAL_GROUPS } from './recapP35Kinds';
 import { buildP36Discoveries } from './recapP36Discoveries';
 import { P36_KINDS, P36_RIVAL_GROUPS } from './recapP36Kinds';
+import { coopGate, makeRecapComputeAbort } from './recapComputeCoop';
 import {
   buildExerciseTrajectory,
   renderExerciseTrajectoryCopy,
@@ -79,6 +83,14 @@ import {
   volumeShapeImplication,
   peakDayImplication
 } from './recapAnalyticalReading';
+import {
+  applyEditorialInformativeValue,
+  editorialCanTake,
+  isWeakDescriptiveCard,
+  phenomenonIdentity,
+  classifyPhenomenon,
+  withRepairedDisplayName
+} from './recapEditorialSelection';
 import {
   buildExerciseBaselines,
   baselineTraceMetrics,
@@ -100,6 +112,10 @@ import {
   detectRecapMilestones,
   isMilestoneKind
 } from './recapMilestoneEngine';
+import {
+  buildMonthlyVolumeArcDiscoveries,
+  buildRunningGapDiscoveries
+} from './monthlyVolumeArcDiscoveries';
 import {
   collectRunDays,
   formatSleepHoursFr,
@@ -529,22 +545,46 @@ function musclesFromRecapState(state) {
   };
 }
 
-function calendarLoad(snapshot, garminData, window) {
+/**
+ * F7.0d — mémo requête-local des agrégats calendaires (mêmes bornes = même résultat).
+ * Ne change pas les dénominateurs ni les frontières ; évite les recalculs ×7 de comparisons.
+ */
+function calendarLoad(
+  snapshot,
+  garminData,
+  window,
+  perfTimer = null,
+  { sportCache = null, calendarMemo = null } = {}
+) {
   const startYmd = window?.start;
   const endYmd = window?.end;
   if (!snapshot || !startYmd || !endYmd) return null;
+  const memoKey = `${startYmd}|${endYmd}`;
+  if (calendarMemo?.has(memoKey)) {
+    perfTimer?.markCall?.('calendarLoad:memoHit');
+    return calendarMemo.get(memoKey);
+  }
+  const measure = (name, fn) => (perfTimer?.measure ? perfTimer.measure(name, fn) : fn());
   const grouped = aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
-  const days = enumerateDatesInclusive(startYmd, endYmd).map((ymd) => {
-    const endurance = Math.floor(
-      Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0
-    );
-    return {
-      isCurrentMonth: true,
-      date: new Date(`${ymd}T12:00:00`),
-      intensity: { reps: dayCheckedReps(grouped, ymd) + endurance }
-    };
-  });
-  return computeCalendarMonthSportStats(days, snapshot, garminData, getDateStr);
+  const dates = measure('enumerateDatesInclusive', () => enumerateDatesInclusive(startYmd, endYmd));
+  const days = measure('calendarDayMap', () =>
+    dates.map((ymd) => {
+      const endurance = Math.floor(
+        Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0
+      );
+      return {
+        isCurrentMonth: true,
+        date: new Date(`${ymd}T12:00:00`),
+        intensity: { reps: dayCheckedReps(grouped, ymd) + endurance }
+      };
+    })
+  );
+  const cache = sportCache || getCalendarSportStatsCache(snapshot, garminData);
+  const result = measure('computeCalendarMonthSportStats', () =>
+    computeCalendarMonthSportStats(days, snapshot, garminData, getDateStr, cache)
+  );
+  if (calendarMemo) calendarMemo.set(memoKey, result);
+  return result;
 }
 
 /**
@@ -557,9 +597,13 @@ export function measureRecapWindow({
   garminData = null,
   recapState = null,
   periodId = null,
-  refDate = null
+  refDate = null,
+  perfTimer = null,
+  sportCache = null,
+  calendarMemo = null
 } = {}) {
   if (!snapshot || !window?.start || !window?.end) return emptyMeasure(window);
+  const measure = (name, fn) => (perfTimer?.measure ? perfTimer.measure(name, fn) : fn());
   const grouped = aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
   const byExercise = new Map();
   const repsByDate = new Map();
@@ -616,7 +660,9 @@ export function measureRecapWindow({
     }))
     .sort((a, b) => b.reps - a.reps);
 
-  const cal = calendarLoad(snapshot, garminData, window);
+  const cal = measure('calendarLoad', () =>
+    calendarLoad(snapshot, garminData, window, perfTimer, { sportCache, calendarMemo })
+  );
   const minutes = Number(cal?.otherExerciseMinutes) || 0;
   const totalMinutes = Number(cal?.totalMinutes) || minutes;
   // F2 contrats : trainingDays = union calendrier ; strengthDays = jours à reps > 0
@@ -695,8 +741,116 @@ export function buildPeriodComparisons({
   getExerciseNameById,
   garminData = null,
   recapState = null,
-  athleteIdentity = null
+  athleteIdentity = null,
+  perfTimer = null
 } = {}) {
+  const end = window?.end;
+  const measure = (name, fn) => (perfTimer?.measure ? perfTimer.measure(name, fn) : fn());
+  if (!snapshot || !end) {
+    return { period: emptyMeasure(window), d7: emptyMeasure(window), d30: emptyMeasure(window), d90: emptyMeasure(window) };
+  }
+  if (!window?.start) {
+    const span = period === '2y' ? 730 : period === '1y' ? 365 : period === '6m' ? 183 : period === '3m' ? 92 : period === '30d' ? 30 : 3650;
+    window = { start: addCalendarDays(end, -(span - 1)), end };
+  }
+  const ref = refFromYmd(end);
+  const sportCache = getCalendarSportStatsCache(snapshot, garminData);
+  const calendarMemo = new Map();
+  const winOpts = { snapshot, getExerciseNameById, garminData, perfTimer, sportCache, calendarMemo };
+  const periodM = measure('measureRecapWindow:period', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window,
+      recapState,
+      periodId: period,
+      refDate: ref
+    })
+  );
+  const d7 = measure('measureRecapWindow:d7', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: windowFromEnd(end, 7),
+      periodId: '7d',
+      refDate: ref
+    })
+  );
+  const d30 = measure('measureRecapWindow:d30', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: windowFromEnd(end, 30),
+      periodId: '30d',
+      refDate: ref
+    })
+  );
+  const d90 = measure('measureRecapWindow:d90', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: windowFromEnd(end, 92),
+      periodId: '3m',
+      refDate: ref
+    })
+  );
+  const prev30 = measure('measureRecapWindow:prev30', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: previousWindow(end, 30),
+      periodId: '30d',
+      refDate: refFromYmd(previousWindow(end, 30).end)
+    })
+  );
+  // Spec #24 C1 — baseline de même durée que la fenêtre courante
+  const sameLen = Math.max(1, Number(periodM.spanDays) || 30);
+  const prevSameWin = previousWindow(end, sameLen);
+  const prevSameLength = measure('measureRecapWindow:prevSameLength', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: prevSameWin,
+      periodId: period,
+      refDate: refFromYmd(prevSameWin.end)
+    })
+  );
+  const quarter = windowFromEnd(end, 92);
+  const first30end = addCalendarDays(quarter.start, 29);
+  const first30 = measure('measureRecapWindow:first30', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: { start: quarter.start, end: first30end },
+      periodId: '30d',
+      refDate: refFromYmd(first30end)
+    })
+  );
+  assertWindowMeasureConsistency(periodM, { label: `period:${period}` });
+  assertWindowMeasureConsistency(prevSameLength, { label: `prevSame:${period}` });
+  return {
+    period: periodM,
+    d7,
+    d30,
+    d90,
+    prev30,
+    prevSameLength,
+    first30,
+    identity: athleteIdentity || null,
+    periodId: period,
+    voice: periodVoice(period, periodM.spanDays),
+    question: PERIOD_QUESTIONS[period] || PERIOD_QUESTIONS['7d']
+  };
+}
+
+/**
+ * F7.0 — même résultat que buildPeriodComparisons, avec yield/abort entre
+ * chaque measureRecapWindow (frontière sûre : fenêtres indépendantes).
+ */
+export async function buildPeriodComparisonsAsync(opts = {}) {
+  const coop = opts.coop || {};
+  const perfTimer = opts.perfTimer || null;
+  const measure = (name, fn) => (perfTimer?.measure ? perfTimer.measure(name, fn) : fn());
+  const snapshot = opts.snapshot;
+  let window = opts.window;
+  const period = opts.period || '7d';
+  const getExerciseNameById = opts.getExerciseNameById;
+  const garminData = opts.garminData || null;
+  const recapState = opts.recapState || null;
+  const athleteIdentity = opts.athleteIdentity || null;
   const end = window?.end;
   if (!snapshot || !end) {
     return { period: emptyMeasure(window), d7: emptyMeasure(window), d30: emptyMeasure(window), d90: emptyMeasure(window) };
@@ -706,68 +860,78 @@ export function buildPeriodComparisons({
     window = { start: addCalendarDays(end, -(span - 1)), end };
   }
   const ref = refFromYmd(end);
-  const periodM = measureRecapWindow({
-    snapshot,
-    window,
-    getExerciseNameById,
-    garminData,
-    recapState,
-    periodId: period,
-    refDate: ref
-  });
-  const d7 = measureRecapWindow({
-    snapshot,
-    window: windowFromEnd(end, 7),
-    getExerciseNameById,
-    garminData,
-    periodId: '7d',
-    refDate: ref
-  });
-  const d30 = measureRecapWindow({
-    snapshot,
-    window: windowFromEnd(end, 30),
-    getExerciseNameById,
-    garminData,
-    periodId: '30d',
-    refDate: ref
-  });
-  const d90 = measureRecapWindow({
-    snapshot,
-    window: windowFromEnd(end, 92),
-    getExerciseNameById,
-    garminData,
-    periodId: '3m',
-    refDate: ref
-  });
-  const prev30 = measureRecapWindow({
-    snapshot,
-    window: previousWindow(end, 30),
-    getExerciseNameById,
-    garminData,
-    periodId: '30d',
-    refDate: refFromYmd(previousWindow(end, 30).end)
-  });
-  // Spec #24 C1 — baseline de même durée que la fenêtre courante
+  const sportCache = getCalendarSportStatsCache(snapshot, garminData);
+  const calendarMemo = new Map();
+  const winOpts = { snapshot, getExerciseNameById, garminData, perfTimer, sportCache, calendarMemo };
+
+  await coopGate(coop);
+  const periodM = measure('measureRecapWindow:period', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window,
+      recapState,
+      periodId: period,
+      refDate: ref
+    })
+  );
+  await coopGate(coop);
+  const d7 = measure('measureRecapWindow:d7', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: windowFromEnd(end, 7),
+      periodId: '7d',
+      refDate: ref
+    })
+  );
+  await coopGate(coop);
+  const d30 = measure('measureRecapWindow:d30', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: windowFromEnd(end, 30),
+      periodId: '30d',
+      refDate: ref
+    })
+  );
+  await coopGate(coop);
+  const d90 = measure('measureRecapWindow:d90', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: windowFromEnd(end, 92),
+      periodId: '3m',
+      refDate: ref
+    })
+  );
+  await coopGate(coop);
+  const prev30 = measure('measureRecapWindow:prev30', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: previousWindow(end, 30),
+      periodId: '30d',
+      refDate: refFromYmd(previousWindow(end, 30).end)
+    })
+  );
+  await coopGate(coop);
   const sameLen = Math.max(1, Number(periodM.spanDays) || 30);
   const prevSameWin = previousWindow(end, sameLen);
-  const prevSameLength = measureRecapWindow({
-    snapshot,
-    window: prevSameWin,
-    getExerciseNameById,
-    garminData,
-    periodId: period,
-    refDate: refFromYmd(prevSameWin.end)
-  });
+  const prevSameLength = measure('measureRecapWindow:prevSameLength', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: prevSameWin,
+      periodId: period,
+      refDate: refFromYmd(prevSameWin.end)
+    })
+  );
+  await coopGate(coop);
   const quarter = windowFromEnd(end, 92);
   const first30end = addCalendarDays(quarter.start, 29);
-  const first30 = measureRecapWindow({
-    snapshot,
-    window: { start: quarter.start, end: first30end },
-    getExerciseNameById,
-    garminData,
-    periodId: '30d',
-    refDate: refFromYmd(first30end)
-  });
+  const first30 = measure('measureRecapWindow:first30', () =>
+    measureRecapWindow({
+      ...winOpts,
+      window: { start: quarter.start, end: first30end },
+      periodId: '30d',
+      refDate: refFromYmd(first30end)
+    })
+  );
   assertWindowMeasureConsistency(periodM, { label: `period:${period}` });
   assertWindowMeasureConsistency(prevSameLength, { label: `prevSame:${period}` });
   return {
@@ -823,6 +987,9 @@ function detectDiscoveries(cmp, extras = {}) {
   const restAssoc = extras.restAssoc || null;
   const features = extras.features || {};
   const catalog = extras.catalog || [];
+  const trajPerf = extras.perfTimer || null;
+  const measureTraj = (fn) =>
+    trajPerf?.measure ? trajPerf.measure('buildExerciseTrajectory', fn) : fn();
 
   if (emptyPeriod) {
     const restToday = isToday ? describeRestDay({
@@ -1637,14 +1804,17 @@ function detectDiscoveries(cmp, extras = {}) {
         backReps: p.byMuscle?.[MuscleGroups.BACK]?.reps || 0,
         peer: peer || null
       });
-      const traj = buildExerciseTrajectory({
-        snapshot: extras.snapshot,
-        exerciseId: e.id,
-        exerciseName: e.name,
-        window: p.window,
-        getExerciseNameById: extras.getExerciseNameById || null,
-        mode: 'emergence'
-      });
+      const traj = measureTraj(() =>
+        buildExerciseTrajectory({
+          snapshot: extras.snapshot,
+          exerciseId: e.id,
+          exerciseName: e.name,
+          window: p.window,
+          getExerciseNameById: extras.getExerciseNameById || null,
+          mode: 'emergence',
+          computeScope: extras.computeScope || null
+        })
+      );
       const rendered = renderExerciseTrajectoryCopy(traj, {
         legacyBits: {
           title: legacyTitle,
@@ -1891,14 +2061,17 @@ function detectDiscoveries(cmp, extras = {}) {
         first > 0 ? Math.round(((comparableLead.lastReps - first) / first) * 100) : null;
       const rising = deltaPct != null && deltaPct >= 12;
       const falling = deltaPct != null && deltaPct <= -12;
-      const traj = buildExerciseTrajectory({
-        snapshot: extras.snapshot,
-        exerciseId: comparableLead.id,
-        exerciseName: comparableLead.name,
-        window: p.window,
-        getExerciseNameById: extras.getExerciseNameById || null,
-        mode: 'progress'
-      });
+      const traj = measureTraj(() =>
+        buildExerciseTrajectory({
+          snapshot: extras.snapshot,
+          exerciseId: comparableLead.id,
+          exerciseName: comparableLead.name,
+          window: p.window,
+          getExerciseNameById: extras.getExerciseNameById || null,
+          mode: 'progress',
+          computeScope: extras.computeScope || null
+        })
+      );
       const setLevel = setShifts.acrossLevel(comparableLead.id);
       let mechBit = '';
       if (traj?.ok && traj.setMechanism?.available && traj.setMechanism.before && traj.setMechanism.after) {
@@ -1972,14 +2145,17 @@ function detectDiscoveries(cmp, extras = {}) {
         ? `Surtout, cette progression est désormais consolidée : ${progressLead.aboveOldMean} de tes ${progressLead.last5Count} dernières performances dépassent ton ancien niveau moyen.`
         : `Le record (${fmtInt(progressLead.best)} le ${progressLead.bestDate ? formatDayFr(progressLead.bestDate, true) : '—'}) n'est pas le niveau : le niveau, c'est ce que tu reproduis.`
     }`;
-    const traj = buildExerciseTrajectory({
-      snapshot: extras.snapshot,
-      exerciseId: progressLead.id,
-      exerciseName: progressLead.name,
-      window: p.window,
-      getExerciseNameById: extras.getExerciseNameById || null,
-      mode: 'progress'
-    });
+    const traj = measureTraj(() =>
+      buildExerciseTrajectory({
+        snapshot: extras.snapshot,
+        exerciseId: progressLead.id,
+        exerciseName: progressLead.name,
+        window: p.window,
+        getExerciseNameById: extras.getExerciseNameById || null,
+        mode: 'progress',
+        computeScope: extras.computeScope || null
+      })
+    );
     const rendered = renderExerciseTrajectoryCopy(traj, {
       legacyBits: {
         title: legacyTitle,
@@ -2730,14 +2906,17 @@ function detectDiscoveries(cmp, extras = {}) {
         ? `contre ${fmtInt(structLead.thenReps)} reps (${fmtPct(structLead.thenShare)} de la ${structLead.family}) sur les 30 jours d'avant`
         : `alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant`;
     const structWin = structSrc.window || p.window;
-    const traj = buildExerciseTrajectory({
-      snapshot: extras.snapshot,
-      exerciseId: structLead.id,
-      exerciseName: structLead.name,
-      window: structWin,
-      getExerciseNameById: extras.getExerciseNameById || null,
-      mode: 'emergence'
-    });
+    const traj = measureTraj(() =>
+      buildExerciseTrajectory({
+        snapshot: extras.snapshot,
+        exerciseId: structLead.id,
+        exerciseName: structLead.name,
+        window: structWin,
+        getExerciseNameById: extras.getExerciseNameById || null,
+        mode: 'emergence',
+        computeScope: extras.computeScope || null
+      })
+    );
     const shareLead = `${structLead.name} pèsent désormais ${fmtInt(structLead.nowReps)} reps sur ${structLead.nowDays} séances des 30 derniers jours, soit ${fmtPct(structLead.nowShare)} de ta ${structLead.family}, ${thenBit}.`;
     const legacyTitle =
       structLead.nowDays < 6
@@ -2915,14 +3094,17 @@ function detectDiscoveries(cmp, extras = {}) {
       start: addCalendarDays(p.window?.end || fadeSrc.window?.end, -60),
       end: p.window?.end || fadeSrc.window?.end
     };
-    const fadeTraj = buildExerciseTrajectory({
-      snapshot: extras.snapshot,
-      exerciseId: fadeLead.id,
-      exerciseName: fadeLead.name,
-      window: fadeWin,
-      getExerciseNameById: extras.getExerciseNameById || null,
-      mode: 'progress'
-    });
+    const fadeTraj = measureTraj(() =>
+      buildExerciseTrajectory({
+        snapshot: extras.snapshot,
+        exerciseId: fadeLead.id,
+        exerciseName: fadeLead.name,
+        window: fadeWin,
+        getExerciseNameById: extras.getExerciseNameById || null,
+        mode: 'progress',
+        computeScope: extras.computeScope || null
+      })
+    );
     let fadeExtra = '';
     if (fadeTraj?.ok && fadeTraj.shape?.kind && fadeTraj.shape.earlyMean != null && fadeTraj.shape.lateMean != null) {
       if (fadeTraj.shape.kind === 'steady_decline' || fadeTraj.shape.kind === 'decline_phases') {
@@ -2995,6 +3177,21 @@ function detectDiscoveries(cmp, extras = {}) {
         );
       }
     }
+
+    // Arcs multi-mois (fréquence vs densité) — prioritaire sur les longs horizons.
+    if (isLongVoice(v) || (isMonth && Object.keys(p.repsByDate || {}).length >= 40)) {
+      buildMonthlyVolumeArcDiscoveries(p.repsByDate, {
+        windowEndYmd: p.window?.end || null
+      }).forEach((partial) => out.push(discovery(partial)));
+    }
+  }
+
+  // Interruption de course documentée (données runDays de la fenêtre).
+  if (isLongVoice(v) && Array.isArray(extras.runDays) && extras.runDays.length >= 2) {
+    buildRunningGapDiscoveries(extras.runDays, {
+      windowStartYmd: p.window?.start || null,
+      windowEndYmd: p.window?.end || null
+    }).forEach((partial) => out.push(discovery(partial)));
   }
 
   appendMilestoneDiscoveries(out, extras, v);
@@ -3331,9 +3528,11 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     journey: [
       'disc_gtg_unplanned_progress',
       P36_KINDS.HABIT_STABILITY,
+      'disc_monthly_volume_arc',
       'disc_best_month',
       'disc_exercise_progress',
       'disc_quarter_profile',
+      'disc_running_gap',
       'disc_sleep_zones',
       'disc_sleep_j2'
     ]
@@ -3359,7 +3558,9 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     ],
     journey: [
       'disc_gtg_unplanned_progress',
+      'disc_monthly_volume_arc',
       P36_KINDS.HABIT_STABILITY,
+      'disc_running_gap',
       'disc_sleep_quarter',
       'disc_best_month',
       'disc_sleep_freq',
@@ -3374,6 +3575,8 @@ PERIOD_DISCOVERY_PRIORITY.year = {
   trajectory: PERIOD_DISCOVERY_PRIORITY.long.trajectory,
   journey: [
     'disc_gtg_unplanned_progress',
+    'disc_monthly_volume_arc',
+    'disc_running_gap',
     'disc_sleep_quarter',
     'disc_best_month',
     'disc_exercise_progress',
@@ -3410,6 +3613,8 @@ const DISCOVERY_RIVALS = [
   // Shift (évolution) peut coexister avec contrast seulement si le builder P3.2b
   // n’a pas déjà appliqué la préférence shift→contrast ; pas de rivalité dure ici.
   ['disc_anchor', 'disc_freq_continuity'],
+  // Arc mensuel explicatif > portrait « pas seulement un total » / quarter_arc flou
+  ['disc_monthly_volume_arc', 'disc_volume_shape', 'disc_quarter_arc'],
   ['disc_quarter_arc', 'disc_quarter_profile'],
   ['disc_exercise_share', 'disc_repertoire'],
   ['disc_family_fade', 'disc_emergence'],
@@ -3476,7 +3681,8 @@ const CROSS_NATURE_RIVALS = [
   // P3.5 : hors classique ≠ hors horaires — pas de rivalité cross-nature avec unplanned.
   [P35_KINDS.GTG_COEXISTENCE, P35_KINDS.GTG_OUTSIDE_CLASSIC],
   [P36_KINDS.EXERCISE_FREQ, P36_KINDS.EXERCISE_VOLUME, 'disc_exercise_share'],
-  [P36_KINDS.HABIT_STABILITY, 'disc_freq_continuity', 'disc_anchor']
+  [P36_KINDS.HABIT_STABILITY, 'disc_freq_continuity', 'disc_anchor'],
+  ['disc_monthly_volume_arc', 'disc_volume_shape', 'disc_quarter_arc']
 ];
 
 function rivalBlocked(kind, usedKinds) {
@@ -3500,8 +3706,12 @@ function discoveryIdentity(d) {
  * Valeur informative réelle — départage doublons et portraits vs trajectoires.
  * Utilise rawScore (avant mémoire) si fourni, pour ne pas écraser une analyse riche.
  * E0 : fiabilité haute ≠ publication ; methodology_limit et composition descriptive sont pénalisées.
+ * F5 : ajustements éditoriaux (preuve, horizon, explication, descriptifs faibles, noms).
+ * @param {object} d
+ * @param {string} [voiceKey='week']
+ * @param {{ attachEditorial?: boolean }} [opts]
  */
-export function discoveryInformativeValue(d) {
+export function discoveryInformativeValue(d, voiceKey = 'week', opts = {}) {
   const baseScore = Number(d?.rawScore != null ? d.rawScore : d?.score) || 0;
   let v = baseScore;
   const m = d?.metrics || {};
@@ -3528,6 +3738,18 @@ export function discoveryInformativeValue(d) {
       v += 3;
     }
   }
+  // Arcs historiques multi-mois / course : forte valeur informative
+  if (d?.kind === 'disc_monthly_volume_arc') v += 16;
+  if (d?.kind === 'disc_running_gap') v += 12;
+  // Portraits « pas seulement un total » sans mécanisme → cèdent la place
+  if (
+    d?.kind === 'disc_volume_shape' &&
+    !m.trajectoryOk &&
+    /pas seulement un total/i.test(String(d?.title || ''))
+  ) {
+    v -= 14;
+  }
+  if (d?.kind === 'disc_quarter_arc' && !m.arcKind) v -= 6;
   // Portraits composition / densité : descriptifs — ne gagnent pas contre une trajectoire riche
   if (COMPOSITION_STORY_KINDS.includes(d?.kind) && !m.trajectoryOk) v -= 8;
   if (d?.kind === 'disc_density' && !m.trajectoryOk) v -= 4;
@@ -3537,7 +3759,14 @@ export function discoveryInformativeValue(d) {
   if (d?.kind === P32B_KINDS.EXPOSURE_CONTRAST && Number(m.relativeGap) > 0 && Number(m.relativeGap) < 0.45) {
     v -= 4;
   }
-  return v;
+
+  const { value, editorial } = applyEditorialInformativeValue(v, d, voiceKey);
+  if (opts.attachEditorial && d && typeof d === 'object') {
+    d._editorialValue = editorial;
+    d._phenomenonId = editorial.phenomenonId;
+    d._phenomenon = editorial.phenomenon;
+  }
+  return value;
 }
 
 function findRivalInSelected(kind, selectedList) {
@@ -3577,13 +3806,22 @@ function inferDropReason(d, selected, famCaps, meta = {}) {
 
 export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = null, voiceKey = 'week') {
   const displaceLog = [];
+  const editorialDecisions = [];
+  const poolSize = (discoveries || []).length;
   const scored = (discoveries || []).map((d) => {
     const rawScore = Number(d.score) || 0;
     const base = Math.round(rawScore * memoryFactor(insightHistory, d.kind, Date.now(), d));
     const contentClass = resolveContentClass(d);
     const withBase = { ...d, rawScore, score: base, contentClass };
-    const info = discoveryInformativeValue(withBase);
-    return { ...withBase, informativeValue: info, score: base };
+    const info = discoveryInformativeValue(withBase, voiceKey, { attachEditorial: true });
+    return {
+      ...withBase,
+      informativeValue: info,
+      score: base,
+      _editorialValue: withBase._editorialValue,
+      _phenomenonId: withBase._phenomenonId || phenomenonIdentity(withBase),
+      _phenomenon: withBase._phenomenon || classifyPhenomenon(withBase)
+    };
   });
   const byIdentity = new Map();
   scored.forEach((d) => {
@@ -3668,6 +3906,24 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       };
     }
 
+    // F5 — rivalité de phénomène / contradiction pack / caps épisode / noms
+    const editorial = editorialCanTake(d, flatSelected(), voiceKey);
+    if (!editorial.ok) {
+      return {
+        ok: false,
+        reason: editorial.reason,
+        blockedBy: editorial.blockedBy || null,
+        phenomenonId: editorial.phenomenonId || d._phenomenonId
+      };
+    }
+    if (editorial.displace) {
+      return {
+        ok: true,
+        displace: editorial.displace,
+        reason: editorial.reason || 'phenomenon_outranked'
+      };
+    }
+
     const seenFamily = usedFamilyByNature[nature].get(d.family) || 0;
     // Famille déjà peuplée : laisser passer une trajectoire nettement plus informative
     if (d.family && seenFamily >= 2 && (d.score || 0) < 86 && info < 95) {
@@ -3687,12 +3943,28 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     const nature = d.nature || 'trajectory';
     const sig = signalFamilyOfKind(d.kind);
     const cap = famCaps[nature]?.[sig] ?? 0;
-    if ((familyCount[nature]?.[sig] || 0) >= cap) return false;
-    if (sig === 'sleep' && sleepTaken >= sleepBudget) return false;
+    if ((familyCount[nature]?.[sig] || 0) >= cap) {
+      d._dropHint = 'cap';
+      return false;
+    }
+    if (sig === 'sleep' && sleepTaken >= sleepBudget) {
+      d._dropHint = 'sleep_budget';
+      return false;
+    }
     const decision = canTake(d);
     if (!decision.ok) {
       d._dropHint = decision.reason;
       d._blockedBy = decision.blockedBy || null;
+      editorialDecisions.push({
+        action: 'reject',
+        identity: discoveryIdentity(d),
+        kind: d.kind,
+        reason: decision.reason,
+        blockedBy: decision.blockedBy || null,
+        phenomenonId: decision.phenomenonId || d._phenomenonId || null,
+        informativeValue: d.informativeValue,
+        editorialFactors: d._editorialValue?.factors || []
+      });
       return false;
     }
     if (decision.displace) {
@@ -3701,10 +3973,19 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
         dropped: discoveryIdentity(decision.displace),
         reason: decision.reason,
         keptValue: d.informativeValue,
+        droppedValue: decision.displace.informativeValue,
+        phenomenonId: d._phenomenonId || null
+      });
+      editorialDecisions.push({
+        action: 'displace',
+        kept: discoveryIdentity(d),
+        dropped: discoveryIdentity(decision.displace),
+        reason: decision.reason,
+        keptValue: d.informativeValue,
         droppedValue: decision.displace.informativeValue
       });
       removeFromSelection(decision.displace);
-      decision.displace._dropHint = 'outranked_by_richer';
+      decision.displace._dropHint = decision.reason || 'outranked_by_richer';
       decision.displace._blockedBy = d.kind;
     }
     byAngle[nature].push(d);
@@ -3716,6 +3997,15 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     }
     familyCount[nature][sig] += 1;
     if (sig === 'sleep') sleepTaken += 1;
+    editorialDecisions.push({
+      action: 'select',
+      identity: discoveryIdentity(d),
+      kind: d.kind,
+      informativeValue: d.informativeValue,
+      phenomenonId: d._phenomenonId || null,
+      phenomenon: d._phenomenon || null,
+      editorialFactors: d._editorialValue?.factors || []
+    });
     return true;
   };
 
@@ -3737,9 +4027,40 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       if ((d.nature || 'trajectory') !== angle) return;
       if ((familyCount[angle].milestone || 0) >= cap) return;
       if (usedKind.has(d.kind)) return;
+      if (usedIdentity.has(discoveryIdentity(d))) return;
       if ((d.score || 0) < 44) return;
+      // F5 : jalons (ex. disc_ms_return) soumis aux rivalités de phénomène
+      const editorial = editorialCanTake(d, flatSelected(), voiceKey);
+      if (!editorial.ok) {
+        d._dropHint = editorial.reason;
+        d._blockedBy = editorial.blockedBy || null;
+        editorialDecisions.push({
+          action: 'reject_milestone',
+          identity: discoveryIdentity(d),
+          kind: d.kind,
+          reason: editorial.reason,
+          blockedBy: editorial.blockedBy || null,
+          phenomenonId: editorial.phenomenonId || d._phenomenonId || null,
+          informativeValue: d.informativeValue
+        });
+        return;
+      }
+      if (editorial.displace) {
+        displaceLog.push({
+          kept: discoveryIdentity(d),
+          dropped: discoveryIdentity(editorial.displace),
+          reason: editorial.reason,
+          keptValue: d.informativeValue,
+          droppedValue: editorial.displace.informativeValue,
+          phenomenonId: d._phenomenonId || null
+        });
+        removeFromSelection(editorial.displace);
+        editorial.displace._dropHint = editorial.reason || 'phenomenon_outranked';
+        editorial.displace._blockedBy = d.kind;
+      }
       byAngle[angle].push(d);
       usedKind.add(d.kind);
+      usedIdentity.add(discoveryIdentity(d));
       usedKindByNature[angle].add(d.kind);
       if (d.family) {
         usedFamilyByNature[angle].set(
@@ -3748,8 +4069,68 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
         );
       }
       familyCount[angle].milestone += 1;
+      editorialDecisions.push({
+        action: 'select_milestone',
+        identity: discoveryIdentity(d),
+        kind: d.kind,
+        informativeValue: d.informativeValue,
+        phenomenonId: d._phenomenonId || null,
+        phenomenon: d._phenomenon || null
+      });
     });
   });
+
+  // F5 — abstention : ne pas saturer avec des descriptifs faibles s’il existe déjà
+  // des cartes analytiques. Si le pack n’a que des observations simples, on les
+  // conserve (utilité > page vide), sauf sous un plancher absolu.
+  const ABSTAIN_IV = { today: 42, week: 48, month: 50, long: 52, year: 52 };
+  const HARD_FLOOR = 32;
+  const minPublish = ABSTAIN_IV[voiceKey] ?? 48;
+  const current = flatSelected();
+  const hasStrong = current.some(
+    (d) =>
+      !isWeakDescriptiveCard(d) ||
+      Boolean(d.metrics?.trajectoryOk) ||
+      Boolean(d.metrics?.composedOk) ||
+      (d.informativeValue || 0) >= minPublish + 12
+  );
+  if (hasStrong) {
+    current.forEach((d) => {
+      if (!isWeakDescriptiveCard(d)) return;
+      if ((d.informativeValue || 0) >= minPublish) return;
+      if (d.metrics?.trajectoryOk || d.metrics?.composedOk) return;
+      removeFromSelection(d);
+      d._dropHint = 'abstain_low_value';
+      editorialDecisions.push({
+        action: 'abstain',
+        identity: discoveryIdentity(d),
+        kind: d.kind,
+        reason: 'abstain_low_value',
+        informativeValue: d.informativeValue
+      });
+    });
+  } else {
+    // Pack uniquement faible : garder au plus 2 cartes au-dessus du plancher.
+    const keepIds = new Set(
+      [...current]
+        .filter((d) => (d.informativeValue || 0) >= HARD_FLOOR)
+        .sort((a, b) => (b.informativeValue || 0) - (a.informativeValue || 0))
+        .slice(0, 2)
+        .map((d) => discoveryIdentity(d))
+    );
+    current.forEach((d) => {
+      if (keepIds.has(discoveryIdentity(d))) return;
+      removeFromSelection(d);
+      d._dropHint = 'abstain_low_value';
+      editorialDecisions.push({
+        action: 'abstain',
+        identity: discoveryIdentity(d),
+        kind: d.kind,
+        reason: 'abstain_empty_pack',
+        informativeValue: d.informativeValue
+      });
+    });
+  }
 
   // Collecter les notes pour les limites non prises via take()
   unique.forEach((d) => {
@@ -3770,15 +4151,33 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
         forcedReason: d._dropHint || (isMethodologyLimitDiscovery(d) ? 'methodology_demoted' : null)
       }),
       blockedBy: d._blockedBy || null,
-      informativeValue: d.informativeValue
+      informativeValue: d.informativeValue,
+      phenomenonId: d._phenomenonId || null,
+      phenomenon: d._phenomenon || null
     }));
+
+  const rejectedByReason = dropped.reduce((acc, d) => {
+    acc[d.reason] = (acc[d.reason] || 0) + 1;
+    return acc;
+  }, {});
 
   return {
     selected,
     dropped,
     displaceLog,
     compositionStoryKinds: COMPOSITION_STORY_KINDS,
-    reliabilityNotes
+    reliabilityNotes,
+    /** F5 — comptages disjoints (pas de double addition multi-étapes). */
+    counts: {
+      pool: poolSize,
+      eligible: unique.length,
+      selected: selected.length,
+      rejected: dropped.length,
+      identityCollapsed: Math.max(0, poolSize - unique.length)
+    },
+    rejectedByReason,
+    editorialDecisions,
+    voiceKey
   };
 }
 
@@ -3814,7 +4213,7 @@ function refillAfterGate(selected, pool, voiceKey) {
   });
   [...(pool || [])]
     .filter((card) => card.reason === 'cap' && !isMethodologyLimitDiscovery(card))
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .sort((a, b) => (b.informativeValue || b.score || 0) - (a.informativeValue || a.score || 0))
     .forEach((card) => {
       const identity = discoveryIdentity(card);
       if (seen.has(identity)) return;
@@ -3823,6 +4222,26 @@ function refillAfterGate(selected, pool, voiceKey) {
       if ((counts[nature][sig] || 0) >= (famCaps[nature]?.[sig] ?? 0)) return;
       const seenFamily = familyCount[nature].get(card.family) || 0;
       if (card.family && seenFamily >= 2 && (card.score || 0) < 86) return;
+      // F5 : le refill ne doit pas réintroduire un rival / contradiction / anonyme
+      const editorial = editorialCanTake(card, kept, voiceKey);
+      if (!editorial.ok) return;
+      if (editorial.displace) {
+        const victimId = discoveryIdentity(editorial.displace);
+        const idx = kept.findIndex((c) => discoveryIdentity(c) === victimId);
+        if (idx >= 0) {
+          const victim = kept[idx];
+          kept.splice(idx, 1);
+          seen.delete(victimId);
+          const vNature = victim.nature || 'trajectory';
+          const vSig = signalFamilyOfKind(victim.kind);
+          counts[vNature][vSig] = Math.max(0, (counts[vNature][vSig] || 1) - 1);
+          if (victim.family) {
+            const n = (familyCount[vNature].get(victim.family) || 1) - 1;
+            if (n <= 0) familyCount[vNature].delete(victim.family);
+            else familyCount[vNature].set(victim.family, n);
+          }
+        }
+      }
       const gated = applyEditorialGate([card], { voiceKey });
       if (!gated.length) return;
       kept.push(gated[0]);
@@ -3834,14 +4253,31 @@ function refillAfterGate(selected, pool, voiceKey) {
 }
 
 export function buildPeriodDiscoveryBundle(opts = {}) {
-  const comparisons = buildPeriodComparisons(opts);
+  if (typeof opts.shouldAbort === 'function' && opts.shouldAbort()) {
+    throw makeRecapComputeAbort();
+  }
   const end = opts.window?.end;
-  const catalog = buildSessionCatalog({
-    snapshot: opts.snapshot,
-    getExerciseNameById: opts.getExerciseNameById,
-    garminData: opts.garminData,
-    endYmd: end
-  });
+  const computeScope = opts.computeScope || null;
+  const perf = opts.perfTimer || null;
+  const pre = opts.precomputed || null;
+  const measure = (name, fn) => (perf?.measure ? perf.measure(name, fn) : fn());
+  const comparisons =
+    pre?.comparisons ||
+    measure('comparisons', () => buildPeriodComparisons({ ...opts, perfTimer: perf }));
+  if (typeof opts.shouldAbort === 'function' && opts.shouldAbort()) {
+    throw makeRecapComputeAbort();
+  }
+  const catalog =
+    pre?.catalog ||
+    measure('catalog', () =>
+      buildSessionCatalog({
+        snapshot: opts.snapshot,
+        getExerciseNameById: opts.getExerciseNameById,
+        garminData: opts.garminData,
+        endYmd: end,
+        computeScope
+      })
+    );
   const catalogPairs = pairSessionsWithNights(catalog);
   const windowStart = opts.window?.start || '';
   const journeyStart = end ? addCalendarDays(end, -91) : null;
@@ -3863,46 +4299,66 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   // (ex. sleep_cardio) — pas tout l’historique Garmin.
   const allRunDays = collectRunDays(opts.garminData);
   const windowRunDays = filterRunDaysToWindow(allRunDays, opts.window);
-  const extras = {
-    baselines: buildExerciseBaselines({
+  const baselines =
+    pre?.baselines ||
+    measure('baselines', () =>
+      buildExerciseBaselines({
+        snapshot: opts.snapshot,
+        endYmd: end,
+        getExerciseNameById: opts.getExerciseNameById,
+        computeScope
+      })
+    );
+  const extras =
+    pre?.extras ||
+    measure('extrasSetup', () => ({
+      baselines,
+      comparable: findComparableSessions(catalog, focusDate),
+      sleepAssoc: computeSleepPerformanceAssociation(catalog),
+      sleepContext: sleepContextForDate(opts.garminData, focusDate, catalog),
+      restAssoc: computeRestPerformanceAssociation(catalog),
+      features: opts.features || null,
+      sleepCandidates: publishSleepCandidates(catalog, {
+        runDays: windowRunDays,
+        snapshot: opts.snapshot
+      }),
+      catalog,
       snapshot: opts.snapshot,
-      endYmd: end,
-      getExerciseNameById: opts.getExerciseNameById
-    }),
-    comparable: findComparableSessions(catalog, focusDate),
-    sleepAssoc: computeSleepPerformanceAssociation(catalog),
-    sleepContext: sleepContextForDate(opts.garminData, focusDate, catalog),
-    restAssoc: computeRestPerformanceAssociation(catalog),
-    features: opts.features || null,
-    sleepCandidates: publishSleepCandidates(catalog, {
-      runDays: windowRunDays,
-      snapshot: opts.snapshot
-    }),
-    catalog,
-    snapshot: opts.snapshot,
-    window: opts.window,
-    garminData: opts.garminData,
-    getExerciseNameById: opts.getExerciseNameById,
-    profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
-    activeProgram: opts.activeProgram || null,
-    allNights,
-    sleepWindowFacts: publishWindowSleepFacts({
-      trainedPairs: trainedInWindow,
+      window: opts.window,
+      garminData: opts.garminData,
+      getExerciseNameById: opts.getExerciseNameById,
+      profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
+      activeProgram: opts.activeProgram || null,
+      computeScope,
+      perfTimer: perf,
       allNights,
-      vs: comparisons.voice?.key === 'week' ? 'nights' : 'sessions'
-    }),
-    sleepJourneyFacts: publishWindowSleepFacts({
-      trainedPairs: journeyPairs,
-      allNights: journeyNights,
-      vs: 'sessions'
-    })
-  };
-  const sleepRaw = buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog });
-  const programAdherenceRaw = buildProgramAdherenceDiscoveries({
-    snapshot: opts.snapshot,
-    window: opts.window,
-    getExerciseNameById: opts.getExerciseNameById || null
-  }).map((card) =>
+      sleepWindowFacts: publishWindowSleepFacts({
+        trainedPairs: trainedInWindow,
+        allNights,
+        vs: comparisons.voice?.key === 'week' ? 'nights' : 'sessions'
+      }),
+      sleepJourneyFacts: publishWindowSleepFacts({
+        trainedPairs: journeyPairs,
+        allNights: journeyNights,
+        vs: 'sessions'
+      })
+    }));
+  const sleepRaw =
+    pre?.sleepRaw ||
+    measure('sleepRhythm', () =>
+      buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog })
+    );
+  const programAdherenceCards =
+    pre?.programAdherenceCards ||
+    measure('programAdherence', () =>
+      buildProgramAdherenceDiscoveries({
+        snapshot: opts.snapshot,
+        window: opts.window,
+        getExerciseNameById: opts.getExerciseNameById || null,
+        computeScope
+      })
+    );
+  const programAdherenceRaw = programAdherenceCards.map((card) =>
     discovery({
       kind: card.kind,
       nature: card.nature,
@@ -3916,13 +4372,17 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     })
   );
   /** P3.2b — toujours calculé (Phase 1) ; injection pool contrôlée (Phase 2). */
-  const p32bPack = buildP32bMuscleDiscoveries({
-    snapshot: opts.snapshot,
-    window: opts.window,
-    getExerciseNameById: opts.getExerciseNameById || null,
-    nameById: opts.nameById || null,
-    publishPlanVsActual: opts.publishP32bPlanVsActual !== false
-  });
+  const p32bPack =
+    pre?.p32bPack ||
+    measure('p32b', () =>
+      buildP32bMuscleDiscoveries({
+        snapshot: opts.snapshot,
+        window: opts.window,
+        getExerciseNameById: opts.getExerciseNameById || null,
+        nameById: opts.nameById || null,
+        publishPlanVsActual: opts.publishP32bPlanVsActual !== false
+      })
+    );
   // Phase 2 : activé par défaut après rejeu oct. (opt-out : includeP32bMuscleDiscoveries: false).
   const includeP32b = opts.includeP32bMuscleDiscoveries !== false;
   const p32bRaw = includeP32b
@@ -3943,10 +4403,13 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   /** P3.4 — révisions structurelles ; opt-out : includeP34RevisionDiscoveries: false. */
   const includeP34 = opts.includeP34RevisionDiscoveries !== false;
   const p34Pack = includeP34
-    ? buildP34RevisionDiscoveries({
-        snapshot: opts.snapshot,
-        window: opts.window
-      })
+    ? pre?.p34Pack ||
+      measure('p34', () =>
+        buildP34RevisionDiscoveries({
+          snapshot: opts.snapshot,
+          window: opts.window
+        })
+      )
     : { discoveries: [] };
   const p34Raw = (p34Pack.discoveries || []).map((card) =>
     discovery({
@@ -3964,13 +4427,16 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   /** P3.5 — GTG × classique / écarts / ressenti ; opt-out : includeP35Discoveries: false. */
   const includeP35 = opts.includeP35Discoveries !== false;
   const p35Pack = includeP35
-    ? buildP35Discoveries({
-        snapshot: opts.snapshot,
-        window: opts.window,
-        liveActiveProgram: opts.liveActiveProgram || null,
-        getExerciseNameById: opts.getExerciseNameById || null,
-        includeP35Discoveries: true
-      })
+    ? pre?.p35Pack ||
+      measure('p35', () =>
+        buildP35Discoveries({
+          snapshot: opts.snapshot,
+          window: opts.window,
+          liveActiveProgram: opts.liveActiveProgram || null,
+          getExerciseNameById: opts.getExerciseNameById || null,
+          includeP35Discoveries: true
+        })
+      )
     : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
   const p35Raw = (p35Pack.discoveries || []).map((card) =>
     discovery({
@@ -3991,14 +4457,17 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   /** P3.6 — habitudes / weekday ; opt-out : includeP36Discoveries: false. */
   const includeP36 = opts.includeP36Discoveries !== false;
   const p36Pack = includeP36
-    ? buildP36Discoveries({
-        snapshot: opts.snapshot,
-        window: opts.window,
-        todayYmd: opts.todayYmd || null,
-        liveActiveProgram: opts.liveActiveProgram || null,
-        getExerciseNameById: opts.getExerciseNameById || null,
-        includeP36Discoveries: true
-      })
+    ? pre?.p36Pack ||
+      measure('p36', () =>
+        buildP36Discoveries({
+          snapshot: opts.snapshot,
+          window: opts.window,
+          todayYmd: opts.todayYmd || null,
+          liveActiveProgram: opts.liveActiveProgram || null,
+          getExerciseNameById: opts.getExerciseNameById || null,
+          includeP36Discoveries: true
+        })
+      )
     : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
   const p36Raw = (p36Pack.discoveries || []).map((card) =>
     discovery({
@@ -4017,18 +4486,22 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     })
   );
   const rawAll = [
-    ...detectDiscoveries(comparisons, extras),
-    ...rewriteSleepDiscoveries(sleepRaw, allNights),
-    ...buildThreadDiscoveries({
-      comparisons,
-      catalog,
-      snapshot: opts.snapshot
-    }),
-    ...buildGtgUnplannedDiscoveries({
-      snapshot: opts.snapshot,
-      window: opts.window,
-      profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
-    }),
+    ...measure('detectDiscoveries', () => detectDiscoveries(comparisons, extras)),
+    ...measure('rewriteSleep', () => rewriteSleepDiscoveries(sleepRaw, allNights)),
+    ...measure('threads', () =>
+      buildThreadDiscoveries({
+        comparisons,
+        catalog,
+        snapshot: opts.snapshot
+      })
+    ),
+    ...measure('gtgUnplanned', () =>
+      buildGtgUnplannedDiscoveries({
+        snapshot: opts.snapshot,
+        window: opts.window,
+        profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
+      })
+    ),
     ...programAdherenceRaw,
     ...p32bRaw,
     ...p34Raw,
@@ -4049,11 +4522,17 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   const scoped = filterDiscoveriesByPeriodScope(rawAll, activityCtx);
   // F3 — compose preuves structurées ; F4 — narration + polish (sans retirer du pool avant E0).
   // N’altère ni kind ni scores E0 (informativeValue inchangé).
-  const enriched = enrichDiscoveriesWithComposedEvidence(scoped.kept, {
-    getExerciseNameById: opts.getExerciseNameById || null,
-    applyNarration: opts.applyF4Narration !== false
-  });
-  const all = polishDiscoveriesProse(enriched);
+  const enriched = measure('f3Enrich', () =>
+    enrichDiscoveriesWithComposedEvidence(scoped.kept, {
+      getExerciseNameById: opts.getExerciseNameById || null,
+      applyNarration: opts.applyF4Narration !== false
+    })
+  );
+  const polished = measure('f4Polish', () => polishDiscoveriesProse(enriched));
+  // F5.1 — réparer « un mouvement » via id historique / banque (sans inventer d’alias)
+  const all = polished.map((d) =>
+    withRepairedDisplayName(d, opts.getExerciseNameById || null)
+  );
   const editorialTrace = all
     .map((d) => {
       const v = editorialValidateDiscovery(d, { voiceKey: comparisons.voice?.key });
@@ -4061,10 +4540,12 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       return { kind: d.kind, title: d.title, rejects: v.rejects, warnings: v.warnings };
     })
     .filter(Boolean);
-  const traced = selectPeriodDiscoveriesWithTrace(
-    all,
-    opts.insightHistory || null,
-    comparisons.voice?.key || 'week'
+  const traced = measure('e0f5Select', () =>
+    selectPeriodDiscoveriesWithTrace(
+      all,
+      opts.insightHistory || null,
+      comparisons.voice?.key || 'week'
+    )
   );
   const voiceKey = comparisons.voice?.key || 'week';
   const gated = applyEditorialGate(traced.selected, { voiceKey });
@@ -4161,12 +4642,21 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
         kind: d.kind,
         identity: discoveryIdentity(d),
         contentClass: resolveContentClass(d),
-        informativeValue: d.informativeValue ?? discoveryInformativeValue(d),
+        informativeValue: d.informativeValue ?? discoveryInformativeValue(d, voiceKey),
         trajectoryOk: Boolean(d.metrics?.trajectoryOk),
         primaryStory: d.metrics?.trajectoryPrimaryStory || null,
         composedOk: Boolean(d.metrics?.composedOk),
-        composedFactCount: d.metrics?.composedFactCount ?? null
+        composedFactCount: d.metrics?.composedFactCount ?? null,
+        phenomenonId: d._phenomenonId || phenomenonIdentity(d),
+        phenomenon: d._phenomenon || classifyPhenomenon(d),
+        editorialFactors: d._editorialValue?.factors || null
       })),
+      f5: {
+        counts: traced.counts || null,
+        rejectedByReason: traced.rejectedByReason || null,
+        editorialDecisions: (traced.editorialDecisions || []).slice(0, 80),
+        displaceLog: traced.displaceLog || []
+      },
       composedPool: {
         trajectoryOk: all.filter((d) => d.metrics?.trajectoryOk).length,
         composedOk: all.filter((d) => d.metrics?.composedOk).length,
@@ -4191,9 +4681,192 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
             title: d.title
           })),
         editorialTrace: editorialTrace.slice(0, 40)
-      }
+      },
+      f6: computeScope
+        ? {
+            scopeId: computeScope.id,
+            counters: { ...computeScope.counters }
+          }
+        : null
     }
   };
+}
+
+/**
+ * F7.0 — même bundle analytique que buildPeriodDiscoveryBundle, avec
+ * coopération (yield + abort) entre comparaisons / producteurs indépendants.
+ * Préserve ordre, identités, preuves, fenêtres, scores, rivalités, E0/F5, F4.
+ */
+export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
+  const coop = opts.coop || {};
+  const end = opts.window?.end;
+  const computeScope = opts.computeScope || null;
+  const perf = opts.perfTimer || null;
+  const measure = (name, fn) => (perf?.measure ? perf.measure(name, fn) : fn());
+
+  await coopGate(coop);
+  const comparisons = await buildPeriodComparisonsAsync({
+    ...opts,
+    perfTimer: perf,
+    coop
+  });
+
+  await coopGate(coop);
+  const catalog = measure('catalog', () =>
+    buildSessionCatalog({
+      snapshot: opts.snapshot,
+      getExerciseNameById: opts.getExerciseNameById,
+      garminData: opts.garminData,
+      endYmd: end,
+      computeScope
+    })
+  );
+  const catalogPairs = pairSessionsWithNights(catalog);
+  const windowStart = opts.window?.start || '';
+  const journeyStart = end ? addCalendarDays(end, -91) : null;
+  const trainedInWindow = catalogPairs.filter(
+    (s) => s.date >= windowStart && s.date <= (end || '9999')
+  );
+  const journeyPairs = journeyStart
+    ? catalogPairs.filter((s) => s.date >= journeyStart && s.date <= (end || '9999'))
+    : catalogPairs;
+  const allNights = extractSleepNightsInWindow(opts.garminData, opts.window?.start, end);
+  const journeyNights = journeyStart
+    ? extractSleepNightsInWindow(opts.garminData, journeyStart, end)
+    : allNights;
+  const focusDate =
+    comparisons.voice?.key === 'today'
+      ? end
+      : comparisons.period?.peakDay?.date || end;
+  const allRunDays = collectRunDays(opts.garminData);
+  const windowRunDays = filterRunDaysToWindow(allRunDays, opts.window);
+
+  await coopGate(coop);
+  const baselines = measure('baselines', () =>
+    buildExerciseBaselines({
+      snapshot: opts.snapshot,
+      endYmd: end,
+      getExerciseNameById: opts.getExerciseNameById,
+      computeScope
+    })
+  );
+  const extras = measure('extrasSetup', () => ({
+    baselines,
+    comparable: findComparableSessions(catalog, focusDate),
+    sleepAssoc: computeSleepPerformanceAssociation(catalog),
+    sleepContext: sleepContextForDate(opts.garminData, focusDate, catalog),
+    restAssoc: computeRestPerformanceAssociation(catalog),
+    features: opts.features || null,
+    sleepCandidates: publishSleepCandidates(catalog, {
+      runDays: windowRunDays,
+      snapshot: opts.snapshot
+    }),
+    catalog,
+    snapshot: opts.snapshot,
+    window: opts.window,
+    garminData: opts.garminData,
+    getExerciseNameById: opts.getExerciseNameById,
+    profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
+    activeProgram: opts.activeProgram || null,
+    computeScope,
+    perfTimer: perf,
+    allNights,
+    sleepWindowFacts: publishWindowSleepFacts({
+      trainedPairs: trainedInWindow,
+      allNights,
+      vs: comparisons.voice?.key === 'week' ? 'nights' : 'sessions'
+    }),
+    sleepJourneyFacts: publishWindowSleepFacts({
+      trainedPairs: journeyPairs,
+      allNights: journeyNights,
+      vs: 'sessions'
+    })
+  }));
+
+  await coopGate(coop);
+  const sleepRaw = measure('sleepRhythm', () =>
+    buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog })
+  );
+
+  await coopGate(coop);
+  const programAdherenceCards = measure('programAdherence', () =>
+    buildProgramAdherenceDiscoveries({
+      snapshot: opts.snapshot,
+      window: opts.window,
+      getExerciseNameById: opts.getExerciseNameById || null,
+      computeScope
+    })
+  );
+
+  await coopGate(coop);
+  const p32bPack = measure('p32b', () =>
+    buildP32bMuscleDiscoveries({
+      snapshot: opts.snapshot,
+      window: opts.window,
+      getExerciseNameById: opts.getExerciseNameById || null,
+      nameById: opts.nameById || null,
+      publishPlanVsActual: opts.publishP32bPlanVsActual !== false
+    })
+  );
+
+  await coopGate(coop);
+  const includeP34 = opts.includeP34RevisionDiscoveries !== false;
+  const p34Pack = includeP34
+    ? measure('p34', () =>
+        buildP34RevisionDiscoveries({
+          snapshot: opts.snapshot,
+          window: opts.window
+        })
+      )
+    : { discoveries: [] };
+
+  await coopGate(coop);
+  const includeP35 = opts.includeP35Discoveries !== false;
+  const p35Pack = includeP35
+    ? measure('p35', () =>
+        buildP35Discoveries({
+          snapshot: opts.snapshot,
+          window: opts.window,
+          liveActiveProgram: opts.liveActiveProgram || null,
+          getExerciseNameById: opts.getExerciseNameById || null,
+          includeP35Discoveries: true
+        })
+      )
+    : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
+
+  await coopGate(coop);
+  const includeP36 = opts.includeP36Discoveries !== false;
+  const p36Pack = includeP36
+    ? measure('p36', () =>
+        buildP36Discoveries({
+          snapshot: opts.snapshot,
+          window: opts.window,
+          todayYmd: opts.todayYmd || null,
+          liveActiveProgram: opts.liveActiveProgram || null,
+          getExerciseNameById: opts.getExerciseNameById || null,
+          includeP36Discoveries: true
+        })
+      )
+    : { discoveries: [], metrics: null, abstentions: ['opt_out'] };
+
+  await coopGate(coop);
+  // detectDiscoveries + F3/F4/E0/F5 : encore sync (secondaire vs p36/calendrier sur longues fenêtres)
+  return buildPeriodDiscoveryBundle({
+    ...opts,
+    shouldAbort: coop.shouldAbort || opts.shouldAbort,
+    precomputed: {
+      comparisons,
+      catalog,
+      baselines,
+      extras,
+      sleepRaw,
+      programAdherenceCards,
+      p32bPack,
+      p34Pack,
+      p35Pack,
+      p36Pack
+    }
+  });
 }
 
 export function periodDiscoveryKindSet(bundle) {

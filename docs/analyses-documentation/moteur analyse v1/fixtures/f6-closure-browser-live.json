@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-11-01T16:59:00.000Z",
+  "mode": "lecture seule — aucune mutation des données utilisateur",
+  "account": "zingariello1314",
+  "environment": "Chrome via cursor-ide-browser · vite localhost:3001 · mode dev",
+  "liveCoverage": {
+    "strengthStore": {
+      "id": "main",
+      "source": "IndexedDB WorkoutTrackerDB / workouts",
+      "firstTrainingDate": "2026-01-05",
+      "lastTrainingDate": "2026-10-30",
+      "daysWithActivity": 100,
+      "spanDaysInclusive": 299,
+      "distinctExercises": 110,
+      "repsKeys": 684,
+      "checkedTrue": 683,
+      "gtgDays": 6,
+      "enduranceSessions": 6,
+      "manualSleepDays": "non extrait ici"
+    },
+    "strengthStoreSecondary": {
+      "id": "user-e479daa467dbe1e5e23e429e14f4c9d0",
+      "firstTrainingDate": "2026-05-13",
+      "lastTrainingDate": "2026-09-30",
+      "daysWithActivity": 80,
+      "spanDaysInclusive": 141,
+      "note": "copie / profil lié — pas la source affichée principale pour les dates UI de fin nov."
+    },
+    "garmin": {
+      "source": "IndexedDB GarminDataDB",
+      "dailyMetricsDays": 375,
+      "firstMetric": "2025-10-20",
+      "lastMetric": "2026-10-29",
+      "activitiesRows": 165
+    },
+    "recapCacheIdb": {
+      "accountScopeInKey": true,
+      "examplePrefix": "span5|u:87d06f9f5405a80352af928b7414a1e6|",
+      "cachedHorizonsObserved": ["6m", "2y", "all"]
+    }
+  },
+  "browserTimingsMs": {
+    "method": "click période → attente changement header/empreinte texte analyse ; firstUseful = premier contenu distinct ; stableMs bruitée par textes async annexes (grades/Garmin)",
+    "caveat": "stableMs surestimé — privilégier firstUsefulMs et observation header",
+    "periodSwitches": [
+      { "name": "7 DAYS", "firstUsefulMs": 1620, "header": "7 days · 2026-10-26 → 2026-11-01" },
+      { "name": "30 DAYS", "firstUsefulMs": 1385, "header": "30 days · 2026-10-03 → 2026-11-01" },
+      { "name": "6 MONTHS", "firstUsefulMs": 706, "header": "6 months · 2026-05-03 → 2026-11-01", "note": "probablement cache chaud" },
+      { "name": "2 YEARS", "firstUsefulMs": 16686, "header": "2 years · 2024-11-02 → 2026-11-01", "note": "fenêtre demandée 2 ans > historique force (~10 mois)" },
+      { "name": "7 DAYS after 2y", "firstUsefulMs": 18188, "note": "ralenti — thread principal probablement encore occupé / file de calcul" },
+      { "name": "ALL TIME", "firstUsefulMs": 16517 }
+    ],
+    "remountRecap": {
+      "leaveSportThenRecap": { "firstUsefulMs": 617, "stableMs": 1200 },
+      "interpretation": "retour onglet nettement plus rapide → réutilisation cache plausible"
+    }
+  },
+  "freshnessMutationsOnLive": "non testées (destructif interdit sur profil réel)",
+  "guestBrowser": "non mesuré séparément — session authentifiée"
+}

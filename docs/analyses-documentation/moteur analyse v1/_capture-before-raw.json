@@ -1,0 +1,628 @@
+[
+  {
+    "appearMs": 6024,
+    "cacheSource": "worker",
+    "cards": [
+      {
+        "body": "La séance du 1 novembre 2026 concentre 418 reps, soit 38,0 % de la fenêtre; les autres jours cumulent 683 reps. Elle mêle 60, 60, 60. La médiane des séances est 351 reps. Ce pic fausse une moyenne: il décrit un point haut, pas l’habitude de séance de la fenêtre. 1 NOVEMBRE 2026 · 418 REPS · 38,0 %",
+        "rawLen": 383,
+        "title": "La séance du 1 novembre 2026 concentre une part importante de ces 7 jours"
+      },
+      {
+        "body": "Il y a 3 jours, tu as enregistré ta première séance depuis 28 jours sur exercice 504. L'écart dépasse 4 fois ton intervalle habituel. Avec 36 répétitions, tu reviens à 79 % de ton volume moyen avant l'interruption. D'habitude, 5 séries de 10 répétitions. Cette séance: 4 séries (10, 10, 10, 6 répétitions). Le nombre de séries baisse. Les répétitions dans chaque série restent du même ordre. Un seul paramètre a bougé. Le répéter avant d'en changer un autre garde la mesure lisible. Reproduire ce for",
+        "rawLen": 699,
+        "title": "Exercice 504 revient après un long silence"
+      },
+      {
+        "body": "2 des 3 séances tiennent sur les quatre premiers jours. Le volume existe, mais il laisse la fin de fenêtre presque vide.",
+        "rawLen": 179,
+        "title": "Les séances sont regroupées en début de fenêtre"
+      },
+      {
+        "body": "",
+        "rawLen": 227,
+        "title": "Le réalisé est inférieur au prévu (~60 %) avec des séances souvent incomplètes (alignement ~47/100). La différence vient surtout de séances commencées mais racc"
+      },
+      {
+        "body": "Le 30 octobre 2026, un jalon d'entraînement arrive après une nuit de 9 h 39 — parmi tes meilleures configurations de récupération. Elle coïncide avec tu reprends exercice 504 après 28 jours d'absence. Ce n'est pas une corrélation statistique: c'est la rencontre, le même jour, d'un événement et d'une récupération haute. 9 H 39",
+        "rawLen": 385,
+        "title": "Jalon sous une de tes meilleures nuits (9 h 39)"
+      },
+      {
+        "body": "Les jours avec un compte de pas se situent autour de 9 026 pas (médiane, 6 jours). Sur les 30 jours d'avant, la médiane est 6 806 pas (27 jours), soit environ 33 % de plus. Ce n'est pas une séance: c'est le déplacement quotidien, à côté de l'entraînement. 9 026 VS 6 806 PAS",
+        "rawLen": 361,
+        "title": "Les pas de ces 7 jours sont au-dessus de ton niveau des 30 jours d'avant"
+      },
+      {
+        "body": "Les 60 un mouvement ces 7 jours représentent environ 100,0 % de tout ton volume de 30 jours sur ce mouvement (60 reps). Les 60 un mouvement ces 7 jours représentent environ 100,0 % de tout ton volume de 30 jours sur ce mouvement (60 reps). Les 60 un mouvement ces 7 jours représentent environ 100,0 % de tout ton volume de 30 jours sur ce mouvement (60 reps). Ces 7 jours pèse beaucoup plus lourd dans ton historique récent que ses 1 101 reps totales ne le laissent penser. UN MOUVEMENT 100,0 % · UN ",
+        "rawLen": 621,
+        "title": "3 mouvements concentrent une part importante de ton travail récent"
+      },
+      {
+        "body": "En lisant les 8 dernières séances jusqu’à la fin de la fenêtre (contexte hors fenêtre inclus), un mouvement est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’u",
+        "rawLen": 840,
+        "title": "un mouvement : recul puis retour près du niveau de départ"
+      },
+      {
+        "body": "",
+        "rawLen": 239,
+        "title": "Les séances d'exercices sont bien plus tenues (~100 %) que les étirements (~0 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacité :"
+      },
+      {
+        "body": "Relevés de genoux à la barre: Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable. 2 SÉANCES · UNCLEAR · 0 % · 3×20→3×20",
+        "rawLen": 310,
+        "title": "Relevés de genoux à la barre reviennent après une interruption"
+      }
+    ],
+    "cardsCount": 10,
+    "event": "publish_final",
+    "id": "7d",
+    "label": "7 DAYS",
+    "ltCount": 2,
+    "maxLT": 1092,
+    "prep": {
+      "mapMs": 0,
+      "nameMapCacheHit": true,
+      "prepMs": 74.7,
+      "sideChars": 1559897
+    },
+    "timeout": false,
+    "titles": [
+      "La séance du 1 novembre 2026 concentre une part importante de ces 7 jours",
+      "Exercice 504 revient après un long silence",
+      "Jalon sous une de tes meilleures nuits (9 h 39)",
+      "Les pas de ces 7 jours sont au-dessus de ton niveau des 30 jours d'avant",
+      "3 mouvements concentrent une part importante de ton travail récent",
+      "un mouvement : recul puis retour près du niveau de départ",
+      "Relevés de genoux à la barre reviennent après une interruption"
+    ],
+    "workerMs": 3664.2
+  },
+  {
+    "appearMs": 14790,
+    "cacheSource": "worker",
+    "cards": [
+      {
+        "body": "6 passages hors planning, 38 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 6 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer. 6 HORS PLANNING · 38 REPS",
+        "rawLen": 517,
+        "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning"
+      },
+      {
+        "body": "Rythme habituel récent: coucher autour de 4 h 59, lever autour de 13 h 53, milieu de nuit vers 9 h 01, pour une durée autour de 8 h 47. La durée et le placement sont deux lectures distinctes: une nuit longue peut rester très tardive.Le coucher et le lever sont tous les deux tardifs, et la durée de sommeil tient. La nuit du 7 octobre 2026 s'écarte d'au moins 1 h 30 de ce placement. Pour lire tes séances du lendemain, ce placement compte autant que la durée: une nuit « longue » mais très tardive n",
+        "rawLen": 686,
+        "title": "Rythme habituel récent : coucher autour de 4 h 59, lever autour de 13 h 53, milieu de nuit vers 9 h 01,…"
+      },
+      {
+        "body": "",
+        "rawLen": 227,
+        "title": "Le réalisé est inférieur au prévu (~52 %) avec des séances souvent incomplètes (alignement ~35/100). La différence vient surtout de séances commencées mais racc"
+      },
+      {
+        "body": "Ces 30 jours totalisent 4 502 répétitions en 14 jours de renforcement, soit environ 322 répétitions et 4 min par séance, contre 3 968 reps en 14 jours de renforcement sur les 30 jours d'avant (+13,5 %, fréquence 0,0 %, 322 vs 283 reps/séance). La comparaison utile est donc période contre période de même durée. Les répétitions suivies sur 28 jours sont +35,3 % que le mois comparable, tandis que les 7 derniers jours repartent (+60,1 %). 4 502 VS 3 968 · +13,5 %",
+        "rawLen": 522,
+        "title": "Le volume du mois dépasse la période précédente"
+      },
+      {
+        "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée. [OBJECT OBJECT]",
+        "rawLen": 359,
+        "title": "Jours habituellement actifs"
+      },
+      {
+        "body": "Sur 14 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 2 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 33,3 % coïncident aussi avec une séance classique. 2 jours GTG sans programme historiquement démontré: non classés comme repos. [OBJECT OBJECT]",
+        "rawLen": 369,
+        "title": "GTG et séances classiques"
+      },
+      {
+        "body": "Le 30 octobre 2026, un jalon d'entraînement arrive après une nuit de 9 h 39 — parmi tes meilleures configurations de récupération. Elle coïncide avec tu reprends exercice 504 après 28 jours d'absence. Ce n'est pas une corrélation statistique: c'est la rencontre, le même jour, d'un événement et d'une récupération haute. 9 H 39",
+        "rawLen": 385,
+        "title": "Jalon sous une de tes meilleures nuits (9 h 39)"
+      },
+      {
+        "body": "Les jours avec un compte de pas se situent autour de 7 222 pas (médiane, 26 jours). Sur les 30 jours d'avant, la médiane est 5 032 pas (28 jours), soit environ 44 % de plus. Ce n'est pas une séance: c'est le déplacement quotidien, à côté de l'entraînement. 7 222 VS 5 032 PAS",
+        "rawLen": 363,
+        "title": "Les pas de ces 30 jours sont au-dessus de ton niveau des 30 jours d'avant"
+      },
+      {
+        "body": "",
+        "rawLen": 184,
+        "title": "Stagnation sur les performances malgré volume +35 % — le corps n'accroche pas encore : changer l'angle (intensité, exercices, deload) vaut plus qu'ajouter du vo"
+      },
+      {
+        "body": "Relevés de genoux à la barre: Réapparition après 35 jours. Tu es passé de 1 à 3 séances sur la période comparable, alors que le volume par séance reste proche. Le volume par séance reste récemment stable. 3 SÉANCES · PLATEAU · 0 % · 3×20→3×20",
+        "rawLen": 347,
+        "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent"
+      },
+      {
+        "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Pompes inclinées sur support passe d’environ 52 à 40 répétitions par séance, soit une baisse d’environ 23,1 %. Le nombre de séries reste proche de 4; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 5 séances antérieures pour situer l’évolution. LOW · 3 J · NET_DECLINE",
+        "rawLen": 567,
+        "title": "Pompes inclinées sur support : moins de répétitions par séance"
+      },
+      {
+        "body": "Ces 30 jours exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 420 répétitions de poussée contre 9 de tirage, soit environ 46,7 répétitions de poussée pour 1 de tirage. Le ratio vient en second: c’est la répartition du volume qui décrit la fenêtre. PUSHPULL",
+        "rawLen": 369,
+        "title": "Le haut du corps travaille surtout en poussée"
+      },
+      {
+        "body": "Sur les 8 dernières séances (dont 4 avant la période affichée, 4 dedans), Pompes inclinées pieds sur banc est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un ",
+        "rawLen": 1026,
+        "title": "un mouvement : recul puis retour près du niveau de départ"
+      },
+      {
+        "body": "",
+        "rawLen": 241,
+        "title": "Les séances d'exercices sont bien plus tenues (~97.6 %) que les étirements (~0 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacité "
+      },
+      {
+        "body": "octobre 2026 totalise 4 084 reps en 13 jours entraînés, soit 90,7 % du volume du mois, contre 418 en novembre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme: une période précise autorise davantage d’exposition. octobre 2026 illustre cette dynamique avec 4 084 reps, 13 jours entraînés et 50 min d'exercice: le sommeil y est en moyenne de 8 h 38, et 83,3 % des nuits dépassent 7 h 30. OCTOBRE 2026 · 4 084 REPS · 90,7 %",
+        "rawLen": 511,
+        "title": "octobre 2026 concentre la part la plus productive de la période"
+      }
+    ],
+    "cardsCount": 15,
+    "event": "publish_final",
+    "id": "30d",
+    "label": "30 DAYS",
+    "ltCount": 6,
+    "maxLT": 1189,
+    "prep": {
+      "mapMs": 0,
+      "nameMapCacheHit": true,
+      "prepMs": 88.8,
+      "sideChars": 1559900
+    },
+    "timeout": false,
+    "titles": [
+      "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "Rythme habituel récent : coucher autour de 4 h 59, lever autour de 13 h 53, milieu de nuit vers 9 h 01,…",
+      "Le volume du mois dépasse la période précédente",
+      "Jours habituellement actifs",
+      "GTG et séances classiques",
+      "Jalon sous une de tes meilleures nuits (9 h 39)",
+      "Les pas de ces 30 jours sont au-dessus de ton niveau des 30 jours d'avant",
+      "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent"
+    ],
+    "workerMs": 11345.4
+  },
+  {
+    "appearMs": 111199,
+    "cacheSource": null,
+    "cards": [],
+    "cardsCount": 0,
+    "event": null,
+    "id": "3m",
+    "label": "3 MONTHS",
+    "ltCount": 1,
+    "maxLT": 1196,
+    "prep": null,
+    "timeout": true,
+    "titles": [],
+    "workerMs": null
+  },
+  {
+    "appearMs": 10460,
+    "cacheSource": "worker",
+    "cards": [
+      {
+        "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer. 12 HORS PLANNING · 76 REPS",
+        "rawLen": 520,
+        "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning"
+      },
+      {
+        "body": "Ces derniers mois totalise 28 598 répétitions en 92 jours entraînés, soit environ 298 reps par séance. Ton rythme comparable sur 28 jours est de 3 séances/semaine, contre 2,8 sur les 28 jours d'avant — ce n'est pas le taux de la fenêtre entière. La question n'est pas « tu manques de régularité »: c'est comment ce volume se construit. Course: 54,7 km en 6 h 41. 80 381 kcal actives sur 92 journées entraînées. Les 30 derniers jours (4 521 reps) représentent 15,8 % de ces derniers mois: ils ne résum",
+        "rawLen": 636,
+        "title": "Ces six mois ont un volume et un rythme, pas seulement un total"
+      },
+      {
+        "body": "Rythme habituel récent: coucher autour de 4 h 01, lever autour de 13 h 29, milieu de nuit vers 8 h 31, pour une durée autour de 9 h 00. La durée et le placement sont deux lectures distinctes: une nuit longue peut rester très tardive.Le coucher et le lever sont tous les deux tardifs, et la durée de sommeil tient. La nuit du 15 mai 2026 s'écarte d'au moins 1 h 30 de ce placement. Pour lire tes séances du lendemain, ce placement compte autant que la durée: une nuit « longue » mais très tardive ne s",
+        "rawLen": 684,
+        "title": "Rythme habituel récent : coucher autour de 4 h 01, lever autour de 13 h 29, milieu de nuit vers 8 h 31,…"
+      },
+      {
+        "body": "juin 2026 : 22 séances, 6 947 reps. juillet 2026 : 20 séances, 5 827 reps. août 2026 : 17 séances, 5 438 reps. septembre 2026 : 13 séances, 3 728 reps. octobre 2026 : 16 séances, 4 367 reps. novembre 2026 : 1 séance, 418 reps. Ensemble : 96 jours entraînés, 28 598 répétitions, environ 3.7 séances par semaine.",
+        "rawLen": 356,
+        "title": "La période n’est pas un seul total"
+      },
+      {
+        "body": "",
+        "rawLen": 227,
+        "title": "Le réalisé est inférieur au prévu (~54 %) avec des séances souvent incomplètes (alignement ~21/100). La différence vient surtout de séances commencées mais racc"
+      },
+      {
+        "body": "Sur 96 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 90 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré: non classés comme repos. [OBJECT OBJECT]",
+        "rawLen": 369,
+        "title": "GTG et séances classiques"
+      },
+      {
+        "body": "Ces derniers mois combine 54,7 km de course en 6 h 41 et 28 598 reps de renforcement. Sur la période précédente de même durée: 28,3 km et 936 reps. Course et renforcement coexistent sur la période. 54,7 KM · 28 598 REPS",
+        "rawLen": 275,
+        "title": "Course et renforcement se lisent ensemble"
+      },
+      {
+        "body": "Un record arrive le 30 octobre 2026 après une nuit de 9 h 39. L'événement et la récupération se rencontrent le même jour — sans en faire une loi générale. PR × 9 H 39",
+        "rawLen": 204,
+        "title": "Record après une nuit haute"
+      },
+      {
+        "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 69,2 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée. [OBJECT OBJECT]",
+        "rawLen": 364,
+        "title": "Jours habituellement actifs"
+      },
+      {
+        "body": "Relevés de genoux à la barre: Réapparition après 126 jours. Tu es passé de 3 à 15 séances sur la période comparable, alors que le volume par séance reste proche. Le volume par séance reste récemment stable. 15 SÉANCES · PLATEAU · 0 % · 3×20→3×20",
+        "rawLen": 350,
+        "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent"
+      },
+      {
+        "body": "Tractions australiennes: Réapparition après 126 jours. Tu es passé de 3 à 18 séances sur la période comparable, alors que le volume par séance reste proche. Le retour s’observe sur plusieurs séances de la période. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 19 répétitions par séance) et Tractions australiennes pieds surélevés (autour de 48 répétitions par séance) et Tractions supination (autour de 20 répétitions par séance) resten",
+        "rawLen": 750,
+        "title": "Tractions australiennes : le total monte surtout parce que tu t’entraînes plus souvent"
+      },
+      {
+        "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Sur les séances où le détail de séries est connu, le format reste du même ordre. 1 séance du creux n’a qu’un total de répétitions: la structure de séries pendant la baisse n’est pas démontrée. LOW · 14 J · NET_RISE",
+        "rawLen": 444,
+        "title": "Élévations latérales : volume par séance en hausse"
+      },
+      {
+        "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé: tu as accumulé 14 259 répétitions pour y parvenir, soit environ 285 reps par séance. 50 SÉANCES · 14 259 REPS",
+        "rawLen": 219,
+        "title": "50e séance enregistrée"
+      },
+      {
+        "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 4 521 reps en 12 jours, contre 4 944 reps en 16 jours au début de ces trois mois (−8,6 %, fréquence −25,0 %). Cette comparaison ne résume pas ces derniers mois: elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début. FIN 4 521 VS DÉBUT 4 944",
+        "rawLen": 415,
+        "title": "Les trois derniers mois ont une trajectoire interne"
+      },
+      {
+        "body": "99 min. 96 MIN",
+        "rawLen": 131,
+        "title": "Sur la période, le coucher se décale d’environ 96 min dans le même sens. La durée change aussi, d’environ…"
+      },
+      {
+        "body": "juin 2026 totalise 6 947 reps en 22 jours entraînés, soit 24,3 % du volume de la période, contre 5 827 en juillet 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme: une période précise autorise davantage d’exposition. juin 2026 illustre cette dynamique avec 6 947 reps, 22 jours entraînés: le sommeil y est en moyenne de 9 h 53, et 84,6 % des nuits dépassent 7 h 30. JUIN 2026 · 6 947 REPS · 24,3 %",
+        "rawLen": 485,
+        "title": "juin 2026 concentre la part la plus productive de la période"
+      },
+      {
+        "body": "Pompes inclinées pieds sur banc est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions: la structure de séries pendant la baisse n’est pas démontrée. La trajectoire (creux p",
+        "rawLen": 1019,
+        "title": "Pompes inclinées pieds sur banc : recul puis retour au niveau de départ"
+      },
+      {
+        "body": "",
+        "rawLen": 243,
+        "title": "Les séances d'exercices sont bien plus tenues (~99.6 %) que les étirements (~0.9 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacit"
+      }
+    ],
+    "cardsCount": 18,
+    "event": "publish_final",
+    "id": "6m",
+    "label": "6 MONTHS",
+    "ltCount": 1,
+    "maxLT": 805,
+    "prep": {
+      "mapMs": 0,
+      "nameMapCacheHit": true,
+      "prepMs": 42.7,
+      "sideChars": 1778356
+    },
+    "timeout": false,
+    "titles": [
+      "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "Ces six mois ont un volume et un rythme, pas seulement un total",
+      "Rythme habituel récent : coucher autour de 4 h 01, lever autour de 13 h 29, milieu de nuit vers 8 h 31,…",
+      "GTG et séances classiques",
+      "Course et renforcement se lisent ensemble",
+      "Record après une nuit haute",
+      "Jours habituellement actifs",
+      "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent"
+    ],
+    "workerMs": 9197.4
+  },
+  {
+    "appearMs": 13406,
+    "cacheSource": "worker",
+    "cards": [
+      {
+        "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer. 12 HORS PLANNING · 76 REPS",
+        "rawLen": 520,
+        "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning"
+      },
+      {
+        "body": "Cette année totalise 29 534 répétitions en 106 jours entraînés, soit environ 295 reps par séance. Les répétitions comptées commencent le 5 janvier 2026, pas au premier jour du calendrier de la fenêtre. Ton rythme comparable sur 28 jours est de 3 séances/semaine, contre 2,8 sur les 28 jours d'avant — ce n'est pas le taux de la fenêtre entière. La question n'est pas « tu manques de régularité »: c'est comment ce volume se construit. Course: 83 km en 9 h 40. 115 850 kcal actives sur 106 journées en",
+        "rawLen": 730,
+        "title": "L'année suivie a un volume et un rythme, pas seulement un total"
+      },
+      {
+        "body": "Rythme habituel récent: coucher autour de 3 h 45, lever autour de 13 h 06, milieu de nuit vers 8 h 11, pour une durée autour de 9 h 07. La durée et le placement sont deux lectures distinctes: une nuit longue peut rester très tardive. La nuit du 3 novembre 2025 s'écarte d'au moins 1 h 30 de ce placement. Pour lire tes séances du lendemain, ce placement compte autant que la durée: une nuit « longue » mais très tardive ne se compare pas à une nuit plus précoce de même durée. 168 NUITS · 362 J",
+        "rawLen": 609,
+        "title": "Rythme habituel récent : coucher autour de 3 h 45, lever autour de 13 h 06, milieu de nuit vers 8 h 11,…"
+      },
+      {
+        "body": "juin 2026 : 22 séances, 6 947 reps. juillet 2026 : 20 séances, 5 827 reps. août 2026 : 17 séances, 5 438 reps. septembre 2026 : 13 séances, 3 728 reps. octobre 2026 : 16 séances, 4 367 reps. novembre 2026 : 1 séance, 418 reps. Ensemble : 100 jours entraînés, 29 534 répétitions, environ 1.9 séances par semaine.",
+        "rawLen": 357,
+        "title": "La période n’est pas un seul total"
+      },
+      {
+        "body": "",
+        "rawLen": 227,
+        "title": "Le réalisé est inférieur au prévu (~28 %) avec des séances souvent incomplètes (alignement ~11/100). La différence vient surtout de séances commencées mais racc"
+      },
+      {
+        "body": "Sur 100 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 94 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré: non classés comme repos. [OBJECT OBJECT]",
+        "rawLen": 370,
+        "title": "GTG et séances classiques"
+      },
+      {
+        "body": "Cette année combine 83 km de course en 9 h 40 et 29 534 reps de renforcement. La course réapparaît à côté du renforcement. 83 KM · 29 534 REPS",
+        "rawLen": 198,
+        "title": "Course et renforcement se lisent ensemble"
+      },
+      {
+        "body": "Un record arrive le 30 octobre 2026 après une nuit de 9 h 39. L'événement et la récupération se rencontrent le même jour — sans en faire une loi générale. PR × 9 H 39",
+        "rawLen": 204,
+        "title": "Record après une nuit haute"
+      },
+      {
+        "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 40,4 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée. [OBJECT OBJECT]",
+        "rawLen": 364,
+        "title": "Jours habituellement actifs"
+      },
+      {
+        "body": "Tractions australiennes: tu es passé d’environ 4 × 10 à environ 4 × 12, soit une hausse de 20 % du volume par séance, reproduite sur les séances suivantes. Le nombre de séries reste proche de 4; les répétitions par série augmentent (environ 10 → 12). Il ne s’agit donc pas seulement d’une séance exceptionnelle: le journal montre une organisation du travail reproduite. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 19 répétitions par s",
+        "rawLen": 945,
+        "title": "Tractions australiennes : un format plus volumineux se maintient"
+      },
+      {
+        "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Sur les séances où le détail de séries est connu, le format reste du même ordre. 1 séance du creux n’a qu’un total de répétitions: la structure de séries pendant la baisse n’est pas démontrée. LOW · 14 J · NET_RISE",
+        "rawLen": 444,
+        "title": "Élévations latérales : volume par séance en hausse"
+      },
+      {
+        "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé: tu as accumulé 14 259 répétitions pour y parvenir, soit environ 285 reps par séance. 50 SÉANCES · 14 259 REPS",
+        "rawLen": 219,
+        "title": "50e séance enregistrée"
+      },
+      {
+        "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 4 521 reps en 12 jours, contre 4 944 reps en 16 jours au début de ces trois mois (−8,6 %, fréquence −25,0 %). Cette comparaison ne résume pas cette année: elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début. FIN 4 521 VS DÉBUT 4 944",
+        "rawLen": 409,
+        "title": "Les trois derniers mois ont une trajectoire interne"
+      },
+      {
+        "body": "Le décalage de le coucher s’est ensuite résorbé d’environ 72 min. La durée change aussi, d’environ 61 min Le décalage de le coucher s’est ensuite résorbé d’environ 72 min. La durée change aussi, d’environ 61 min. 72 min 72 MIN",
+        "rawLen": 344,
+        "title": "Le décalage de le coucher s’est ensuite résorbé d’environ 72 min. La durée change aussi, d’environ 61 min"
+      },
+      {
+        "body": "juin 2026 totalise 6 947 reps en 22 jours entraînés, soit 23,5 % du volume de l'année, contre 5 827 en juillet 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme: une période précise autorise davantage d’exposition. juin 2026 illustre cette dynamique avec 6 947 reps, 22 jours entraînés: le sommeil y est en moyenne de 9 h 53, et 84,6 % des nuits dépassent 7 h 30. JUIN 2026 · 6 947 REPS · 23,5 %",
+        "rawLen": 482,
+        "title": "juin 2026 concentre la part la plus productive de la période"
+      },
+      {
+        "body": "Pompes inclinées pieds sur banc est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La traject",
+        "rawLen": 949,
+        "title": "un mouvement : recul puis retour près du niveau de départ"
+      },
+      {
+        "body": "",
+        "rawLen": 243,
+        "title": "Les séances d'exercices sont bien plus tenues (~97.9 %) que les étirements (~0.9 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacit"
+      }
+    ],
+    "cardsCount": 17,
+    "event": "publish_final",
+    "id": "1y",
+    "label": "1 YEAR",
+    "ltCount": 2,
+    "maxLT": 773,
+    "prep": {
+      "mapMs": 0,
+      "nameMapCacheHit": true,
+      "prepMs": 43.8,
+      "sideChars": 2005420
+    },
+    "timeout": false,
+    "titles": [
+      "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "L'année suivie a un volume et un rythme, pas seulement un total",
+      "Rythme habituel récent : coucher autour de 3 h 45, lever autour de 13 h 06, milieu de nuit vers 8 h 11,…",
+      "GTG et séances classiques",
+      "Course et renforcement se lisent ensemble",
+      "Record après une nuit haute",
+      "Jours habituellement actifs",
+      "Tractions australiennes : un format plus volumineux se maintient"
+    ],
+    "workerMs": 11082.1
+  },
+  {
+    "appearMs": 15430,
+    "cacheSource": "worker",
+    "cards": [
+      {
+        "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer. 12 HORS PLANNING · 76 REPS",
+        "rawLen": 520,
+        "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning"
+      },
+      {
+        "body": "Ces deux années totalise 29 534 répétitions en 106 jours entraînés, soit environ 295 reps par séance. Les répétitions comptées commencent le 5 janvier 2026, pas au premier jour du calendrier de la fenêtre. Ton rythme comparable sur 28 jours est de 3 séances/semaine, contre 2,8 sur les 28 jours d'avant — ce n'est pas le taux de la fenêtre entière. La question n'est pas « tu manques de régularité »: c'est comment ce volume se construit. Course: 83 km en 9 h 40. 119 948 kcal actives sur 106 journée",
+        "rawLen": 738,
+        "title": "L'année suivie a un volume et un rythme, pas seulement un total"
+      },
+      {
+        "body": "Rythme habituel récent: coucher autour de 3 h 45, lever autour de 13 h 08, milieu de nuit vers 8 h 14, pour une durée autour de 9 h 09. La durée et le placement sont deux lectures distinctes: une nuit longue peut rester très tardive. La nuit du 28 octobre 2025 s'écarte d'au moins 1 h 30 de ce placement. Pour lire tes séances du lendemain, ce placement compte autant que la durée: une nuit « longue » mais très tardive ne se compare pas à une nuit plus précoce de même durée. 174 NUITS · 368 J",
+        "rawLen": 609,
+        "title": "Rythme habituel récent : coucher autour de 3 h 45, lever autour de 13 h 08, milieu de nuit vers 8 h 14,…"
+      },
+      {
+        "body": "juin 2026 : 22 séances, 6 947 reps. juillet 2026 : 20 séances, 5 827 reps. août 2026 : 17 séances, 5 438 reps. septembre 2026 : 13 séances, 3 728 reps. octobre 2026 : 16 séances, 4 367 reps. novembre 2026 : 1 séance, 418 reps. Ensemble : 100 jours entraînés, 29 534 répétitions, environ 1 séances par semaine.",
+        "rawLen": 355,
+        "title": "La période n’est pas un seul total"
+      },
+      {
+        "body": "",
+        "rawLen": 225,
+        "title": "Le réalisé est inférieur au prévu (~0 %) avec des séances souvent incomplètes (alignement ~11/100). La différence vient surtout de séances commencées mais racco"
+      },
+      {
+        "body": "Sur 100 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 94 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré: non classés comme repos. [OBJECT OBJECT]",
+        "rawLen": 370,
+        "title": "GTG et séances classiques"
+      },
+      {
+        "body": "Ces deux années combine 83 km de course en 9 h 40 et 29 534 reps de renforcement. La course réapparaît à côté du renforcement. 83 KM · 29 534 REPS",
+        "rawLen": 202,
+        "title": "Course et renforcement se lisent ensemble"
+      },
+      {
+        "body": "Un record arrive le 30 octobre 2026 après une nuit de 9 h 39. L'événement et la récupération se rencontrent le même jour — sans en faire une loi générale. PR × 9 H 39",
+        "rawLen": 204,
+        "title": "Record après une nuit haute"
+      },
+      {
+        "body": "Sur cette période, lundi, vendredi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 20,2 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée. [OBJECT OBJECT]",
+        "rawLen": 371,
+        "title": "Jours habituellement actifs"
+      },
+      {
+        "body": "Tractions australiennes: tu es passé d’environ 4 × 10 à environ 4 × 12, soit une hausse de 20 % du volume par séance, reproduite sur les séances suivantes. Le nombre de séries reste proche de 4; les répétitions par série augmentent (environ 10 → 12). Il ne s’agit donc pas seulement d’une séance exceptionnelle: le journal montre une organisation du travail reproduite. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 19 répétitions par s",
+        "rawLen": 945,
+        "title": "Tractions australiennes : un format plus volumineux se maintient"
+      },
+      {
+        "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Sur les séances où le détail de séries est connu, le format reste du même ordre. 1 séance du creux n’a qu’un total de répétitions: la structure de séries pendant la baisse n’est pas démontrée. LOW · 14 J · NET_RISE",
+        "rawLen": 444,
+        "title": "Élévations latérales : volume par séance en hausse"
+      },
+      {
+        "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé: tu as accumulé 14 259 répétitions pour y parvenir, soit environ 285 reps par séance. 50 SÉANCES · 14 259 REPS",
+        "rawLen": 219,
+        "title": "50e séance enregistrée"
+      },
+      {
+        "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 4 521 reps en 12 jours, contre 4 944 reps en 16 jours au début de ces trois mois (−8,6 %, fréquence −25,0 %). Cette comparaison ne résume pas ces deux années: elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début. FIN 4 521 VS DÉBUT 4 944",
+        "rawLen": 413,
+        "title": "Les trois derniers mois ont une trajectoire interne"
+      },
+      {
+        "body": "Le décalage de le coucher s’est ensuite résorbé d’environ 88 min Le décalage de le coucher s’est ensuite résorbé d’environ 88 min. 88 min 88 MIN",
+        "rawLen": 221,
+        "title": "Le décalage de le coucher s’est ensuite résorbé d’environ 88 min"
+      },
+      {
+        "body": "juin 2026 totalise 6 947 reps en 22 jours entraînés, soit 23,5 % du volume de ces deux années, contre 5 827 en juillet 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme: une période précise autorise davantage d’exposition. juin 2026 illustre cette dynamique avec 6 947 reps, 22 jours entraînés: le sommeil y est en moyenne de 9 h 53, et 84,6 % des nuits dépassent 7 h 30. JUIN 2026 · 6 947 REPS · 23,5 %",
+        "rawLen": 490,
+        "title": "juin 2026 concentre la part la plus productive de la période"
+      },
+      {
+        "body": "Pompes inclinées pieds sur banc est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La traject",
+        "rawLen": 949,
+        "title": "un mouvement : recul puis retour près du niveau de départ"
+      },
+      {
+        "body": "",
+        "rawLen": 243,
+        "title": "Les séances d'exercices sont bien plus tenues (~97.9 %) que les étirements (~0.9 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacit"
+      }
+    ],
+    "cardsCount": 17,
+    "event": "publish_final",
+    "id": "2y",
+    "label": "2 YEARS",
+    "ltCount": 2,
+    "maxLT": 802,
+    "prep": {
+      "mapMs": 0,
+      "nameMapCacheHit": true,
+      "prepMs": 51.7,
+      "sideChars": 2021749
+    },
+    "timeout": false,
+    "titles": [
+      "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "L'année suivie a un volume et un rythme, pas seulement un total",
+      "Rythme habituel récent : coucher autour de 3 h 45, lever autour de 13 h 08, milieu de nuit vers 8 h 14,…",
+      "GTG et séances classiques",
+      "Course et renforcement se lisent ensemble",
+      "Record après une nuit haute",
+      "Jours habituellement actifs",
+      "Tractions australiennes : un format plus volumineux se maintient"
+    ],
+    "workerMs": 13384.7
+  },
+  {
+    "appearMs": 1204,
+    "cacheSource": "exact",
+    "cards": [
+      {
+        "body": "L’ensemble du suivi totalise 29 534 répétitions en 106 jours entraînés, soit environ 295 reps par séance. Les répétitions comptées commencent le 5 janvier 2026, pas au premier jour du calendrier de la fenêtre. Ton rythme comparable sur 28 jours est de 3 séances/semaine, contre 2,8 sur les 28 jours d'avant — ce n'est pas le taux de la fenêtre entière. La question n'est pas « tu manques de régularité »: c'est comment ce volume se construit. Course: 83 km en 9 h 40. 116 675 kcal actives sur 106 jou",
+        "rawLen": 744,
+        "title": "Le trimestre a un volume et un rythme, pas seulement un total"
+      },
+      {
+        "body": "juin 2026 : 22 séances, 6 947 reps. juillet 2026 : 20 séances, 5 827 reps. août 2026 : 17 séances, 5 438 reps. septembre 2026 : 13 séances, 3 728 reps. octobre 2026 : 16 séances, 4 367 reps. novembre 2026 : 1 séance, 418 reps. Ensemble : 100 jours entraînés, 29 534 répétitions, environ 2.3 séances par semaine.",
+        "rawLen": 365,
+        "title": "Le parcours se lit en mois, pas en semaine"
+      },
+      {
+        "body": "",
+        "rawLen": 227,
+        "title": "Le réalisé est inférieur au prévu (~34 %) avec des séances souvent incomplètes (alignement ~14/100). La différence vient surtout de séances commencées mais racc"
+      },
+      {
+        "body": "L’ensemble du suivi combine 83 km de course en 9 h 40 et 29 534 reps de renforcement. La course réapparaît à côté du renforcement. 83 KM · 29 534 REPS",
+        "rawLen": 206,
+        "title": "Course et renforcement se lisent ensemble"
+      },
+      {
+        "body": "Tractions australiennes: tu es passé d’environ 4 × 10 à environ 4 × 12, soit une hausse de 20 % du volume par séance, reproduite sur les séances suivantes. Le nombre de séries reste proche de 4; les répétitions par série augmentent (environ 10 → 12). Il ne s’agit donc pas seulement d’une séance exceptionnelle: le journal montre une organisation du travail reproduite. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 19 répétitions par s",
+        "rawLen": 945,
+        "title": "Tractions australiennes : un format plus volumineux se maintient"
+      },
+      {
+        "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 4 521 reps en 12 jours, contre 4 944 reps en 16 jours au début de ces trois mois (−8,6 %, fréquence −25,0 %). Cette comparaison ne résume pas l’ensemble du suivi: elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début. FIN 4 521 VS DÉBUT 4 944",
+        "rawLen": 417,
+        "title": "Les trois derniers mois ont une trajectoire interne"
+      },
+      {
+        "body": "Même après une nuit précédente d'au moins 7 h 30, un sommeil sous 7 h deux nuits plus tôt est associé à 328 reps le jour J, contre 259 lorsque les deux nuits dépassent 7 h 30 (4 et 8 cas). La nuit d'avant-hier n'est donc pas un détail: elle sépare encore deux régimes de volume. J -2 COURT 328 · DEUX NUITS OK 259",
+        "rawLen": 389,
+        "title": "Le sommeil d’avant-hier pèse encore, même après une nuit correcte"
+      },
+      {
+        "body": "juin 2026 totalise 6 947 reps en 22 jours entraînés, soit 23,5 % du volume du parcours, contre 5 827 en juillet 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme: une période précise autorise davantage d’exposition. JUIN 2026 · 6 947 REPS · 23,5 %",
+        "rawLen": 333,
+        "title": "juin 2026 concentre la part la plus productive de la période"
+      },
+      {
+        "body": "Un mouvement est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise: ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La trajectoire (creux puis re",
+        "rawLen": 930,
+        "title": "un mouvement : recul puis retour près du niveau de départ"
+      },
+      {
+        "body": "",
+        "rawLen": 243,
+        "title": "Les séances d'exercices sont bien plus tenues (~97.9 %) que les étirements (~0.9 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacit"
+      }
+    ],
+    "cardsCount": 10,
+    "event": "publish_exact_cache",
+    "id": "all",
+    "label": "ALL TIME",
+    "ltCount": 2,
+    "maxLT": 747,
+    "prep": null,
+    "timeout": false,
+    "titles": [
+      "Le trimestre a un volume et un rythme, pas seulement un total",
+      "Le parcours se lit en mois, pas en semaine",
+      "Le réalisé est inférieur au prévu (~34 %) avec des séances souvent incomplètes (alignement ~14/100). La différence vient surtout de séances commencées mais racc",
+      "Course et renforcement se lisent ensemble",
+      "Tractions australiennes : un format plus volumineux se maintient",
+      "Les trois derniers mois ont une trajectoire interne",
+      "Le sommeil d’avant-hier pèse encore, même après une nuit correcte",
+      "juin 2026 concentre la part la plus productive de la période",
+      "un mouvement : recul puis retour près du niveau de départ",
+      "Les séances d'exercices sont bien plus tenues (~97.9 %) que les étirements (~0.9 %). Sur la durée, cet écart de pratique pèse davantage qu'un déficit de capacit"
+    ],
+    "workerMs": null
+  }
+]

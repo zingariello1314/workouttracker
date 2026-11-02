@@ -1,0 +1,4795 @@
+{
+  "generatedAt": "2026-11-01T16:10:31.015Z",
+  "note": "F5 replay — sélection éditoriale (phénomène, IV, caps, abstention) ; F2/F3/F4 non retunés",
+  "liveProfileInspected": false,
+  "periods": {
+    "7d": {
+      "ms": 459,
+      "window": {
+        "start": "2026-10-24",
+        "end": "2026-10-30",
+        "voiceHint": "week"
+      },
+      "pool": 31,
+      "eligible": 31,
+      "selected": 11,
+      "rejected": 15,
+      "counts": {
+        "pool": 31,
+        "eligible": 31,
+        "selected": 16,
+        "rejected": 15,
+        "identityCollapsed": 0
+      },
+      "rejectedByReason": {
+        "rival": 3,
+        "episode_cap": 1,
+        "abstain_low_value": 2,
+        "cap": 4,
+        "score": 2,
+        "methodology_demoted": 3
+      },
+      "selectedKinds": [
+        "disc_density",
+        "disc_vs_habit",
+        "disc_structural_memory",
+        "disc_emergence",
+        "disc_exercise_share",
+        "disc_rest_assoc",
+        "disc_exercise_progress",
+        "disc_freq_continuity",
+        "disc_muscle_share_shift",
+        "disc_muscle_reorient",
+        "disc_push_pull"
+      ],
+      "beforeF4SelectedKinds": null,
+      "composedCount": 3,
+      "descriptiveCount": 2,
+      "episodeCount": 2,
+      "duplicatePhenomena": 0,
+      "packVolumeContradictions": 0,
+      "unresolvedNameCount": 0,
+      "cards": [
+        {
+          "kind": "disc_density",
+          "nature": "now",
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "body": "Ces 7 jours concentre 1 371 répétitions en 20 min, soit environ 4 113 reps par heure. Sur tes 30 derniers jours, tu réalises en moyenne environ 5 240 reps par heure : ces 7 jours sont donc 21,5 % moins dense que ton rythme mensuel. , soit environ 343 répétitions et 5 min par séance. Moins de répétitions par heure sur cette fenêtre : le travail prend plus de temps pour un volume comparable, ou le volume a baissé dans le temps disponible.",
+          "score": 70,
+          "informativeValue": 49,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "body": "Tes séances de pompes déclinées se situent habituellement autour de 50 répétitions (médiane, écart interquartile 46,5–50). Les 36 répétitions du 30 octobre 2026 placent cette séance environ 28,0 % en dessous de ton niveau habituel. D'habitude, 5 séries de 10 répétitions. Cette séance : 4 séries (10, 10, 10, 6 répétitions). Le nombre de séries baisse. Les répétitions dans chaque série restent du même ordre. Sur ces 7 jours, tu as accumulé 36 répétitions de ce mouvement (1 séance). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.",
+          "score": 36,
+          "informativeValue": 36,
+          "phenomenon": "volume_trajectory",
+          "phenomenonId": "ex:504|volume_trajectory",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": "504",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_structural_memory",
+          "nature": "journey",
+          "title": "Relevés de genoux à la barre reviennent après une interruption",
+          "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
+          "score": 72,
+          "informativeValue": 106,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "ex:505|return_after_gap",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "505",
+          "continuity": "punctual_return",
+          "attribution": null,
+          "volumeDirection": "flat"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Pompes déclinées reviennent après une interruption",
+          "body": "Pompes déclinées : Réapparition après 28 jours. Sur les séances où les séries sont détaillées, le format reste identique (5 × 10) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
+          "score": 94,
+          "informativeValue": 132,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "ex:504|return_after_gap",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "504",
+          "continuity": "punctual_return",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_exercise_share",
+          "nature": "trajectory",
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 40 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (80 reps). Ces 7 jours pèse beaucoup plus lourd dans ton historique récent que ses 1 371 reps totales ne le laissent penser.",
+          "score": 78,
+          "informativeValue": 64,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "nature": "trajectory",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique.",
+          "score": 55,
+          "informativeValue": 49,
+          "phenomenon": "rest_sleep_assoc",
+          "phenomenonId": "global|rest_sleep_assoc",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "rest_assoc_demote",
+              "delta": -6
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 7 avant la période affichée, 1 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "score": 63,
+          "informativeValue": 110,
+          "phenomenon": "decline_then_recovery",
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "104",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "nature": "journey",
+          "title": "Ces 7 jours s'inscrit dans une pratique déjà documentée",
+          "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 4 jours sur les 7 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 57 % sur ces 7 jours. Ces 7 jours n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement.",
+          "score": 45,
+          "informativeValue": 45,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_muscle_share_shift",
+          "nature": "trajectory",
+          "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global",
+          "body": "Les gainage/tronc représentent actuellement 11,9 % du volume musculaire attribué (indicatif), contre 5,8 % sur les 30 jours précédents. Sa part a donc augmenté de 105,4 % relativement, alors que le volume global est −63,2 %. un mouvement comptait 100 répétitions sur la période précédente et n'apparaît plus ici. Une partie du changement de part vient de cette disparition, pas seulement d'une baisse générale. Lecture de structure de parts conventionnelles, pas une mesure anatomique exacte.",
+          "score": 32,
+          "informativeValue": 21,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_muscle_reorient",
+          "nature": "journey",
+          "title": "Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre",
+          "body": "Les biceps représentent ces 7 jours 97 reps attribuées (répartition indicative), contre 218 sur les 30 derniers jours. À elle seule, ces 7 jours concentre environ 44,5 % de l’exposition attribuée biceps du dernier mois. Lecture de composition (parts conventionnelles), pas une mesure de stimulation musculaire. Parts issues d’une attribution conventionnelle des répétitions ; pas une preuve d’hypertrophie ni de déséquilibre à corriger. Cela décrit ce groupe sur le mois, pas le stimulus de toute la fenêtre.",
+          "score": 31,
+          "informativeValue": 20,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_push_pull",
+          "nature": "trajectory",
+          "title": "La poussée domine nettement le tirage de ces 7 jours",
+          "body": "Ces 7 jours totalise environ 101 reps attribuées dos contre 332 reps pectoraux + triceps (et 423 en comptant aussi les épaules de poussée). La composition attribuée du haut du corps penche nettement poussée plutôt que tirage. Avec 101 reps dos, tu réalises ces 7 jours environ 30,1 % du volume de dos des 30 derniers jours. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte.",
+          "score": 26,
+          "informativeValue": 15,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        }
+      ],
+      "texts": [
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours concentre le travail sur moins de temps",
+          "body": "Ces 7 jours concentre 1 371 répétitions en 20 min, soit environ 4 113 reps par heure. Sur tes 30 derniers jours, tu réalises en moyenne environ 5 240 reps par heure : ces 7 jours sont donc 21,5 % moins dense que ton rythme mensuel. , soit environ 343 répétitions et 5 min par séance. Moins de répétitions par heure sur cette fenêtre : le travail prend plus de temps pour un volume comparable, ou le volume a baissé dans le temps disponible."
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Pompes déclinées : ces 7 jours sont en retrait de ton niveau habituel",
+          "body": "Tes séances de pompes déclinées se situent habituellement autour de 50 répétitions (médiane, écart interquartile 46,5–50). Les 36 répétitions du 30 octobre 2026 placent cette séance environ 28,0 % en dessous de ton niveau habituel. D'habitude, 5 séries de 10 répétitions. Cette séance : 4 séries (10, 10, 10, 6 répétitions). Le nombre de séries baisse. Les répétitions dans chaque série restent du même ordre. Sur ces 7 jours, tu as accumulé 36 répétitions de ce mouvement (1 séance). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre reviennent après une interruption",
+          "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées reviennent après une interruption",
+          "body": "Pompes déclinées : Réapparition après 28 jours. Sur les séances où les séries sont détaillées, le format reste identique (5 × 10) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable."
+        },
+        {
+          "kind": "disc_exercise_share",
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 40 un mouvement ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (80 reps). Ces 7 jours pèse beaucoup plus lourd dans ton historique récent que ses 1 371 reps totales ne le laissent penser."
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 7 avant la période affichée, 1 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "title": "Ces 7 jours s'inscrit dans une pratique déjà documentée",
+          "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 4 jours sur les 7 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 57 % sur ces 7 jours. Ces 7 jours n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement."
+        },
+        {
+          "kind": "disc_muscle_share_shift",
+          "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global",
+          "body": "Les gainage/tronc représentent actuellement 11,9 % du volume musculaire attribué (indicatif), contre 5,8 % sur les 30 jours précédents. Sa part a donc augmenté de 105,4 % relativement, alors que le volume global est −63,2 %. un mouvement comptait 100 répétitions sur la période précédente et n'apparaît plus ici. Une partie du changement de part vient de cette disparition, pas seulement d'une baisse générale. Lecture de structure de parts conventionnelles, pas une mesure anatomique exacte."
+        },
+        {
+          "kind": "disc_muscle_reorient",
+          "title": "Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre",
+          "body": "Les biceps représentent ces 7 jours 97 reps attribuées (répartition indicative), contre 218 sur les 30 derniers jours. À elle seule, ces 7 jours concentre environ 44,5 % de l’exposition attribuée biceps du dernier mois. Lecture de composition (parts conventionnelles), pas une mesure de stimulation musculaire. Parts issues d’une attribution conventionnelle des répétitions ; pas une preuve d’hypertrophie ni de déséquilibre à corriger. Cela décrit ce groupe sur le mois, pas le stimulus de toute la fenêtre."
+        },
+        {
+          "kind": "disc_push_pull",
+          "title": "La poussée domine nettement le tirage de ces 7 jours",
+          "body": "Ces 7 jours totalise environ 101 reps attribuées dos contre 332 reps pectoraux + triceps (et 423 en comptant aussi les épaules de poussée). La composition attribuée du haut du corps penche nettement poussée plutôt que tirage. Avec 101 reps dos, tu réalises ces 7 jours environ 30,1 % du volume de dos des 30 derniers jours. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte."
+        }
+      ],
+      "editorialDecisions": [
+        {
+          "action": "select",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "informativeValue": 57,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_density",
+          "kind": "disc_density",
+          "informativeValue": 49,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_exercise_base",
+          "kind": "disc_exercise_base",
+          "informativeValue": 52,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_structural_memory:505",
+          "kind": "disc_structural_memory",
+          "informativeValue": 106,
+          "phenomenonId": "ex:505|return_after_gap",
+          "phenomenon": "return_after_gap",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_stimulus_mix",
+          "kind": "disc_stimulus_mix",
+          "informativeValue": 59,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_share_shift",
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 21,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_push_pull",
+          "kind": "disc_push_pull",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "informativeValue": 29,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_anchor_short",
+              "delta": -16
+            },
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "informativeValue": 42,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:504",
+          "kind": "disc_emergence",
+          "informativeValue": 132,
+          "phenomenonId": "ex:504|return_after_gap",
+          "phenomenon": "return_after_gap",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "informativeValue": 110,
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "phenomenon": "decline_then_recovery",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_structural_memory:505",
+          "kind": "disc_structural_memory",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "ex:505|return_after_gap",
+          "informativeValue": 106,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_family_fade",
+          "kind": "disc_family_fade",
+          "reason": "rival",
+          "blockedBy": "disc_emergence",
+          "phenomenonId": "global|other",
+          "informativeValue": 105,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_rhythm_trajectory",
+          "kind": "disc_th_rhythm_trajectory",
+          "informativeValue": 82,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "displace",
+          "kept": "disc_exercise_share",
+          "dropped": "disc_repertoire",
+          "reason": "outranked_by_richer",
+          "keptValue": 64,
+          "droppedValue": 42
+        },
+        {
+          "action": "select",
+          "identity": "disc_exercise_share",
+          "kind": "disc_exercise_share",
+          "informativeValue": 64,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_now",
+          "kind": "disc_th_pushPull_now",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_trajectory",
+          "kind": "disc_th_pushPull_trajectory",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_journey",
+          "kind": "disc_th_pushPull_journey",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_stimulus_mix",
+          "kind": "disc_stimulus_mix",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 59,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 57,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_exercise_base",
+          "kind": "disc_exercise_base",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 52,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_density",
+          "kind": "disc_density",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 49,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_rest_assoc",
+          "kind": "disc_rest_assoc",
+          "informativeValue": 49,
+          "phenomenonId": "global|rest_sleep_assoc",
+          "phenomenon": "rest_sleep_assoc",
+          "editorialFactors": [
+            {
+              "id": "rest_assoc_demote",
+              "delta": -6
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "informativeValue": 46,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "displace",
+          "kept": "disc_freq_continuity",
+          "dropped": "disc_anchor",
+          "reason": "outranked_by_richer",
+          "keptValue": 45,
+          "droppedValue": 29
+        },
+        {
+          "action": "select",
+          "identity": "disc_freq_continuity",
+          "kind": "disc_freq_continuity",
+          "informativeValue": 45,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "reason": "rival",
+          "blockedBy": "disc_exercise_share",
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 42,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_vs_habit:504",
+          "kind": "disc_vs_habit",
+          "informativeValue": 36,
+          "phenomenonId": "ex:504|volume_trajectory",
+          "phenomenon": "volume_trajectory",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "reason": "rival",
+          "blockedBy": "disc_freq_continuity",
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 29,
+          "editorialFactors": [
+            {
+              "id": "weak_anchor_short",
+              "delta": -16
+            },
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_no_running",
+          "kind": "disc_no_running",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 26,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "informativeValue": 6,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "quarter_on_short_window",
+              "delta": -28
+            },
+            {
+              "id": "weak_descriptive",
+              "delta": -14
+            }
+          ]
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_pr",
+          "kind": "disc_ms_pr",
+          "informativeValue": 77,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return_durable",
+          "kind": "disc_ms_return_durable",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "global|return_after_gap",
+          "informativeValue": 72
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "reason": "abstain_low_value",
+          "informativeValue": 46
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "reason": "abstain_low_value",
+          "informativeValue": 6
+        }
+      ],
+      "displaceLog": [
+        {
+          "kept": "disc_exercise_share",
+          "dropped": "disc_repertoire",
+          "reason": "outranked_by_richer",
+          "keptValue": 64,
+          "droppedValue": 42,
+          "phenomenonId": "global|descriptive_weak"
+        },
+        {
+          "kept": "disc_freq_continuity",
+          "dropped": "disc_anchor",
+          "reason": "outranked_by_richer",
+          "keptValue": 45,
+          "droppedValue": 29,
+          "phenomenonId": "global|other"
+        }
+      ],
+      "reliabilityNotes": [
+        "disc_plan_data_insufficient",
+        "disc_muscle_ledger_limits",
+        "disc_program_revision_journal_limit"
+      ]
+    },
+    "30d": {
+      "ms": 896,
+      "window": {
+        "start": "2026-10-01",
+        "end": "2026-10-30",
+        "voiceHint": "month"
+      },
+      "pool": 43,
+      "eligible": 43,
+      "selected": 14,
+      "rejected": 26,
+      "counts": {
+        "pool": 43,
+        "eligible": 43,
+        "selected": 17,
+        "rejected": 26,
+        "identityCollapsed": 0
+      },
+      "rejectedByReason": {
+        "unresolved_exercise_name": 8,
+        "phenomenon_rival": 1,
+        "rival": 2,
+        "cap": 7,
+        "abstain_low_value": 3,
+        "score": 2,
+        "methodology_demoted": 3
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_ms_return",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_freq_decline_low_exposure",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_muscle_exposure_shift",
+        "disc_exercise_progress",
+        "disc_anchor",
+        "disc_rest_assoc",
+        "disc_p35_gtg_outside_classic"
+      ],
+      "beforeF4SelectedKinds": null,
+      "composedCount": 4,
+      "descriptiveCount": 2,
+      "episodeCount": 3,
+      "duplicatePhenomena": 0,
+      "packVolumeContradictions": 0,
+      "unresolvedNameCount": 0,
+      "cards": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "nature": "now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+          "score": 90,
+          "informativeValue": 90,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_volume_shape",
+          "nature": "now",
+          "title": "Le volume du mois dépasse la période précédente",
+          "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée.",
+          "score": 75,
+          "informativeValue": 64,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "title": "Face pull : ces 30 jours sont au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur ces 30 jours, tu as accumulé 60 répétitions de ce mouvement (1 séance). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.",
+          "score": 36,
+          "informativeValue": 36,
+          "phenomenon": "volume_trajectory",
+          "phenomenonId": "ex:306|volume_trajectory",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": "306",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_return",
+          "nature": "now",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte. Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données.",
+          "score": 91,
+          "informativeValue": 91,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "ex:107|return_after_gap",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": "107",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "title": "GTG et séances classiques",
+          "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "score": 43,
+          "informativeValue": 43,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "score": 42,
+          "informativeValue": 42,
+          "phenomenon": "habit_p36",
+          "phenomenonId": "global|habit_p36",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "nature": "trajectory",
+          "title": "Pompes déclinées : moins de répétitions par séance",
+          "body": "Sur 6 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 53,3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 3 séances antérieures pour situer l’évolution.",
+          "score": 52,
+          "informativeValue": 110,
+          "phenomenon": "volume_decline",
+          "phenomenonId": "ex:202|volume_decline",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "202",
+          "continuity": "directional_change",
+          "attribution": "per_session_driven_decline",
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+          "body": "Relevés de genoux à la barre : Réapparition après 35 jours. Tu es passé de 1 à 3 séances sur la période comparable, alors que le volume par séance reste proche. Le volume par séance reste récemment stable.",
+          "score": 94,
+          "informativeValue": 135,
+          "phenomenon": "volume_stable",
+          "phenomenonId": "ex:106|volume_stable",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "106",
+          "continuity": "stable_plateau",
+          "attribution": "frequency_driven_total_rise",
+          "volumeDirection": "flat"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Relevés de genoux à la barre reviennent après une interruption",
+          "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable.",
+          "score": 92,
+          "informativeValue": 126,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "ex:505|return_after_gap",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "505",
+          "continuity": "punctual_return",
+          "attribution": null,
+          "volumeDirection": "flat"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "nature": "trajectory",
+          "title": "Biceps : davantage de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 16+ jours d’activité (1 septembre 2026→30 septembre 2026 puis 1 octobre 2026→30 octobre 2026), les jours d’exposition primaire aux biceps passent de 4 à 10 (Δ +6). Les reps mono associées vont de 240 à 432 (Δ +192). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire.",
+          "score": 59,
+          "informativeValue": 73,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "score": 63,
+          "informativeValue": 116,
+          "phenomenon": "decline_then_recovery",
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "104",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_anchor",
+          "nature": "journey",
+          "title": "Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique",
+          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'ancrage.",
+          "score": 59,
+          "informativeValue": 51,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "nature": "trajectory",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique.",
+          "score": 55,
+          "informativeValue": 49,
+          "phenomenon": "rest_sleep_assoc",
+          "phenomenonId": "global|rest_sleep_assoc",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "rest_assoc_demote",
+              "delta": -6
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "nature": "trajectory",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
+          "score": 47,
+          "informativeValue": 47,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        }
+      ],
+      "texts": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer."
+        },
+        {
+          "kind": "disc_volume_shape",
+          "title": "Le volume du mois dépasse la période précédente",
+          "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces 30 jours sont au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur ces 30 jours, tu as accumulé 60 répétitions de ce mouvement (1 séance). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte. Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données."
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "title": "GTG et séances classiques",
+          "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos."
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
+        },
+        {
+          "kind": "disc_freq_decline_low_exposure",
+          "title": "Pompes déclinées : moins de répétitions par séance",
+          "body": "Sur 6 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 53,3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 3 séances antérieures pour situer l’évolution."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+          "body": "Relevés de genoux à la barre : Réapparition après 35 jours. Tu es passé de 1 à 3 séances sur la période comparable, alors que le volume par séance reste proche. Le volume par séance reste récemment stable."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre reviennent après une interruption",
+          "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable."
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "title": "Biceps : davantage de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 16+ jours d’activité (1 septembre 2026→30 septembre 2026 puis 1 octobre 2026→30 octobre 2026), les jours d’exposition primaire aux biceps passent de 4 à 10 (Δ +6). Les reps mono associées vont de 240 à 432 (Δ +192). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+        },
+        {
+          "kind": "disc_anchor",
+          "title": "Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique",
+          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'ancrage."
+        },
+        {
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés."
+        }
+      ],
+      "editorialDecisions": [
+        {
+          "action": "select",
+          "identity": "disc_gtg_unplanned_now",
+          "kind": "disc_gtg_unplanned_now",
+          "informativeValue": 90,
+          "phenomenonId": "global|gtg_channel",
+          "phenomenon": "gtg_channel",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "informativeValue": 64,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_role",
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "blockedBy": "disc_gtg_unplanned_now",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 86,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_p35_gtg_coexistence",
+          "kind": "disc_p35_gtg_coexistence",
+          "informativeValue": 43,
+          "phenomenonId": "global|gtg_channel",
+          "phenomenon": "gtg_channel",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_p35_gtg_outside_classic",
+          "kind": "disc_p35_gtg_outside_classic",
+          "reason": "rival",
+          "blockedBy": "disc_p35_gtg_coexistence",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 47,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_p36_weekday_regularity",
+          "kind": "disc_p36_weekday_regularity",
+          "informativeValue": 42,
+          "phenomenonId": "global|habit_p36",
+          "phenomenon": "habit_p36",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_progress_low:146651247",
+          "kind": "disc_freq_progress_low",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:146651247|volume_rise",
+          "informativeValue": 84,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_freq_decline_low_exposure:202",
+          "kind": "disc_freq_decline_low_exposure",
+          "informativeValue": 110,
+          "phenomenonId": "ex:202|volume_decline",
+          "phenomenon": "volume_decline",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_family_fade",
+          "kind": "disc_family_fade",
+          "informativeValue": 105,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_stimulus_mix",
+          "kind": "disc_stimulus_mix",
+          "informativeValue": 59,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_share_shift",
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 21,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "informativeValue": 116,
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "phenomenon": "decline_then_recovery",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "informativeValue": 40,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "displace",
+          "kept": "disc_emergence:106",
+          "dropped": "disc_family_fade",
+          "reason": "outranked_by_richer",
+          "keptValue": 135,
+          "droppedValue": 105
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:106",
+          "kind": "disc_emergence",
+          "informativeValue": 135,
+          "phenomenonId": "ex:106|volume_stable",
+          "phenomenon": "volume_stable",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:505",
+          "kind": "disc_emergence",
+          "informativeValue": 126,
+          "phenomenonId": "ex:505|return_after_gap",
+          "phenomenon": "return_after_gap",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "informativeValue": 116,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:146651247",
+          "kind": "disc_emergence",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:146651247|volume_rise",
+          "informativeValue": 114,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_decline_low_exposure:202",
+          "kind": "disc_freq_decline_low_exposure",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "ex:202|volume_decline",
+          "informativeValue": 110,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:1979012181",
+          "kind": "disc_emergence",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1979012181|volume_stable",
+          "informativeValue": 106,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_structural_memory:505",
+          "kind": "disc_structural_memory",
+          "reason": "phenomenon_rival",
+          "blockedBy": "disc_emergence",
+          "phenomenonId": "ex:505|return_after_gap",
+          "informativeValue": 106,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_family_fade",
+          "kind": "disc_family_fade",
+          "reason": "rival",
+          "blockedBy": "disc_emergence",
+          "phenomenonId": "global|other",
+          "informativeValue": 105,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:728134920",
+          "kind": "disc_emergence",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:728134920|emergence_generic",
+          "informativeValue": 90,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "shallow_composition",
+              "delta": -5
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_now",
+          "kind": "disc_gtg_unplanned_now",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 90,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:1647297599",
+          "kind": "disc_emergence",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1647297599|emergence_generic",
+          "informativeValue": 89,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "shallow_composition",
+              "delta": -5
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_role",
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "blockedBy": "disc_gtg_unplanned_now",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 86,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:1488780401",
+          "kind": "disc_emergence",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1488780401|volume_stable",
+          "informativeValue": 85,
+          "editorialFactors": [
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:1974855961",
+          "kind": "disc_emergence",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1974855961|volume_stable",
+          "informativeValue": 84,
+          "editorialFactors": [
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_progress_low:146651247",
+          "kind": "disc_freq_progress_low",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:146651247|volume_rise",
+          "informativeValue": 84,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_progress_low:1433469569",
+          "kind": "disc_freq_progress_low",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1433469569|volume_rise",
+          "informativeValue": 80,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_muscle_exposure_shift",
+          "kind": "disc_muscle_exposure_shift",
+          "informativeValue": 73,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 64,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_now",
+          "kind": "disc_th_pushPull_now",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_trajectory",
+          "kind": "disc_th_pushPull_trajectory",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_journey",
+          "kind": "disc_th_pushPull_journey",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "informativeValue": 51,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "informativeValue": 48,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "informativeValue": 44,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 40,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_vs_habit:306",
+          "kind": "disc_vs_habit",
+          "informativeValue": 36,
+          "phenomenonId": "ex:306|volume_trajectory",
+          "phenomenon": "volume_trajectory",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_no_running",
+          "kind": "disc_no_running",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 26,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_return:107",
+          "kind": "disc_ms_return",
+          "informativeValue": 91,
+          "phenomenonId": "ex:107|return_after_gap",
+          "phenomenon": "return_after_gap"
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_event_combo",
+          "kind": "disc_ms_event_combo",
+          "informativeValue": 76,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "reason": "abstain_low_value",
+          "informativeValue": 44
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "reason": "abstain_low_value",
+          "informativeValue": 40
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "reason": "abstain_low_value",
+          "informativeValue": 48
+        }
+      ],
+      "displaceLog": [
+        {
+          "kept": "disc_emergence:106",
+          "dropped": "disc_family_fade",
+          "reason": "outranked_by_richer",
+          "keptValue": 135,
+          "droppedValue": 105,
+          "phenomenonId": "ex:106|volume_stable"
+        }
+      ],
+      "reliabilityNotes": [
+        "disc_plan_data_insufficient",
+        "disc_muscle_ledger_limits",
+        "disc_program_revision_journal_limit"
+      ]
+    },
+    "3m": {
+      "ms": 1568,
+      "window": {
+        "start": "2026-08-01",
+        "end": "2026-10-30",
+        "voiceHint": "long"
+      },
+      "pool": 52,
+      "eligible": 52,
+      "selected": 17,
+      "rejected": 33,
+      "counts": {
+        "pool": 52,
+        "eligible": 52,
+        "selected": 19,
+        "rejected": 33,
+        "identityCollapsed": 0
+      },
+      "rejectedByReason": {
+        "episode_cap": 10,
+        "rival": 3,
+        "unresolved_exercise_name": 1,
+        "cap": 11,
+        "abstain_low_value": 3,
+        "score": 2,
+        "methodology_demoted": 3
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_freq_progress_low",
+        "disc_structural_memory",
+        "disc_muscle_exposure_shift",
+        "disc_best_month",
+        "disc_quarter_arc",
+        "disc_exercise_progress",
+        "disc_ms_sessions",
+        "disc_ms_first_exercise",
+        "disc_th_pushPull_trajectory"
+      ],
+      "beforeF4SelectedKinds": null,
+      "composedCount": 6,
+      "descriptiveCount": 2,
+      "episodeCount": 3,
+      "duplicatePhenomena": 0,
+      "packVolumeContradictions": 0,
+      "unresolvedNameCount": 0,
+      "cards": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "nature": "now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+          "score": 90,
+          "informativeValue": 90,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_volume_shape",
+          "nature": "now",
+          "title": "Le trimestre a un volume et un rythme, pas seulement un total",
+          "body": "Cette période totalise 13 533 répétitions en 41 jours entraînés, soit environ 294 reps par séance. La question n'est pas « tu manques de régularité » : c'est comment ce volume se construit. Aucune course : la charge est entièrement du renforcement. Les 30 derniers jours (4 367 reps) représentent 32,3 % de cette période : ils ne résument pas toute la fenêtre.",
+          "score": 74,
+          "informativeValue": 63,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "title": "Face pull : cette période est au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur cette période, tu as accumulé 210 répétitions de ce mouvement (4 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.",
+          "score": 36,
+          "informativeValue": 36,
+          "phenomenon": "volume_trajectory",
+          "phenomenonId": "ex:306|volume_trajectory",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": "306",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "title": "GTG et séances classiques",
+          "body": "Sur 46 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 40 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "score": 43,
+          "informativeValue": 43,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 76,9 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "score": 42,
+          "informativeValue": 42,
+          "phenomenon": "habit_p36",
+          "phenomenonId": "global|habit_p36",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Pompes déclinées : moins de répétitions par séance",
+          "body": "Sur 6 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 53,3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé.",
+          "score": 94,
+          "informativeValue": 143,
+          "phenomenon": "volume_decline",
+          "phenomenonId": "ex:202|volume_decline",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "202",
+          "continuity": "directional_change",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Relevés de genoux aux parallèles : volume par séance stable",
+          "body": "Relevés de genoux aux parallèles apparaît sur 6 séances réparties sur 77 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (2 × 20). Le volume par séance reste récemment stable.",
+          "score": 93,
+          "informativeValue": 128,
+          "phenomenon": "volume_stable",
+          "phenomenonId": "ex:107|volume_stable",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "107",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "volumeDirection": "flat"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "nature": "trajectory",
+          "title": "Face pull : progression malgré une exposition faible",
+          "body": "Face pull n’apparaît que sur 4 jours d’exposition (4 classiques) — rythme ≈ 0.31/semaine — avec un volume de 210 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 40 à 55 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre.",
+          "score": 56,
+          "informativeValue": 127,
+          "phenomenon": "volume_rise",
+          "phenomenonId": "ex:306|volume_rise",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "306",
+          "continuity": "punctual_format_spike",
+          "attribution": "per_session_driven_rise",
+          "volumeDirection": "up"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "nature": "trajectory",
+          "title": "Élévations latérales : davantage de répétitions par séance",
+          "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Le nombre de séances est resté proche (4 → 4), mais le volume par séance a changé (≈41 → ≈53, 27,3 %). Le retour s’observe sur plusieurs séances de la période. Cette lecture s’appuie aussi sur 4 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "score": 56,
+          "informativeValue": 113,
+          "phenomenon": "volume_rise",
+          "phenomenonId": "ex:304|volume_rise",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "304",
+          "continuity": "confirmed_return",
+          "attribution": "per_session_driven_rise",
+          "volumeDirection": "up"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "nature": "journey",
+          "title": "Relevés de genoux à la barre : volume par séance stable",
+          "body": "Relevés de genoux à la barre : Réapparition après 28 jours. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
+          "score": 72,
+          "informativeValue": 106,
+          "phenomenon": "volume_stable",
+          "phenomenonId": "ex:505|volume_stable",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "505",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "volumeDirection": "flat"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "nature": "trajectory",
+          "title": "Pectoraux : davantage de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 46+ jours d’activité (2 mai 2026→31 juillet 2026 puis 1 août 2026→30 octobre 2026), les jours d’exposition primaire aux pectoraux passent de 11 à 40 (Δ +29). Les reps mono associées vont de 491 à 1 399 (Δ +908). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire.",
+          "score": 59,
+          "informativeValue": 73,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_best_month",
+          "nature": "journey",
+          "title": "août 2026 concentre la part la plus productive de la période",
+          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition.",
+          "score": 65,
+          "informativeValue": 65,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "nature": "journey",
+          "title": "Le trimestre a une trajectoire interne, pas seulement un total",
+          "body": "Les 30 derniers jours totalisent 4 367 reps en 12 jours, contre 5 344 reps en 17 jours au début du trimestre (−18,3 %, fréquence −29,4 %). Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxième version du court terme.",
+          "score": 64,
+          "informativeValue": 56,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Pompes lestées (autour de 40 répétitions par séance) reste stable. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "score": 63,
+          "informativeValue": 124,
+          "phenomenon": "decline_then_recovery",
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "104",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "nature": "journey",
+          "title": "50e séance enregistrée",
+          "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance.",
+          "score": 79,
+          "informativeValue": 79,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "nature": "trajectory",
+          "title": "Première apparition : Exercice 728134920",
+          "body": "Première apparition de exercice 728134920 dans ton historique. Ils représentent déjà 23 % de ton volume de séance ce jour-là.",
+          "score": 74,
+          "informativeValue": 74,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_th_pushPull_trajectory",
+          "nature": "trajectory",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "body": "Ces trois mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 3 897 répétitions de poussée contre 1 808 de tirage, soit environ 2,2 répétitions de poussée pour 1 de tirage. Le ratio vient en second : c’est la répartition du volume qui décrit la fenêtre.",
+          "score": 64,
+          "informativeValue": 64,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        }
+      ],
+      "texts": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer."
+        },
+        {
+          "kind": "disc_volume_shape",
+          "title": "Le trimestre a un volume et un rythme, pas seulement un total",
+          "body": "Cette période totalise 13 533 répétitions en 41 jours entraînés, soit environ 294 reps par séance. La question n'est pas « tu manques de régularité » : c'est comment ce volume se construit. Aucune course : la charge est entièrement du renforcement. Les 30 derniers jours (4 367 reps) représentent 32,3 % de cette période : ils ne résument pas toute la fenêtre."
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : cette période est au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur cette période, tu as accumulé 210 répétitions de ce mouvement (4 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "title": "GTG et séances classiques",
+          "body": "Sur 46 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 40 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos."
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi présentent des fréquences d’entraînement classique enregistré proches (environ 76,9 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées : moins de répétitions par séance",
+          "body": "Sur 6 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 53,3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux aux parallèles : volume par séance stable",
+          "body": "Relevés de genoux aux parallèles apparaît sur 6 séances réparties sur 77 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (2 × 20). Le volume par séance reste récemment stable."
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Face pull : progression malgré une exposition faible",
+          "body": "Face pull n’apparaît que sur 4 jours d’exposition (4 classiques) — rythme ≈ 0.31/semaine — avec un volume de 210 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 40 à 55 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Élévations latérales : davantage de répétitions par séance",
+          "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Le nombre de séances est resté proche (4 → 4), mais le volume par séance a changé (≈41 → ≈53, 27,3 %). Le retour s’observe sur plusieurs séances de la période. Cette lecture s’appuie aussi sur 4 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre : volume par séance stable",
+          "body": "Relevés de genoux à la barre : Réapparition après 28 jours. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable."
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "title": "Pectoraux : davantage de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 46+ jours d’activité (2 mai 2026→31 juillet 2026 puis 1 août 2026→30 octobre 2026), les jours d’exposition primaire aux pectoraux passent de 11 à 40 (Δ +29). Les reps mono associées vont de 491 à 1 399 (Δ +908). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
+        },
+        {
+          "kind": "disc_best_month",
+          "title": "août 2026 concentre la part la plus productive de la période",
+          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition."
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Le trimestre a une trajectoire interne, pas seulement un total",
+          "body": "Les 30 derniers jours totalisent 4 367 reps en 12 jours, contre 5 344 reps en 17 jours au début du trimestre (−18,3 %, fréquence −29,4 %). Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxième version du court terme."
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Pompes lestées (autour de 40 répétitions par séance) reste stable. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance."
+        },
+        {
+          "kind": "disc_ms_first_exercise",
+          "title": "Première apparition : Exercice 728134920",
+          "body": "Première apparition de exercice 728134920 dans ton historique. Ils représentent déjà 23 % de ton volume de séance ce jour-là."
+        },
+        {
+          "kind": "disc_th_pushPull_trajectory",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "body": "Ces trois mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 3 897 répétitions de poussée contre 1 808 de tirage, soit environ 2,2 répétitions de poussée pour 1 de tirage. Le ratio vient en second : c’est la répartition du volume qui décrit la fenêtre."
+        }
+      ],
+      "editorialDecisions": [
+        {
+          "action": "select",
+          "identity": "disc_gtg_unplanned_now",
+          "kind": "disc_gtg_unplanned_now",
+          "informativeValue": 90,
+          "phenomenonId": "global|gtg_channel",
+          "phenomenon": "gtg_channel",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "informativeValue": 63,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_role",
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "blockedBy": "disc_gtg_unplanned_now",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 86,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_p35_gtg_coexistence",
+          "kind": "disc_p35_gtg_coexistence",
+          "informativeValue": 43,
+          "phenomenonId": "global|gtg_channel",
+          "phenomenon": "gtg_channel",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_p36_weekday_regularity",
+          "kind": "disc_p36_weekday_regularity",
+          "informativeValue": 42,
+          "phenomenonId": "global|habit_p36",
+          "phenomenon": "habit_p36",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_share_shift",
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 21,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_best_month",
+          "kind": "disc_best_month",
+          "informativeValue": 65,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_quarter_arc",
+          "kind": "disc_quarter_arc",
+          "informativeValue": 56,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:202",
+          "kind": "disc_emergence",
+          "informativeValue": 143,
+          "phenomenonId": "ex:202|volume_decline",
+          "phenomenon": "volume_decline",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:107",
+          "kind": "disc_emergence",
+          "informativeValue": 128,
+          "phenomenonId": "ex:107|volume_stable",
+          "phenomenon": "volume_stable",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_freq_progress_low:306",
+          "kind": "disc_freq_progress_low",
+          "informativeValue": 127,
+          "phenomenonId": "ex:306|volume_rise",
+          "phenomenon": "volume_rise",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "informativeValue": 124,
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "phenomenon": "decline_then_recovery",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_freq_progress_low:304",
+          "kind": "disc_freq_progress_low",
+          "informativeValue": 113,
+          "phenomenonId": "ex:304|volume_rise",
+          "phenomenon": "volume_rise",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_structural_memory:505",
+          "kind": "disc_structural_memory",
+          "informativeValue": 106,
+          "phenomenonId": "ex:505|volume_stable",
+          "phenomenon": "volume_stable",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:1433469569",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:1433469569|volume_rise",
+          "informativeValue": 104,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:703294235",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:703294235|volume_stable",
+          "informativeValue": 103,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:466084426",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:466084426|volume_stable",
+          "informativeValue": 102,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:1979012181",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:1979012181|volume_stable",
+          "informativeValue": 100,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_now",
+          "kind": "disc_gtg_unplanned_now",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 90,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:448199957",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:448199957|volume_stable",
+          "informativeValue": 89,
+          "editorialFactors": [
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:77780789",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:77780789|volume_stable",
+          "informativeValue": 88,
+          "editorialFactors": [
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_role",
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "blockedBy": "disc_gtg_unplanned_now",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 86,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_progress_low:1433469569",
+          "kind": "disc_freq_progress_low",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1433469569|volume_rise",
+          "informativeValue": 78,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_muscle_exposure_shift",
+          "kind": "disc_muscle_exposure_shift",
+          "informativeValue": 73,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_best_month",
+          "kind": "disc_best_month",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 65,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_now",
+          "kind": "disc_th_pushPull_now",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_journey",
+          "kind": "disc_th_pushPull_journey",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 63,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_quarter_arc",
+          "kind": "disc_quarter_arc",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 56,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "informativeValue": 51,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "informativeValue": 48,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "informativeValue": 44,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "reason": "rival",
+          "blockedBy": "disc_quarter_arc",
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 40,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_continuity",
+          "kind": "disc_freq_continuity",
+          "reason": "rival",
+          "blockedBy": "disc_anchor",
+          "phenomenonId": "global|other",
+          "informativeValue": 36,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_vs_habit:306",
+          "kind": "disc_vs_habit",
+          "informativeValue": 36,
+          "phenomenonId": "ex:306|volume_trajectory",
+          "phenomenon": "volume_trajectory",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_no_running",
+          "kind": "disc_no_running",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 26,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return:107",
+          "kind": "disc_ms_return",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:107|return_after_gap",
+          "informativeValue": 95
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return:701",
+          "kind": "disc_ms_return",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:701|return_after_gap",
+          "informativeValue": 95
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return:702",
+          "kind": "disc_ms_return",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:702|return_after_gap",
+          "informativeValue": 95
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_pr",
+          "kind": "disc_ms_pr",
+          "informativeValue": 77,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return_durable",
+          "kind": "disc_ms_return_durable",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "global|return_after_gap",
+          "informativeValue": 80
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_event_combo",
+          "kind": "disc_ms_event_combo",
+          "informativeValue": 76,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_sessions",
+          "kind": "disc_ms_sessions",
+          "informativeValue": 79,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "reason": "abstain_low_value",
+          "informativeValue": 44
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "reason": "abstain_low_value",
+          "informativeValue": 51
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "reason": "abstain_low_value",
+          "informativeValue": 48
+        }
+      ],
+      "displaceLog": [],
+      "reliabilityNotes": [
+        "disc_plan_data_insufficient",
+        "disc_muscle_ledger_limits",
+        "disc_program_revision_journal_limit"
+      ]
+    },
+    "6m": {
+      "ms": 1515,
+      "window": {
+        "start": "2026-05-01",
+        "end": "2026-10-30",
+        "voiceHint": "long"
+      },
+      "pool": 54,
+      "eligible": 54,
+      "selected": 14,
+      "rejected": 36,
+      "counts": {
+        "pool": 54,
+        "eligible": 54,
+        "selected": 18,
+        "rejected": 36,
+        "identityCollapsed": 0
+      },
+      "rejectedByReason": {
+        "episode_cap": 6,
+        "volume_contradiction": 1,
+        "cap": 20,
+        "abstain_low_value": 3,
+        "rival": 2,
+        "score": 1,
+        "methodology_demoted": 3
+      },
+      "selectedKinds": [
+        "disc_gtg_unplanned_now",
+        "disc_volume_shape",
+        "disc_vs_habit",
+        "disc_p35_gtg_coexistence",
+        "disc_p36_weekday_regularity",
+        "disc_cardio_strength",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_freq_progress_low",
+        "disc_quarter_arc",
+        "disc_ms_sessions",
+        "disc_ms_week_freq"
+      ],
+      "beforeF4SelectedKinds": null,
+      "composedCount": 5,
+      "descriptiveCount": 2,
+      "episodeCount": 4,
+      "duplicatePhenomena": 0,
+      "packVolumeContradictions": 0,
+      "unresolvedNameCount": 0,
+      "cards": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "nature": "now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+          "score": 90,
+          "informativeValue": 90,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_volume_shape",
+          "nature": "now",
+          "title": "Ces six mois ont un volume et un rythme, pas seulement un total",
+          "body": "Ces derniers mois totalise 19 360 répétitions en 71 jours entraînés, soit environ 293 reps par séance. Les répétitions comptées commencent le 2 juillet 2026, pas au premier jour du calendrier de la fenêtre. La question n'est pas « tu manques de régularité » : c'est comment ce volume se construit. Course : 54,7 km en 6 h 41. Les 30 derniers jours (4 367 reps) représentent 22,6 % de ces derniers mois : ils ne résument pas toute la fenêtre.",
+          "score": 74,
+          "informativeValue": 63,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_vs_habit",
+          "nature": "now",
+          "title": "Face pull : ces derniers mois sont au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur ces derniers mois, tu as accumulé 375 répétitions de ce mouvement (8 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.",
+          "score": 36,
+          "informativeValue": 36,
+          "phenomenon": "volume_trajectory",
+          "phenomenonId": "ex:306|volume_trajectory",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": "306",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "nature": "trajectory",
+          "title": "GTG et séances classiques",
+          "body": "Sur 66 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 60 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos.",
+          "score": 43,
+          "informativeValue": 43,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "nature": "trajectory",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 50 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée.",
+          "score": 42,
+          "informativeValue": 42,
+          "phenomenon": "habit_p36",
+          "phenomenonId": "global|habit_p36",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_cardio_strength",
+          "nature": "trajectory",
+          "title": "Course et renforcement se lisent ensemble",
+          "body": "Ces derniers mois combine 54,7 km de course en 6 h 41 et 19 360 reps de renforcement. Sur la période précédente de même durée : 28,3 km et 0 reps. Course et renforcement coexistent sur la période.",
+          "score": 63,
+          "informativeValue": 63,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Tractions australiennes — prise large pronation : un format plus volumineux se maintient",
+          "body": "Tractions australiennes — prise large pronation : tu es passé d’environ 4 × 10 à environ 4 × 12, soit une hausse de 20 % du volume par séance, reproduite sur les séances suivantes. Le nombre de séries reste proche de 4 ; les répétitions par série augmentent (environ 10 → 12). Il ne s’agit donc pas seulement d’une séance exceptionnelle : le journal montre une organisation du travail reproduite. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 18 répétitions par séance) et Tractions australiennes — prise pronation (autour de 48 répétitions par séance) et Oiseaux (autour de 45 répétitions par séance) restent stables. Cela montre une augmentation maintenue du volume réalisé, sans suffire à démontrer à elle seule une progression physiologique.",
+          "score": 89,
+          "informativeValue": 146,
+          "phenomenon": "volume_rise",
+          "phenomenonId": "ex:102|volume_rise",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "102",
+          "continuity": "consolidated_format",
+          "attribution": null,
+          "volumeDirection": "up"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Dips : recul confirmé sur plusieurs séances",
+          "body": "Sur 19 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 42,3 à 34 répétitions par séance, soit une baisse d’environ 19,7 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique.",
+          "score": 92,
+          "informativeValue": 138,
+          "phenomenon": "volume_decline",
+          "phenomenonId": "ex:103|volume_decline",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            }
+          ],
+          "exerciseId": "103",
+          "continuity": "directional_change",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Pompes déclinées : recul confirmé sur plusieurs séances",
+          "body": "Sur 16 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 69,3 à 25,3 répétitions par séance, soit une baisse d’environ 63,5 %. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique.",
+          "score": 88,
+          "informativeValue": 137,
+          "phenomenon": "volume_decline",
+          "phenomenonId": "ex:104|volume_decline",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "104",
+          "continuity": "directional_change",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Dips : volume par séance stable",
+          "body": "Dips apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (4 × 12). Le volume par séance reste récemment stable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé.",
+          "score": 90,
+          "informativeValue": 132,
+          "phenomenon": "volume_stable",
+          "phenomenonId": "ex:503|volume_stable",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "503",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "volumeDirection": "flat"
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "nature": "trajectory",
+          "title": "Face pull : progression malgré une exposition faible",
+          "body": "Face pull n’apparaît que sur 8 jours d’exposition (8 classiques) — rythme ≈ 0.31/semaine — avec un volume de 375 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 40 à 55 répétitions (comparaison bornée à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre.",
+          "score": 56,
+          "informativeValue": 118,
+          "phenomenon": "volume_rise",
+          "phenomenonId": "ex:306|volume_rise",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ],
+          "exerciseId": "306",
+          "continuity": "punctual_format_spike",
+          "attribution": null,
+          "volumeDirection": "up"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "nature": "journey",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 4 367 reps en 12 jours, contre 5 344 reps en 17 jours au début de ces trois mois (−18,3 %, fréquence −29,4 %). Cette comparaison ne résume pas ces derniers mois : elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début.",
+          "score": 64,
+          "informativeValue": 56,
+          "phenomenon": "descriptive_weak",
+          "phenomenonId": "global|descriptive_weak",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": true,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "nature": "journey",
+          "title": "50e séance enregistrée",
+          "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance.",
+          "score": 79,
+          "informativeValue": 79,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "nature": "trajectory",
+          "title": "Première semaine à 5 entraînements",
+          "body": "Première semaine à 5 entraînements : cette fréquence dépasse ton précédent maximum hebdomadaire de 2 séances.",
+          "score": 76,
+          "informativeValue": 76,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        }
+      ],
+      "texts": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove : répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer."
+        },
+        {
+          "kind": "disc_volume_shape",
+          "title": "Ces six mois ont un volume et un rythme, pas seulement un total",
+          "body": "Ces derniers mois totalise 19 360 répétitions en 71 jours entraînés, soit environ 293 reps par séance. Les répétitions comptées commencent le 2 juillet 2026, pas au premier jour du calendrier de la fenêtre. La question n'est pas « tu manques de régularité » : c'est comment ce volume se construit. Course : 54,7 km en 6 h 41. Les 30 derniers jours (4 367 reps) représentent 22,6 % de ces derniers mois : ils ne résument pas toute la fenêtre."
+        },
+        {
+          "kind": "disc_vs_habit",
+          "title": "Face pull : ces derniers mois sont au-dessus de ton niveau habituel",
+          "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur ces derniers mois, tu as accumulé 375 répétitions de ce mouvement (8 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
+        },
+        {
+          "kind": "disc_p35_gtg_coexistence",
+          "title": "GTG et séances classiques",
+          "body": "Sur 66 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 60 sont exclusivement classiques, 5 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 16,7 % coïncident aussi avec une séance classique. 5 jours GTG sans programme historiquement démontré : non classés comme repos."
+        },
+        {
+          "kind": "disc_p36_weekday_regularity",
+          "title": "Jours habituellement actifs",
+          "body": "Sur cette période, lundi, vendredi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 50 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
+        },
+        {
+          "kind": "disc_cardio_strength",
+          "title": "Course et renforcement se lisent ensemble",
+          "body": "Ces derniers mois combine 54,7 km de course en 6 h 41 et 19 360 reps de renforcement. Sur la période précédente de même durée : 28,3 km et 0 reps. Course et renforcement coexistent sur la période."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise large pronation : un format plus volumineux se maintient",
+          "body": "Tractions australiennes — prise large pronation : tu es passé d’environ 4 × 10 à environ 4 × 12, soit une hausse de 20 % du volume par séance, reproduite sur les séances suivantes. Le nombre de séries reste proche de 4 ; les répétitions par série augmentent (environ 10 → 12). Il ne s’agit donc pas seulement d’une séance exceptionnelle : le journal montre une organisation du travail reproduite. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Tractions pronation (autour de 18 répétitions par séance) et Tractions australiennes — prise pronation (autour de 48 répétitions par séance) et Oiseaux (autour de 45 répétitions par séance) restent stables. Cela montre une augmentation maintenue du volume réalisé, sans suffire à démontrer à elle seule une progression physiologique."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips : recul confirmé sur plusieurs séances",
+          "body": "Sur 19 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 42,3 à 34 répétitions par séance, soit une baisse d’environ 19,7 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes déclinées : recul confirmé sur plusieurs séances",
+          "body": "Sur 16 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 69,3 à 25,3 répétitions par séance, soit une baisse d’environ 63,5 %. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Dips : volume par séance stable",
+          "body": "Dips apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (4 × 12). Le volume par séance reste récemment stable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé."
+        },
+        {
+          "kind": "disc_freq_progress_low",
+          "title": "Face pull : progression malgré une exposition faible",
+          "body": "Face pull n’apparaît que sur 8 jours d’exposition (8 classiques) — rythme ≈ 0.31/semaine — avec un volume de 375 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 40 à 55 répétitions (comparaison bornée à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 4 367 reps en 12 jours, contre 5 344 reps en 17 jours au début de ces trois mois (−18,3 %, fréquence −29,4 %). Cette comparaison ne résume pas ces derniers mois : elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début."
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance."
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 5 entraînements",
+          "body": "Première semaine à 5 entraînements : cette fréquence dépasse ton précédent maximum hebdomadaire de 2 séances."
+        }
+      ],
+      "editorialDecisions": [
+        {
+          "action": "select",
+          "identity": "disc_gtg_unplanned_now",
+          "kind": "disc_gtg_unplanned_now",
+          "informativeValue": 90,
+          "phenomenonId": "global|gtg_channel",
+          "phenomenon": "gtg_channel",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "informativeValue": 63,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_role",
+          "kind": "disc_gtg_unplanned_role",
+          "reason": "rival",
+          "blockedBy": "disc_gtg_unplanned_now",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 86,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_p35_gtg_coexistence",
+          "kind": "disc_p35_gtg_coexistence",
+          "informativeValue": 43,
+          "phenomenonId": "global|gtg_channel",
+          "phenomenon": "gtg_channel",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_p36_weekday_regularity",
+          "kind": "disc_p36_weekday_regularity",
+          "informativeValue": 42,
+          "phenomenonId": "global|habit_p36",
+          "phenomenon": "habit_p36",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_cardio_strength",
+          "kind": "disc_cardio_strength",
+          "informativeValue": 63,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_share_shift",
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 21,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "informativeValue": 124,
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "phenomenon": "decline_then_recovery",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_quarter_arc",
+          "kind": "disc_quarter_arc",
+          "informativeValue": 56,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:102",
+          "kind": "disc_emergence",
+          "informativeValue": 146,
+          "phenomenonId": "ex:102|volume_rise",
+          "phenomenon": "volume_rise",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:103",
+          "kind": "disc_emergence",
+          "informativeValue": 138,
+          "phenomenonId": "ex:103|volume_decline",
+          "phenomenon": "volume_decline",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "action": "displace",
+          "kept": "disc_emergence:104",
+          "dropped": "disc_exercise_progress:104",
+          "reason": "contradiction_outranked",
+          "keptValue": 137,
+          "droppedValue": 124
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:104",
+          "kind": "disc_emergence",
+          "informativeValue": 137,
+          "phenomenonId": "ex:104|volume_decline",
+          "phenomenon": "volume_decline",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_emergence:503",
+          "kind": "disc_emergence",
+          "informativeValue": 132,
+          "phenomenonId": "ex:503|volume_stable",
+          "phenomenon": "volume_stable",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_emergence:106",
+          "kind": "disc_emergence",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:106|volume_stable",
+          "informativeValue": 128,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "reason": "volume_contradiction",
+          "blockedBy": "disc_emergence",
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "informativeValue": 124,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_freq_progress_low:306",
+          "kind": "disc_freq_progress_low",
+          "informativeValue": 118,
+          "phenomenonId": "ex:306|volume_rise",
+          "phenomenon": "volume_rise",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "set_mechanism",
+              "delta": 6
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_gtg_unplanned_now",
+          "kind": "disc_gtg_unplanned_now",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 90,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_rhythm_journey",
+          "kind": "disc_th_rhythm_journey",
+          "informativeValue": 82,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_now",
+          "kind": "disc_th_pushPull_now",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_th_pushPull_journey",
+          "kind": "disc_th_pushPull_journey",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_volume_shape",
+          "kind": "disc_volume_shape",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 63,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_quarter_arc",
+          "kind": "disc_quarter_arc",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 56,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "informativeValue": 51,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "informativeValue": 48,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "select",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "informativeValue": 44,
+          "phenomenonId": "global|descriptive_weak",
+          "phenomenon": "descriptive_weak",
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_quarter_profile",
+          "kind": "disc_quarter_profile",
+          "reason": "rival",
+          "blockedBy": "disc_quarter_arc",
+          "phenomenonId": "global|descriptive_weak",
+          "informativeValue": 40,
+          "editorialFactors": [
+            {
+              "id": "weak_descriptive",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_freq_continuity",
+          "kind": "disc_freq_continuity",
+          "reason": "rival",
+          "blockedBy": "disc_anchor",
+          "phenomenonId": "global|other",
+          "informativeValue": 36,
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
+          "identity": "disc_vs_habit:306",
+          "kind": "disc_vs_habit",
+          "informativeValue": 36,
+          "phenomenonId": "ex:306|volume_trajectory",
+          "phenomenon": "volume_trajectory",
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_now",
+          "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return:107",
+          "kind": "disc_ms_return",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:107|return_after_gap",
+          "informativeValue": 95
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return:701",
+          "kind": "disc_ms_return",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:701|return_after_gap",
+          "informativeValue": 95
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return:702",
+          "kind": "disc_ms_return",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "ex:702|return_after_gap",
+          "informativeValue": 95
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return_run",
+          "kind": "disc_ms_return_run",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 79
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_pr",
+          "kind": "disc_ms_pr",
+          "informativeValue": 77,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "reject_milestone",
+          "identity": "disc_ms_return_durable",
+          "kind": "disc_ms_return_durable",
+          "reason": "episode_cap",
+          "blockedBy": null,
+          "phenomenonId": "global|return_after_gap",
+          "informativeValue": 80
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_event_combo",
+          "kind": "disc_ms_event_combo",
+          "informativeValue": 76,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_sessions",
+          "kind": "disc_ms_sessions",
+          "informativeValue": 79,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_calendar_rhythm",
+          "kind": "disc_calendar_rhythm",
+          "reason": "abstain_low_value",
+          "informativeValue": 44
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_anchor",
+          "kind": "disc_anchor",
+          "reason": "abstain_low_value",
+          "informativeValue": 51
+        },
+        {
+          "action": "abstain",
+          "identity": "disc_repertoire",
+          "kind": "disc_repertoire",
+          "reason": "abstain_low_value",
+          "informativeValue": 48
+        }
+      ],
+      "displaceLog": [
+        {
+          "kept": "disc_emergence:104",
+          "dropped": "disc_exercise_progress:104",
+          "reason": "contradiction_outranked",
+          "keptValue": 137,
+          "droppedValue": 124,
+          "phenomenonId": "ex:104|volume_decline"
+        }
+      ],
+      "reliabilityNotes": [
+        "disc_plan_data_insufficient",
+        "disc_muscle_ledger_limits",
+        "disc_program_revision_journal_limit"
+      ]
+    }
+  },
+  "synthetic": {
+    "1y_thin": {
+      "window": {
+        "start": "2025-10-31",
+        "end": "2026-10-30"
+      },
+      "pool": 21,
+      "selected": 6,
+      "selectedKinds": [
+        "disc_ms_first_session",
+        "disc_p36_weekday_regularity",
+        "disc_p36_exercise_dominant_volume",
+        "disc_emergence",
+        "disc_ms_first_exercise",
+        "disc_ms_cumul"
+      ],
+      "counts": {
+        "pool": 21,
+        "eligible": 21,
+        "selected": 11,
+        "rejected": 10,
+        "identityCollapsed": 0
+      },
+      "note": "Fenêtre longue, densite réelle faible — le moteur doit s’abstenir plutôt que filler."
+    },
+    "2y_thin": {
+      "window": {
+        "start": "2024-10-31",
+        "end": "2026-10-30"
+      },
+      "pool": 18,
+      "selected": 6,
+      "selectedKinds": [
+        "disc_ms_first_session",
+        "disc_p36_weekday_regularity",
+        "disc_p36_exercise_dominant_volume",
+        "disc_emergence",
+        "disc_ms_first_exercise",
+        "disc_ms_cumul"
+      ],
+      "counts": {
+        "pool": 18,
+        "eligible": 18,
+        "selected": 8,
+        "rejected": 10,
+        "identityCollapsed": 0
+      },
+      "note": "Fenêtre longue, densite réelle faible — le moteur doit s’abstenir plutôt que filler."
+    },
+    "always_thin": {
+      "window": {
+        "start": "2020-01-01",
+        "end": "2026-10-30"
+      },
+      "pool": 18,
+      "selected": 6,
+      "selectedKinds": [
+        "disc_ms_first_session",
+        "disc_p36_weekday_regularity",
+        "disc_p36_exercise_dominant_volume",
+        "disc_emergence",
+        "disc_ms_first_exercise",
+        "disc_ms_cumul"
+      ],
+      "counts": {
+        "pool": 18,
+        "eligible": 18,
+        "selected": 8,
+        "rejected": 10,
+        "identityCollapsed": 0
+      },
+      "note": "Fenêtre longue, densite réelle faible — le moteur doit s’abstenir plutôt que filler."
+    }
+  }
+}

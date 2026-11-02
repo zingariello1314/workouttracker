@@ -8,6 +8,7 @@
  */
 
 import { aggregateCheckedRepsByDateAndExerciseId } from './trainingLoadUtils';
+import { ENDURANCE_REP_ACTIVITIES } from '../services/endurance/enduranceRepsWorkoutSync';
 import { mergedStepsFromDaily, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
 
 const YMD = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -71,9 +72,12 @@ export function calendarRepsByDate(workoutData) {
     if (n > 0) map.set(date, (map.get(date) || 0) + n);
   });
 
+  // Ne pas rejouer les activités déjà mirorées en clés workout complementary_*
+  // (sinon double compte pompes endurance, etc.). Aligné sur computeEnduranceDayMetricsForCalendar.
   const sessions = workoutData?.enduranceData?.sessions || {};
-  Object.values(sessions).forEach((list) => {
+  Object.entries(sessions).forEach(([activityType, list]) => {
     if (!Array.isArray(list)) return;
+    if (ENDURANCE_REP_ACTIVITIES.includes(activityType)) return;
     list.forEach((session) => {
       if (!session || session.isMock === true) return;
       const date = String(session.date || '').slice(0, 10);
