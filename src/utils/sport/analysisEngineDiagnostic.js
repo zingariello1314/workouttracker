@@ -17,8 +17,10 @@ import {
 import { kindFromNarrativeCandidate } from './recapNarrativeClaims';
 import { enrichDiagnosticReport } from './analysisEngineDiagnosticModel';
 import { buildAnalysisEngineDataCatalog } from './analysisEngineDataCatalog';
+import { buildRunManifest } from './analysisEngineRunManifest';
+import { buildCoherenceReport } from './analysisEngineCoherence';
 
-const PERIODS = ['today', '7d', '30d', '3m', '6m', '1y', 'all'];
+const PERIODS = ['today', '7d', '30d', '3m', '6m', '1y', '2y', 'all'];
 
 function nowMs() {
   return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -433,9 +435,15 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     signature: adaptive?.signature || null
   };
 
+  const generatedAt = new Date().toISOString();
+  const editorialHistorySignature = Array.isArray(insightHistoryIn?.entries)
+    ? `hist:${insightHistoryIn.entries.length}:1`
+    : insightHistoryIn == null
+      ? null
+      : 'hist:0:0';
   const baseReport = {
     meta: {
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       period,
       supportedPeriods: PERIODS,
       mode: 'diagnostic',
@@ -445,6 +453,10 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       insightHistoryEntryCount: Array.isArray(insightHistoryIn?.entries)
         ? insightHistoryIn.entries.length
         : null,
+      dataSignature: overview.signature || null,
+      snapshotSignature: overview.signature || null,
+      editorialHistorySignature,
+      cacheStatus: 'diagnostic_ephemeral',
       displayScopeNote:
         'Sélectionnée = pack final de CE run diagnostic (même pipeline qu’Analyse si insightHistory injecté). Ne signifie pas « carte rendue dans l’onglet Analyse ».'
     },
@@ -484,7 +496,24 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     }
   };
 
-  return enrichDiagnosticReport(baseReport);
+  const enriched = enrichDiagnosticReport(baseReport);
+  const runManifest = buildRunManifest({
+    report: enriched,
+    period,
+    computedAt: generatedAt,
+    cacheStatus: 'diagnostic_ephemeral',
+    loadCompleteness: {
+      status: 'diagnostic_snapshot',
+      note: 'Le diagnostic utilise getCurrentData() au moment du clic — vérifier signatures si reps divergent entre runs.'
+    }
+  });
+  enriched.meta = {
+    ...enriched.meta,
+    runId: runManifest.runId,
+    runManifest
+  };
+  enriched.coherence = buildCoherenceReport(enriched);
+  return enriched;
 }
 
 export function compareDiagnosticOverviews(a, b) {

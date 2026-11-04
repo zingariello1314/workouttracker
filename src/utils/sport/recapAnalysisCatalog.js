@@ -14,6 +14,7 @@ import { evaluateVolumeChange } from './recapVolumeQuestion';
 import { evaluateRegularity } from './recapRegularityQuestion';
 import { evaluateHistoryBaselines, evaluateRhythmRegime } from './recapHistoryQuestion';
 import { informationGain, markTold } from './recapReasoning';
+import { isPluralExerciseLabel } from './recapComposedNarration';
 
 const MONTHS = [
   'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
@@ -232,7 +233,7 @@ const ANALYSES = [
       if (!best) return null;
       return {
         strength: Math.min(90, 60 + best.gap / 5),
-        title: `${best.ex.name} revient après ${best.gap} jours`,
+        title: `${best.ex.name} ${isPluralExerciseLabel(best.ex.name) ? 'reviennent' : 'revient'} après ${best.gap} jours`,
         body: `Ce mouvement n’avait plus été enregistré depuis ${best.gap} jours. Son retour est assez net pour être une reprise, pas encore une nouvelle habitude.`
       };
     }

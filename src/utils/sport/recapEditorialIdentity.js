@@ -7,6 +7,7 @@
 
 import { sameMovementName, movementKey, pushupFamily } from './recapExerciseIdentity';
 import { resolveExerciseNameForRecap, userFacingExerciseLabel } from './recapStrengthPeriodStats';
+import { resolveStorageExerciseIdentity } from './resolveStorageExerciseIdentity';
 
 /** Relations entre deux découvertes / exercices. */
 export const IDENTITY_RELATION = Object.freeze({
@@ -222,16 +223,23 @@ function looksLikeDraftTitleNotExerciseName(label) {
   return false;
 }
 
-export function repairDisplayNameFromIdentity(d, getExerciseNameById = null) {
+/**
+ * @param {object} d
+ * @param {Function|null} getExerciseNameById
+ * @param {{ snapshot?: object|null }} [opts]
+ */
+export function repairDisplayNameFromIdentity(d, getExerciseNameById = null, opts = {}) {
   const m = d?.metrics || {};
   const id = m.exerciseId ?? m.storageId;
+  const idStr = id != null ? String(id) : '';
   const rawCurrent = String(m.exerciseName || m.name || m.f4Narration?.resolvedName || '').trim();
   const current = looksLikeDraftTitleNotExerciseName(rawCurrent) ? '' : rawCurrent;
   if (current && !/^un mouvement$/i.test(current)) {
     return {
       name: current,
       status: 'name_present',
-      identityStatus: id != null ? 'identity_present' : 'identity_missing'
+      identityStatus: id != null ? 'identity_present' : 'identity_missing',
+      resolutionSource: 'metrics'
     };
   }
   if (id == null || id === '') {
@@ -240,6 +248,55 @@ export function repairDisplayNameFromIdentity(d, getExerciseNameById = null) {
   if (m.identityConfidence === 'ambiguous' || m.hashAmbiguous) {
     return { name: null, status: 'name_missing', identityStatus: 'identity_ambiguous' };
   }
+
+  // Snapshot persisté (souvent disponible alors que le getter programme échoue)
+  const snapNames = opts.snapshot?.exerciseDisplayNames || m.snapshotDisplayNames || null;
+  const snapName = snapNames?.[idStr] || snapNames?.[id] || null;
+  if (snapName && String(snapName).trim() && !/^un mouvement$/i.test(snapName)) {
+    const facingSnap = userFacingExerciseLabel(String(snapName).trim(), id);
+    if (facingSnap && facingSnap !== 'un mouvement') {
+      return {
+        name: facingSnap,
+        status: 'name_repaired_from_historical_id',
+        identityStatus: 'identity_present',
+        storageId: idStr,
+        resolutionSource: 'snapshot_display_names'
+      };
+    }
+  }
+
+  // Chaîne canonique complète (displayNames → reverse hash → db_* → getter)
+  const identity = resolveStorageExerciseIdentity({
+    storageId: id,
+    snapshot: opts.snapshot || null,
+    getExerciseNameById,
+    nameById: opts.nameById || snapNames || null
+  });
+  if (identity.hashAmbiguous) {
+    return {
+      name: null,
+      status: 'name_missing',
+      identityStatus: 'identity_ambiguous',
+      storageId: idStr,
+      resolutionSource: identity.resolutionSource || 'ambiguous_hash',
+      originalId: identity.originalId || null
+    };
+  }
+  if (identity.resolvedName) {
+    const facingId = userFacingExerciseLabel(String(identity.resolvedName).trim(), id);
+    if (facingId && facingId !== 'un mouvement') {
+      return {
+        name: facingId,
+        status: 'name_repaired_from_historical_id',
+        identityStatus: 'identity_present',
+        storageId: idStr,
+        resolutionSource: identity.resolutionSource || 'resolve_storage_identity',
+        originalId: identity.originalId || null,
+        exerciseBankKey: identity.exerciseBankKey || null
+      };
+    }
+  }
+
   const resolved = resolveExerciseNameForRecap(id, getExerciseNameById);
   const facing = userFacingExerciseLabel(resolved, id);
   if (facing && facing !== 'un mouvement') {
@@ -247,15 +304,18 @@ export function repairDisplayNameFromIdentity(d, getExerciseNameById = null) {
       name: facing,
       status: 'name_repaired_from_historical_id',
       identityStatus: 'identity_present',
-      storageId: String(id)
+      storageId: idStr,
+      resolutionSource: 'getter_or_db'
     };
   }
-  // Identité présente mais hors programme actuel / map
   return {
     name: null,
     status: 'name_missing',
     identityStatus: 'identity_present_name_unresolved',
-    storageId: String(id)
+    storageId: idStr,
+    resolutionSource: 'none',
+    diagnosticHint:
+      'ID présent mais aucun nom dans exerciseDisplayNames, reverse-hash, banque db_* ni getter — corriger la persistance des noms au stockage.'
   };
 }
 

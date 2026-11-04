@@ -14,15 +14,15 @@
       "nature": "now",
       "score": 75,
       "contentClass": "descriptive",
-      "title": "Le volume du mois dépasse la période précédente",
-      "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
+      "title": "Le volume de ces 30 jours dépasse la période précédente",
+      "body": "Ces 30 jours totalisent 4 367 répétitions sur 16 jours avec répétitions de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
     },
     {
       "kind": "disc_muscle_now",
       "nature": "now",
       "score": 26,
       "contentClass": "descriptive",
-      "title": "Les pectoraux porte 14,1 % du volume de ces 30 jours",
+      "title": "Les pectoraux portent 14,1 % du volume de ces 30 jours",
       "body": "617 reps attribuées à les pectoraux sur 4 367 reps de la fenêtre, contre 384 pour les triceps, 341 pour les épaules, 335 pour le dos, auxquels s'ajoutent 254 reps de gainage/tronc. Ce n'est pas le pic d'un seul exercice : plusieurs mouvements vont dans le même sens, et le tirage pèse environ 7,7 % du volume. Les mouvements de poussée (pectoraux, épaules, triceps) totalisent 1 342 reps, contre 335 pour le dos : le haut du corps est clairement plus exposé en poussée. À volume de poussée égal, le dos reste nettement derrière dans cette fenêtre (écart ~336 reps) — constat de répartition, pas un quota à rattraper. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles primary/secondary), pas une mesure anatomique exacte. Composition de ces 30 jours, pas d'une séance isolée."
     },
     {
@@ -39,39 +39,39 @@
       "score": 26,
       "contentClass": "descriptive",
       "title": "La poussée domine nettement le tirage du mois",
-      "body": "Ces 30 jours totalise environ 335 reps attribuées dos contre 1 001 reps pectoraux + triceps (et 1 342 en comptant aussi les épaules de poussée). La composition attribuée du haut du corps penche nettement poussée plutôt que tirage. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte."
+      "body": "Ces 30 jours totalisent environ 335 reps attribuées dos contre 1 001 reps pectoraux + triceps (et 1 342 en comptant aussi les épaules de poussée). La composition attribuée du haut du corps penche nettement poussée plutôt que tirage. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
       "score": 94,
       "contentClass": "analytical",
-      "title": "Relevés de genoux à la barre revient après une interruption",
-      "body": "Relevés de genoux à la barre : Réapparition après 35 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %), et ce format se maintient sur les séances suivantes. Ces 180 répétitions font 70,9 % des 254 répétitions de gainage/tronc de la période."
+      "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+      "body": "Relevés de genoux à la barre : Réapparition après 35 jours. La reprise totalise 180 répétitions sur 3 séances, soit 100 % du volume moyen des séances antérieures (≈60 reps/séance). Format habituel environ 3 × 20, reprise en environ 3 × 20. Tu es passé de 1 à 3 séances sur la période comparable, alors que le volume par séance reste proche. Le volume par séance reste récemment stable."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
       "score": 93,
       "contentClass": "analytical",
-      "title": "un mouvement s'installe dans ton entraînement",
-      "body": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 144 répétitions sur la période, contre aucune sur la période précédente comparable."
+      "title": "un mouvement : volume par séance stable",
+      "body": "Un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (4 × 12). Le volume par séance reste récemment stable."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
       "score": 92,
       "contentClass": "analytical",
-      "title": "Relevés de genoux à la barre revient après une interruption",
-      "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %). Ces 120 répétitions font 47,2 % des 254 répétitions de gainage/tronc de la période."
+      "title": "Relevés de genoux à la barre reviennent après une interruption",
+      "body": "Relevés de genoux à la barre : Réapparition après 49 jours. La reprise totalise 120 répétitions sur 2 séances. Format habituel environ 3 × 20, reprise en environ 3 × 20 (3×20). Le format de séries observé est resté identique (3 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
       "score": 91,
       "contentClass": "analytical",
-      "title": "un mouvement s'installe dans ton entraînement",
-      "body": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le nombre de séries reste ~3 ; les répétitions par série augmentent (~10 → ~12). 1 séance du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Au total, 102 répétitions sur la période, contre aucune sur la période précédente comparable."
+      "title": "un mouvement : davantage de répétitions par séance",
+      "body": "Sur 3 séances, le volume moyen de répétitions enregistré pour un mouvement passe d’environ 30 à 36 répétitions par séance, soit une hausse d’environ 20 %. Le nombre de séries reste proche de 3 ; les répétitions par série augmentent (environ 10 → 12)."
     },
     {
       "kind": "disc_emergence",
@@ -79,7 +79,7 @@
       "score": 90,
       "contentClass": "analytical",
       "title": "un mouvement entre dans ton historique",
-      "body": "Tu enregistres un mouvement pour la première fois dans l’historique disponible : 100 répétitions sur cette séance. Reproduire ce volume sur la prochaine séance confirme le départ ; augmenter tout de suite le total mélangerait l’apprentissage du geste et une dose nouvelle."
+      "body": "Tu enregistres un mouvement pour la première fois dans l’historique disponible : 100 répétitions sur cette séance. Une seule séance est encore trop peu pour en faire une habitude. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne."
     },
     {
       "kind": "disc_emergence",
@@ -87,7 +87,7 @@
       "score": 89,
       "contentClass": "analytical",
       "title": "un mouvement entre dans ton historique",
-      "body": "Tu enregistres un mouvement pour la première fois dans l’historique disponible : 100 répétitions sur cette séance. Reproduire ce volume sur la prochaine séance confirme le départ ; augmenter tout de suite le total mélangerait l’apprentissage du geste et une dose nouvelle."
+      "body": "Tu enregistres un mouvement pour la première fois dans l’historique disponible : 100 répétitions sur cette séance. Une seule séance est encore trop peu pour en faire une habitude. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne."
     },
     {
       "kind": "disc_emergence",
@@ -106,12 +106,52 @@
       "body": "un mouvement apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 4 × 10 à environ 4 × 10 (0 %). Au total, 80 répétitions sur la période, contre aucune sur la période précédente comparable."
     },
     {
-      "kind": "disc_anchor",
-      "nature": "journey",
-      "score": 59,
+      "kind": "disc_emergence",
+      "nature": "trajectory",
+      "score": 86,
       "contentClass": "analytical",
-      "title": "Ces 30 jours devient un nouveau point d'ancrage dans ton historique",
-      "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'ancrage."
+      "title": "Relevés de genoux aux parallèles reviennent après une interruption",
+      "body": "Relevés de genoux aux parallèles : Réapparition après 77 jours. La reprise totalise 80 répétitions sur 2 séances. Format habituel environ 2 × 20, reprise en environ 2 × 20 (2×20). Le format de séries observé est resté identique (2 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable."
+    },
+    {
+      "kind": "disc_emergence",
+      "nature": "trajectory",
+      "score": 85,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé",
+      "body": "un mouvement apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 3 × 12 à environ 3 × 12 (0 %). Au total, 72 répétitions sur la période, contre aucune sur la période précédente comparable."
+    },
+    {
+      "kind": "disc_emergence",
+      "nature": "trajectory",
+      "score": 84,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé",
+      "body": "un mouvement apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 3 × 12 à environ 3 × 12 (0 %). Au total, 72 répétitions sur la période, contre aucune sur la période précédente comparable."
+    },
+    {
+      "kind": "disc_emergence",
+      "nature": "trajectory",
+      "score": 83,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé",
+      "body": "un mouvement apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 3 × 12 à environ 3 × 12 (0 %). Au total, 72 répétitions sur la période, contre aucune sur la période précédente comparable."
+    },
+    {
+      "kind": "disc_emergence",
+      "nature": "trajectory",
+      "score": 82,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé",
+      "body": "un mouvement apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 3 × 12 à environ 3 × 12 (0 %). Au total, 72 répétitions sur la période, contre aucune sur la période précédente comparable."
+    },
+    {
+      "kind": "disc_emergence",
+      "nature": "trajectory",
+      "score": 81,
+      "contentClass": "analytical",
+      "title": "Pompes inclinées reviennent après une interruption",
+      "body": "Pompes inclinées : Réapparition après 42 jours. La reprise totalise 72 répétitions sur 2 séances, soit 100 % du volume moyen des séances antérieures (≈36 reps/séance). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne."
     },
     {
       "kind": "disc_repertoire",
@@ -142,8 +182,48 @@
       "nature": "journey",
       "score": 63,
       "contentClass": "analytical",
-      "title": "Pompes déclinées : recul puis retour au niveau de départ",
-      "body": "Sur les 8 dernières séances (dont 2 avant la fenêtre sélectionnée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (2026-10-01)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Le retour près du niveau de départ est confirmé sur les séances récentes : le maintenir sur les prochaines séances avant de changer la dose."
+      "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+      "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 59,
+      "contentClass": "analytical",
+      "title": "Dips : volume par séance en hausse",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 6 à 34 répétitions par séance, soit une hausse d’environ 466,7 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé."
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 56,
+      "contentClass": "analytical",
+      "title": "Pompes lestées : moins de répétitions par séance",
+      "body": "Sur 7 séances, le volume moyen de répétitions enregistré pour Pompes lestées passe d’environ 66,7 à 40 répétitions par séance, soit une baisse d’environ 40 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution."
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 52,
+      "contentClass": "analytical",
+      "title": "Tractions australiennes — prise large pronation : volume par séance stable",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise large pronation passe d’environ 45,3 à 48 répétitions par séance. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Le volume par séance reste récemment stable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 5 séances antérieures pour situer l’évolution."
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 49,
+      "contentClass": "analytical",
+      "title": "Face pull : le volume par séance progresse",
+      "body": "Sur les 8 dernières séances (dont 7 avant la période affichée, 1 dedans), Face pull : d’environ 40 à 55 répétitions par séance (37,5 %) sur 8 séances. Le nombre de séries augmente (3 → 4), les répétitions par série restent du même ordre (~15). 2 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Consolide d’abord le volume récent observé (autour de 55 répétitions par séance) avant d’ajouter une dose nouvelle."
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 48,
+      "contentClass": "analytical",
+      "title": "Élévations latérales : volume par séance en hausse",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Sur les séances où le détail de séries est connu, le format reste du même ordre. 1 séance du creux n’a qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution."
     },
     {
       "kind": "disc_rest_assoc",
@@ -174,8 +254,24 @@
       "nature": "trajectory",
       "score": 72,
       "contentClass": "analytical",
-      "title": "Relevés de genoux à la barre revient après une interruption",
+      "title": "Relevés de genoux à la barre reviennent après une interruption",
       "body": "Relevés de genoux à la barre pèsent désormais 120 reps sur 2 séances des 30 derniers jours, soit 26,3 % de ta tronc, alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20. Ce n'est plus une séance isolée ; répéter ce volume sur les prochaines séances dira s'il structure vraiment la tronc."
+    },
+    {
+      "kind": "disc_structural_memory",
+      "nature": "trajectory",
+      "score": 67,
+      "contentClass": "analytical",
+      "title": "Relevés de genoux aux parallèles reviennent après une interruption",
+      "body": "Relevés de genoux aux parallèles pèsent désormais 80 reps sur 2 séances des 30 derniers jours, soit 17,5 % de ta tronc, alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant. Le volume par séance passe d’environ 2 × 20 à environ 2 × 20. Ce n'est plus une séance isolée ; répéter ce volume sur les prochaines séances dira s'il structure vraiment la tronc."
+    },
+    {
+      "kind": "disc_structural_memory",
+      "nature": "trajectory",
+      "score": 62,
+      "contentClass": "analytical",
+      "title": "Relevés de genoux à la barre reviennent après une interruption",
+      "body": "Relevés de genoux à la barre pèsent désormais 180 reps sur 3 séances des 30 derniers jours, soit 39,5 % de ta tronc, contre 60 reps (44,1 % de la tronc) sur les 30 jours d'avant. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20, format maintenu sur les séances suivantes. Ce n'est plus une séance isolée ; répéter ce volume sur les prochaines séances dira s'il structure vraiment la tronc."
     },
     {
       "kind": "disc_stimulus_mix",
@@ -183,7 +279,7 @@
       "score": 59,
       "contentClass": "analytical",
       "title": "Le mix force / endurance / poly du mois se lit dans les parts, pas dans le total",
-      "body": "Ces 30 jours répartit 4 367 reps identifiées ainsi : 90,2 % de mouvements polyarticulaires contre 9,8 % d'isolation, 88,6 % de travail de force contre 11,4 % d'endurance musculaire, la quasi-totalité du volume reste au poids du corps, 11,7 % de tirage/poussée vertical contre 27,3 % d'horizontal. Ces parts décrivent le type de stimulus reçu, pas seulement la quantité de travail."
+      "body": "Ces 30 jours répartissent 4 367 reps identifiées ainsi : 90,2 % de mouvements polyarticulaires contre 9,8 % d'isolation, 88,6 % de travail de force contre 11,4 % d'endurance musculaire, la quasi-totalité du volume reste au poids du corps, 11,7 % de tirage/poussée vertical contre 27,3 % d'horizontal. Ces parts décrivent le type de stimulus reçu, pas seulement la quantité de travail."
     },
     {
       "kind": "disc_family_fade",
@@ -194,20 +290,44 @@
       "body": "Relevés de genoux aux parallèles représentaient 29,4 % de ta tronc sur les 30 jours d'avant (40 reps), contre 8,8 % aujourd'hui (40 reps). Leur disparition explique une part de la baisse d'exposition de cette famille."
     },
     {
+      "kind": "disc_rhythm_streak",
+      "nature": "trajectory",
+      "score": 52,
+      "contentClass": "analytical",
+      "title": "3 jours de renforcement consécutifs",
+      "body": "Sur la période, la plus longue série de journées avec répétitions de renforcement atteint 3 jours calendaires d’affilée (12 jours actifs au total, soit ≈2,8 / semaine). Ce n’est pas le rythme moyen : c’est le pic de continuité observé."
+    },
+    {
+      "kind": "disc_rhythm_gap",
+      "nature": "trajectory",
+      "score": 53,
+      "contentClass": "analytical",
+      "title": "Une interruption de 9 jours entre deux séances de renforcement",
+      "body": "Entre le 2 octobre 2026 et le 12 octobre 2026, 9 jours calendaires sans répétitions de renforcement cochées séparent deux journées actives. C’est la plus longue coupure interne de la fenêtre — distincte d’un arrêt d’exercice isolé."
+    },
+    {
+      "kind": "disc_rhythm_weekday",
+      "nature": "trajectory",
+      "score": 44,
+      "contentClass": "analytical",
+      "title": "Le mardi concentre plus souvent les séances de renforcement",
+      "body": "Sur 12 jours actifs, le mardi revient 3 fois (1 056 reps), contre 1 pour le mercredi (445 reps). La répartition hebdomadaire n’est pas uniforme : certains jours portent davantage la pratique."
+    },
+    {
       "kind": "disc_ms_return",
       "nature": "now",
       "score": 91,
       "contentClass": "analytical",
       "title": "Tu reprends Relevés de genoux aux parallèles après 42 jours d'absence",
-      "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte. Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données."
+      "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement."
     },
     {
-      "kind": "disc_ms_pr",
-      "nature": "now",
-      "score": 77,
+      "kind": "disc_ms_pr_consolidated",
+      "nature": "trajectory",
+      "score": 76,
       "contentClass": "analytical",
-      "title": "Meilleure série observée : 12 exercice 146651247",
-      "body": "Meilleure série observée : 12 exercice 146651247. Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent 10)."
+      "title": "Ces 20 reps sont devenues ton niveau récemment reproductible",
+      "body": "Ces 20 reps de relevés de genoux à la barre sont devenues ton niveau récemment reproductible : cette série apparaît sur 5 de tes 5 dernières séances."
     },
     {
       "kind": "disc_ms_event_combo",
@@ -220,7 +340,7 @@
     {
       "kind": "disc_ms_return_durable",
       "nature": "trajectory",
-      "score": 76,
+      "score": 91,
       "contentClass": "analytical",
       "title": "La reprise de pompes déclinées est devenue durable",
       "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe."
@@ -278,24 +398,24 @@
       "nature": "trajectory",
       "score": 56,
       "contentClass": "analytical",
-      "title": "un mouvement : progression malgré une exposition faible",
-      "body": "un mouvement n’apparaît que sur 3 jours d’exposition (3 classiques) — rythme ≈ 0.7/semaine — avec un volume de 126 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 35 à 45 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+      "title": "un mouvement : volume par séance en hausse",
+      "body": "Sur 4 séances, le volume moyen de répétitions enregistré pour un mouvement passe d’environ 35 à 45 répétitions par séance, soit une hausse d’environ 28,6 %. Sur les séances où les séries sont détaillées, le format reste identique (3 × 15) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Cette lecture s’appuie aussi sur 1 séance antérieure pour situer l’évolution."
     },
     {
       "kind": "disc_freq_progress_low",
       "nature": "trajectory",
       "score": 56,
       "contentClass": "analytical",
-      "title": "un mouvement : progression malgré une exposition faible",
-      "body": "un mouvement n’apparaît que sur 3 jours d’exposition (3 classiques) — rythme ≈ 0.7/semaine — avec un volume de 102 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 30 à 36 répétitions (comparaison bornée à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+      "title": "un mouvement : davantage de répétitions par séance",
+      "body": "Sur 3 séances, le volume moyen de répétitions enregistré pour un mouvement passe d’environ 30 à 36 répétitions par séance, soit une hausse d’environ 20 %. Le nombre de séries reste proche de 3 ; les répétitions par série augmentent (environ 10 → 12)."
     },
     {
       "kind": "disc_freq_decline_low_exposure",
       "nature": "trajectory",
       "score": 52,
       "contentClass": "analytical",
-      "title": "Pompes déclinées : recul et exposition faible coïncident",
-      "body": "Pompes déclinées combine un recul net avec seulement 3 jours d’exposition (≈ 0.7/sem., volume 120 reps). Les niveaux comparés par la trajectoire P0 passent d’environ 53 à 40 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La co-occurrence est établie ; aucune relation causale entre le recul et le niveau d’exposition n’est affirmée. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+      "title": "Pompes déclinées : moins de répétitions par séance",
+      "body": "Sur 6 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 53,3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 3 séances antérieures pour situer l’évolution."
     },
     {
       "kind": "disc_muscle_exposure_shift",
@@ -303,7 +423,7 @@
       "score": 59,
       "contentClass": "analytical",
       "title": "Triceps : davantage de jours d’exposition qu’en période précédente",
-      "body": "Sur deux fenêtres comparables de 16+ jours d’activité (2026-09-01→2026-09-30 puis 2026-10-01→2026-10-30), les jours d’exposition primaire aux triceps passent de 11 à 16 (Δ +5). Les reps mono associées vont de 88 à 90 (Δ +2). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
+      "body": "Sur deux fenêtres comparables de 16+ jours d’activité (1 septembre 2026→30 septembre 2026 puis 1 octobre 2026→30 octobre 2026), les jours d’exposition primaire aux triceps passent de 11 à 16 (Δ +5). Les reps mono associées vont de 88 à 90 (Δ +2). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
     },
     {
       "kind": "disc_muscle_ledger_limits",
@@ -312,6 +432,38 @@
       "contentClass": "methodology_limit",
       "title": "Limites du compte musculaire sur cette fenêtre",
       "body": "Aucun jour snapshot suffisant (0) : aucune affirmation sur les groupes musculaires « prévus » historiques. 32 % des reps sont multi-principales (exposition possible, volume non isolé par muscle). 36 s isométriques hors total de reps."
+    },
+    {
+      "kind": "disc_program_revision_journal_limit",
+      "nature": "trajectory",
+      "score": 3,
+      "contentClass": "methodology_limit",
+      "title": "Historique de révisions de programme indisponible",
+      "body": "Aucun journal P3.4 n’est encore enregistré pour cette copie : les versions applicables aux journées anciennes ne peuvent pas être démontrées. Les snapshots P3.3 déjà prouvés restent la seule preuve de plan figé."
+    },
+    {
+      "kind": "disc_p35_gtg_coexistence",
+      "nature": "trajectory",
+      "score": 43,
+      "contentClass": "analytical",
+      "title": "GTG et séances classiques",
+      "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos."
+    },
+    {
+      "kind": "disc_p35_gtg_outside_classic",
+      "nature": "trajectory",
+      "score": 47,
+      "contentClass": "analytical",
+      "title": "GTG hors séances classiques",
+      "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés."
+    },
+    {
+      "kind": "disc_p36_weekday_regularity",
+      "nature": "trajectory",
+      "score": 42,
+      "contentClass": "analytical",
+      "title": "Jours habituellement actifs",
+      "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
     }
   ],
   "selected": [
@@ -328,19 +480,10 @@
       "kind": "disc_volume_shape",
       "nature": "now",
       "score": 75,
-      "informativeValue": 72,
+      "informativeValue": 64,
       "contentClass": "descriptive",
-      "title": "Le volume du mois dépasse la période précédente",
-      "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
-    },
-    {
-      "kind": "disc_calendar_rhythm",
-      "nature": "now",
-      "score": 52,
-      "informativeValue": 52,
-      "contentClass": "analytical",
-      "title": "Ces 30 jours mêlent un bloc chargé et un creux",
-      "body": "Du 13 octobre 2026 au 14 octobre 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 324 répétitions, pic 536). Du 7 octobre 2026 au 11 octobre 2026 reste sans séance. Sur 30 jours, 16 ont une séance et 14 n'en ont pas. Le pic vaut environ 1,7 fois la médiane de séance de la fenêtre : la médiane décrit l’habitude, le pic un point haut. Les jours sans séance font partie de ce rythme : ce sont eux qui rendent le bloc possible. Les jours sans séance font partie du rythme observé : ce n’est pas un trou à remplir automatiquement par une séance « de rattrapage » hors schéma."
+      "title": "Le volume de ces 30 jours dépasse la période précédente",
+      "body": "Ces 30 jours totalisent 4 367 répétitions sur 16 jours avec répétitions de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
     },
     {
       "kind": "disc_vs_habit",
@@ -352,169 +495,210 @@
       "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur ces 30 jours, tu as accumulé 60 répétitions de ce mouvement (1 séance). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
     },
     {
-      "kind": "disc_ms_return",
-      "nature": "now",
-      "score": 91,
-      "informativeValue": 91,
+      "kind": "disc_p35_gtg_coexistence",
+      "nature": "trajectory",
+      "score": 43,
+      "informativeValue": 43,
       "contentClass": "analytical",
-      "title": "Relevés de genoux aux parallèles revient après un long silence",
-      "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte. Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données."
+      "title": "GTG et séances classiques",
+      "body": "Sur 16 jours avec activité enregistrée (séance classique hors sync GTG et/ou GTG), 11 sont exclusivement classiques, 4 exclusivement GTG, et 1 combine les deux. Parmi tes jours GTG actifs, 20 % coïncident aussi avec une séance classique. 4 jours GTG sans programme historiquement démontré : non classés comme repos."
     },
     {
-      "kind": "disc_freq_progress_low",
+      "kind": "disc_p36_weekday_regularity",
       "nature": "trajectory",
-      "score": 56,
-      "informativeValue": 82,
+      "score": 42,
+      "informativeValue": 42,
       "contentClass": "analytical",
-      "title": "un mouvement : progression malgré une exposition faible",
-      "body": "un mouvement n’apparaît que sur 3 jours d’exposition (3 classiques) — rythme ≈ 0.7/semaine — avec un volume de 126 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 35 à 45 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+      "title": "Jours habituellement actifs",
+      "body": "Sur cette période, lundi, mardi présentent des fréquences d’entraînement classique enregistré proches (environ 75 % des occurrences éligibles). Aucun jour unique ne se démarque assez pour être présenté comme « le » jour régulier. L’absence d’enregistrement n’équivaut pas à une inactivité physique prouvée."
     },
     {
       "kind": "disc_freq_decline_low_exposure",
       "nature": "trajectory",
       "score": 52,
-      "informativeValue": 77,
-      "contentClass": "analytical",
-      "title": "Pompes déclinées : recul et exposition faible coïncident",
-      "body": "Pompes déclinées combine un recul net avec seulement 3 jours d’exposition (≈ 0.7/sem., volume 120 reps). Les niveaux comparés par la trajectoire P0 passent d’environ 53 à 40 répétitions (arc d’interprétation incluant des séances antérieures à la fenêtre). La co-occurrence est établie ; aucune relation causale entre le recul et le niveau d’exposition n’est affirmée. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
-    },
-    {
-      "kind": "disc_emergence",
-      "nature": "trajectory",
-      "score": 91,
       "informativeValue": 110,
       "contentClass": "analytical",
-      "title": "un mouvement s'installe dans ton entraînement",
-      "body": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le nombre de séries reste ~3 ; les répétitions par série augmentent (~10 → ~12). 1 séance du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Au total, 102 répétitions sur la période, contre aucune sur la période précédente comparable."
+      "title": "Pompes déclinées : moins de répétitions par séance",
+      "body": "Sur 6 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 53,3 à 40 répétitions par séance, soit une baisse d’environ 25 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 3 séances antérieures pour situer l’évolution."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
       "score": 94,
-      "informativeValue": 107,
+      "informativeValue": 136,
       "contentClass": "analytical",
-      "title": "Relevés de genoux à la barre revient après une interruption",
-      "body": "Relevés de genoux à la barre : Réapparition après 35 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %), et ce format se maintient sur les séances suivantes. Ces 180 répétitions font 70,9 % des 254 répétitions de gainage/tronc de la période."
+      "title": "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+      "body": "Relevés de genoux à la barre : Réapparition après 35 jours. La reprise totalise 180 répétitions sur 3 séances, soit 100 % du volume moyen des séances antérieures (≈60 reps/séance). Format habituel environ 3 × 20, reprise en environ 3 × 20. Tu es passé de 1 à 3 séances sur la période comparable, alors que le volume par séance reste proche. Le volume par séance reste récemment stable."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
-      "score": 93,
-      "informativeValue": 107,
+      "score": 86,
+      "informativeValue": 121,
       "contentClass": "analytical",
-      "title": "un mouvement s'installe dans ton entraînement",
-      "body": "un mouvement apparaît sur 3 séances réparties sur 28 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 144 répétitions sur la période, contre aucune sur la période précédente comparable."
+      "title": "Relevés de genoux aux parallèles reviennent après une interruption",
+      "body": "Relevés de genoux aux parallèles : Réapparition après 77 jours. La reprise totalise 80 répétitions sur 2 séances. Format habituel environ 2 × 20, reprise en environ 2 × 20 (2×20). Le format de séries observé est resté identique (2 × 20). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable."
     },
     {
       "kind": "disc_emergence",
       "nature": "trajectory",
-      "score": 92,
+      "score": 81,
       "informativeValue": 105,
       "contentClass": "analytical",
-      "title": "Relevés de genoux à la barre revient après une interruption",
-      "body": "Relevés de genoux à la barre : Réapparition après 49 jours. Le volume par séance passe d’environ 3 × 20 à environ 3 × 20 (0 %). Ces 120 répétitions font 47,2 % des 254 répétitions de gainage/tronc de la période."
+      "title": "Pompes inclinées reviennent après une interruption",
+      "body": "Pompes inclinées : Réapparition après 42 jours. La reprise totalise 72 répétitions sur 2 séances, soit 100 % du volume moyen des séances antérieures (≈36 reps/séance). Pour l’instant, c’est un retour ponctuel — trop tôt pour parler de reprise durable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne."
     },
     {
-      "kind": "disc_emergence",
+      "kind": "disc_muscle_exposure_shift",
       "nature": "trajectory",
-      "score": 88,
-      "informativeValue": 102,
+      "score": 59,
+      "informativeValue": 73,
       "contentClass": "analytical",
-      "title": "un mouvement : format repris, pas encore installé",
-      "body": "un mouvement apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Le volume par séance passe d’environ 4 × 12 à environ 4 × 12 (0 %). Au total, 96 répétitions sur la période, contre aucune sur la période précédente comparable."
+      "title": "Triceps : davantage de jours d’exposition qu’en période précédente",
+      "body": "Sur deux fenêtres comparables de 16+ jours d’activité (1 septembre 2026→30 septembre 2026 puis 1 octobre 2026→30 octobre 2026), les jours d’exposition primaire aux triceps passent de 11 à 16 (Δ +5). Les reps mono associées vont de 88 à 90 (Δ +2). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
     },
     {
-      "kind": "disc_rest_assoc",
+      "kind": "disc_rhythm_gap",
       "nature": "trajectory",
-      "score": 55,
-      "informativeValue": 55,
+      "score": 53,
+      "informativeValue": 53,
       "contentClass": "analytical",
-      "title": "Tes données montrent une association entre repos et volume de séance",
-      "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
+      "title": "Une interruption de 9 jours entre deux séances de renforcement",
+      "body": "Entre le 2 octobre 2026 et le 12 octobre 2026, 9 jours calendaires sans répétitions de renforcement cochées séparent deux journées actives. C’est la plus longue coupure interne de la fenêtre — distincte d’un arrêt d’exercice isolé."
+    },
+    {
+      "kind": "disc_ms_return_durable",
+      "nature": "trajectory",
+      "score": 91,
+      "informativeValue": 91,
+      "contentClass": "analytical",
+      "title": "La reprise de pompes déclinées est devenue durable",
+      "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe."
+    },
+    {
+      "kind": "disc_ms_pr_consolidated",
+      "nature": "trajectory",
+      "score": 76,
+      "informativeValue": 76,
+      "contentClass": "analytical",
+      "title": "Ces 20 reps sont devenues ton niveau récemment reproductible",
+      "body": "Ces 20 reps de relevés de genoux à la barre sont devenues ton niveau récemment reproductible : cette série apparaît sur 5 de tes 5 dernières séances."
     },
     {
       "kind": "disc_exercise_progress",
       "nature": "journey",
       "score": 63,
-      "informativeValue": 95,
+      "informativeValue": 123,
       "contentClass": "analytical",
-      "title": "Pompes déclinées : recul puis retour au niveau de départ",
-      "body": "Sur les 8 dernières séances (dont 2 avant la fenêtre sélectionnée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (2026-10-01)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27.3). La moyenne des dernières séances de l’arc (≈25.3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où le détail de séries est connu, le format reste du même ordre. 5 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Le retour près du niveau de départ est confirmé sur les séances récentes : le maintenir sur les prochaines séances avant de changer la dose."
+      "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+      "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
     },
     {
-      "kind": "disc_quarter_profile",
-      "nature": "journey",
-      "score": 48,
-      "informativeValue": 48,
-      "contentClass": "analytical",
-      "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil",
-      "body": "Sur le trimestre, tu as réalisé 13 799 répétitions, dont environ 1 795 pectoraux, environ 1 151 triceps, environ 1 053 épaules, environ 1 069 dos. Ce mois, la répartition observée peut s’écarter de cette structure historique (617 pectoraux, 384 triceps, 341 épaules, 335 dos). Ces 30 jours sert de nouvelle observation dans cette trajectoire."
-    },
-    {
-      "kind": "disc_anchor",
+      "kind": "disc_exercise_progress",
       "nature": "journey",
       "score": 59,
-      "informativeValue": 59,
+      "informativeValue": 116,
       "contentClass": "analytical",
-      "title": "Ces 30 jours devient un nouveau point d'ancrage dans ton historique",
-      "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'ancrage."
+      "title": "Dips : volume par séance en hausse",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 6 à 34 répétitions par séance, soit une hausse d’environ 466,7 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé."
     },
     {
-      "kind": "disc_repertoire",
+      "kind": "disc_exercise_progress",
       "nature": "journey",
       "score": 56,
-      "informativeValue": 56,
+      "informativeValue": 108,
       "contentClass": "analytical",
-      "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
-      "body": "Pompes (endurance) : 500 ce mois sur 500 en 30 jours. Relevés de genoux à la barre : 180 ce mois sur 180 en 30 jours. Dips : 174 ce mois sur 174 en 30 jours. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble : Momentum peut suivre l'évolution de chaque mouvement, en distinguant ceux qui progressent, ceux qui se maintiennent et ceux dont l'exposition reste insuffisante."
+      "title": "Pompes lestées : moins de répétitions par séance",
+      "body": "Sur 7 séances, le volume moyen de répétitions enregistré pour Pompes lestées passe d’environ 66,7 à 40 répétitions par séance, soit une baisse d’environ 40 %. Le nombre de séries reste proche de 4 ; la diminution vient surtout des répétitions par série (environ 15 → 10). Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution."
     },
     {
-      "kind": "disc_emergence",
-      "nature": "trajectory",
-      "score": 90,
-      "informativeValue": 101,
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 49,
+      "informativeValue": 107,
       "contentClass": "analytical",
-      "title": "un mouvement entre dans ton historique",
-      "body": "Tu enregistres un mouvement pour la première fois dans l’historique disponible : 100 répétitions sur cette séance. Reproduire ce volume sur la prochaine séance confirme le départ ; augmenter tout de suite le total mélangerait l’apprentissage du geste et une dose nouvelle."
+      "title": "Face pull : le volume par séance progresse",
+      "body": "Sur les 8 dernières séances (dont 7 avant la période affichée, 1 dedans), Face pull : d’environ 40 à 55 répétitions par séance (37,5 %) sur 8 séances. Le nombre de séries augmente (3 → 4), les répétitions par série restent du même ordre (~15). 2 séances du creux n’ont qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Consolide d’abord le volume récent observé (autour de 55 répétitions par séance) avant d’ajouter une dose nouvelle."
     },
     {
-      "kind": "disc_ms_return_durable",
-      "nature": "trajectory",
-      "score": 76,
-      "informativeValue": 76,
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 52,
+      "informativeValue": 95,
       "contentClass": "analytical",
-      "title": "La reprise de pompes déclinées est devenue durable",
-      "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe."
+      "title": "Tractions australiennes — prise large pronation : volume par séance stable",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise large pronation passe d’environ 45,3 à 48 répétitions par séance. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Le volume par séance reste récemment stable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 5 séances antérieures pour situer l’évolution."
+    },
+    {
+      "kind": "disc_exercise_progress",
+      "nature": "journey",
+      "score": 48,
+      "informativeValue": 94,
+      "contentClass": "analytical",
+      "title": "Élévations latérales : volume par séance en hausse",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Sur les séances où le détail de séries est connu, le format reste du même ordre. 1 séance du creux n’a qu’un total de répétitions : la structure de séries pendant la baisse n’est pas démontrée. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution."
+    },
+    {
+      "kind": "disc_rhythm_streak",
+      "nature": "trajectory",
+      "score": 52,
+      "informativeValue": 52,
+      "contentClass": "analytical",
+      "title": "3 jours de renforcement consécutifs",
+      "body": "Sur la période, la plus longue série de journées avec répétitions de renforcement atteint 3 jours calendaires d’affilée (12 jours actifs au total, soit ≈2,8 / semaine). Ce n’est pas le rythme moyen : c’est le pic de continuité observé."
+    },
+    {
+      "kind": "disc_rest_assoc",
+      "nature": "trajectory",
+      "score": 55,
+      "informativeValue": 49,
+      "contentClass": "analytical",
+      "title": "Tes données montrent une association entre repos et volume de séance",
+      "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
     }
   ],
   "dropped": [
     {
       "kind": "disc_emergence",
-      "reason": "cap",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 114,
+      "contentClass": "analytical",
+      "title": "un mouvement : davantage de répétitions par séance"
+    },
+    {
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 106,
+      "contentClass": "analytical",
+      "title": "un mouvement : volume par séance stable"
+    },
+    {
+      "kind": "disc_family_fade",
+      "reason": "rival",
       "informativeValue": 101,
+      "contentClass": "analytical",
+      "title": "Relevés de genoux aux parallèles s'efface de ta tronc"
+    },
+    {
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 90,
       "contentClass": "analytical",
       "title": "un mouvement entre dans ton historique"
     },
     {
       "kind": "disc_emergence",
-      "reason": "cap",
-      "informativeValue": 101,
-      "contentClass": "analytical",
-      "title": "un mouvement : format repris, pas encore installé"
-    },
-    {
-      "kind": "disc_emergence",
-      "reason": "cap",
-      "informativeValue": 100,
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 89,
       "contentClass": "analytical",
       "title": "un mouvement entre dans ton historique"
     },
     {
-      "kind": "disc_ms_return",
-      "reason": "cap",
-      "informativeValue": 91,
+      "kind": "disc_freq_progress_low",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 87,
       "contentClass": "analytical",
-      "title": "Tu reprends Relevés de genoux aux parallèles après 42 jours d'absence"
+      "title": "un mouvement : volume par séance en hausse"
     },
     {
       "kind": "disc_gtg_unplanned_role",
@@ -524,32 +708,53 @@
       "title": "Les passages hors planning tiennent le fil des jours sans créneau coché"
     },
     {
-      "kind": "disc_structural_memory",
-      "reason": "cap",
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
       "informativeValue": 85,
       "contentClass": "analytical",
-      "title": "Relevés de genoux à la barre revient après une interruption"
+      "title": "un mouvement : format repris, pas encore installé"
     },
     {
-      "kind": "disc_family_fade",
-      "reason": "outranked_by_richer",
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
       "informativeValue": 84,
       "contentClass": "analytical",
-      "title": "Relevés de genoux aux parallèles s'efface de ta tronc"
+      "title": "un mouvement : format repris, pas encore installé"
     },
     {
       "kind": "disc_freq_progress_low",
-      "reason": "family",
-      "informativeValue": 80,
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 84,
       "contentClass": "analytical",
-      "title": "un mouvement : progression malgré une exposition faible"
+      "title": "un mouvement : davantage de répétitions par séance"
     },
     {
-      "kind": "disc_ms_pr",
-      "reason": "cap",
-      "informativeValue": 77,
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 82,
       "contentClass": "analytical",
-      "title": "Meilleure série observée : 12 exercice 146651247"
+      "title": "un mouvement : format repris, pas encore installé"
+    },
+    {
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 81,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé"
+    },
+    {
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 80,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé"
+    },
+    {
+      "kind": "disc_emergence",
+      "reason": "unresolved_exercise_name",
+      "informativeValue": 79,
+      "contentClass": "analytical",
+      "title": "un mouvement : format repris, pas encore installé"
     },
     {
       "kind": "disc_ms_event_combo",
@@ -559,25 +764,53 @@
       "title": "Reprise et niveau habituel le même jour"
     },
     {
-      "kind": "disc_ms_return_durable",
+      "kind": "disc_rhythm_streak",
       "reason": "cap",
-      "informativeValue": 76,
+      "informativeValue": 52,
       "contentClass": "analytical",
-      "title": "La reprise de pompes déclinées est devenue durable"
+      "title": "3 jours de renforcement consécutifs"
     },
     {
-      "kind": "disc_muscle_exposure_shift",
+      "kind": "disc_rest_assoc",
       "reason": "cap",
-      "informativeValue": 73,
+      "informativeValue": 49,
       "contentClass": "analytical",
-      "title": "Triceps : davantage de jours d’exposition qu’en période précédente"
+      "title": "Tes données montrent une association entre repos et volume de séance"
     },
     {
-      "kind": "disc_th_pushPull_trajectory",
-      "reason": "cap",
-      "informativeValue": 64,
+      "kind": "disc_repertoire",
+      "reason": "abstain_low_value",
+      "informativeValue": 48,
       "contentClass": "analytical",
-      "title": "Le haut du corps travaille surtout en poussée"
+      "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni"
+    },
+    {
+      "kind": "disc_p35_gtg_outside_classic",
+      "reason": "cap",
+      "informativeValue": 47,
+      "contentClass": "analytical",
+      "title": "GTG hors séances classiques"
+    },
+    {
+      "kind": "disc_calendar_rhythm",
+      "reason": "abstain_low_value",
+      "informativeValue": 44,
+      "contentClass": "analytical",
+      "title": "Ces 30 jours mêlent un bloc chargé et un creux"
+    },
+    {
+      "kind": "disc_rhythm_weekday",
+      "reason": "cap",
+      "informativeValue": 44,
+      "contentClass": "analytical",
+      "title": "Le mardi concentre plus souvent les séances de renforcement"
+    },
+    {
+      "kind": "disc_quarter_profile",
+      "reason": "abstain_low_value",
+      "informativeValue": 40,
+      "contentClass": "analytical",
+      "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil"
     },
     {
       "kind": "disc_ratio_structure",
@@ -594,25 +827,25 @@
       "title": "La charge du mois provient entièrement des exercices de renforcement"
     },
     {
-      "kind": "disc_muscle_share_shift",
-      "reason": "score",
-      "informativeValue": 21,
-      "contentClass": "descriptive",
-      "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global"
-    },
-    {
       "kind": "disc_muscle_now",
       "reason": "score",
       "informativeValue": 15,
       "contentClass": "descriptive",
-      "title": "Les pectoraux porte 14,1 % du volume de ces 30 jours"
+      "title": "Les pectoraux portent 14,1 % du volume de ces 30 jours"
     },
     {
       "kind": "disc_push_pull",
-      "reason": "score",
+      "reason": "cap",
       "informativeValue": 15,
       "contentClass": "descriptive",
       "title": "La poussée domine nettement le tirage du mois"
+    },
+    {
+      "kind": "disc_muscle_share_shift",
+      "reason": "cap",
+      "informativeValue": -1,
+      "contentClass": "descriptive",
+      "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global"
     },
     {
       "kind": "disc_plan_data_insufficient",
@@ -629,6 +862,13 @@
       "title": "Limites du compte musculaire sur cette fenêtre"
     },
     {
+      "kind": "disc_program_revision_journal_limit",
+      "reason": "methodology_demoted",
+      "informativeValue": -17,
+      "contentClass": "methodology_limit",
+      "title": "Historique de révisions de programme indisponible"
+    },
+    {
       "kind": "disc_th_pushPull_now",
       "reason": "insight_validation:internal_chip",
       "informativeValue": 64,
@@ -643,11 +883,11 @@
       "title": "Le mix force / endurance / poly du mois se lit dans les parts, pas dans le total"
     },
     {
-      "kind": "disc_ms_event_combo",
+      "kind": "disc_th_pushPull_trajectory",
       "reason": "editorial_gate",
-      "informativeValue": 76,
+      "informativeValue": 64,
       "contentClass": "analytical",
-      "title": "Reprise et niveau habituel le même jour"
+      "title": "Le haut du corps travaille surtout en poussée"
     },
     {
       "kind": "disc_th_pushPull_journey",
@@ -682,6 +922,19 @@
         "reconstructDayCount": null,
         "minRequired": null,
         "reason": "muscle_ledger_limits"
+      }
+    },
+    {
+      "kind": "disc_program_revision_journal_limit",
+      "contentClass": "methodology_limit",
+      "title": "Historique de révisions de programme indisponible",
+      "summary": "Aucun journal P3.4 n’est encore enregistré pour cette copie : les versions applicables aux journées anciennes ne peuvent pas être démontrées. Les snapshots P3.3 déjà prouvés restent la seule preuve de plan figé.",
+      "evidence": "journal_absent",
+      "metrics": {
+        "snapshotDayCount": null,
+        "reconstructDayCount": null,
+        "minRequired": null,
+        "reason": null
       }
     }
   ]

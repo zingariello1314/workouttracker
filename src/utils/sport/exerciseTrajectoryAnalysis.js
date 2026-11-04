@@ -831,11 +831,39 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         const b = setMechanism.before;
         if (a.setCount != null && a.perSet != null) {
           const lateSample = (a.sample || []).map((s) => s.scheme).filter(Boolean);
-          returnScheme =
-            b?.setCount != null && b?.perSet != null
-              ? ` Format habituel environ ${b.setCount} × ${b.perSet}, reprise en environ ${a.setCount} × ${a.perSet}`
-              : ` Format de reprise observé : environ ${a.setCount} × ${a.perSet}`;
-          if (lateSample.length === 1) returnScheme += ` (${lateSample[0]})`;
+          const impliedTotal =
+            Number(a.setCount) > 0 && Number(a.perSet) > 0
+              ? Math.round(Number(a.setCount) * Number(a.perSet))
+              : null;
+          const actualReturn =
+            returnPerSession != null
+              ? returnPerSession
+              : returnTotal != null
+                ? returnTotal
+                : null;
+          const mismatch =
+            impliedTotal != null &&
+            actualReturn != null &&
+            Math.abs(impliedTotal - actualReturn) >= Math.max(3, impliedTotal * 0.12);
+          if (mismatch) {
+            returnScheme = ` Total de reprise : ${Math.round(actualReturn)} répétitions`;
+            if (b?.setCount != null && b?.perSet != null) {
+              returnScheme += ` (format antérieur observé ≈ ${b.setCount} × ${b.perSet}`;
+              returnScheme += impliedTotal
+                ? ` ; schéma médian de reprise ≈ ${a.setCount} × ${a.perSet} ≠ total saisi)`
+                : ')';
+            } else if (lateSample.length === 1) {
+              returnScheme += ` · séries saisies : ${lateSample[0]}`;
+            }
+          } else {
+            returnScheme =
+              b?.setCount != null && b?.perSet != null
+                ? ` Format habituel environ ${b.setCount} × ${b.perSet}, reprise en environ ${a.setCount} × ${a.perSet}`
+                : ` Format de reprise observé : environ ${a.setCount} × ${a.perSet}`;
+            if (lateSample.length === 1 && lateSample[0] !== `${a.setCount}×${a.perSet}`) {
+              returnScheme += ` (${lateSample[0]})`;
+            }
+          }
         }
       }
       const vsBit =
@@ -1512,6 +1540,20 @@ export function trajectoryToMetrics(trajectory) {
     diagnostics: trajectory.diagnostics,
     // Brouillon produit par la couche (avant gate)
     draftTitle: trajectory.findings?.titleHint || null,
+    // Lecture structurée (constat → mécanisme → portée → implication)
+    analyticalReading: {
+      constat: trajectory.findings?.main?.text || null,
+      mechanism:
+        trajectory.findings?.mechanism?.text ||
+        (trajectory.setMechanism?.available ? trajectory.setMechanism.kind : null) ||
+        null,
+      scope:
+        trajectory.findings?.pathNote?.text ||
+        trajectory.findings?.peerScope?.text ||
+        null,
+      implication: trajectory.findings?.implication?.text || trajectory.findings?.implication?.ruleId || null,
+      limits: (trajectory.findings?.limits || []).map((l) => l.id || l.text).filter(Boolean)
+    },
     // F3 — preuves composées (structurées, pas du texte parsé)
     composedEvidence: trajectory.composedEvidence || buildComposedEvidenceFromTrajectory(trajectory),
     composedFactCount: trajectory.composedEvidence?.factCount ?? null,

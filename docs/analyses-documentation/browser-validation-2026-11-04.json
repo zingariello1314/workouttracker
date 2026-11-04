@@ -1,0 +1,97 @@
+{
+  "at": "2026-11-04T02:19:44.195Z",
+  "user": "zingariello1314",
+  "periodA": "30d",
+  "periodB": "7d",
+  "A": {
+    "shown": 33,
+    "demoted": 36,
+    "intermediate": 19,
+    "total": 89,
+    "conservation": true,
+    "totalMs": 2671,
+    "window": {
+      "start": "2026-10-06",
+      "end": "2026-11-04"
+    }
+  },
+  "B": {
+    "shown": 21,
+    "demoted": 26,
+    "intermediate": 15,
+    "total": 62,
+    "conservation": true,
+    "totalMs": 1454,
+    "window": {
+      "start": "2026-10-29",
+      "end": "2026-11-04"
+    }
+  },
+  "anonShown": 0,
+  "issues": {
+    "total": 35,
+    "bySeverity": {
+      "high": 24,
+      "medium": 10,
+      "low": 1
+    },
+    "byReason": {
+      "unresolved_exercise_name": 24,
+      "selected_without_evidence": 10,
+      "trajectory_without_mechanism_prose": 1
+    }
+  },
+  "comparison": {
+    "exactMatches": 47,
+    "matched": 49,
+    "onlyA": 40,
+    "onlyB": 13,
+    "probableMatches": 2,
+    "statusChanges": 31
+  },
+  "dom": {
+    "uiFilterAll": 12,
+    "captured": 11,
+    "packShown": 33,
+    "note": "pack diagnostic != publication Analyse live"
+  },
+  "editorial": {
+    "defectCount": 1,
+    "defects": [
+      {
+        "kind": "disc_sleep_architecture",
+        "type": "technical_artifact",
+        "title": "La continuité du sommeil accompagne tes journées à fort volume"
+      }
+    ]
+  },
+  "health": {
+    "execution": "ok",
+    "integrity": "warn",
+    "analyticalQuality": "warn"
+  },
+  "exportsTriggered": [
+    "Dossier",
+    "JSON",
+    "MD"
+  ],
+  "liveDomTitles": [
+    "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+    "Relevés de genoux aux parallèles revient après un long silence",
+    "Les séances commencées restent souvent incomplètes",
+    "Le volume de ces 30 jours dépasse la période précédente",
+    "GTG hors séances classiques",
+    "Ces 20 reps sont devenues ton niveau récemment reproductible",
+    "Jalon sous une de tes meilleures nuits (9 h 39)",
+    "Relevés de genoux aux parallèles reviennent après une interruption",
+    "Pompes inclinées sur support : moins de répétitions par séance",
+    "Pompes inclinées pieds sur banc : recul puis retour près du niveau de départ",
+    "octobre 2026 (portion dans la fenêtre) concentre la part la plus productive de la période"
+  ],
+  "packTitlesSample": [
+    "Pompes inclinées mains sur banc reviennent après une interruption",
+    "Relevés de genoux à la barre : le total monte surtout parce que tu t’entraînes plus souvent",
+    "Dips parallèles : volume par séance en hausse",
+    "Ces 30 jours mêlent un bloc chargé et un creux"
+  ]
+}

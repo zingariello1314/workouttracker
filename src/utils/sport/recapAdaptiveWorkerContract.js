@@ -3,6 +3,9 @@
  * Chemin sync de référence conservé pour tests / fixtures.
  */
 
+import { convertToStableNumericId } from '../workoutExerciseIdResolve';
+import { buildReverseStableIdIndex } from './resolveStorageExerciseIdentity';
+
 /** F7.0j — shell (assessment/enrichment/coach) + adaptive dans le même Worker. */
 export const RECAP_ADAPTIVE_WORKER_CONTRACT = 'f70l2-shell-adaptive-v1';
 
@@ -94,15 +97,19 @@ export function matchesWorkerPublicationGate(request, response) {
  * Priorité : getter live → exerciseDisplayNames persistés (historique hors programme actuel).
  * Ne invente jamais de libellé ; laisse vide si non résolu (le gate éditorial s’abstient).
  */
-export function buildExerciseNameMap(snapshot, getExerciseNameById) {
+export function buildExerciseNameMap(snapshot, getExerciseNameById, opts = {}) {
   const map = Object.create(null);
   const persisted =
     snapshot?.exerciseDisplayNames && typeof snapshot.exerciseDisplayNames === 'object'
       ? snapshot.exerciseDisplayNames
       : {};
+  const extra =
+    opts.extraNameById && typeof opts.extraNameById === 'object' ? opts.extraNameById : {};
   const ids = collectExerciseIdsForNameMap(snapshot);
   for (const key of Object.keys(persisted)) ids.add(String(key));
-  for (const id of ids) {
+  for (const key of Object.keys(extra)) ids.add(String(key));
+
+  const resolveDirect = (id) => {
     let name = '';
     if (typeof getExerciseNameById === 'function') {
       try {
@@ -112,12 +119,50 @@ export function buildExerciseNameMap(snapshot, getExerciseNameById) {
       }
     }
     if (!name || /^Exercice\s+\d+$/i.test(String(name).trim())) {
-      const snap = persisted[String(id)] || persisted[id];
+      const snap = persisted[String(id)] || persisted[id] || extra[String(id)] || extra[id];
       if (snap && !/^Exercice\s+\d+$/i.test(String(snap).trim())) name = snap;
     }
-    if (name) map[String(id)] = String(name);
+    return name && !/^Exercice\s+\d+$/i.test(String(name).trim()) ? String(name).trim() : '';
+  };
+
+  for (const id of ids) {
+    const name = resolveDirect(id);
+    if (name) map[String(id)] = name;
   }
+
+  // Seed depuis extra/persisted (originaux ex_/dup_/db_) puis remplir les hash stables.
+  const seed = { ...extra, ...persisted, ...map };
+  for (const [oid, name] of Object.entries(seed)) {
+    if (!name || isFallbackLabel(name)) continue;
+    const n = String(name).trim();
+    if (!map[oid]) map[oid] = n;
+    if (/^\d{7,}$/.test(oid)) continue;
+    const hash = String(convertToStableNumericId(oid));
+    if (!map[hash]) map[hash] = n;
+    ids.add(hash);
+  }
+
+  const reverseIndex = buildReverseStableIdIndex(seed);
+  for (const id of ids) {
+    if (map[String(id)]) continue;
+    const hit = reverseIndex.get(String(id)) || reverseIndex.get(String(Number(id)));
+    if (!hit || hit.ambiguous) continue;
+    if (hit.name && !isFallbackLabel(hit.name)) {
+      map[String(id)] = hit.name;
+      continue;
+    }
+    if (hit.originalId) {
+      const n = resolveDirect(hit.originalId) || map[hit.originalId] || seed[hit.originalId];
+      if (n && !isFallbackLabel(n)) map[String(id)] = String(n).trim();
+    }
+  }
+
   return map;
+}
+
+function isFallbackLabel(name) {
+  const s = String(name || '').trim();
+  return !s || /^Exercice\s+\d+$/i.test(s) || /^un mouvement$/i.test(s);
 }
 
 function collectExerciseIdsForNameMap(snapshot) {

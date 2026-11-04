@@ -15,6 +15,7 @@ import {
   displayNameOf
 } from './recapEditorialIdentity';
 import { isFallbackExerciseLabel } from './resolveStorageExerciseIdentity';
+import { requiresExerciseIdentity } from './analysisEngineSubjectContract';
 
 /** Kinds descriptifs souvent faibles hors contraste réel. */
 export const WEAK_DESCRIPTIVE_KINDS = Object.freeze([
@@ -178,10 +179,40 @@ export function displayNameKeyOf(d) {
 export function phenomenonIdentity(d) {
   const ex = exerciseKeyOf(d) || 'global';
   const phen = classifyPhenomenon(d);
-  return `${ex}|${phen}`;
+  // Retours / émergences : bucket temporel (pas le mécanisme de continuité),
+  // pour que emergence + ms_return du même exercice fusionnent.
+  if (phen === 'return_after_gap' || phen === 'emergence_generic') {
+    const g = Number(d?.metrics?.gapDays);
+    const time = Number.isFinite(g)
+      ? g >= 60
+        ? 'gap:long'
+        : g >= 21
+          ? 'gap:med'
+          : g >= 7
+            ? 'gap:short'
+            : 'gap:tiny'
+      : 't:na';
+    return `${ex}|${phen}|${time}`;
+  }
+  // Autres : suffixe mécanisme pour distinguer format vs volume sur le même exercice
+  const m = d?.metrics || {};
+  const mech =
+    m.trajectorySetMechanism ||
+    m.composedEvidence?.volumeAttribution?.kind ||
+    m.trajectoryPrimaryStory ||
+    '';
+  return mech ? `${ex}|${phen}|${mech}` : `${ex}|${phen}`;
 }
 
 export function isUnresolvedExerciseName(d) {
+  // Transversal / période / programme : pas d’exigence d’identité d’exercice.
+  if (d && !requiresExerciseIdentity(d)) {
+    // Toujours bloquer la prose cassée explicite (« un mouvement ») même en transversal.
+    const softBlob = `${d?.title || ''} ${d?.body || ''}`;
+    if (!/\bun mouvement\b/i.test(softBlob) && !/\bExercice\s+\d{2,}\b/i.test(softBlob)) {
+      return false;
+    }
+  }
   const title = String(d?.title || '');
   const body = String(d?.body || '');
   const blob = `${title} ${body} ${d?.metrics?.name || ''} ${d?.metrics?.f4Narration?.resolvedName || ''}`;
@@ -208,17 +239,38 @@ export function isUnresolvedExerciseName(d) {
 }
 
 /** Applique une réparation de nom sur une copie metrics (sans inventer d’alias). */
-export function withRepairedDisplayName(d, getExerciseNameById = null) {
-  const repaired = repairDisplayNameFromIdentity(d, getExerciseNameById);
-  if (repaired.status !== 'name_repaired_from_historical_id' || !repaired.name) return d;
+export function withRepairedDisplayName(d, getExerciseNameById = null, opts = {}) {
+  const repaired = repairDisplayNameFromIdentity(d, getExerciseNameById, opts);
+  if (repaired.status !== 'name_repaired_from_historical_id' || !repaired.name) {
+    // Propager le statut d’échec pour le diagnostic (sans inventer de nom).
+    if (repaired.identityStatus === 'identity_present_name_unresolved') {
+      return {
+        ...d,
+        metrics: {
+          ...(d.metrics || {}),
+          nameRepair: repaired,
+          identityUnresolvedReason: repaired.identityStatus
+        }
+      };
+    }
+    return d;
+  }
+  const name = repaired.name;
+  const patchTitle = (t) =>
+    String(t || '')
+      .replace(/\bun mouvement\b/gi, name)
+      .replace(/\bExercice\s+\d{2,}\b/gi, name);
   return {
     ...d,
-    title: String(d.title || '').replace(/\bun mouvement\b/gi, repaired.name),
+    title: patchTitle(d.title),
+    body: /\bun mouvement\b/i.test(String(d.body || '')) ? patchTitle(d.body) : d.body,
     metrics: {
       ...(d.metrics || {}),
-      name: repaired.name,
-      historicalDisplayName: repaired.name,
-      nameRepair: repaired
+      name,
+      exerciseName: name,
+      historicalDisplayName: name,
+      nameRepair: repaired,
+      identityResolutionSource: repaired.resolutionSource || null
     }
   };
 }
@@ -401,10 +453,27 @@ export function findPhenomenonRival(d, selectedList = []) {
     if (!sameExerciseIdentity(d, s)) return false;
     const other = classifyPhenomenon(s);
     if (other === phen) return true;
-    // Compléments sur le même exercice : retour + hausse de fréquence / structure
-    // du même retour → rivaliser ; conserver la carte la plus informative.
-    const returnFamily = new Set(['return_after_gap', 'emergence_generic', 'format_or_install']);
-    if (returnFamily.has(phen) && returnFamily.has(other)) return true;
+    // Complémentaires (retour + format / fréquence) : ne pas rivaliser.
+    const complementary = {
+      return_after_gap: new Set(['frequency_attribution', 'format_or_install', 'decline_then_recovery']),
+      format_or_install: new Set(['return_after_gap', 'frequency_attribution', 'volume_rise']),
+      frequency_attribution: new Set([
+        'return_after_gap',
+        'format_or_install',
+        'volume_rise',
+        'volume_decline'
+      ]),
+      decline_then_recovery: new Set(['return_after_gap', 'format_or_install']),
+      emergence_generic: new Set(['frequency_attribution', 'format_or_install'])
+    };
+    if (complementary[phen]?.has(other)) return false;
+    // Uniquement fusionner émergence générique avec retour (même épisode flou).
+    if (
+      (phen === 'emergence_generic' && other === 'return_after_gap') ||
+      (phen === 'return_after_gap' && other === 'emergence_generic')
+    ) {
+      return true;
+    }
     return false;
   });
   if (!hit) return null;
@@ -511,12 +580,12 @@ export function countEpisodeCards(selectedList = []) {
 }
 
 export function episodeCapForVoice(voiceKey) {
-  // Plafonds souples : une fenêtre riche peut porter plusieurs épisodes d’exercices distincts.
-  // Ce n’est pas un quota à remplir — editorialCanTake refuse toujours les cartes anonymes / faibles.
-  if (voiceKey === 'today') return 3;
-  if (voiceKey === 'week') return 8;
-  if (voiceKey === 'month') return 12;
-  return 14; // long / year
+  // Garde-fou (exercices DISTINCTS) — soft overflow dans editorialCanTake si IV élevée.
+  // Pas un quota destructeur : overflow +6 pour phénomènes distincts à forte IV.
+  if (voiceKey === 'today') return 4;
+  if (voiceKey === 'week') return 10;
+  if (voiceKey === 'month') return 14;
+  return 12; // long / year — période riche peut dépasser via soft overflow
 }
 
 /**
@@ -562,15 +631,16 @@ export function editorialCanTake(d, selectedList, voiceKey = 'week') {
           (EXERCISE_EPISODE_KINDS.includes(s.kind) || String(s.kind || '').startsWith('disc_ms_return')) &&
           sameExerciseIdentity(d, s)
       );
-      // Soft overflow : exercices DISTINCTS à forte IV (pas le même mouvement en double).
-      if (sameEx || (d.informativeValue || 0) < 72 || n >= cap + 4) {
+      // Soft overflow : exercices DISTINCTS à forte IV — plafond élargi (+6).
+      if (sameEx || (d.informativeValue || 0) < 70 || n >= cap + 6) {
         return { ok: false, reason: 'episode_cap' };
       }
     }
   }
 
-  // Nom anonyme : ne jamais promouvoir (pas de découverte majeure sans identité)
-  if (isUnresolvedExerciseName(d)) {
+  // Nom anonyme : seulement si le kind affirme parler d’un exercice unique.
+  // Les analyses transversales (répertoire, parts, concentration…) n’exigent pas d’exerciseId.
+  if (requiresExerciseIdentity(d) && isUnresolvedExerciseName(d)) {
     return { ok: false, reason: 'unresolved_exercise_name' };
   }
 

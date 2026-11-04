@@ -17,6 +17,27 @@ import {
   STAGE_STATUS_META
 } from '../../utils/sport/analysisEngineDiagnosticModel';
 import { buildFindingForensics } from '../../utils/sport/analysisEngineFindingForensics';
+import {
+  buildDiagnosticComparison,
+  buildDiagnosticExportPayload,
+  buildComparisonMarkdown,
+  compareDomToPack
+} from '../../utils/sport/analysisEngineComparison';
+import {
+  buildInvestigationExport,
+  buildInvestigationMarkdown
+} from '../../utils/sport/analysisEngineInvestigationExport';
+import {
+  buildMergedCompareRegistry,
+  filterCompareRows,
+  buildIssuesBundle
+} from '../../utils/sport/analysisEngineCompareRegistry';
+import {
+  loadAnalyseDomCapture,
+  captureAnalyseCardsFromDom,
+  clearAnalyseDomCapture,
+  DOM_CAPTURE_EVENT
+} from '../../utils/sport/analysisEngineDomCapture';
 import { analysisFamilyLabel } from '../../utils/sport/recapSelectionDiagnostics';
 import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
 import { useGarminData } from '../../hooks/useGarminData';
@@ -33,6 +54,7 @@ import './AnalysisEngineConsole.css';
 const FORENSIC_TABS = [
   ['general', 'Général'],
   ['chain', 'Chaîne'],
+  ['identity', 'Identité'],
   ['raw', '1 · Bruts'],
   ['groups', '2 · Groupes'],
   ['discovery', '3 · Découverte'],
@@ -44,6 +66,7 @@ const FORENSIC_TABS = [
 
 /** Couches empilées dans l’onglet Général (sans Chaîne / JSON). */
 const FORENSIC_STACK = [
+  ['identity', 'Identité / phénomène'],
   ['raw', '1 · Bruts'],
   ['groups', '2 · Groupes'],
   ['discovery', '3 · Découverte'],
@@ -83,6 +106,7 @@ const SECTIONS = [
   { id: 'correlations', label: 'Corrélations' },
   { id: 'gaps', label: 'Absences' },
   { id: 'prose', label: 'Texte final' },
+  { id: 'issues', label: 'Problèmes' },
   { id: 'limits', label: 'Limites' }
 ];
 
@@ -93,6 +117,7 @@ const PERIOD_LABELS = {
   '3m': '3 mois',
   '6m': '6 mois',
   '1y': '1 an',
+  '2y': '2 ans',
   all: 'Tout'
 };
 
@@ -105,7 +130,19 @@ const QUICK_FILTERS = [
   { id: 'no_evidence', label: 'Sans preuve' },
   { id: 'dupes', label: 'Redondances' },
   { id: 'cross', label: 'Transversales' },
-  { id: 'unknown', label: 'Non traçables' }
+  { id: 'unknown', label: 'Non traçables' },
+  { id: 'cap', label: 'Perdues par cap' },
+  { id: 'unresolved', label: 'Identités non résolues' }
+];
+
+const COMPARE_FILTERS = [
+  { id: 'all', label: 'Toutes' },
+  { id: 'common', label: 'Communes' },
+  { id: 'only_a', label: 'Spécifiques A' },
+  { id: 'only_b', label: 'Spécifiques B' },
+  { id: 'status_flip', label: 'Statut différent' },
+  { id: 'sel_a_dem_b', label: 'Sél. A / décl. B' },
+  { id: 'dem_a_sel_b', label: 'Décl. A / sél. B' }
 ];
 
 const LIMIT_GROUPS = [
@@ -211,6 +248,88 @@ function ForensicLayerBody({ layer, f, row, setTab }) {
           ) : null}
         </div>
       </div>
+    );
+  }
+
+  if (layer === 'identity') {
+    const idn = f.identity || {};
+    const tmp = f.temporality || {};
+    const read = f.reading || {};
+    const trail = f.editorialTrail || [];
+    return (
+      <>
+        <h4>Identité</h4>
+        <div className="aec-metric-grid">
+          {[
+            ['Candidate ID', idn.candidateId],
+            ['Phenomenon ID', idn.phenomenonId],
+            ['Classe phénomène', idn.phenomenonClass],
+            ['Kind', idn.kind],
+            ['Famille', idn.family],
+            ['Producteur', idn.producer],
+            ['Sujet', idn.subjectKey],
+            ['Exercice ID', idn.exerciseId],
+            ['Nom résolu', idn.resolvedName],
+            ['Provenance', idn.resolutionSource],
+            ['Statut résolution', idn.resolutionStatus],
+            ['Ambigu', idn.ambiguous ? 'oui' : 'non']
+          ].map(([k, v]) => (
+            <div key={k} className="aec-metric-cell">
+              <span className="aec-mono">{k}</span>
+              <strong>{v != null && v !== '' ? String(v) : 'non instrumenté'}</strong>
+            </div>
+          ))}
+        </div>
+        <h4>Temporalité</h4>
+        <div className="aec-metric-grid">
+          {[
+            ['Période', tmp.period],
+            ['Fenêtre', tmp.window ? JSON.stringify(tmp.window) : null],
+            ['Baseline', tmp.baseline],
+            ['Histo. hors fenêtre', tmp.historyOutsideWindow],
+            ['Mois partiel', tmp.partialMonth]
+          ].map(([k, v]) => (
+            <div key={k} className="aec-metric-cell">
+              <span className="aec-mono">{k}</span>
+              <strong>{v != null && v !== '' ? String(v) : 'non instrumenté'}</strong>
+            </div>
+          ))}
+        </div>
+        {(tmp.eventDates || []).length ? (
+          <p className="aec-mono" style={{ fontSize: 11 }}>
+            Dates : {tmp.eventDates.join(' · ')}
+          </p>
+        ) : null}
+        <h4>Lecture structurée</h4>
+        <ul className="aec-for-list">
+          <li>
+            <strong>Constat</strong> — {read.constat || 'non instrumenté'}
+          </li>
+          <li>
+            <strong>Mécanisme</strong> — {String(read.mechanism || 'non instrumenté')}
+          </li>
+          <li>
+            <strong>Portée</strong> — {String(read.scope || 'non instrumenté')}
+          </li>
+          <li>
+            <strong>Implication</strong> — {String(read.implication || 'non instrumenté')}
+          </li>
+        </ul>
+        <h4>Chaîne éditoriale</h4>
+        {trail.length ? (
+          <ul className="aec-for-list">
+            {trail.map((t, i) => (
+              <li key={`${t.step}-${i}`}>
+                <span className="aec-mono">{t.step}</span> · {t.status}
+                {t.reason ? ` · ${t.reason}` : ''}
+                {t.phenomenonId ? ` · ${t.phenomenonId}` : ''}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ForensicEmpty note="Trail non instrumenté" />
+        )}
+      </>
     );
   }
 
@@ -1024,11 +1143,15 @@ export default function AnalysisEngineConsole() {
 
   const [period, setPeriod] = useState('30d');
   const [comparePeriod, setComparePeriod] = useState('');
+  const [viewMode, setViewMode] = useState('A'); // A | B | compare
+  const [compareFilter, setCompareFilter] = useState('all');
   const [section, setSection] = useState('registry');
   const [report, setReport] = useState(null);
   const [compareReport, setCompareReport] = useState(null);
   const [error, setError] = useState(null);
+  const [errorB, setErrorB] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [busyPhase, setBusyPhase] = useState(null);
   const [query, setQuery] = useState('');
   const [quickFilter, setQuickFilter] = useState('all');
   const [familyFilter, setFamilyFilter] = useState('all');
@@ -1043,6 +1166,7 @@ export default function AnalysisEngineConsole() {
   /** cards = digestible par famille ; table = dense */
   const [registryLayout, setRegistryLayout] = useState('cards');
   const [collapsedFamilies, setCollapsedFamilies] = useState(() => new Set());
+  const [domCapture, setDomCapture] = useState(() => loadAnalyseDomCapture());
 
   const periodWindow = useMemo(() => getRecapDateWindow(period, new Date()), [period]);
   const garminRange = useMemo(() => {
@@ -1090,43 +1214,56 @@ export default function AnalysisEngineConsole() {
 
   const run = useCallback(async () => {
     if (!canAccess) return;
-    // F7.0f — diagnostic hors thread ; UI reste interactive.
     setBusy(true);
     setError(null);
+    setErrorB(null);
     setSelected(null);
     setPage(0);
     await browserYieldFrame();
+    const snapshot = getCurrentData() || {};
+    const window = getRecapDateWindow(period, new Date());
+    const payload = {
+      snapshot,
+      period,
+      window,
+      garminData: garminBundle,
+      garminPartial,
+      getExerciseNameById,
+      profileQuestionnaireRaw: currentUser?.profileQuestionnaire ?? null,
+      activeProgram,
+      programs: Array.isArray(programs) ? programs : [],
+      isAdmin,
+      isAuthenticated
+    };
     try {
-      const snapshot = getCurrentData() || {};
-      const window = getRecapDateWindow(period, new Date());
-      const payload = {
-        snapshot,
-        period,
-        window,
-        garminData: garminBundle,
-        garminPartial,
-        getExerciseNameById,
-        profileQuestionnaireRaw: currentUser?.profileQuestionnaire ?? null,
-        activeProgram,
-        programs: Array.isArray(programs) ? programs : [],
-        isAdmin,
-        isAuthenticated
-      };
+      setBusyPhase('A');
       const primary = await requestDiagnosticViaWorker(payload);
-      // F7.0h — céder le thread avant d’hydrater le gros rapport (évite long message handler).
       await browserYieldFrame();
       setReport(primary.report);
       if (comparePeriod && comparePeriod !== period) {
-        await browserYieldFrame();
-        const w2 = getRecapDateWindow(comparePeriod, new Date());
-        const secondary = await requestDiagnosticViaWorker({
-          ...payload,
-          period: comparePeriod,
-          window: w2
-        });
-        setCompareReport(secondary.report);
+        try {
+          setBusyPhase('B');
+          await browserYieldFrame();
+          const w2 = getRecapDateWindow(comparePeriod, new Date());
+          const secondary = await requestDiagnosticViaWorker({
+            ...payload,
+            period: comparePeriod,
+            window: w2
+          });
+          setCompareReport(secondary.report);
+          setViewMode((vm) => (vm === 'A' ? 'compare' : vm));
+        } catch (eB) {
+          if (eB?.code === 'cancelled') return;
+          setCompareReport(null);
+          setErrorB(
+            eB?.code === 'unavailable'
+              ? 'Worker B indisponible.'
+              : String(eB?.message || eB)
+          );
+        }
       } else {
         setCompareReport(null);
+        setViewMode('A');
       }
     } catch (e) {
       if (e?.code === 'cancelled') return;
@@ -1136,8 +1273,10 @@ export default function AnalysisEngineConsole() {
           : String(e?.message || e)
       );
       setReport(null);
+      setCompareReport(null);
     } finally {
       setBusy(false);
+      setBusyPhase(null);
     }
   }, [
     canAccess,
@@ -1156,14 +1295,58 @@ export default function AnalysisEngineConsole() {
 
   useEffect(() => () => cancelDiagnosticWorker(), []);
 
+  useEffect(() => {
+    const onCap = (ev) => setDomCapture(ev?.detail || loadAnalyseDomCapture());
+    if (typeof window !== 'undefined') {
+      window.addEventListener(DOM_CAPTURE_EVENT, onCap);
+      return () => window.removeEventListener(DOM_CAPTURE_EVENT, onCap);
+    }
+    return undefined;
+  }, []);
+
   // F7.0e : aucun recalcul automatique à l’ouverture — diagnostic explicite via « Relancer ».
 
-  const comparison = useMemo(
+  const overviewComparison = useMemo(
     () => (report && compareReport ? compareDiagnosticOverviews(report, compareReport) : null),
     [report, compareReport]
   );
 
-  const registryRows = report?.registry?.rows || [];
+  const structuredComparison = useMemo(
+    () =>
+      report && compareReport
+        ? buildDiagnosticComparison(report, compareReport, {
+            periodA: period,
+            periodB: comparePeriod
+          })
+        : null,
+    [report, compareReport, period, comparePeriod]
+  );
+
+  const activeReport = viewMode === 'B' && compareReport ? compareReport : report;
+
+  const mergedCompare = useMemo(() => {
+    if (!report || !compareReport) return null;
+    return buildMergedCompareRegistry(report, compareReport, {
+      a: period,
+      b: comparePeriod
+    });
+  }, [report, compareReport, period, comparePeriod]);
+
+  const issuesBundle = useMemo(
+    () => buildIssuesBundle(report, compareReport, structuredComparison),
+    [report, compareReport, structuredComparison]
+  );
+
+  const domPackDiff = useMemo(
+    () => (activeReport ? compareDomToPack(activeReport, domCapture) : null),
+    [activeReport, domCapture]
+  );
+
+  const registryRows = useMemo(() => {
+    if (viewMode === 'compare' && mergedCompare) return mergedCompare.rows;
+    return activeReport?.registry?.rows || [];
+  }, [viewMode, mergedCompare, activeReport]);
+
   const families = useMemo(() => {
     const set = new Set(registryRows.map((r) => r.family).filter(Boolean));
     return ['all', ...[...set].sort()];
@@ -1173,7 +1356,9 @@ export default function AnalysisEngineConsole() {
 
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const base = registryRows.filter((r) => {
+    let rows = registryRows;
+    if (viewMode === 'compare') rows = filterCompareRows(rows, compareFilter);
+    const base = rows.filter((r) => {
       if (familyFilter !== 'all' && r.family !== familyFilter) return false;
       if (activeQuick === 'shown_now' && r.diagStatus !== DIAG_STATUS.SHOWN_NOW) return false;
       if (activeQuick === 'intermediate' && r.diagStatus !== DIAG_STATUS.INTERMEDIATE) return false;
@@ -1182,12 +1367,22 @@ export default function AnalysisEngineConsole() {
       if (activeQuick === 'unknown' && r.diagStatus !== DIAG_STATUS.UNKNOWN) return false;
       if (activeQuick === 'cross' && !r.isCrossFamily) return false;
       if (activeQuick === 'no_evidence' && r.evidenceCount > 0) return false;
+      if (activeQuick === 'cap' && r.decisionReason !== 'cap' && r.decisionReason !== 'episode_cap') {
+        return false;
+      }
+      if (
+        activeQuick === 'unresolved' &&
+        r.decisionReason !== 'unresolved_exercise_name' &&
+        !r.metrics?.identityUnresolvedReason
+      ) {
+        return false;
+      }
       if (activeQuick === 'dupes') {
         const t = String(r.title || r.body || '')
           .slice(0, 48)
           .toLowerCase();
         const dup =
-          registryRows.filter(
+          rows.filter(
             (x) =>
               String(x.title || x.body || '')
                 .slice(0, 48)
@@ -1196,13 +1391,21 @@ export default function AnalysisEngineConsole() {
         if (!dup) return false;
       }
       if (!q) return true;
-      return `${r.id} ${r.kind} ${r.family} ${r.title} ${r.body} ${r.decisionReason || ''}`
+      return `${r.id} ${r.kind} ${r.family} ${r.title} ${r.body} ${r.decisionReason || ''} ${r._phenomenonId || ''}`
         .toLowerCase()
         .includes(q);
     });
     return sortRows(base, sortKey, sortDir);
-  }, [registryRows, query, activeQuick, familyFilter, sortKey, sortDir]);
-
+  }, [
+    registryRows,
+    query,
+    activeQuick,
+    familyFilter,
+    sortKey,
+    sortDir,
+    viewMode,
+    compareFilter
+  ]);
   const rowsByFamily = useMemo(() => {
     const map = new Map();
     filteredRows.forEach((r) => {
@@ -1231,40 +1434,41 @@ export default function AnalysisEngineConsole() {
 
   useEffect(() => {
     setPage(0);
-  }, [quickFilter, familyFilter, query, section, sortKey, sortDir]);
+  }, [quickFilter, familyFilter, query, section, sortKey, sortDir, viewMode, compareFilter]);
 
   const navCounts = useMemo(() => {
-    if (!report) return {};
+    if (!activeReport) return {};
     return {
-      overview: report.registry?.counts?.shown_now ?? 0,
-      registry: report.registry?.counts?.total ?? 0,
-      pipeline: report.stagesDetailed?.length ?? 0,
-      data: report.dataCatalog?.items?.length ?? report.dataInventory?.length ?? 0,
-      families: report.families?.length ?? 0,
-      correlations: report.correlations?.length ?? 0,
-      gaps: report.opportunities?.length ?? 0,
-      prose: report.registry?.counts?.shown_now ?? 0,
-      limits: report.limits?.length ?? 0
+      overview: activeReport.registry?.counts?.shown_now ?? 0,
+      registry: registryRows.length,
+      pipeline: activeReport.stagesDetailed?.length ?? 0,
+      data: activeReport.dataCatalog?.items?.length ?? activeReport.dataInventory?.length ?? 0,
+      families: activeReport.families?.length ?? 0,
+      correlations: activeReport.correlations?.length ?? 0,
+      gaps: activeReport.opportunities?.length ?? 0,
+      prose: activeReport.registry?.counts?.shown_now ?? 0,
+      issues: issuesBundle.length,
+      limits: activeReport.limits?.length ?? 0
     };
-  }, [report]);
+  }, [activeReport, registryRows.length, issuesBundle.length]);
 
   const garminUi = garminStatusLabel(garminPartial, garminBundle);
-  const counts = report?.registry?.counts;
+  const counts = activeReport?.registry?.counts;
 
   const costlyStages = useMemo(() => {
-    return [...(report?.stagesDetailed || [])]
+    return [...(activeReport?.stagesDetailed || [])]
       .filter((s) => s.ms != null)
       .sort((a, b) => (b.ms || 0) - (a.ms || 0))
       .slice(0, 5);
-  }, [report]);
+  }, [activeReport]);
 
   const familyMax = useMemo(() => {
-    const list = report?.families || [];
+    const list = activeReport?.families || [];
     return Math.max(1, ...list.map((f) => f.produced || 0));
-  }, [report]);
+  }, [activeReport]);
 
   const groupedLimits = useMemo(() => {
-    const limits = report?.limits || [];
+    const limits = activeReport?.limits || [];
     const buckets = LIMIT_GROUPS.map((g) => ({
       id: g.id,
       items: limits.filter((l) => g.match.test(l.text || l.id || ''))
@@ -1273,16 +1477,16 @@ export default function AnalysisEngineConsole() {
     const other = limits.filter((l) => !used.has(l.id));
     if (other.length) buckets.push({ id: 'autres', items: other });
     return buckets.filter((b) => b.items.length);
-  }, [report]);
+  }, [activeReport]);
 
   const gapsByKind = useMemo(() => {
     const map = {};
-    (report?.opportunities || []).forEach((o) => {
+    (activeReport?.opportunities || []).forEach((o) => {
       if (!map[o.kind]) map[o.kind] = [];
       map[o.kind].push(o);
     });
     return map;
-  }, [report]);
+  }, [activeReport]);
 
   const onSort = (col) => {
     if (sortKey === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -1301,36 +1505,85 @@ export default function AnalysisEngineConsole() {
 
   const exportJson = () => {
     if (!report) return;
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const mode = compareReport ? 'comparison' : 'single';
+    const payload = buildDiagnosticExportPayload({
+      mode,
+      reportA: report,
+      reportB: compareReport,
+      comparison: structuredComparison,
+      context: {
+        generatedAt: new Date().toISOString(),
+        periodA: period,
+        periodB: comparePeriod || null,
+        viewMode,
+        issues: issuesBundle,
+        domCapture: domCapture || null,
+        domPackDiff: domPackDiff || null
+      }
+    });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `analysis-engine-diag-${period}-${Date.now()}.json`;
+    a.download = `analysis-engine-diag-${mode}-${period}${comparePeriod ? `-vs-${comparePeriod}` : ''}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const exportMarkdown = () => {
     if (!report) return;
-    const c = report.registry?.counts || {};
-    const lines = [
-      `# Diagnostic moteur — ${period}`,
-      '',
-      `- Généré : ${report.meta?.generatedAt}`,
-      `- Sélectionnées (pack diagnostic) : ${c.shown_now}`,
-      `- Intermédiaires : ${c.intermediate}`,
-      `- Déclassées : ${c.demoted}`,
-      `- Rejetées : ${c.rejected}`,
-      `- Durée : ${report.overview?.totalMs} ms`,
-      '',
-      '## Limites',
-      ...(report.limits || []).map((l) => `- ${l.text}`)
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    let text;
+    if (compareReport && structuredComparison) {
+      text = buildComparisonMarkdown({
+        schemaVersion: structuredComparison.schemaVersion,
+        context: { generatedAt: new Date().toISOString() },
+        comparison: {
+          ...structuredComparison,
+          issues: issuesBundle
+        }
+      });
+      text += `\n\n## Pack vs DOM\n\n`;
+      if (domPackDiff) {
+                    text += `- Comparabilité : ${domPackDiff.comparability || (domPackDiff.comparable ? 'comparable' : 'non_comparable')}\n`;
+                    text += `- sameSignature : ${domPackDiff.sameSignature}\n`;
+                    text += `- Raison : ${domPackDiff.reason || '—'}\n`;
+                    text += `- Pack : ${domPackDiff.levels?.selectedInDiagnosticPack ?? '—'}\n`;
+                    text += `- DOM : ${domPackDiff.levels?.renderedInAnalyseDom ?? '—'}\n`;
+                    if (domPackDiff.emptyReason) text += `- Capture vide : ${domPackDiff.emptyReason}\n`;
+                    if (domPackDiff.note) text += `- Note : ${domPackDiff.note}\n`;
+      } else text += `- Aucune capture DOM.\n`;
+    } else {
+      text = buildInvestigationMarkdown(
+        buildInvestigationExport({
+          report,
+          reportB: compareReport,
+          domCapture,
+          context: { periodA: period, periodB: comparePeriod || null }
+        })
+      );
+    }
+    const blob = new Blob([text], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `analysis-engine-diag-${period}.md`;
+    a.download = `analysis-engine-diag-${period}${comparePeriod ? `-vs-${comparePeriod}` : ''}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportInvestigation = () => {
+    if (!report) return;
+    const dossier = buildInvestigationExport({
+      report,
+      reportB: compareReport,
+      domCapture,
+      context: { periodA: period, periodB: comparePeriod || null }
+    });
+    const blob = new Blob([JSON.stringify(dossier, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analysis-investigation-${period}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -1380,10 +1633,16 @@ export default function AnalysisEngineConsole() {
             <div className="aec-ctrl-group">
               <span
                 className={`aec-run-dot${busy ? ' is-busy' : report ? '' : ' is-idle'}`}
-                title={busy ? 'Exécution' : report ? 'Run prêt' : 'Idle'}
+                title={
+                  busy
+                    ? `Exécution ${busyPhase || ''}`.trim()
+                    : report
+                      ? 'Run prêt'
+                      : 'Idle'
+                }
               />
               <label className="aec-field">
-                Période
+                Période A
                 <select value={period} onChange={(e) => setPeriod(e.target.value)}>
                   {DIAGNOSTIC_PERIODS.map((p) => (
                     <option key={p} value={p}>
@@ -1393,8 +1652,15 @@ export default function AnalysisEngineConsole() {
                 </select>
               </label>
               <label className="aec-field">
-                vs
-                <select value={comparePeriod} onChange={(e) => setComparePeriod(e.target.value)}>
+                vs B
+                <select
+                  value={comparePeriod}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setComparePeriod(v);
+                    if (!v) setViewMode('A');
+                  }}
+                >
                   <option value="">—</option>
                   {DIAGNOSTIC_PERIODS.map((p) => (
                     <option key={p} value={p}>
@@ -1404,11 +1670,42 @@ export default function AnalysisEngineConsole() {
                 </select>
               </label>
             </div>
+            {compareReport ? (
+              <div className="aec-view-modes" role="group" aria-label="Vue période">
+                {[
+                  ['A', PERIOD_LABELS[period] || period],
+                  ['B', PERIOD_LABELS[comparePeriod] || comparePeriod],
+                  ['compare', 'Comparaison']
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`aec-btn aec-btn-ghost${viewMode === id ? ' is-on' : ''}`}
+                    onClick={() => setViewMode(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <button type="button" className="aec-btn aec-btn-primary" onClick={run} disabled={busy}>
-              {busy ? 'Analyse…' : report ? 'Relancer' : 'Lancer le diagnostic'}
+              {busy
+                ? `Analyse ${busyPhase || ''}…`
+                : report
+                  ? 'Relancer'
+                  : 'Lancer le diagnostic'}
             </button>
             <button type="button" className="aec-btn aec-btn-ghost" onClick={exportJson} disabled={!report}>
               JSON
+            </button>
+            <button
+              type="button"
+              className="aec-btn aec-btn-ghost"
+              onClick={exportInvestigation}
+              disabled={!report}
+              title="Dossier d’investigation complet"
+            >
+              Dossier
             </button>
             <button
               type="button"
@@ -1417,6 +1714,17 @@ export default function AnalysisEngineConsole() {
               disabled={!report}
             >
               MD
+            </button>
+            <button
+              type="button"
+              className="aec-btn aec-btn-ghost"
+              onClick={() => {
+                const cap = captureAnalyseCardsFromDom({ period: viewMode === 'B' ? comparePeriod : period });
+                setDomCapture(cap);
+              }}
+              title="Capturer les cartes rendues dans Analyse"
+            >
+              DOM
             </button>
             <button
               type="button"
@@ -1464,11 +1772,11 @@ export default function AnalysisEngineConsole() {
                     <div className="aec-kpi">
                       <div className="aec-kpi-label">Période</div>
                       <div className="aec-kpi-value" style={{ fontSize: '0.95rem' }}>
-                        {PERIOD_LABELS[report.overview.period] || report.overview.period}
+                        {PERIOD_LABELS[activeReport.overview.period] || activeReport.overview.period}
                       </div>
                       <div className="aec-kpi-hint">
-                        {report.overview.window
-                          ? `${report.overview.window.start} → ${report.overview.window.end}`
+                        {activeReport.overview.window
+                          ? `${activeReport.overview.window.start} → ${activeReport.overview.window.end}`
                           : '—'}
                       </div>
                     </div>
@@ -1477,8 +1785,8 @@ export default function AnalysisEngineConsole() {
                       <div className="aec-kpi-value">{counts?.shown_now ?? 0}</div>
                       <div className="aec-kpi-hint">
                         pack diagnostic
-                        {report.meta?.insightHistoryEntryCount != null
-                          ? ` · hist. ${report.meta.insightHistoryEntryCount}`
+                        {activeReport.meta?.insightHistoryEntryCount != null
+                          ? ` · hist. ${activeReport.meta.insightHistoryEntryCount}`
                           : ''}
                       </div>
                     </div>
@@ -1510,7 +1818,7 @@ export default function AnalysisEngineConsole() {
                     </div>
                     <div className="aec-kpi">
                       <div className="aec-kpi-label">Durée</div>
-                      <div className="aec-kpi-value">{report.overview.totalMs}</div>
+                      <div className="aec-kpi-value">{activeReport.overview.totalMs}</div>
                       <div className="aec-kpi-hint">ms</div>
                     </div>
                   </div>
@@ -1522,7 +1830,7 @@ export default function AnalysisEngineConsole() {
                           <h2>Supervision du run</h2>
                           <p>
                             {counts?.total ?? 0} candidats uniques ·{' '}
-                            {report.overview.signalsDetected} signaux détectés
+                            {activeReport.overview.signalsDetected} signaux détectés
                           </p>
                         </div>
                         <div className="aec-panel-body">
@@ -1536,35 +1844,80 @@ export default function AnalysisEngineConsole() {
                           <p style={{ margin: '0 0 4px', fontSize: 13 }}>
                             Pack sélectionné <strong>{counts?.shown_now}</strong> · hors pack{' '}
                             <strong>
-                              {(counts?.intermediate || 0) +
-                                (counts?.demoted || 0) +
-                                (counts?.rejected || 0) +
-                                (counts?.unknown || 0)}
+                              {counts?.hors_pack ??
+                                (counts?.intermediate || 0) +
+                                  (counts?.demoted || 0) +
+                                  (counts?.rejected || 0) +
+                                  (counts?.unknown || 0)}
                             </strong>
+                            · indéterminés <strong>{counts?.unknown ?? 0}</strong>
                             . Ce compteur n’est pas le nombre de cartes rendues dans Analyse.
                           </p>
-                          {report.meta?.displayScopeNote ? (
-                            <p className="aec-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>
-                              {report.meta.displayScopeNote}
+                          {counts?.conservation ? (
+                            <p className="aec-muted" style={{ fontSize: 11, margin: '0 0 8px' }}>
+                              Conservation : {counts.conservation.formula} →{' '}
+                              {counts.conservation.holds ? 'OK' : 'ÉCHEC'} · cross={counts.cross}{' '}
+                              (flag, hors somme exclusive)
                             </p>
                           ) : null}
-                          {comparison ? (
+                          {activeReport.meta?.displayScopeNote ? (
+                            <p className="aec-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>
+                              {activeReport.meta.displayScopeNote}
+                            </p>
+                          ) : null}
+                          {structuredComparison ? (
+                            <div className="aec-muted" style={{ fontSize: 12 }}>
+                              <p style={{ margin: '0 0 6px' }}>
+                                Comparaison structurée {structuredComparison.overview?.periodA} vs{' '}
+                                {structuredComparison.overview?.periodB} : candidats{' '}
+                                {structuredComparison.overview?.candidatesA}/
+                                {structuredComparison.overview?.candidatesB} · sélectionnées{' '}
+                                {structuredComparison.overview?.shownA}/
+                                {structuredComparison.overview?.shownB} (Δ{' '}
+                                {structuredComparison.overview?.shownDelta}) · phénomènes appariés{' '}
+                                {structuredComparison.stats?.matched} · problèmes{' '}
+                                {issuesBundle.length}.
+                              </p>
+                              {structuredComparison.context?.comparabilityLabel ? (
+                                <p
+                                  className={
+                                    structuredComparison.context?.comparableAsRegression
+                                      ? 'aec-banner'
+                                      : 'aec-banner aec-banner-warn'
+                                  }
+                                  style={{ margin: '0 0 6px', fontSize: 11 }}
+                                >
+                                  Comparabilité : {structuredComparison.context.comparabilityLabel}
+                                  {structuredComparison.context.comparableAsRegression
+                                    ? ''
+                                    : ' — consultable, pas une preuve de régression.'}
+                                </p>
+                              ) : null}
+                              <p className="aec-faint" style={{ margin: 0, fontSize: 11 }}>
+                                {structuredComparison.overview?.note}
+                              </p>
+                            </div>
+                          ) : overviewComparison ? (
                             <p className="aec-muted" style={{ fontSize: 12 }}>
-                              Comparaison {comparison.periodA} → {comparison.periodB} : Δ affichés{' '}
-                              {comparison.shownDelta} · Δ rejetés {comparison.rejectedDelta} · Δ
-                              signaux {comparison.signalsDelta}.
+                              Comparaison {overviewComparison.periodA} → {overviewComparison.periodB} :
+                              Δ affichés {overviewComparison.shownDelta}.
                             </p>
                           ) : (
                             <p className="aec-faint" style={{ fontSize: 11 }}>
-                              Choisis une période « vs » pour comparer deux fenêtres sur les mêmes
-                              données.
+                              Choisis une période « vs » puis Relancer pour construire deux rapports
+                              complets comparables.
                             </p>
                           )}
+                          {errorB ? (
+                            <p className="aec-banner aec-banner-error" style={{ marginTop: 8 }}>
+                              Période B : {errorB}
+                            </p>
+                          ) : null}
                           <h3 style={{ fontSize: 12, margin: '14px 0 6px', color: 'var(--aec-muted)' }}>
                             Pipeline (cliquable)
                           </h3>
                           <div className="aec-pipeline-track">
-                            {(report.stagesDetailed || []).slice(0, 8).map((st) => (
+                            {(activeReport.stagesDetailed || []).slice(0, 8).map((st) => (
                               <button
                                 key={st.id}
                                 type="button"
@@ -1591,9 +1944,9 @@ export default function AnalysisEngineConsole() {
                               </button>
                             ))}
                           </div>
-                          {report.overview.warnings?.length ? (
+                          {activeReport.overview.warnings?.length ? (
                             <ul className="aec-list" style={{ color: 'var(--aec-orange)' }}>
-                              {report.overview.warnings.slice(0, 8).map((w) => (
+                              {activeReport.overview.warnings.slice(0, 8).map((w) => (
                                 <li key={w}>{w}</li>
                               ))}
                             </ul>
@@ -1608,8 +1961,8 @@ export default function AnalysisEngineConsole() {
                             <h2>Sources de données</h2>
                             <p>
                               Version courte ·{' '}
-                              {report.dataCatalog?.totals
-                                ? `${report.dataCatalog.totals.ok} ok · ${report.dataCatalog.totals.sparse} faibles · ${report.dataCatalog.totals.missing} manquantes`
+                              {activeReport.dataCatalog?.totals
+                                ? `${activeReport.dataCatalog.totals.ok} ok · ${activeReport.dataCatalog.totals.sparse} faibles · ${activeReport.dataCatalog.totals.missing} manquantes`
                                 : '—'}{' '}
                               ·{' '}
                               <button
@@ -1624,7 +1977,7 @@ export default function AnalysisEngineConsole() {
                         </div>
                         <div className="aec-panel-body">
                           <ul className="aec-data-short">
-                            {(report.dataCatalogShort || report.dataCatalog?.short || []).map((d) => (
+                            {(activeReport.dataCatalogShort || activeReport.dataCatalog?.short || []).map((d) => (
                               <li key={d.id}>
                                 <DataPill status={d.status} />
                                 <span className="aec-data-short-label">{d.label}</span>
@@ -1741,12 +2094,28 @@ export default function AnalysisEngineConsole() {
                               ))}
                             </div>
                           </div>
+                          {viewMode === 'compare' ? (
+                            <div className="aec-toolbar-row">
+                              <div className="aec-filters">
+                                {COMPARE_FILTERS.map((f) => (
+                                  <button
+                                    key={f.id}
+                                    type="button"
+                                    className={`aec-chip${compareFilter === f.id ? ' is-on' : ''}`}
+                                    onClick={() => setCompareFilter(f.id)}
+                                  >
+                                    {f.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
                           <div className="aec-toolbar-row">
                             <input
                               className="aec-search"
                               value={query}
                               onChange={(e) => setQuery(e.target.value)}
-                              placeholder="Chercher un titre, un kind, une raison…"
+                              placeholder="Chercher titre, kind, phénomène, raison…"
                             />
                             <select
                               className="aec-select"
@@ -1794,7 +2163,13 @@ export default function AnalysisEngineConsole() {
                               <div style={{ marginTop: 12 }}>
                                 <DetailInspector
                                   row={selected}
-                                  report={report}
+                                  report={
+                                    selected?._periodKey === 'B' && compareReport
+                                      ? compareReport
+                                      : selected?._periodKey === 'A'
+                                        ? report
+                                        : activeReport
+                                  }
                                   onJumpFamily={jumpFamily}
                                   onBack={() => setSelected(null)}
                                 />
@@ -1994,7 +2369,13 @@ export default function AnalysisEngineConsole() {
                             {!detailHidden ? (
                               <DetailInspector
                                 row={selected}
-                                report={report}
+                                report={
+                                  selected?._periodKey === 'B' && compareReport
+                                    ? compareReport
+                                    : selected?._periodKey === 'A'
+                                      ? report
+                                      : activeReport
+                                }
                                 onJumpFamily={jumpFamily}
                                 onBack={() => setSelected(null)}
                               />
@@ -2007,7 +2388,7 @@ export default function AnalysisEngineConsole() {
 
                   {section === 'pipeline' ? (
                     <AnalysisEnginePipelinePanel
-                      report={report}
+                      report={activeReport}
                       pipelineStep={pipelineStep}
                       setPipelineStep={setPipelineStep}
                       StagePill={StagePill}
@@ -2027,28 +2408,28 @@ export default function AnalysisEngineConsole() {
                       </div>
                       <div className="aec-panel-body">
                         <div className="aec-legend">
-                          {report.dataCatalog?.totals ? (
+                          {activeReport.dataCatalog?.totals ? (
                             <span>
-                              {report.dataCatalog.totals.sources} sources ·{' '}
-                              {report.dataCatalog.totals.ok} ok · {report.dataCatalog.totals.sparse}{' '}
-                              couverture faible · {report.dataCatalog.totals.missing} manquantes
+                              {activeReport.dataCatalog.totals.sources} sources ·{' '}
+                              {activeReport.dataCatalog.totals.ok} ok · {activeReport.dataCatalog.totals.sparse}{' '}
+                              couverture faible · {activeReport.dataCatalog.totals.missing} manquantes
                             </span>
                           ) : null}
                           <DataPill status="ok" />
                           <DataPill status="sparse" />
                           <DataPill status="missing" />
                         </div>
-                        {(report.dataCatalog?.absences || []).length ? (
+                        {(activeReport.dataCatalog?.absences || []).length ? (
                           <section className="aec-data-absences">
                             <h3 className="aec-data-tab-title">
                               État des absences
                               <span className="aec-faint">
                                 {' '}
-                                · {report.dataCatalog.absences.length} à traiter ou à ignorer
+                                · {activeReport.dataCatalog.absences.length} à traiter ou à ignorer
                               </span>
                             </h3>
                             <div className="aec-abs-list">
-                              {report.dataCatalog.absences.map((a) => (
+                              {activeReport.dataCatalog.absences.map((a) => (
                                 <article
                                   key={a.id}
                                   className={`aec-abs-card aec-abs-${a.severity || 'info'}`}
@@ -2073,7 +2454,7 @@ export default function AnalysisEngineConsole() {
                             </div>
                           </section>
                         ) : null}
-                        {(report.dataCatalog?.byTab || []).map((group) => (
+                        {(activeReport.dataCatalog?.byTab || []).map((group) => (
                           <section key={group.tab} className="aec-data-tab-block">
                             <h3 className="aec-data-tab-title">
                               Onglet <strong>{group.tab}</strong>
@@ -2118,7 +2499,7 @@ export default function AnalysisEngineConsole() {
                             </div>
                           </section>
                         ))}
-                        {!report.dataCatalog?.byTab?.length ? (
+                        {!activeReport.dataCatalog?.byTab?.length ? (
                           <div className="aec-table-wrap">
                             <table className="aec-table" style={{ tableLayout: 'auto' }}>
                               <thead>
@@ -2130,7 +2511,7 @@ export default function AnalysisEngineConsole() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {(report.dataInventory || []).map((d) => (
+                                {(activeReport.dataInventory || []).map((d) => (
                                   <tr key={d.id} className="is-static">
                                     <td>{d.label}</td>
                                     <td>
@@ -2159,7 +2540,7 @@ export default function AnalysisEngineConsole() {
                       </div>
                       <div className="aec-panel-body">
                         <div className="aec-fam-list">
-                          {(report.families || []).map((f) => {
+                          {(activeReport.families || []).map((f) => {
                             const label = f.familyLabel || analysisFamilyLabel(f.family);
                             const pct = Math.round((f.shareOfShown || 0) * 100);
                             return (
@@ -2214,7 +2595,7 @@ export default function AnalysisEngineConsole() {
                         </p>
                       </div>
                       <div className="aec-panel-body">
-                        <CorrelationMatrix correlations={report.correlations} />
+                        <CorrelationMatrix correlations={activeReport.correlations} />
                         <div className="aec-table-wrap" style={{ marginTop: 12, maxHeight: 400 }}>
                           <table className="aec-table" style={{ tableLayout: 'auto' }}>
                             <thead>
@@ -2228,7 +2609,7 @@ export default function AnalysisEngineConsole() {
                               </tr>
                             </thead>
                             <tbody>
-                              {(report.correlations || []).map((c) => (
+                              {(activeReport.correlations || []).map((c) => (
                                 <tr key={c.id} className="is-static">
                                   <td style={{ whiteSpace: 'normal' }}>{c.label}</td>
                                   <td>
@@ -2267,8 +2648,8 @@ export default function AnalysisEngineConsole() {
                           Sommeil publié
                         </h3>
                         <ul className="aec-list">
-                          {(report.signals?.correlations || []).length ? (
-                            report.signals.correlations.map((c) => (
+                          {(activeReport.signals?.correlations || []).length ? (
+                            activeReport.signals.correlations.map((c) => (
                               <li key={c.type}>
                                 <TonePill tone="violet">calculée</TonePill> {c.type} · nH={c.nHigh}{' '}
                                 nL={c.nLow}
@@ -2348,11 +2729,132 @@ export default function AnalysisEngineConsole() {
                     </div>
                   ) : null}
 
+                  {section === 'issues' ? (
+                    <div className="aec-panel">
+                      <div className="aec-panel-head">
+                        <h2>Problèmes détectés</h2>
+                        <p>
+                          {issuesBundle.length} anomalie(s) instrumentée(s)
+                          {domPackDiff
+                            ? ` · pack↔DOM ${domPackDiff.comparable ? 'comparable' : 'non équivalent'}`
+                            : ''}
+                        </p>
+                      </div>
+                      <div className="aec-panel-body">
+                        <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="aec-btn aec-btn-ghost"
+                            onClick={() => {
+                              const cap = captureAnalyseCardsFromDom({
+                                period: viewMode === 'B' ? comparePeriod : period
+                              });
+                              setDomCapture(cap);
+                            }}
+                          >
+                            Capturer DOM Analyse
+                          </button>
+                          <button
+                            type="button"
+                            className="aec-btn aec-btn-ghost"
+                            onClick={() => {
+                              clearAnalyseDomCapture();
+                              setDomCapture(null);
+                            }}
+                          >
+                            Effacer capture
+                          </button>
+                          {domCapture ? (
+                            <span className="aec-faint" style={{ fontSize: 12 }}>
+                              Capture {domCapture.period || '?'} · {domCapture.count} cartes ·{' '}
+                              {domCapture.capturedAt}
+                            </span>
+                          ) : null}
+                        </div>
+                        {domPackDiff?.levels ? (
+                          <p className="aec-muted" style={{ fontSize: 12 }}>
+                            Niveaux : admissibles {domPackDiff.levels.admissible ?? '—'} · pack{' '}
+                            {domPackDiff.levels.selectedInDiagnosticPack ?? '—'} · DOM{' '}
+                            {domPackDiff.levels.renderedInAnalyseDom ?? '—'}.
+                            {domPackDiff.note ? ` ${domPackDiff.note}` : ''}
+                          </p>
+                        ) : null}
+                        {!issuesBundle.length ? (
+                          <p className="aec-muted">Aucun problème instrumenté sur ce run.</p>
+                        ) : (
+                          <div className="aec-table-wrap">
+                            <table className="aec-table">
+                              <thead>
+                                <tr>
+                                  <th>Gravité</th>
+                                  <th>Catégorie</th>
+                                  <th>Période</th>
+                                  <th>Raison</th>
+                                  <th>Cible</th>
+                                  <th />
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {issuesBundle.map((iss, i) => (
+                                  <tr key={`${iss.reason}-${i}`}>
+                                    <td>
+                                      <TonePill
+                                        tone={
+                                          iss.severity === 'high'
+                                            ? 'red'
+                                            : iss.severity === 'medium'
+                                              ? 'orange'
+                                              : 'violet'
+                                        }
+                                      >
+                                        {iss.severity}
+                                      </TonePill>
+                                    </td>
+                                    <td className="aec-mono">{iss.category}</td>
+                                    <td>{iss.period}</td>
+                                    <td>
+                                      {iss.reason}
+                                      {iss.confirmed === false ? ' · à vérifier' : ''}
+                                    </td>
+                                    <td style={{ whiteSpace: 'normal' }}>
+                                      {iss.kind || iss.title || iss.stageId || iss.label || '—'}
+                                    </td>
+                                    <td>
+                                      <button
+                                        type="button"
+                                        className="aec-linkish"
+                                        onClick={() => {
+                                          if (iss.kind || iss.title) {
+                                            setQuery(String(iss.kind || iss.title || ''));
+                                            setSection('registry');
+                                            setQuickFilter(
+                                              iss.reason === 'unresolved_exercise_name'
+                                                ? 'unresolved'
+                                                : iss.reason?.includes('cap')
+                                                  ? 'cap'
+                                                  : 'all'
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        Registre
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+
                   {section === 'limits' ? (
                     <div className="aec-panel">
                       <div className="aec-panel-head">
                         <h2>Limites techniques</h2>
-                        <p>{report.meta?.displayScopeNote}</p>
+                        <p>{activeReport.meta?.displayScopeNote}</p>
                       </div>
                       <div className="aec-panel-body">
                         {groupedLimits.map((g) => (
@@ -2387,7 +2889,7 @@ export default function AnalysisEngineConsole() {
                 <strong>{busy ? 'Exécution' : report ? 'Prêt' : 'Idle'}</strong>
               </span>
               <span>{report?.meta?.generatedAt || '—'}</span>
-              <span>{report?.overview?.totalMs != null ? `${report.overview.totalMs} ms` : '—'}</span>
+              <span>{report?.overview?.totalMs != null ? `${activeReport.overview.totalMs} ms` : '—'}</span>
               <span>
                 warn {report?.overview?.warnings?.length ?? 0} · err étapes{' '}
                 {(report?.stagesDetailed || []).filter((s) => s.stageStatus === 'error').length}

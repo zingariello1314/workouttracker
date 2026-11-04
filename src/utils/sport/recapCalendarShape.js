@@ -97,11 +97,13 @@ export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod 
   }
   if (!bits.length) return null;
   const quietCount = dates.length - trained.length;
+  const pluralPeriod = /^(ces|les)\b/i.test(String(thisPeriod || ''));
+  const periodCap = `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)}`;
   const titleThesis = quietLead && hotLead
-    ? `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)} mêlent un bloc chargé et un creux`
+    ? `${periodCap} ${pluralPeriod ? 'mêlent' : 'mêle'} un bloc chargé et un creux`
     : hotLead
       ? `Un bloc dépasse le niveau de séance de ${thisPeriod}`
-      : `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)} : le volume repose sur peu de journées`;
+      : `${periodCap} : le volume repose sur peu de journées`;
   const constat = `${bits
     .map((bit) => bit.charAt(0).toUpperCase() + bit.slice(1))
     .join('. ')}. Sur ${dates.length} jours, ${trained.length} ont une séance et ${quietCount} n'en ont pas`;
@@ -131,10 +133,31 @@ export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod 
     scope,
     implication
   });
+  const dayRows = dates.map((date) => ({
+    date,
+    reps: repsOf(date),
+    trained: repsOf(date) > 0
+  }));
   return {
     title: reading.title,
     body: reading.body,
     evidence: `${trained.length} jours avec répétitions · ${quietCount} jours sans séance (contrat positive_reps)`,
-    readingBeats: reading.beats
+    readingBeats: reading.beats,
+    metrics: {
+      windowStart: start,
+      windowEnd: end,
+      spanDays: dates.length,
+      trainedDays: trained.length,
+      quietDays: quietCount,
+      habitMedianReps: Math.round(habit),
+      peakReps: hotLead ? Math.max(...hotLead.reps) : null,
+      hotRange: hotLead ? { start: hotLead.start, end: hotLead.end, reps: hotLead.reps } : null,
+      quietRange: quietLead ? { start: quietLead.start, end: quietLead.end } : null,
+      dates: trained.slice(),
+      dayRows,
+      daysDetail: dayRows.filter((d) => d.trained),
+      denominator: 'jours_calendaires_fenetre',
+      unit: 'repetitions_positives_par_jour'
+    }
   };
 }

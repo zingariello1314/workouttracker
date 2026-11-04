@@ -349,7 +349,7 @@ describe('F5 — rivalités et contradictions', () => {
   });
 
   it('saturation emergence : cap épisode sur long', () => {
-    const pack = Array.from({ length: 12 }, (_, idx) => {
+    const pack = Array.from({ length: 24 }, (_, idx) => {
       const i = idx + 1;
       return card({
         kind: 'disc_emergence',
@@ -367,8 +367,8 @@ describe('F5 — rivalités et contradictions', () => {
     });
     const traced = selectPeriodDiscoveriesWithTrace(pack, null, 'long');
     const emergences = traced.selected.filter((d) => d.kind === 'disc_emergence');
-    // Cap long = 8, dépassement souple limité à +2 pour IV élevées distinctes.
-    expect(emergences.length).toBeLessThanOrEqual(10);
+    // Cap long = 12, soft overflow +6 pour IV élevées distinctes → max 18.
+    expect(emergences.length).toBeLessThanOrEqual(18);
     expect(emergences.length).toBeLessThan(pack.length);
     expect(
       traced.dropped.some((d) => d.reason === 'episode_cap' || d.reason === 'family' || d.reason === 'cap')

@@ -5,7 +5,13 @@
  * 8 % est la bande déjà utilisée pour « proche du mois précédent ».
  */
 
+import { isPluralExerciseLabel } from './recapComposedNarration';
+
 const CLOSE_PCT = 8;
+
+function returnVerbForExercise(name) {
+  return isPluralExerciseLabel(name) ? 'reviennent' : 'revient';
+}
 
 const GUARD = [
   /Une présence dans la fenêtre n'est pas une habitude installée\.?\s*/gi,
@@ -34,7 +40,7 @@ function stripGuards(text) {
 
 function weekWords(text, voiceKey) {
   if (voiceKey !== 'week') return text;
-  return String(text || '')
+  let s = String(text || '')
     .replace(/Cette semaine/g, 'Ces 7 jours')
     .replace(/cette semaine/g, 'ces 7 jours')
     .replace(/de la semaine/g, 'de ces 7 jours')
@@ -43,10 +49,19 @@ function weekWords(text, voiceKey) {
     .replace(/\bCes 7 jours répartit\b/g, 'Ces 7 jours répartissent')
     .replace(/\bCes 7 jours représente\b/g, 'Ces 7 jours représentent')
     .replace(/\bCes 7 jours confirme\b/g, 'Ces 7 jours confirment')
+    .replace(/\bCes 7 jours concentre\b/g, 'Ces 7 jours concentrent')
+    .replace(/\bces 7 jours concentre\b/g, 'ces 7 jours concentrent')
+    .replace(/\bCes 7 jours totalise\b/g, 'Ces 7 jours totalisent')
     .replace(/\bCes 30 jours répartit\b/g, 'Ces 30 jours répartissent')
     .replace(/\bCes 30 jours représente\b/g, 'Ces 30 jours représentent')
     .replace(/\bCes 30 jours confirme\b/g, 'Ces 30 jours confirment');
-  }
+  // Accords adjectivaux après réécriture semaine → jours
+  s = s.replace(/\b(Ces|ces)\s+7\s+jours\s+(sont|étaient)\s+plus\s+dense\b/g, '$1 7 jours $2 plus denses');
+  s = s.replace(/\b(Ces|ces)\s+7\s+jours\s+(sont|étaient)\s+moins\s+dense\b/g, '$1 7 jours $2 moins denses');
+  s = s.replace(/\b(Ces|ces)\s+7\s+jours\s+plus\s+dense\b/g, '$1 7 jours plus denses');
+  s = s.replace(/\b(Ces|ces)\s+7\s+jours\s+moins\s+dense\b/g, '$1 7 jours moins denses');
+  return s;
+}
 
 function thin(text) {
   const t = String(text || '').trim();
@@ -206,11 +221,14 @@ function rewrite(card, voiceKey) {
         .replace(/\s+après[\s\S]*$/i, '')
         .trim();
       if (name) {
-        const plural =
-          /^(les|des)\s/i.test(name) ||
-          /\b(pompes|dips|tractions|relevés|extensions|hyperextensions|oiseaux|développés)\b/i.test(name);
-        title = `${name} ${plural ? 'reviennent' : 'revient'} après un long silence`;
+        title = `${name} ${returnVerbForExercise(name)} après un long silence`;
       }
+    } else {
+      // Même si trajectoryOk : ré-accorder un titre déjà généré au singulier à tort.
+      title = title.replace(
+        /^(.+?)\s+revient\s+(après\s+(?:un long silence|\d+\s*jours))/i,
+        (full, name, rest) => `${name} ${returnVerbForExercise(name)} ${rest}`
+      );
     }
     nature = 'now';
   }
@@ -231,6 +249,12 @@ function rewrite(card, voiceKey) {
       .replace(/\s+/g, ' ')
       .trim();
   }
+
+  // Accords pluriel sur tout titre « X revient » (émergence, structural, etc.)
+  title = title.replace(
+    /^(.+?)\s+revient\s+(après\b.*)$/i,
+    (full, name, rest) => `${name} ${returnVerbForExercise(name)} ${rest}`
+  );
 
   // Point 23 — jargon → constat utile
   body = body

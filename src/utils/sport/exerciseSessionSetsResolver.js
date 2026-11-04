@@ -197,7 +197,11 @@ export function resolveExerciseSetsForAnalysis(workoutData, storageKey, getExerc
       schemeLabel =
         setCount > 1 ? `${setCount}×${bestDisplay} (meilleure série)` : bestDisplay;
     } else {
-      schemeLabel = setCount > 1 ? `${setCount}×${maxSetReps}` : `${maxSetReps} reps`;
+      const setReps = sets.map((s) => s.reps);
+      const uniform = setReps.length > 0 && setReps.every((r) => r === setReps[0]);
+      if (setCount <= 1) schemeLabel = `${maxSetReps} reps`;
+      else if (uniform) schemeLabel = `${setCount}×${setReps[0]}`;
+      else schemeLabel = `${setCount} séries (${setReps.join('+')})`;
     }
   }
 

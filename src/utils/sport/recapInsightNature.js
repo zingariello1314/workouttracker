@@ -27,35 +27,58 @@ export const NATURE_TO_HORIZON = {
  * Un maximum, jamais un plancher : slot vide si le signal n'est pas publiable.
  * Sommeil volontairement bas : 2/angle saturait le pack (rythme + assoc + RPE).
  */
-/** Plafonds souples par angle — jamais un quota à remplir ; refusent les cartes faibles. */
-const SPORT_HEAVY = { sport: 10, sleep: 1, milestone: 2 };
+/**
+ * Plafonds = garde-fous, pas moteur de sélection.
+ * Soft overflow (IV élevée + phénomène distinct) dans selectPeriodDiscoveriesWithTrace.
+ * Avant : sport:10/angle saturait les longues périodes (décennies de drops « cap »).
+ */
+const SPORT_TODAY = { sport: 8, sleep: 1, milestone: 2 };
+const SPORT_WEEK = { sport: 14, sleep: 1, milestone: 2 };
+const SPORT_MONTH = { sport: 18, sleep: 1, milestone: 3 };
+const SPORT_LONG = { sport: 22, sleep: 1, milestone: 3 };
 
 export const SIGNAL_FAMILY_CAPS = {
   today: {
-    now: { sport: 6, sleep: 1, milestone: 1 },
-    trajectory: { sport: 6, sleep: 1, milestone: 0 },
-    journey: { sport: 6, sleep: 0, milestone: 1 }
+    now: SPORT_TODAY,
+    trajectory: SPORT_TODAY,
+    journey: { sport: 8, sleep: 0, milestone: 2 }
   },
   week: {
-    now: { ...SPORT_HEAVY },
-    trajectory: { ...SPORT_HEAVY },
-    journey: { ...SPORT_HEAVY }
+    now: { ...SPORT_WEEK },
+    trajectory: { ...SPORT_WEEK },
+    journey: { ...SPORT_WEEK }
   },
   month: {
-    now: { ...SPORT_HEAVY },
-    trajectory: { ...SPORT_HEAVY },
-    journey: { ...SPORT_HEAVY }
+    now: { ...SPORT_MONTH },
+    trajectory: { ...SPORT_MONTH },
+    journey: { ...SPORT_MONTH }
   },
   long: {
-    now: { ...SPORT_HEAVY },
-    trajectory: { ...SPORT_HEAVY },
-    journey: { ...SPORT_HEAVY }
+    now: { ...SPORT_LONG },
+    trajectory: { ...SPORT_LONG },
+    journey: { ...SPORT_LONG }
   },
   year: {
-    now: { ...SPORT_HEAVY },
-    trajectory: { ...SPORT_HEAVY },
-    journey: { ...SPORT_HEAVY }
+    now: { ...SPORT_LONG },
+    trajectory: { ...SPORT_LONG },
+    journey: { ...SPORT_LONG }
   }
+};
+
+/** Overflow max au-delà du cap si IV ≥ seuil et phénomène non déjà représenté. */
+export const SIGNAL_FAMILY_SOFT_OVERFLOW = {
+  today: 4,
+  week: 6,
+  month: 10,
+  long: 14,
+  year: 14
+};
+export const SIGNAL_FAMILY_OVERFLOW_IV = {
+  today: 72,
+  week: 70,
+  month: 68,
+  long: 66,
+  year: 66
 };
 
 /** Budget sommeil total (toutes natures) — empêche 1+1+1 = 3 cartes sleep. */

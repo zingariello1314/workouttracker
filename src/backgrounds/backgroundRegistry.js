@@ -159,6 +159,30 @@ const animatedBackgroundOptions = [
     loadThumbnail: () => import('./thumbnails/WireTerrainThumbnail'),
     fallbackBackground: 'linear-gradient(180deg, #1a0800 0%, #000000 100%)',
   },
+  {
+    id: 'wire-terrain-02',
+    name: 'Terrain filaire 2',
+    type: 'animated',
+    load: () => import('./WireTerrain02Background'),
+    loadThumbnail: () => import('./thumbnails/WireTerrain02Thumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #1a0830 0%, #0b0420 100%)',
+  },
+  {
+    id: 'particle-drift',
+    name: 'Dérive de particules',
+    type: 'animated',
+    load: () => import('./ParticleDriftBackground'),
+    loadThumbnail: () => import('./thumbnails/ParticleDriftThumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #030509 0%, #000000 100%)',
+  },
+  {
+    id: 'formula-stream',
+    name: 'Flux de formules',
+    type: 'animated',
+    load: () => import('./FormulaStreamBackground'),
+    loadThumbnail: () => import('./thumbnails/FormulaStreamThumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #0a0a0c 0%, #050507 100%)',
+  },
 ];
 
 /** @type {BackgroundOption[]} */

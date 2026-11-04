@@ -359,6 +359,10 @@ export function buildFindingForensics(row, report = null) {
     !(richRaw.length || rawRecords.length) &&
     hasAggregateCalcSignal(metrics);
 
+  const phenRec = row._phenomenonRecord || null;
+  const nameRepair = metrics.nameRepair || null;
+  const reading = metrics.analyticalReading || metrics.composedEvidence?.reading || null;
+
   const forensics = {
     id: row.id,
     kind: row.kind,
@@ -366,6 +370,84 @@ export function buildFindingForensics(row, report = null) {
     familyLabel: row.familyLabel || row.family,
     title: row.title || ctx.title || '',
     body: row.body || ctx.body || '',
+    identity: {
+      candidateId: row.id ?? row.registryKey ?? null,
+      phenomenonId: row._phenomenonId || phenRec?.id || metrics.phenomenonId || null,
+      phenomenonClass: row._phenomenon || phenRec?.class || null,
+      phenomenonConfidence: phenRec?.confidence || null,
+      kind: row.kind,
+      family: row.family,
+      producer: copyProvenance.producer || row.moduleHint || row.producerHint || null,
+      subjectKey: phenRec?.subjectKey || null,
+      exerciseId: metrics.exerciseId ?? metrics.storageId ?? null,
+      resolvedName: metrics.name || metrics.exerciseName || null,
+      resolutionSource:
+        metrics.identityResolutionSource || nameRepair?.resolutionSource || null,
+      resolutionStatus:
+        nameRepair?.status ||
+        metrics.nameIdentityStatus ||
+        (metrics.identityUnresolvedReason ? 'unresolved' : null) ||
+        'non_instrumenté',
+      ambiguous: Boolean(metrics.hashAmbiguous || metrics.identityConfidence === 'ambiguous'),
+      nameRepair: nameRepair || null
+    },
+    temporality: {
+      period: report?.meta?.period || report?.overview?.period || null,
+      window: report?.overview?.window || metrics.window || null,
+      eventDates: deepDates.slice(0, 24),
+      comparisonWindow: metrics.previousWindow || metrics.temporalScope?.previousComparable || null,
+      baseline: metrics.baseline || metrics.historicalMean || null,
+      historyOutsideWindow: metrics.temporalScope?.interpretingWithHistory ?? null,
+      partialMonth: metrics.partialMonth ?? metrics.monthPartial ?? null
+    },
+    reading: {
+      constat:
+        reading?.constat ||
+        metrics.composedEvidence?.primaryPhenomenon?.text ||
+        'non_instrumenté',
+      mechanism:
+        reading?.mechanism ||
+        metrics.trajectorySetMechanism ||
+        metrics.composedEvidence?.volumeAttribution?.kind ||
+        'non_instrumenté',
+      scope: reading?.scope || metrics.composedEvidence?.continuity?.kind || 'non_instrumenté',
+      implication:
+        reading?.implication ||
+        metrics.trajectoryImplicationRule ||
+        'non_instrumenté',
+      confidence: row.confidence ?? metrics.confidence ?? 'non_instrumenté',
+      limits: metrics.trajectoryLimits || reading?.limits || []
+    },
+    editorialTrail: row.editorialTrail || metrics.editorialTrail || [
+      { step: 'data_available', status: 'non_instrumenté' },
+      { step: 'producer_eligible', status: 'non_instrumenté' },
+      { step: 'candidate_created', status: discoveryMatch || row.kind ? 'ok' : 'unknown' },
+      {
+        step: 'identity_resolved',
+        status:
+          nameRepair?.status === 'name_repaired_from_historical_id' ||
+          nameRepair?.status === 'name_present'
+            ? 'ok'
+            : metrics.identityUnresolvedReason
+              ? 'failed'
+              : 'non_instrumenté',
+        reason: metrics.identityUnresolvedReason || nameRepair?.identityStatus || null
+      },
+      {
+        step: 'evidence_validated',
+        status: (row.evidenceCount || 0) > 0 ? 'ok' : 'weak_or_missing'
+      },
+      {
+        step: 'phenomenon_identified',
+        status: phenRec?.id || row._phenomenonId ? 'ok' : 'non_instrumenté',
+        phenomenonId: row._phenomenonId || phenRec?.id || null
+      },
+      {
+        step: 'selection',
+        status: row.diagStatus || 'unknown',
+        reason: row.decisionReason || null
+      }
+    ],
     calcWithoutTrace,
     rawRecords: {
       coverage: layerCoverage(
@@ -474,6 +556,9 @@ export function buildFindingForensics(row, report = null) {
       weight: row.weight ?? null,
       score: row.score ?? null,
       informativeValue: metrics.informativeValue ?? row.informativeValue ?? null,
+      scoreComponents: row._editorialValue || metrics.editorialValue || 'non_instrumenté',
+      rivals: row.rivals || row._rivals || 'non_instrumenté',
+      phenomenonCollapsedInto: row._collapsedInto || null,
       noveltyKey: row.noveltyKey || null,
       evidenceFamilyId: row.evidenceFamilyId || null,
       familyBucket: familySel

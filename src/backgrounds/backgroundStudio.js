@@ -489,6 +489,78 @@ export const BACKGROUND_STUDIOS = {
       toggle('cursor', 'Curseur', true)
     ],
     groups: []
+  },
+  'wire-terrain-02': {
+    baseId: 'wire-terrain-02',
+    title: 'Terrain filaire 2',
+    fields: [
+      color('background', 'Fond', '#0b0420'),
+      color('lineColor', 'Lignes', '#ff2bd6'),
+      color('accentColor', "Couleur d'accent", '#ffb23f'),
+      range('density', 'Densité', 10, 120, 1, 80),
+      range('speed', 'Vitesse', 0, 200, 1, 50),
+      range('relief', 'Relief', 0, 200, 1, 100),
+      range('sunSize', 'Soleil', 0, 200, 1, 100),
+      range('cameraHeight', 'Hauteur caméra', 10, 200, 1, 100),
+      range('hover', 'Survol', 0, 300, 1, 100),
+      range('stars', 'Étoiles', 0, 100, 1, 50),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: []
+  },
+  'particle-drift': {
+    baseId: 'particle-drift',
+    title: 'Dérive de particules',
+    fields: [
+      color('background', 'Fond', '#030509'),
+      color('baseColor', 'Couleur de base', '#ffffff'),
+      color('accentColor', 'Survol', '#fdfd00'),
+      range('density', 'Densité', 10, 400, 1, 400),
+      range('dotSize', 'Points', 1, 24, 1, 6),
+      range('speed', 'Vitesse', 0, 100, 1, 50),
+      range('direction', 'Direction', 0, 360, 1, 0),
+      range('hover', 'Intensité survol', 0, 200, 1, 200),
+      range('linkDistance', 'Liens', 0, 400, 1, 230),
+      range('linkThickness', 'Épaisseur liens', 0.5, 8, 0.5, 1),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: []
+  },
+  'formula-stream': {
+    baseId: 'formula-stream',
+    title: 'Flux de formules',
+    fields: [
+      color('background', 'Fond', '#0a0a0c'),
+      color('textColor', 'Texte', '#e8e4dc'),
+      range('textOpacity', 'Opacité texte', 0, 100, 1, 55),
+      color('accentColor', "Couleur d'accent", '#ff4900'),
+      range('fontSize', 'Taille police', 10, 80, 1, 26),
+      range('density', 'Densité', 1, 40, 1, 18),
+      range('speed', 'Vitesse', 0, 150, 1, 69),
+      range('curve', 'Courbe', 0, 100, 1, 50),
+      range('gap', 'Écart', 10, 200, 1, 81),
+      range('hover', 'Survol', 0, 200, 1, 139),
+      range('reach', 'Portée', 40, 400, 1, 240),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: [
+      {
+        id: 'font',
+        label: 'Police',
+        fields: [
+          select('fontFamily', 'Famille', [
+            { value: 'Georgia', label: 'Georgia' },
+            { value: 'Times New Roman', label: 'Times New Roman' },
+            { value: 'serif', label: 'Serif' }
+          ], 'Georgia'),
+          select('fontStyle', 'Style', [
+            { value: 'italic', label: 'Italique' },
+            { value: 'normal', label: 'Normal' }
+          ], 'italic'),
+          range('fontWeight', 'Graisse', 100, 900, 100, 400)
+        ]
+      }
+    ]
   }
 };
 

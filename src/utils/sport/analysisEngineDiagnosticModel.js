@@ -120,6 +120,12 @@ function evidenceCount(row) {
   let n = 0;
   if (row?.evidence) n += 1;
   if (Array.isArray(m.evidence)) n += m.evidence.length;
+  if (Array.isArray(m.sessions) && m.sessions.length) n += 1;
+  if (Array.isArray(m.dayRows) && m.dayRows.length) n += 1;
+  if (Array.isArray(m.dates) && m.dates.length) n += 1;
+  if (m.composedEvidence) n += 1;
+  if (m.totalReps != null || m.sessionCount != null) n += 1;
+  if (m.gapDays != null || m.lastDate != null) n += 1;
   if (m.nHigh != null || m.highN != null) n += 1;
   if (m.nLow != null || m.lowN != null) n += 1;
   if (m.sampleSize != null) n += 1;
@@ -197,13 +203,32 @@ export function buildAnalysisRegistry(report) {
   const counts = emptyCounts();
   rows.forEach((r) => {
     counts.total += 1;
-    if (r.diagStatus === DIAG_STATUS.SHOWN_NOW) counts.shown_now += 1;
-    else if (r.diagStatus === DIAG_STATUS.INTERMEDIATE) counts.intermediate += 1;
-    else if (r.diagStatus === DIAG_STATUS.DEMOTED) counts.demoted += 1;
-    else if (r.diagStatus === DIAG_STATUS.REJECTED) counts.rejected += 1;
+    // CROSS n’est jamais un statut de comptage primaire : il est un flag (isCrossFamily).
+    const status =
+      r.diagStatus === DIAG_STATUS.CROSS ? DIAG_STATUS.SHOWN_NOW : r.diagStatus;
+    if (status !== r.diagStatus) r.diagStatus = status;
+    if (status === DIAG_STATUS.SHOWN_NOW) counts.shown_now += 1;
+    else if (status === DIAG_STATUS.INTERMEDIATE) counts.intermediate += 1;
+    else if (status === DIAG_STATUS.DEMOTED) counts.demoted += 1;
+    else if (status === DIAG_STATUS.REJECTED) counts.rejected += 1;
     else counts.unknown += 1;
     if (r.isCrossFamily) counts.cross += 1;
   });
+
+  counts.conservation = {
+    formula: 'total = shown_now + intermediate + demoted + rejected + unknown',
+    holds:
+      counts.total ===
+      counts.shown_now +
+        counts.intermediate +
+        counts.demoted +
+        counts.rejected +
+        counts.unknown,
+    note:
+      'cross est un sous-ensemble (flag), pas une part exclusive du total. hors_pack = intermediate+demoted+rejected+unknown.'
+  };
+  counts.hors_pack =
+    counts.intermediate + counts.demoted + counts.rejected + counts.unknown;
 
   const overlapping = {
     withoutEvidence: rows.filter((r) => r.evidenceCount === 0).length,

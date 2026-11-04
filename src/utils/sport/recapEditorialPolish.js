@@ -32,6 +32,25 @@ export function fixKnownGrammarInProse(text) {
   s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+confirme\b/g, '$1 $2 jours confirment');
   s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+concentre\b/g, '$1 $2 jours concentrent');
   s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+totalise\b/g, '$1 $2 jours totalisent');
+  s = s.replace(
+    /\b(Ces|ces)\s+(\d+)\s+jours?\s+(sont|étaient)\s+plus\s+dense\b/g,
+    '$1 $2 jours $3 plus denses'
+  );
+  s = s.replace(
+    /\b(Ces|ces)\s+(\d+)\s+jours?\s+(sont|étaient)\s+moins\s+dense\b/g,
+    '$1 $2 jours $3 moins denses'
+  );
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+plus\s+dense\b/g, '$1 $2 jours plus denses');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+moins\s+dense\b/g, '$1 $2 jours moins denses');
+  // « ces 30 jours mêlent » OK ; « cette période mêlent » → mêle
+  s = s.replace(/\b(Cette|cette)\s+(période|séance|semaine|année)\s+mêlent\b/g, '$1 $2 mêle');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+mêle\b/g, '$1 $2 jours mêlent');
+  // Genre : tronc / gainage
+  s = s.replace(/\bde ta tronc\b/gi, 'de ton tronc');
+  s = s.replace(/\bde ta gainage\b/gi, 'de ton gainage');
+  s = s.replace(/\bde ta gainage\/tronc\b/gi, 'de ton gainage/tronc');
+  s = s.replace(/\b% de ta (tronc|gainage)\b/gi, '% de ton $1');
+  s = s.replace(/\bpour Les\b/g, 'pour les');
   s = s.replace(/\.\s*,\s*/g, '. ');
   s = s.replace(/:\s+(\d+)\s+\./g, ': $1.');
   // Articles contractés
@@ -51,9 +70,9 @@ export function fixKnownGrammarInProse(text) {
     if (Number(n) <= 1) return full;
     return `${n} séances${mid}n’ont`;
   });
-  // Exercices pluriels + revient → reviennent
+  // Exercices pluriels + revient → reviennent (noms composés inclus, jusqu’à ~80 car.)
   s = s.replace(
-    /\b((?:[Pp]ompes|[Dd]ips|[Tt]ractions|[Rr]elevés|[Hh]yperextensions)[^:.]{0,40}?)\s+revient\b/g,
+    /\b((?:[Pp]ompes|[Dd]ips|[Tt]ractions|[Rr]elevés|[Hh]yperextensions|[Ee]xtensions|[Oo]iseaux|[Dd]éveloppés)[^:.]{0,80}?)\s+revient\b/g,
     '$1 reviennent'
   );
   // Décimales ASCII dans contextes volume (53.3 → 53,3) — pas les versions/ids
