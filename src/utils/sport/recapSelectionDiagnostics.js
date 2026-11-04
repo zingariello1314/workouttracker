@@ -5,6 +5,7 @@
 
 import { kindFromNarrativeCandidate } from './recapNarrativeClaims';
 import { isMilestoneKind } from './recapMilestoneEngine';
+import { explainVolumeRivalry } from './recapVolumeRivalryExplain';
 
 /**
  * Familles grossières pour sélection / console.
@@ -175,8 +176,31 @@ export function buildSelectionDiagnostics(opts = {}) {
   bump(opts.rankedOut, 'ranked_out');
   bump(opts.shown, 'shown');
 
+  // Console « pourquoi perdu » — rivalité volume globale
+  let volumeRivalry = null;
+  const pool = [...(opts.produced || []), ...(opts.deduped || []), ...(opts.shown || [])];
+  const span = pool.find((r) => kindOf(r) === 'span_volume_vs_frequency');
+  const shape = pool.find((r) => kindOf(r) === 'disc_volume_shape');
+  if (span && shape) {
+    const expl = explainVolumeRivalry(span, shape);
+    const shownKinds = new Set((opts.shown || []).map(kindOf));
+    volumeRivalry = {
+      ...expl,
+      spanShown: shownKinds.has('span_volume_vs_frequency'),
+      shapeShown: shownKinds.has('disc_volume_shape'),
+      spanDeduped: (opts.deduped || []).some((r) => kindOf(r) === 'span_volume_vs_frequency'),
+      shapeDeduped: (opts.deduped || []).some((r) => kindOf(r) === 'disc_volume_shape'),
+      decisionSummary: expl.complementary
+        ? 'Complémentaires — pas une rivalité'
+        : shownKinds.has(expl.winnerKind)
+          ? `${expl.winnerKind} publié ; ${expl.loserKind} écarté (${expl.reason})`
+          : `${expl.reason} (vérifier colonnes / caps)`
+    };
+  }
+
   return {
     byFamily,
+    volumeRivalry,
     totals: Object.values(byFamily).reduce(
       (acc, b) => {
         acc.produced += b.produced;

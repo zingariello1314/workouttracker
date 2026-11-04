@@ -967,7 +967,11 @@ export function detectDiscoveries(cmp, extras = {}) {
             name: e.name,
             dates,
             sessionCount: dates.length,
+            // Date de reprise = première séance dans la fenêtre (alignée jalon disc_ms_return)
+            date: firstInWindow || lastDate || null,
             lastDate: lastDate || null,
+            lastSessionDate: lastDate || null,
+            returnDate: firstInWindow || lastDate || null,
             gapDays,
             draftTitle: legacyTitle,
             draftBody: legacyBody,
@@ -2370,8 +2374,11 @@ export function detectDiscoveries(cmp, extras = {}) {
     if (isLongVoice(v) || (isMonth && Object.keys(p.repsByDate || {}).length >= 40)) {
       buildMonthlyVolumeArcDiscoveries(p.repsByDate, {
         windowEndYmd: p.window?.end || null,
+        windowStartYmd: p.window?.start || null,
+        period: v.key === 'year' || v.key === 'long' ? '6m' : v.key === 'month' ? '30d' : '6m',
         snapshot: extras.snapshot || null,
-        garminData: extras.garminData || null
+        garminData: extras.garminData || null,
+        sessionDates: Object.keys(p.repsByDate || {}).filter((d) => (p.repsByDate[d] || 0) > 0)
       }).forEach((partial) => out.push(discovery(partial)));
     }
   }
@@ -2467,6 +2474,13 @@ export function appendMilestoneDiscoveries(out, extras, v) {
           mates: m.mates || [],
           factId: m.exerciseId ? `ms|${m.kind}|${m.exerciseId}` : undefined,
           name: m.exerciseName || m.title,
+          punctualClaim:
+            m.punctualClaim === true ||
+            m.metrics?.punctualClaim === true ||
+            /disc_ms_pr|disc_ms_day_volume|disc_ms_first_/.test(String(m.kind || '')),
+          conclusionKey:
+            m.metrics?.conclusionKey ||
+            (m.exerciseId && m.kind ? `${m.kind}|${m.exerciseId}|${m.date || ''}` : null),
           // Brouillon avant porte éditoriale (titre/body d’origine jalon)
           draftTitle: m.title,
           draftBody: m.body

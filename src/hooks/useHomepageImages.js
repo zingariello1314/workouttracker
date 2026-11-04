@@ -55,6 +55,8 @@ export const useHomepageImages = () => {
   const [systemHealth, setSystemHealth] = useState('unknown');
   const backgroundImagesRef = useRef([]);
   const lastSaveTimeRef = useRef(0); // ✅ Phase 7: Protection contre sauvegardes trop rapprochées
+  /** Incrémenté à chaque mutation UI ; une sauvegarde async ne doit pas écraser un état plus neuf. */
+  const imagesMutationEpochRef = useRef(0);
   const shuffledImagesRef = useRef(null); // ✅ RANDOMISATION : Cache shuffle par session
   const scopedType = useMemo(() => `homepage_background_${scopeKey}`, [scopeKey]);
   const scopedFallbackKey = useMemo(() => `homepage_images_fallback_${scopeKey}`, [scopeKey]);
@@ -296,6 +298,22 @@ export const useHomepageImages = () => {
   // ✅ Phase 6: Fonction interne pour exécuter la sauvegarde effective
   // ✅ Phase 4: Avec support versioning optionnel
   const executeSaveImagesRobust = async (validImages, saveOptions = {}) => {
+    const epochAtStart = imagesMutationEpochRef.current;
+    const applyIfCurrent = (images) => {
+      // Ne jamais écraser un état UI plus récent (toggle Accueil qui « se décoche »).
+      if (imagesMutationEpochRef.current !== epochAtStart) {
+        log.debug('⏭️ Sauvegarde terminée mais état plus récent présent — pas d’écrasement UI');
+        return false;
+      }
+      const normalized = normalizeHomepageImages(images);
+      persistImagePreferences(normalized);
+      wallpaperSessionByScope.set(scopeKey, normalized);
+      backgroundImagesRef.current = normalized;
+      lastSaveTimeRef.current = Date.now();
+      setBackgroundImages(normalized);
+      return true;
+    };
+
     try {
       // Sauvegarde niveau 1: IndexedDB (PRINCIPAL)
       // ✅ Phase 4: Passer options versioning
@@ -303,34 +321,32 @@ export const useHomepageImages = () => {
       
       if (indexedDBSuccess) {
         // IndexedDB fonctionne → Sauvegarde légère des métadonnées seulement
-        try {
-          // Fusionner avec l’existant pour ne pas écraser playback (mediaKinds, etc.)
-          persistImagePreferences(validImages);
-          const existing = JSON.parse(localStorage.getItem(scopedMetadataKey) || '{}');
-          localStorage.setItem(
-            scopedMetadataKey,
-            JSON.stringify({
-              ...existing,
-              count: validImages.length,
-              timestamp: new Date().toISOString(),
-              version: '3.1',
-              storage: 'indexeddb_primary',
-              preferences: readHomepagePreferencesFromStorage(scopedMetadataKey),
-            })
-          );
-          log.debug('✅ Métadonnées sauvegardées dans localStorage');
-        } catch (error) {
-          log.warn('⚠️ Impossible de sauvegarder les métadonnées:', error);
+        // Uniquement si on est encore sur le même epoch (sinon les prefs live ont déjà été écrites)
+        if (imagesMutationEpochRef.current === epochAtStart) {
+          try {
+            // Fusionner avec l’existant pour ne pas écraser playback (mediaKinds, etc.)
+            persistImagePreferences(validImages);
+            const existing = JSON.parse(localStorage.getItem(scopedMetadataKey) || '{}');
+            localStorage.setItem(
+              scopedMetadataKey,
+              JSON.stringify({
+                ...existing,
+                count: validImages.length,
+                timestamp: new Date().toISOString(),
+                version: '3.1',
+                storage: 'indexeddb_primary',
+                preferences: readHomepagePreferencesFromStorage(scopedMetadataKey),
+              })
+            );
+            log.debug('✅ Métadonnées sauvegardées dans localStorage');
+          } catch (error) {
+            log.warn('⚠️ Impossible de sauvegarder les métadonnées:', error);
+          }
         }
         
         setSystemHealth('excellent');
-        const normalized = normalizeHomepageImages(validImages);
-        persistImagePreferences(normalized);
-        wallpaperSessionByScope.set(scopeKey, normalized);
-        backgroundImagesRef.current = normalized;
-        lastSaveTimeRef.current = Date.now();
-        setBackgroundImages(normalized);
-        log.debug(`🎉 ${normalized.length} images sauvegardées dans IndexedDB avec succès`);
+        applyIfCurrent(validImages);
+        log.debug(`🎉 ${validImages.length} images sauvegardées dans IndexedDB avec succès`);
         return;
       }
       
@@ -340,10 +356,7 @@ export const useHomepageImages = () => {
       
       if (localStorageSuccess) {
         setSystemHealth('good');
-        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
-        backgroundImagesRef.current = validImages;
-        lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
-        setBackgroundImages(validImages);
+        applyIfCurrent(validImages);
         log.debug(`🎉 ${validImages.length} images sauvegardées dans localStorage (fallback)`);
         return;
       }
@@ -354,10 +367,7 @@ export const useHomepageImages = () => {
       
       if (sessionStorageSuccess) {
         setSystemHealth('good');
-        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
-        backgroundImagesRef.current = validImages;
-        lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
-        setBackgroundImages(validImages);
+        applyIfCurrent(validImages);
         log.debug(`🎉 ${validImages.length} images sauvegardées dans sessionStorage (fallback)`);
         return;
       }
@@ -1174,6 +1184,7 @@ export const useHomepageImages = () => {
   // ✅ Phase 7: Fonction pour mettre à jour la ref directement (pour éviter race condition)
   const updateImagesRef = (images) => {
     const normalized = normalizeHomepageImages(images);
+    imagesMutationEpochRef.current += 1;
     backgroundImagesRef.current = normalized;
     lastSaveTimeRef.current = Date.now();
     persistImagePreferences(normalized);
@@ -1181,6 +1192,7 @@ export const useHomepageImages = () => {
 
   const setBackgroundImagesWithPrefs = (images) => {
     const normalized = normalizeHomepageImages(images);
+    imagesMutationEpochRef.current += 1;
     backgroundImagesRef.current = normalized;
     setBackgroundImages(normalized);
     persistImagePreferences(normalized);

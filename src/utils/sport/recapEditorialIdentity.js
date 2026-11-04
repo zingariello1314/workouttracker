@@ -161,6 +161,110 @@ export function sameExerciseIdentity(a, b) {
 /**
  * Épisode historique commun : même identité + continuité / fenêtre compatible.
  */
+/** Date d’événement de reprise (séance de retour), pas le gap. */
+export function returnEventYmd(d) {
+  const m = d?.metrics || d || {};
+  const raw =
+    m.date ||
+    m.eventDate ||
+    m.lastSessionDate ||
+    m.lastDate ||
+    m.returnDate ||
+    m.ymd ||
+    m.composedEvidence?.continuity?.returnDate ||
+    null;
+  if (raw) return String(raw).slice(0, 10);
+  if (Array.isArray(m.dates) && m.dates.length) return String(m.dates[0]).slice(0, 10);
+  const retSession = (m.sessions || []).find(
+    (s) => s?.role === 'return_session' || s?.role === 'first_in_window'
+  );
+  if (retSession?.date) return String(retSession.date).slice(0, 10);
+  return '';
+}
+
+/** Nom normalisé pour collapse d’épisode de reprise (pas une preuve d’identité). */
+export function normalizeReturnExerciseName(d) {
+  const raw = String(
+    d?.metrics?.name ||
+      d?.metrics?.exerciseName ||
+      d?.metrics?.historicalDisplayName ||
+      d?.title ||
+      d?.name ||
+      ''
+  )
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/\s+(revient|reviennent|après|réapparition|suite à|reprend).*$/i, '')
+    .replace(/^(les|des|le|la|l['’])\s+/i, '')
+    .trim();
+  return raw;
+}
+
+/**
+ * Clé de collapse pour un épisode de reprise.
+ * Priorité : (nom + date de retour) pour dual storage ids du même retour ;
+ * sinon id seul ; sinon nom sans id.
+ * Deux ids distincts + même nom + dates absentes ou différentes → clés distinctes
+ * (pas de fusion homonyme inventée).
+ */
+export function returnEpisodeCollapseKey(d) {
+  const name = normalizeReturnExerciseName(d);
+  const eid = d?.metrics?.exerciseId != null ? String(d.metrics.exerciseId) : '';
+  const ymd = returnEventYmd(d);
+  if (name && ymd) return `ep:${name}|${ymd}`;
+  if (eid) return `id:${eid}`;
+  if (name && !eid) return `name:${name}`;
+  return '';
+}
+
+function isReturnKind(d) {
+  return /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d?.kind || ''));
+}
+
+function kindsAreComplementaryReturns(a, b) {
+  const ka = String(a?.kind || '');
+  const kb = String(b?.kind || '');
+  const milestone = (k) => /disc_ms_return/.test(k);
+  const emergence = (k) => /disc_emergence|disc_structural_memory/.test(k);
+  return (milestone(ka) && emergence(kb)) || (milestone(kb) && emergence(ka));
+}
+
+/**
+ * Décide si deux cartes de reprise racontent le même épisode.
+ * Préfère l’absence de fusion face à une ambiguïté d’identité réelle.
+ * Autorise la fusion complémentaire (jalon + émergence) si nom aligné et
+ * dates compatibles (égales, ou une seule renseignée — producteur incomplet).
+ */
+export function shouldCollapseReturnEpisodes(a, b) {
+  if (!a || !b || a === b) return false;
+  if (sameHistoricalEpisode(a, b)) return true;
+  if (!isReturnKind(a) || !isReturnKind(b)) return false;
+
+  const nameA = normalizeReturnExerciseName(a);
+  const nameB = normalizeReturnExerciseName(b);
+  if (!nameA || nameA !== nameB) return false;
+
+  const rel = relateExerciseIdentities(a, b);
+  if (rel.relation === IDENTITY_RELATION.DISTINCT) return false;
+  if (rel.relation === IDENTITY_RELATION.SAME_EXERCISE) return true;
+
+  // Homonyme / famille : seulement si producteurs complémentaires
+  if (!kindsAreComplementaryReturns(a, b)) return false;
+  if (
+    rel.relation !== IDENTITY_RELATION.SAME_DISPLAY_NAME &&
+    rel.relation !== IDENTITY_RELATION.SAME_MOVEMENT_FAMILY &&
+    rel.relation !== IDENTITY_RELATION.INDETERMINATE
+  ) {
+    return false;
+  }
+
+  const ymdA = returnEventYmd(a);
+  const ymdB = returnEventYmd(b);
+  if (ymdA && ymdB) return ymdA === ymdB;
+  // Une date manquante : on fusionne le doublon producteur, pas deux épisodes datés distincts
+  return true;
+}
+
 export function sameHistoricalEpisode(a, b) {
   const rel = relateExerciseIdentities(a, b);
   const titleReturn = (d) =>
@@ -173,25 +277,54 @@ export function sameHistoricalEpisode(a, b) {
     (titleReturn(a) || kindReturn(a) || Number(a?.metrics?.gapDays) >= 21) &&
     (titleReturn(b) || kindReturn(b) || Number(b?.metrics?.gapDays) >= 21);
 
-  // Même storage id, ou même famille de mouvement pour un épisode de reprise (42 j / 77 j).
-  // Homonyme seul hors reprise ≠ épisode commun.
-  const identityOk =
-    rel.relation === IDENTITY_RELATION.SAME_EXERCISE ||
-    (bothReturn &&
-      (rel.relation === IDENTITY_RELATION.SAME_MOVEMENT_FAMILY ||
-        rel.relation === IDENTITY_RELATION.SAME_DISPLAY_NAME));
-  if (!identityOk) return false;
+  const ymdA = returnEventYmd(a);
+  const ymdB = returnEventYmd(b);
+  const sameReturnDay = Boolean(ymdA && ymdB && ymdA === ymdB);
+
+  // 1) Même exercice prouvé (id / alias)
+  if (rel.relation === IDENTITY_RELATION.SAME_EXERCISE) {
+    // ok — suite
+  } else if (
+    bothReturn &&
+    sameReturnDay &&
+    (rel.relation === IDENTITY_RELATION.SAME_MOVEMENT_FAMILY ||
+      rel.relation === IDENTITY_RELATION.SAME_DISPLAY_NAME ||
+      rel.relation === IDENTITY_RELATION.INDETERMINATE)
+  ) {
+    // 2) Même jour + même libellé : dual id OK seulement si producteurs complémentaires
+    //    ou un id manquant — pas deux jalons homonymes (deux exercices distincts).
+    const idA = a?.metrics?.exerciseId != null ? String(a.metrics.exerciseId) : '';
+    const idB = b?.metrics?.exerciseId != null ? String(b.metrics.exerciseId) : '';
+    const nameOnlyRelation =
+      rel.relation === IDENTITY_RELATION.SAME_DISPLAY_NAME ||
+      rel.relation === IDENTITY_RELATION.SAME_MOVEMENT_FAMILY;
+    if (nameOnlyRelation && idA && idB && idA !== idB) {
+      // Homonymes / famille nominale avec ids distincts : fusion seulement si
+      // producteurs complémentaires (jalon + émergence), jamais deux mêmes kinds.
+      if (String(a?.kind || '') === String(b?.kind || '') || !kindsAreComplementaryReturns(a, b)) {
+        return false;
+      }
+    }
+  } else if (
+    bothReturn &&
+    rel.relation === IDENTITY_RELATION.INDETERMINATE &&
+    normalizeReturnExerciseName(a) &&
+    normalizeReturnExerciseName(a) === normalizeReturnExerciseName(b)
+  ) {
+    // 3) Id manquant des deux côtés, même nom
+  } else {
+    // Homonyme avec deux storage ids distincts sans date de retour partagée → ne pas fusionner
+    return false;
+  }
 
   const ca = a?.metrics?.composedEvidence?.continuity?.kind;
   const cb = b?.metrics?.composedEvidence?.continuity?.kind;
   const returnLike = new Set(['punctual_return', 'confirmed_return', 'returning', 'decline_then_recovery']);
   if (ca && cb && returnLike.has(ca) && returnLike.has(cb)) return true;
-  // Même primaryStory de reprise
   const sa = a?.metrics?.trajectoryPrimaryStory;
   const sb = b?.metrics?.trajectoryPrimaryStory;
   if (sa && sb && sa === sb && (sa === 'partial_recovery' || sa === 'recovered')) return true;
-  // Reprises / interruptions : deux gaps (42 j vs 77 j) sur le même mouvement = un seul épisode
-  if (bothReturn) return true;
+  if (bothReturn && (sameReturnDay || rel.relation === IDENTITY_RELATION.SAME_EXERCISE)) return true;
   return false;
 }
 

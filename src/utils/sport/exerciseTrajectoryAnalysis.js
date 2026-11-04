@@ -20,6 +20,12 @@ import {
   buildComposedEvidenceFromTrajectory,
   resolveVolumeLexicon
 } from './recapComposedEvidence';
+import {
+  buildMetricFact,
+  METRIC_REFERENT,
+  METRIC_GRANULARITY,
+  METRIC_UNIT
+} from './recapMetricContract';
 import { formatDayFr } from './recapTrainingTimeline';
 
 /** @typedef {'established'|'probable'|'watch'|'indeterminate'} Stance */
@@ -1494,8 +1500,51 @@ export function trajectoryToMetrics(trajectory) {
     (trajectory.peers?.available && trajectory.peers.verdict !== 'insufficient' ? 2 : 0) +
     (trajectory.findings?.implication ? 2 : 0) +
     (trajectory.findings?.positions?.length || 0);
+  const vol = trajectory.volume || {};
+  const shape = trajectory.shape || {};
+  const metricFacts = {
+    windowMeanPerSession: buildMetricFact({
+      value: vol.meanPerSession,
+      exerciseId: trajectory.identity?.id,
+      subjectKey: trajectory.identity?.id ? `ex:${trajectory.identity.id}` : null,
+      granularity: METRIC_GRANULARITY.PER_SESSION,
+      unit: METRIC_UNIT.REPS,
+      denominator: 'session',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      aggregation: 'mean',
+      sampleSize: vol.windowSessionCount,
+      source: 'exerciseTrajectory.volume',
+      reliability: 'high',
+      labelFr: 'reps/séance (fenêtre sélectionnée)'
+    }),
+    arcEarlyMean: buildMetricFact({
+      value: shape.earlyMean,
+      exerciseId: trajectory.identity?.id,
+      granularity: METRIC_GRANULARITY.PER_SESSION,
+      unit: METRIC_UNIT.REPS,
+      denominator: 'session',
+      referent: METRIC_REFERENT.ARC_EARLY_LATE,
+      aggregation: 'mean_early_arc',
+      source: 'exerciseTrajectory.shape',
+      reliability: 'medium',
+      labelFr: 'reps/séance (début d’arc)'
+    }),
+    arcLateMean: buildMetricFact({
+      value: shape.lateMean,
+      exerciseId: trajectory.identity?.id,
+      granularity: METRIC_GRANULARITY.PER_SESSION,
+      unit: METRIC_UNIT.REPS,
+      denominator: 'session',
+      referent: METRIC_REFERENT.ARC_EARLY_LATE,
+      aggregation: 'mean_late_arc',
+      source: 'exerciseTrajectory.shape',
+      reliability: 'medium',
+      labelFr: 'reps/séance (fin d’arc)'
+    })
+  };
   return {
     trajectoryOk: true,
+    metricFacts,
     trajectoryMode: trajectory.mode,
     trajectoryInstallation: trajectory.installation?.kind || null,
     trajectoryShape: trajectory.shape?.kind || null,

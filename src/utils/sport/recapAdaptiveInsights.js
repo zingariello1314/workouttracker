@@ -63,6 +63,7 @@ import { structuredBestSetReps } from './exercisePerformanceUnit';
 import { mergeGarminDataForRecap } from './recapGarminMerge';
 import { periodVoice } from './recapPeriodDiscoveries';
 import { buildSpanStoryCandidates } from './recapSpanStory';
+import { proposeTemporalPlans, selectTemporalPlans } from './recapTemporalStrategy';
 
 const MIN_COLUMN_WEIGHT = 32;
 /** Deux cartes à cet écart ou moins sont départagées par la rotation. Au-delà, le score brut gagne. */
@@ -1692,6 +1693,21 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     athleteJourney: composed.athleteJourney,
     phenomena: composed.phenomena,
     periodDiscoveries: composed.periodDiscoveries,
+    temporalPlans: (() => {
+      const sessionDates =
+        composed.periodDiscoveries?.debug?.sessionDates ||
+        composed.trainingEvents?.map?.((e) => e?.date).filter(Boolean) ||
+        [];
+      const plans = proposeTemporalPlans({
+        period,
+        window,
+        sessionDates: [...new Set(sessionDates)],
+        gapBreaks: (composed.phenomena || [])
+          .filter((p) => p?.class === 'return_after_gap' || Number(p?.gapDays) >= 14)
+          .map((p) => ({ gapDays: p.gapDays, id: p.id }))
+      });
+      return selectTemporalPlans(plans, {}, { maxPlans: period === '6m' || period === '1y' ? 3 : 2 });
+    })(),
     selectionDiagnostics,
     starvedFamilies,
     rescuedFamilies,

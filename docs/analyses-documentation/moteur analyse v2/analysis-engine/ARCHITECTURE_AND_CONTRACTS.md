@@ -56,11 +56,24 @@ snapshot / window / period
 4. **Meilleure interprétation** — `span_volume_vs_frequency` (mécanisme) bat `disc_volume_shape` (portrait) sur le même phénomène de volume global.
 5. **Fenêtre** — pas de carte exercice si `windowSessionCount === 0` dans la période affichée.
 
-## Architecture projetée (non encore dominante)
+## Contrats ajoutés (v2)
 
-- Plans de comparaison temporelle multi-stratégies scorés
-- Réserve publiable persistante + republication intelligente
-- Qualification intrinsèque séparée de la priorité contextuelle (statuts complets)
-- Nombre de cartes purement piloté par valeur marginale (caps UI ≠ caps éditoriaux)
+| Module | Rôle |
+|---|---|
+| `recapMetricContract.js` | Affirmations numériques traçables (`buildMetricFact`, comparabilité référentiels) |
+| `recapTemporalStrategy.js` | Plans de découpage scorés (pas course au %) |
+| `recapEditorialLifecycle.js` | Statuts + fraîcheur ponctuelle + réserve méta |
+| `returnEpisodeCollapseKey` | Collapse reprise nom+date / id (pas homonyme inventé) |
 
-Voir `IMPLEMENTATION_PROGRESS.md` pour l’état d’avancement.
+`classifyVolumeAttribution` annote désormais `metrics.metricFacts`.  
+`buildAdaptiveInsights` expose `temporalPlans` (sélection scorée) — **rédaction long horizon pas encore pilotée par ces plans**.
+
+## Architecture projetée (reste)
+
+- Propagation metric facts à tous les producteurs
+- Plans temporels → choix de narration / preuves long horizon
+- Réserve publiable persistante
+- Caps UI ≠ éditorial
+- Console « pourquoi perdu »
+
+Voir `IMPLEMENTATION_PROGRESS.md`.

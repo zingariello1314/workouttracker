@@ -9,11 +9,17 @@
  */
 
 import { applyComposedNarrationToDiscovery } from './recapComposedNarration';
+import { annotateVolumeAttributionMetrics } from './recapMetricContract';
+
+function finalizeVolumeAttribution(attrib) {
+  return attrib ? annotateVolumeAttributionMetrics(attrib) : null;
+}
 
 /**
  * Attribution d’une hausse/baisse de volume de période.
  * @returns {{ kind: string, stance: string, detail: string, metrics: object }|null}
  */
+
 export function classifyVolumeAttribution({
   windowSessionCount = 0,
   prevSessionCount = 0,
@@ -56,7 +62,7 @@ export function classifyVolumeAttribution({
   ) {
     const freqBit = `${prevSessionCount} → ${windowSessionCount} séances`;
     const densBit = `≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps/séance (${perSessionPct > 0 ? '+' : ''}${perSessionPct} %)`;
-    return {
+    return finalizeVolumeAttribution({
       kind: totalPct > 0 ? 'combined_frequency_and_density_rise' : 'combined_frequency_and_density_decline',
       stance: 'probable',
       detail: `Le total change via les deux leviers à la fois : fréquence (${freqBit}) et volume par séance (${densBit}). On ne peut pas attribuer la variation à un seul facteur.`,
@@ -70,12 +76,12 @@ export function classifyVolumeAttribution({
         prevMeanPerSession,
         referent: 'window_vs_previous_window'
       }
-    };
+    });
   }
 
   // Hausse de total surtout via fréquence (séances ↑, volume/séance ≈ stable)
   if (freqMovedUp && totalPct != null && totalPct >= 15 && perNear) {
-    return {
+    return finalizeVolumeAttribution({
       kind: 'frequency_driven_total_rise',
       stance: 'probable',
       detail: `Le total de la période augmente surtout parce que tu as pratiqué plus souvent (${prevSessionCount} → ${windowSessionCount} séances), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
@@ -89,12 +95,12 @@ export function classifyVolumeAttribution({
         prevMeanPerSession,
         referent: 'window_vs_previous_window'
       }
-    };
+    });
   }
 
   // Baisse de total surtout via fréquence
   if (freqMovedDown && totalPct != null && totalPct <= -15 && perNear) {
-    return {
+    return finalizeVolumeAttribution({
       kind: 'frequency_driven_total_decline',
       stance: 'probable',
       detail: `Le total de la période diminue surtout parce que tu as moins de séances (${prevSessionCount} → ${windowSessionCount}), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
@@ -108,12 +114,12 @@ export function classifyVolumeAttribution({
         prevMeanPerSession,
         referent: 'window_vs_previous_window'
       }
-    };
+    });
   }
 
   // Contenu de séance change, fréquence stable
   if (Math.abs(sessionDelta) <= 1 && perMoved) {
-    return {
+    return finalizeVolumeAttribution({
       kind: perSessionPct > 0 ? 'per_session_driven_rise' : 'per_session_driven_decline',
       stance: 'probable',
       detail: `Le nombre de séances est resté proche (${prevSessionCount} → ${windowSessionCount}), mais le volume par séance a changé (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)}, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
@@ -127,7 +133,7 @@ export function classifyVolumeAttribution({
         prevMeanPerSession,
         referent: 'window_vs_previous_window'
       }
-    };
+    });
   }
 
   return null;

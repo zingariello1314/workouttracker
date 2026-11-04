@@ -65,19 +65,23 @@ export const SIGNAL_FAMILY_CAPS = {
   }
 };
 
-/** Overflow max au-delà du cap si IV ≥ seuil et phénomène non déjà représenté. */
+/**
+ * Overflow max au-delà du cap si IV ≥ seuil et phénomène distinct.
+ * Garde-fou technique — pas un quota éditorial de qualité.
+ * Élargi (v2) pour ne pas disqualifier des analyses solides sur périodes riches.
+ */
 export const SIGNAL_FAMILY_SOFT_OVERFLOW = {
-  today: 4,
-  week: 6,
-  month: 10,
-  long: 14,
-  year: 14
+  today: 8,
+  week: 16,
+  month: 24,
+  long: 32,
+  year: 32
 };
 export const SIGNAL_FAMILY_OVERFLOW_IV = {
-  today: 72,
-  week: 70,
-  month: 68,
-  long: 66,
+  today: 68,
+  week: 64,
+  month: 62,
+  long: 58,
   year: 66
 };
 

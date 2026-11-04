@@ -1,5 +1,5 @@
 ---
-description: Conventions du moteur d'analyse Sport → Récap → Analyse
+description: Conventions du moteur d'analyse Sport → Récap → Analyse (v2)
 globs:
   - src/utils/sport/recap*.js
   - src/utils/sport/exerciseTrajectory*.js
@@ -8,20 +8,21 @@ globs:
   - src/utils/sport/analysisEngine*.js
   - src/utils/sport/monthlyVolume*.js
   - src/components/sport/recap/**
-  - docs/analyses-documentation/analysis-engine/**
+  - docs/analyses-documentation/moteur analyse v2/**
 alwaysApply: false
 ---
-# Moteur d’analyse Momentum
+# Moteur d’analyse Momentum (v2)
 
 Avant toute modification substantielle du pipeline Récap / Analyse :
 
-1. Lire `docs/analyses-documentation/analysis-engine/README.md` (ordre de lecture).
-2. Consulter `ISSUES_AND_REGRESSIONS.md` pour les défauts ouverts et causes racines.
-3. Respecter les contrats dans `ARCHITECTURE_AND_CONTRACTS.md` (ne pas recréer F4, trajectoires, attribution, etc. sous d’autres noms).
-4. Préserver les invariants : vérité des métriques + référentiels explicites, identité de phénomène, sélection par valeur (pas de quotas arbitraires), français publiable.
-5. Ajouter un test de non-régression pour chaque correctif P0 / scénario golden.
-6. Mettre à jour `IMPLEMENTATION_PROGRESS.md`, et le registre défauts / décisions si la règle évolue.
+1. Lire `docs/analyses-documentation/moteur analyse v2/README.md`.
+2. Reprendre via `…/analysis-engine/IMPLEMENTATION_PROGRESS.md`.
+3. Consulter `ISSUES_AND_REGRESSIONS.md` pour les défauts ouverts.
+4. Respecter `ARCHITECTURE_AND_CONTRACTS.md` (ne pas recréer F4 / trajectoires / attribution sous d’autres noms).
+5. Préserver les invariants : métriques + référentiels explicites, identité (pas de fusion homonyme inventée), sélection par valeur, français publiable.
+6. Ajouter un test de non-régression pour chaque correctif / golden.
+7. Mettre à jour les docs **dans** `moteur analyse v2/analysis-engine/` (pas de second dossier).
 
-Ne pas charger toute la doc à chaque tour : cibler le document concerné.
+Ne pas charger toute la doc à chaque tour.
 
-Référence contradictoire : `docs/analyses-documentation/VERIFICATION-ESSAI-DETECTION-VS-RAISONNEMENT-2026-11-04.md`.
+Références : `VERIFICATION-ESSAI-DETECTION-VS-RAISONNEMENT-2026-11-04.md`, `RECONCILIATION-387-REPS-2026-11-04.md`.

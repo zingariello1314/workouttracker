@@ -6,6 +6,11 @@
  */
 
 import { noveltyKeyFromCandidate } from './recapNarrativeClaims';
+import {
+  normalizeReturnExerciseName,
+  returnEventYmd,
+  returnEpisodeCollapseKey
+} from './recapEditorialIdentity';
 
 const PARASITE = [
   /~[+-]/,
@@ -233,9 +238,8 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     ranked.slice(1).forEach((row) => drop.add(row.index));
   });
 
-  // Reprises du même mouvement (42 j vs 77 j, milestone + émergence) :
-  // une seule carte sur tout le pack short/medium/long — pas une par horizon.
-  const returnNameOf = (row) => {
+  // Reprises du même mouvement (42 j vs 77 j) : clé structurée (nom+date ou id).
+  const returnKeyOf = (row) => {
     const ctx = ctxOf(row.candidate);
     const kind = String(ctx.kind || row.candidate?.kind || '');
     const blob = row.blob || '';
@@ -243,27 +247,37 @@ export function keepDistinctProofCards(candidates, opts = {}) {
       blob
     );
     const looksReturnKind = /disc_ms_return|disc_emergence|disc_structural_memory/.test(kind);
-    // Kind parfois absent du context en live : le texte de reprise suffit.
     if (!(looksReturnKind || looksReturnBlob)) return '';
-    return String(ctx.name || ctx.exerciseName || ctx.historicalDisplayName || row.title || '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .replace(/\s+(revient|reviennent|après|réapparition|suite à|reprend).*$/i, '')
-      .replace(/^(les|des|le|la|l['’])\s+/i, '')
-      .trim();
+    const proxy = {
+      title: row.title || ctx.title || '',
+      kind,
+      metrics: {
+        name: ctx.name || ctx.exerciseName || ctx.historicalDisplayName || null,
+        exerciseName: ctx.exerciseName || null,
+        exerciseId: ctx.exerciseId ?? row.candidate?.metrics?.exerciseId ?? null,
+        date: ctx.date || ctx.eventDate || returnEventYmd(row.candidate) || null,
+        eventDate: ctx.eventDate || null,
+        lastSessionDate: ctx.lastSessionDate || null,
+        returnDate: ctx.returnDate || null
+      }
+    };
+    // Si pas de métriques : retomber sur nom normalisé du titre (cartes sans id).
+    const key = returnEpisodeCollapseKey(proxy);
+    if (key) return key;
+    const name = normalizeReturnExerciseName({ title: row.title || ctx.title, metrics: proxy.metrics });
+    return name ? `name:${name}` : '';
   };
   const returnGroups = new Map();
   rows.forEach((row) => {
     if (drop.has(row.index)) return;
-    const name = returnNameOf(row);
-    if (!name) return;
-    if (!returnGroups.has(name)) returnGroups.set(name, []);
-    returnGroups.get(name).push(row);
+    const key = returnKeyOf(row);
+    if (!key) return;
+    if (!returnGroups.has(key)) returnGroups.set(key, []);
+    returnGroups.get(key).push(row);
   });
   returnGroups.forEach((group) => {
     if (group.length < 2) return;
     const ranked = [...group].sort((a, b) => {
-      // Préférer le jalon (preuve gap + % du moyen) à l’émergence seule.
       const score = (row) => {
         const kind = String(ctxOf(row.candidate).kind || row.candidate?.kind || '');
         let s = 0;
@@ -278,21 +292,19 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     ranked.slice(1).forEach((row) => drop.add(row.index));
   });
 
-  // Volume global : lecture attributive (span) bat le portrait descriptif (volume_shape).
+  // Volume GLOBAL de période uniquement — pas les volumes d’exercice / densité / GTG / muscle.
+  const GLOBAL_VOLUME_KINDS = new Set(['disc_volume_shape', 'span_volume_vs_frequency']);
   const volumeRivalOf = (row) => {
-    const kind = String(ctxOf(row.candidate).kind || row.candidate?.kind || '');
+    const ctx = ctxOf(row.candidate);
+    const kind = String(ctx.kind || row.candidate?.kind || '');
+    if (ctx.exerciseId != null || row.candidate?.metrics?.exerciseId != null) return '';
+    if (GLOBAL_VOLUME_KINDS.has(kind)) return 'global_volume_period';
     const findings = row.candidate?.findings || [];
     const hasAttribFinding = (findings || []).some((f) =>
       /^volume_change:from_/.test(String(f || ''))
     );
-    if (
-      kind === 'disc_volume_shape' ||
-      kind === 'span_volume_vs_frequency' ||
-      hasAttribFinding ||
-      /volume bouge surtout|intérieur des séances|nombre de séances bouge/i.test(row.blob || '')
-    ) {
-      return 'global_volume';
-    }
+    // Finding attributif catalogue sans sujet exercice = même phénomène global
+    if (hasAttribFinding && String(kind).startsWith('span_')) return 'global_volume_period';
     return '';
   };
   const volumeRivalGroups = new Map();
@@ -312,9 +324,7 @@ export function keepDistinctProofCards(candidates, opts = {}) {
         let s = Number(row.candidate?.weight || 0);
         if (kind === 'span_volume_vs_frequency') s += 40;
         if ((findings || []).some((f) => /^volume_change:from_/.test(String(f || '')))) s += 35;
-        if (/surtout|intérieur des séances|nombre de séances/i.test(row.blob || '')) s += 20;
         if (kind === 'disc_volume_shape') s -= 25;
-        if (/pas seulement un total|dépasse la période précédente/i.test(row.blob || '')) s -= 10;
         return s;
       };
       return score(b) - score(a) || preferHorizon(a, b);

@@ -930,7 +930,16 @@ export function detectRecapMilestones({
       body: `Meilleure série observée : ${fmtInt(last.reps)} ${last.name.toLowerCase()}. Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent ${fmtInt(priorMax)}).${aboveDeclared}`,
       evidence: `${fmtInt(priorMax)} → ${fmtInt(last.reps)}`,
       importance: 0.92,
-      metrics: { name: last.name, exerciseName: last.name, exerciseId: String(id) }
+      // Événement ponctuel : cycle de vie J1–J6 (novelty) si aucune nouvelle preuve
+      punctualClaim: true,
+      metrics: {
+        name: last.name,
+        exerciseName: last.name,
+        exerciseId: String(id),
+        date: last.date,
+        punctualClaim: true,
+        conclusionKey: `pr_reps:${id}:${last.reps}`
+      }
     });
   });
   prs.sort((a, b) => (b.importance || 0) - (a.importance || 0));

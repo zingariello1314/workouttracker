@@ -13,6 +13,10 @@ import {
   semanticGroupRecentPenalty
 } from './insightSemanticThemes';
 import { claimFromCandidate, sameClaimState } from './recapNarrativeClaims';
+import {
+  assessPunctualClaimFreshness,
+  lifecycleSelectionPenalty
+} from './recapEditorialLifecycle';
 
 /** Même ordre de grandeur qu'un kind déjà revu : l'idée ne gagne plus contre une autre. */
 const CLAIM_REPEAT_PENALTY = 40;
@@ -79,6 +83,34 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
   if (claimRepeated) {
     penalty += CLAIM_REPEAT_PENALTY;
     novelty -= 0.4;
+  }
+
+  // Cycle de vie : perf ponctuelle déjà montrée, sans nouvelle preuve (J1→J6)
+  const punctual =
+    candidate?.punctualClaim === true ||
+    candidate?.metrics?.punctualClaim === true ||
+    candidate?.interpretation?.context?.punctualClaim === true;
+  if (punctual && entry) {
+    const voiceKey =
+      candidate?.horizon === 'long' || candidate?.nature === 'journey'
+        ? 'long'
+        : candidate?.horizon === 'medium'
+          ? 'month'
+          : 'week';
+    const freshness = assessPunctualClaimFreshness({
+      firstPublishedAt: entry.seenAt,
+      lastProofAt: entry.lastProofAt || entry.seenAt,
+      timesShown: entry.count || 1,
+      voiceKey,
+      hasNewProof: candidate?.hasNewProof === true,
+      hasNewInterpretation: candidate?.hasNewInterpretation === true,
+      phenomenonClass: candidate?.phenomenonClass || 'other'
+    });
+    const lifePen = lifecycleSelectionPenalty(freshness);
+    if (lifePen > 0) {
+      penalty += lifePen;
+      novelty -= lifePen / 100;
+    }
   }
 
   if (candidate?.pillar === 'interpretation') {

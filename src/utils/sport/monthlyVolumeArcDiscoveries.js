@@ -8,6 +8,12 @@
 import DateHelper from '../dateHelper';
 import { getCalendarSportStatsCache } from '../calendarMonthSportStats';
 import { dayCountsAsCalendarTrainingDay } from './recapTrainingDayTruth';
+import {
+  proposeTemporalPlans,
+  selectTemporalPlans,
+  TEMPORAL_PLAN_KIND
+} from './recapTemporalStrategy';
+import { buildMetricFact, METRIC_GRANULARITY, METRIC_REFERENT, METRIC_UNIT } from './recapMetricContract';
 
 function ymOf(ymd) {
   return String(ymd || '').slice(0, 7);
@@ -300,6 +306,101 @@ function bodyForArc(shape) {
 }
 
 /**
+ * Évalue les plans temporels sur l’arc mensuel et peut réorienter le titre.
+ * @returns {{ title: string, body: string, plan: object|null, considered: object[], rejectedSpectacular: object|null }}
+ */
+export function resolveMonthlyArcTemporalReading(shape, months, opts = {}) {
+  const { peak, trough, recent, mechanism, arcKind } = shape;
+  const first = months[0];
+  const last = months[months.length - 1];
+  const window = {
+    start: first?.ym ? `${first.ym}-01` : null,
+    end: opts.windowEndYmd || (last?.ym ? monthEndYmd(last.ym) : null)
+  };
+  const sessionDates = (opts.sessionDates || []).filter(Boolean);
+  const gapBreaks =
+    arcKind === 'partial_recovery' || arcKind === 'full_recovery' || arcKind === 'prolonged_decline'
+      ? [{ gapDays: 28, troughYm: trough.ym, peakYm: peak.ym }]
+      : [];
+
+  const plans = proposeTemporalPlans({
+    period: opts.period || '6m',
+    window,
+    sessionDates:
+      sessionDates.length >= 4
+        ? sessionDates
+        : months.flatMap((m) => Array.from({ length: Math.min(8, m.days || 0) }, () => `${m.ym}-15`)),
+    gapBreaks
+  });
+
+  const dropPct = Math.abs(Number(mechanism?.repsPct) || 0);
+  const recoveryPct = Math.abs(Number(mechanism?.recovery?.repsPct) || 0);
+  const firstLastPct = first && last ? pct(last.reps, first.reps) : null;
+  const evidences = {
+    [TEMPORAL_PLAN_KIND.BEFORE_AFTER_GAP]: {
+      sampleA: peak.days,
+      sampleB: recent.days,
+      deltaPct: recoveryPct || dropPct,
+      gapDays: 28
+    },
+    [TEMPORAL_PLAN_KIND.FIRST_VS_LAST_MONTH]: {
+      sampleA: first?.days || 0,
+      sampleB: last?.days || 0,
+      deltaPct: firstLastPct,
+      // Mois unique très extrême = suspect
+      outlierShare: dropPct >= 100 ? 0.45 : 0.1
+    },
+    [TEMPORAL_PLAN_KIND.FIRST_VS_SECOND_HALF]: {
+      sampleA: Math.max(1, Math.floor(months.length / 2)),
+      sampleB: Math.max(1, Math.ceil(months.length / 2)),
+      deltaPct: firstLastPct,
+      outlierShare: dropPct >= 120 ? 0.5 : 0.15
+    },
+    [TEMPORAL_PLAN_KIND.THIRDS]: {
+      sampleA: 3,
+      sampleB: 3,
+      deltaPct: firstLastPct
+    }
+  };
+
+  const considered = selectTemporalPlans(plans, evidences, { maxPlans: 3 });
+  const plan = considered[0] || null;
+
+  // Contre-exemple : plan « spectaculaire » (énorme %) mais fragile → exposé comme rejeté
+  const spectacularHalf = plans.find((p) => p.kind === TEMPORAL_PLAN_KIND.FIRST_VS_SECOND_HALF);
+  const spectacularScore = spectacularHalf
+    ? evidences[TEMPORAL_PLAN_KIND.FIRST_VS_SECOND_HALF]
+    : null;
+  const rejectedSpectacular =
+    spectacularHalf &&
+    spectacularScore &&
+    Math.abs(Number(spectacularScore.deltaPct) || 0) >= 100 &&
+    (spectacularScore.outlierShare || 0) >= 0.4 &&
+    plan &&
+    plan.plan.kind !== TEMPORAL_PLAN_KIND.FIRST_VS_SECOND_HALF
+      ? { kind: spectacularHalf.kind, reason: 'opportunistic_outlier_contrast', deltaPct: spectacularScore.deltaPct }
+      : null;
+
+  // Conserver le titre analytique de l’arc ; le plan enrichit le corps (preuve de choix).
+  const title = titleForArc(shape);
+  let body = bodyForArc(shape);
+  const planKind = plan?.plan?.kind;
+
+  if (planKind === TEMPORAL_PLAN_KIND.BEFORE_AFTER_GAP && (arcKind === 'partial_recovery' || arcKind === 'full_recovery')) {
+    body = `${body} Lecture retenue : avant/après l’interruption autour de ${monthLabelFr(trough.ym)} (plutôt qu’un simple contraste de moitiés calendaires).`;
+  } else if (planKind === TEMPORAL_PLAN_KIND.FIRST_VS_LAST_MONTH && first && last) {
+    body = `${body} Comparaison retenue : premier mois (${monthLabelFr(first.ym)}) vs dernier mois (${monthLabelFr(last.ym)}, ${fmtSignedPct(firstLastPct)}).`;
+  } else if (planKind === TEMPORAL_PLAN_KIND.THIRDS) {
+    body = `${body} Le découpage par tiers confirme la trajectoire sans s’appuyer sur un contraste opportuniste.`;
+  }
+  if (rejectedSpectacular) {
+    body = `${body} Un contraste de moitiés très élevé a été écarté (risque d’outlier / segments peu représentatifs).`;
+  }
+
+  return { title, body, plan, considered, rejectedSpectacular, evidences };
+}
+
+/**
  * Producteur de découvertes d’arcs mensuels.
  * @returns {object[]} partials compatibles avec discovery()
  */
@@ -314,9 +415,10 @@ export function buildMonthlyVolumeArcDiscoveries(repsByDate, opts = {}) {
   });
   if (!shape) return [];
 
-  const title = titleForArc(shape);
-  const body = bodyForArc(shape);
   const { peak, trough, recent, mechanism, arcKind } = shape;
+  const reading = resolveMonthlyArcTemporalReading(shape, months, opts);
+  const title = reading.title;
+  const body = reading.body;
 
   return [
     {
@@ -360,7 +462,51 @@ export function buildMonthlyVolumeArcDiscoveries(repsByDate, opts = {}) {
               : arcKind === 'prolonged_decline'
                 ? 'net_decline'
                 : 'net_rise',
-        temporalScope: { interpretingWithHistory: true }
+        temporalScope: { interpretingWithHistory: true },
+        // C — plan temporel réellement utilisé par le producteur
+        temporalPlan: reading.plan
+          ? {
+              kind: reading.plan.plan.kind,
+              score: reading.plan.score,
+              question: reading.plan.plan.question,
+              reason: reading.plan.plan.reason
+            }
+          : null,
+        temporalPlansConsidered: (reading.considered || []).map((r) => ({
+          kind: r.plan.kind,
+          score: r.score,
+          question: r.plan.question
+        })),
+        temporalPlanRejected: reading.rejectedSpectacular,
+        metricFacts: {
+          peakMonthReps: buildMetricFact({
+            value: peak.reps,
+            unit: METRIC_UNIT.REPS,
+            granularity: METRIC_GRANULARITY.TOTAL,
+            referent: METRIC_REFERENT.BEST_PHASE,
+            aggregation: 'month_sum',
+            source: 'monthlyVolumeArc',
+            labelFr: `reps ${monthLabelFr(peak.ym)}`
+          }),
+          troughMonthReps: buildMetricFact({
+            value: trough.reps,
+            unit: METRIC_UNIT.REPS,
+            granularity: METRIC_GRANULARITY.TOTAL,
+            referent: METRIC_REFERENT.PRIMARY_WINDOW,
+            aggregation: 'month_sum',
+            source: 'monthlyVolumeArc',
+            labelFr: `reps ${monthLabelFr(trough.ym)}`
+          }),
+          recentMonthReps: buildMetricFact({
+            value: recent.reps,
+            unit: METRIC_UNIT.REPS,
+            granularity: METRIC_GRANULARITY.TOTAL,
+            referent: METRIC_REFERENT.PRIMARY_WINDOW,
+            aggregation: 'month_sum',
+            source: 'monthlyVolumeArc',
+            labelFr: `reps ${monthLabelFr(recent.ym)}`
+          })
+        }
       }
     }
   ];

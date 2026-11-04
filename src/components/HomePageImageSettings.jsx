@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Volume2, VolumeX, Check } from 'lucide-react';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { useAppLock } from '../context/AppLockContext';
 import { resolveLockWallpaperUrls } from '../utils/wallpaperTargets';
@@ -85,6 +85,14 @@ const HomePageImageSettings = ({ onClose }) => {
   const [bankPreviewId, setBankPreviewId] = useState(null);
   const [bankAddingTheme, setBankAddingTheme] = useState(false);
   const [bankVideos, setBankVideos] = useState([]);
+  /** Multi-sélection banque (ids manifest) */
+  const [selectedBankIds, setSelectedBankIds] = useState(() => new Set());
+  /** Multi-sélection collection (ids images) */
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState(() => new Set());
+  /** all | in | out — filtre rotation accueil sur la bibliothèque */
+  const [collectionRotationFilter, setCollectionRotationFilter] = useState('all');
+  const lastBankSelectIndexRef = useRef(null);
+  const lastCollectionSelectIndexRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
@@ -173,6 +181,44 @@ const HomePageImageSettings = ({ onClose }) => {
     bankNewFilter,
     collectionIdSet
   ]);
+
+  const collectionEntries = useMemo(
+    () =>
+      backgroundImages.map((image, index) => ({
+        image,
+        index,
+        norm: normalizeHomepageImage(image, index)
+      })),
+    [backgroundImages]
+  );
+
+  const filteredCollectionEntries = useMemo(() => {
+    return collectionEntries.filter(({ norm }) => {
+      if (collectionRotationFilter === 'in') {
+        return norm.useOnHome !== false && !norm.hidden;
+      }
+      if (collectionRotationFilter === 'out') {
+        return norm.useOnHome === false || norm.hidden;
+      }
+      return true;
+    });
+  }, [collectionEntries, collectionRotationFilter]);
+
+  const filteredCollectionOrderedIds = useMemo(
+    () => filteredCollectionEntries.map(({ norm }) => norm.id),
+    [filteredCollectionEntries]
+  );
+
+  const filteredBankOrderedIds = useMemo(
+    () => filteredBankImages.map((item) => item.id),
+    [filteredBankImages]
+  );
+
+  const rotationPoolCount = useMemo(
+    () =>
+      collectionEntries.filter(({ norm }) => norm.useOnHome !== false && !norm.hidden).length,
+    [collectionEntries]
+  );
 
   const bankPreviewItem = useMemo(
     () => bankImages.find((item) => item.id === bankPreviewId) || null,
@@ -265,27 +311,35 @@ const HomePageImageSettings = ({ onClose }) => {
   const imagesLiveRef = useRef(backgroundImages);
   const seenImagesRef = useRef(backgroundImages);
   const saveQueueRef = useRef(Promise.resolve());
-  if (backgroundImages !== seenImagesRef.current) {
+  /** true tant qu’une mutation locale n’a pas été confirmée par le state React. */
+  const localDirtyRef = useRef(false);
+  // Sync externe (chargement initial) seulement si on n’a pas de mutation locale en cours —
+  // sinon une sauvegarde async périmée réécrasait imagesLiveRef et « décochait » Accueil.
+  if (!localDirtyRef.current && backgroundImages !== seenImagesRef.current) {
     seenImagesRef.current = backgroundImages;
-    if (backgroundImages !== imagesLiveRef.current) {
-      imagesLiveRef.current = backgroundImages;
-    }
+    imagesLiveRef.current = backgroundImages;
+  } else if (localDirtyRef.current && backgroundImages === imagesLiveRef.current) {
+    seenImagesRef.current = backgroundImages;
+    localDirtyRef.current = false;
   }
 
   const commitImages = (updated) => {
+    localDirtyRef.current = true;
     imagesLiveRef.current = updated;
     seenImagesRef.current = updated;
     setBackgroundImages(updated);
     updateImagesRef(updated);
-    const snapshot = updated;
     saveQueueRef.current = saveQueueRef.current
       .catch(() => {})
       .then(async () => {
-        if (imagesLiveRef.current !== snapshot) return;
+        // Toujours persister l’état live (coalesce), jamais un snapshot déjà dépassé.
+        const toSave = imagesLiveRef.current;
         try {
           cleanupLocalStorage();
-          await saveImages(snapshot, { force: true });
-          if (imagesLiveRef.current !== snapshot) {
+          await saveImages(toSave, { force: true });
+          if (imagesLiveRef.current !== toSave) {
+            // Une mutation plus récente est arrivée pendant l’await → resynchroniser l’UI
+            // et laisser la prochaine tâche de la file sauver le live.
             setBackgroundImages(imagesLiveRef.current);
             updateImagesRef(imagesLiveRef.current);
           }
@@ -302,6 +356,130 @@ const HomePageImageSettings = ({ onClose }) => {
     const patch = typeof recipe === 'function' ? recipe(norm) : recipe;
     current[index] = { ...norm, ...patch };
     commitImages(current);
+  };
+
+  const patchSelectedCollection = (recipe) => {
+    if (selectedCollectionIds.size === 0) return;
+    const current = imagesLiveRef.current.map((img, i) => normalizeHomepageImage(img, i));
+    const next = current.map((norm) => {
+      if (!selectedCollectionIds.has(norm.id)) return norm;
+      const patch = typeof recipe === 'function' ? recipe(norm) : recipe;
+      return { ...norm, ...patch };
+    });
+    commitImages(next);
+  };
+
+  const clearCollectionSelection = () => {
+    setSelectedCollectionIds(new Set());
+    lastCollectionSelectIndexRef.current = null;
+  };
+
+  const clearBankSelection = () => {
+    setSelectedBankIds(new Set());
+    lastBankSelectIndexRef.current = null;
+  };
+
+  const applyRangeSelection = ({
+    prev,
+    id,
+    index,
+    orderedIds,
+    shiftKey,
+    toggleKey,
+    lastIndexRef
+  }) => {
+    const next = new Set();
+    if (shiftKey && lastIndexRef.current != null && orderedIds.length) {
+      if (toggleKey) prev.forEach((x) => next.add(x));
+      const from = Math.min(lastIndexRef.current, index);
+      const to = Math.max(lastIndexRef.current, index);
+      for (let i = from; i <= to; i += 1) {
+        const oid = orderedIds[i];
+        if (oid != null) next.add(oid);
+      }
+      return next;
+    }
+    if (toggleKey) {
+      prev.forEach((x) => next.add(x));
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+    } else {
+      next.add(id);
+    }
+    lastIndexRef.current = index;
+    return next;
+  };
+
+  const onCollectionTileSelect = (event, norm, index, orderedIds) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedCollectionIds((prev) =>
+      applyRangeSelection({
+        prev,
+        id: norm.id,
+        index,
+        orderedIds,
+        shiftKey: event.shiftKey,
+        toggleKey: event.metaKey || event.ctrlKey,
+        lastIndexRef: lastCollectionSelectIndexRef
+      })
+    );
+  };
+
+  const onBankTileSelect = (event, itemId, index, orderedIds) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedBankIds((prev) =>
+      applyRangeSelection({
+        prev,
+        id: itemId,
+        index,
+        orderedIds,
+        shiftKey: event.shiftKey,
+        toggleKey: event.metaKey || event.ctrlKey,
+        lastIndexRef: lastBankSelectIndexRef
+      })
+    );
+  };
+
+  const addSelectedBankImages = async ({ intoRotation }) => {
+    if (selectedBankIds.size === 0) return;
+    const toAdd = filteredBankImages.filter((item) => selectedBankIds.has(item.id));
+    if (!toAdd.length) return;
+    const existingIds = new Set(
+      imagesLiveRef.current.map((img, i) => normalizeHomepageImage(img, i).id)
+    );
+    const additions = [];
+    for (const item of toAdd) {
+      const id = `bank:${item.id}`;
+      if (existingIds.has(id)) continue;
+      existingIds.add(id);
+      additions.push({
+        id,
+        full: item.src,
+        thumbnail: item.thumb || item.src,
+        liked: false,
+        hidden: false,
+        useOnHome: Boolean(intoRotation),
+        useOnLock: false,
+        bankId: item.id,
+        theme: item.theme || null
+      });
+    }
+    if (!additions.length) {
+      clearBankSelection();
+      return;
+    }
+    const updated = [
+      ...imagesLiveRef.current.map((img, i) => normalizeHomepageImage(img, i)),
+      ...additions
+    ];
+    try {
+      await persistCollection(updated);
+      clearBankSelection();
+    } catch (error) {
+      log.error('Erreur ajout banque multi', error);
+    }
   };
 
   const toggleLike = (index) => {
@@ -366,6 +544,9 @@ const HomePageImageSettings = ({ onClose }) => {
   ]);
 
   const persistCollection = async (updated) => {
+    localDirtyRef.current = true;
+    imagesLiveRef.current = updated;
+    seenImagesRef.current = updated;
     setBackgroundImages(updated);
     updateImagesRef(updated);
     cleanupLocalStorage();
@@ -821,8 +1002,8 @@ const HomePageImageSettings = ({ onClose }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-zinc-950 via-black to-zinc-950 text-red-50">
-      <div className="sticky top-0 z-40 border-b border-red-900/40 bg-black/90 backdrop-blur-md">
+    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_rgba(39,39,42,0.45),_transparent_55%),linear-gradient(180deg,#09090b_0%,#000_45%,#09090b_100%)] text-zinc-100">
+      <div className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             <button
@@ -830,21 +1011,24 @@ const HomePageImageSettings = ({ onClose }) => {
               onClick={onClose}
               className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-sm`}
             >
-              ← Retour aux paramètres
+              ← Retour
             </button>
             <div className="min-w-0">
               <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${S.muted}`}>
                 Apparence
               </p>
-              <h1 className="truncate text-lg font-bold text-red-50 md:text-xl">
-                Fonds d&apos;écran — accueil &amp; verrouillage
+              <h1 className="truncate text-lg font-semibold tracking-tight text-white md:text-xl">
+                Fonds d&apos;écran
               </h1>
+              <p className={`mt-0.5 text-xs ${S.muted}`}>
+                {rotationPoolCount} en rotation accueil · {backgroundImages.length} dans la collection
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 text-xs text-emerald-400/90 md:text-sm">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-              <span>Sauvegarde automatique</span>
+            <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300/90">
+              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+              <span>Auto-save</span>
             </div>
             <button
               type="button"
@@ -862,7 +1046,7 @@ const HomePageImageSettings = ({ onClose }) => {
               {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
             </button>
             {saveStatus === 'success' ? (
-              <span className="text-sm text-emerald-400">Sauvegardé !</span>
+              <span className="text-sm text-emerald-400">Sauvegardé</span>
             ) : null}
             {saveStatus === 'error' ? (
               <span className="text-sm text-red-400">Erreur</span>
@@ -871,14 +1055,42 @@ const HomePageImageSettings = ({ onClose }) => {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-6 md:px-6 md:py-8">
-          <section className="rounded-2xl border border-red-900/35 bg-zinc-950/80 p-4 shadow-xl shadow-black/40 md:p-6">
-            <h2 className="mb-2 text-lg font-semibold text-red-100">Banque de fonds d&apos;écran</h2>
-            <p className={`mb-4 text-sm ${S.muted}`}>
-              {bankImages.length} images · {bankNewCount} nouvelles (dossiers « nouvelles bannières »
-              + « v2 »). Cliquez une miniature pour l&apos;agrandir. Les ajouts ne passent sur
-              l&apos;accueil / le verrou qu&apos;après activation dans votre collection.
-            </p>
+      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 md:px-6 md:py-8">
+          <section className="rounded-2xl border border-white/10 bg-zinc-950/70 p-4 shadow-2xl shadow-black/30 md:p-6">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Banque</h2>
+                <p className={`mt-1 max-w-2xl text-sm ${S.muted}`}>
+                  {bankImages.length} images · {bankNewCount} nouvelles. Clic = aperçu · Ctrl/Cmd =
+                  multi-sélection · Maj = plage. Les ajouts banque restent hors rotation tant que
+                  vous ne les activez pas.
+                </p>
+              </div>
+              {selectedBankIds.size > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-950/40 px-3 py-2">
+                  <span className="text-xs font-medium text-sky-100">
+                    {selectedBankIds.size} sélectionné{selectedBankIds.size > 1 ? 's' : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => addSelectedBankImages({ intoRotation: false })}
+                    className={S.btnSm}
+                  >
+                    Ajouter à la collection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addSelectedBankImages({ intoRotation: true })}
+                    className={S.btnPrimary}
+                  >
+                    Ajouter + rotation
+                  </button>
+                  <button type="button" onClick={clearBankSelection} className={S.btnSecondary}>
+                    Annuler
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <input
                 type="search"

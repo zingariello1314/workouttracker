@@ -191,6 +191,57 @@ describe('parenté des cartes', () => {
     expect(kept.some((c) => c.interpretation?.context?.kind === 'disc_volume_shape')).toBe(false);
   });
 
+  it('ne rivalise pas volume global avec trajectoire d’exercice / densité / GTG', () => {
+    const kept = keepDistinctProofCards([
+      {
+        id: 'relation.reading.medium.span_volume_vs_frequency',
+        horizon: 'medium',
+        weight: 98,
+        findings: ['volume_change:from_density'],
+        interpretation: {
+          context: {
+            kind: 'span_volume_vs_frequency',
+            title: 'Le volume bouge surtout à l’intérieur des séances',
+            body: 'La variation vient surtout du contenu des séances (+22 % par séance).'
+          }
+        }
+      },
+      {
+        id: 'ex.traj',
+        horizon: 'medium',
+        weight: 80,
+        interpretation: {
+          context: {
+            kind: 'disc_exercise_progress',
+            exerciseId: '103',
+            name: 'Dips parallèles',
+            title: 'Dips parallèles : volume par séance en hausse',
+            body: 'Sur 6 séances, le volume moyen passe d’environ 20 à 48 répétitions par séance.'
+          }
+        }
+      },
+      card({
+        horizon: 'short',
+        kind: 'disc_density',
+        title: 'Densité de séance',
+        body: 'Tes séances sont plus denses : davantage de répétitions par minute active.',
+        nature: 'now'
+      }),
+      card({
+        horizon: 'short',
+        kind: 'disc_gtg_unplanned_now',
+        title: 'GTG hors plan',
+        body: 'Du volume GTG apparaît hors des séances planifiées.',
+        nature: 'now'
+      })
+    ]);
+    const kinds = kept.map((c) => c.interpretation?.context?.kind);
+    expect(kinds).toContain('span_volume_vs_frequency');
+    expect(kinds).toContain('disc_exercise_progress');
+    expect(kinds).toContain('disc_density');
+    expect(kinds).toContain('disc_gtg_unplanned_now');
+  });
+
   it('nomme la fenêtre Garmin réelle sur 6 mois', () => {
     const kept = keepDistinctProofCards([
       card({

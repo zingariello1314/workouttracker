@@ -26,7 +26,11 @@ function getImageFullSrc(image) {
 
 /** Clé stable liée au contenu (survit à la perte de `id` au reload IndexedDB). */
 export function homepageImageContentPrefKey(image) {
-  return `src_${hashPrefix(getImageFullSrc(image), 48)}`;
+  const src = getImageFullSrc(image);
+  if (!src) return 'src_empty';
+  // data: URLs — slice après le préfixe MIME ; chemins banque — clé sur le path entier
+  if (src.startsWith('data:')) return `src_${hashPrefix(src, 48)}`;
+  return `src_path_${src.slice(0, 160)}`;
 }
 
 function snapshotDisplayPrefs(img) {
@@ -43,17 +47,6 @@ function snapshotDisplayPrefs(img) {
     if (img.name) prefs.name = String(img.name);
   }
   return prefs;
-}
-
-function hasNonDefaultDisplayPrefs(img) {
-  const isVideo = getHomepageMediaType(img) === 'video';
-  return Boolean(
-    img.liked ||
-      img.hidden ||
-      img.useOnHome === false ||
-      img.useOnLock ||
-      (isVideo && (img.allowSound || img.loop))
-  );
 }
 
 /** Sources retirées de la banque (fichiers supprimés). */
@@ -176,7 +169,8 @@ export function applyHomepageImagePreferences(images, preferences = {}) {
       ...img,
       liked: Boolean(p.liked),
       hidden: Boolean(p.hidden),
-      useOnHome: p.useOnHome !== false,
+      // Respecter false explicite (ne pas retomber sur le défaut true)
+      useOnHome: typeof p.useOnHome === 'boolean' ? p.useOnHome : p.useOnHome !== false,
       useOnLock: Boolean(p.useOnLock),
     };
     if (p.mediaType === 'video' || getHomepageMediaType(img) === 'video') {
@@ -193,7 +187,8 @@ export function applyHomepageImagePreferences(images, preferences = {}) {
 export function extractHomepageImagePreferences(images) {
   const out = {};
   normalizeHomepageImages(images).forEach((img, i) => {
-    if (!hasNonDefaultDisplayPrefs(img)) return;
+    // Toujours persister (y compris useOnHome:true) — sinon activer l’accueil
+    // effaçait l’entrée et une sauvegarde périmée (useOnHome:false) pouvait revenir.
     const prefs = snapshotDisplayPrefs(img);
     out[getHomepageImageId(img, i)] = prefs;
     out[homepageImageContentPrefKey(img)] = prefs;

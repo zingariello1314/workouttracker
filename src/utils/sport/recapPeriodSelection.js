@@ -30,6 +30,10 @@ import {
   phenomenonIdentity,
   classifyPhenomenon
 } from './recapEditorialSelection';
+import {
+  returnEpisodeCollapseKey,
+  shouldCollapseReturnEpisodes
+} from './recapEditorialIdentity';
 import { isMilestoneKind } from './recapMilestoneEngine';
 
 export function memoryFactor(history, kind, now = Date.now(), discovery = null) {
@@ -502,29 +506,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const phenCollapse = collapseByPhenomenon([...byIdentity.values()]);
   let unique = phenCollapse.unique;
   const phenomenonCollapsed = phenCollapse.collapsed;
-  // Un seul épisode de reprise par mouvement (milestone 42 j + emergence 77 j, etc.).
-  // Clé primaire = nom normalisé : deux storage ids pour le même mouvement = un épisode.
-  const normalizeReturnExerciseName = (d) => {
-    const raw = String(
-      d?.metrics?.name ||
-        d?.metrics?.exerciseName ||
-        d?.metrics?.historicalDisplayName ||
-        d?.title ||
-        ''
-    )
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .replace(/\s+(revient|reviennent|après|réapparition|suite à|reprend).*$/i, '')
-      .replace(/^(les|des|le|la|l['’])\s+/i, '')
-      .trim();
-    return raw;
-  };
-  const returnEpisodeKey = (d) => {
-    const name = normalizeReturnExerciseName(d);
-    if (name) return `name:${name}`;
-    const eid = d?.metrics?.exerciseId != null ? String(d.metrics.exerciseId) : '';
-    return eid ? `id:${eid}` : '';
-  };
+  // Un seul épisode de reprise : identité / nom+date / producteurs complémentaires.
   const looksReturnEpisode = (d) =>
     /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d.kind || '')) &&
     (/revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(
@@ -535,24 +517,26 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       d.metrics?.composedEvidence?.continuity?.kind === 'returning' ||
       d.metrics?.composedEvidence?.continuity?.kind === 'punctual_return' ||
       d.metrics?.composedEvidence?.continuity?.kind === 'confirmed_return');
-  const bestReturnByKey = new Map();
-  unique.forEach((d) => {
-    if (!looksReturnEpisode(d)) return;
-    const key = returnEpisodeKey(d);
-    if (!key) return;
-    const prev = bestReturnByKey.get(key);
-    if (!prev || (d.informativeValue || 0) > (prev.informativeValue || 0)) {
-      bestReturnByKey.set(key, d);
+  const returnCandidates = unique
+    .filter(looksReturnEpisode)
+    .sort(
+      (a, b) =>
+        (b.informativeValue || 0) - (a.informativeValue || 0) || (b.score || 0) - (a.score || 0)
+    );
+  const keptReturns = [];
+  returnCandidates.forEach((d) => {
+    const rival = keptReturns.find((k) => shouldCollapseReturnEpisodes(d, k));
+    if (rival) {
+      d._dropHint = 'return_episode_collapsed';
+      d._blockedBy = rival.kind;
+      d._collapseKey = returnEpisodeCollapseKey(d) || returnEpisodeCollapseKey(rival);
+      return;
     }
+    keptReturns.push(d);
   });
-  if (bestReturnByKey.size) {
-    unique = unique.filter((d) => {
-      if (!looksReturnEpisode(d)) return true;
-      const key = returnEpisodeKey(d);
-      const winner = key ? bestReturnByKey.get(key) : null;
-      if (!winner) return true;
-      return winner === d;
-    });
+  if (returnCandidates.length) {
+    const keepSet = new Set(keptReturns);
+    unique = unique.filter((d) => !looksReturnEpisode(d) || keepSet.has(d));
   }
   // Tri : valeur informative d’abord, puis score (priority ne force plus les methodology_limit)
   const sorted = unique.sort(
