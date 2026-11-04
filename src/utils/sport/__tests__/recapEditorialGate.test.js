@@ -89,6 +89,36 @@ describe('porte éditoriale', () => {
     expect(kept.find((c) => c.kind === 'disc_exercise_progress').nature).toBe('journey');
   });
 
+  it('refuse Pompes lestées / trajectoire sans séance dans la fenêtre Recap', () => {
+    const kept = applyEditorialGate([
+      card({
+        kind: 'disc_exercise_progress',
+        title: 'Pompes lestées : moins de répétitions par séance',
+        body: 'Sur 8 séances, le volume moyen passe d’environ 69 à 40.',
+        metrics: {
+          exerciseId: '201',
+          name: 'Pompes lestées',
+          volume: { windowSessionCount: 0 },
+          temporalScope: { windowSessionCount: 0 }
+        }
+      }),
+      card({
+        kind: 'disc_exercise_progress',
+        title: 'Dips parallèles : davantage de répétitions par séance',
+        body: 'Sur 8 séances dans la fenêtre, progression nette.',
+        metrics: {
+          exerciseId: '103',
+          name: 'Dips parallèles',
+          volume: { windowSessionCount: 5 },
+          temporalScope: { windowSessionCount: 5 }
+        }
+      })
+    ]);
+    expect(kept).toHaveLength(1);
+    expect(kept[0].title).toMatch(/Dips parallèles/);
+    expect(kept.map((c) => c.title).join(' ')).not.toMatch(/Pompes lestées|gilet/i);
+  });
+
   it('ne s\'arrête pas après deux cartes acceptées', () => {
     const kept = applyEditorialGate([
       card({ kind: 'disc_ms_return', title: 'Tu reprends A après 34 jours', body: 'Avec 60 répétitions, retour à 139 % du volume d\'avant sur plusieurs séances comparables.' }),

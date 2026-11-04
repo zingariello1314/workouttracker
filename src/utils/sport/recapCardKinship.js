@@ -239,14 +239,17 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     const ctx = ctxOf(row.candidate);
     const kind = String(ctx.kind || row.candidate?.kind || '');
     const blob = row.blob || '';
-    const isReturn =
-      /disc_ms_return|disc_emergence|disc_structural_memory/.test(kind) &&
-      /revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(blob);
-    if (!isReturn) return '';
-    return String(ctx.name || ctx.exerciseName || row.title || '')
+    const looksReturnBlob = /revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(
+      blob
+    );
+    const looksReturnKind = /disc_ms_return|disc_emergence|disc_structural_memory/.test(kind);
+    // Kind parfois absent du context en live : le texte de reprise suffit.
+    if (!(looksReturnKind || looksReturnBlob)) return '';
+    return String(ctx.name || ctx.exerciseName || ctx.historicalDisplayName || row.title || '')
       .toLowerCase()
       .replace(/\s+/g, ' ')
-      .replace(/\s+(revient|reviennent|après|réapparition).*$/i, '')
+      .replace(/\s+(revient|reviennent|après|réapparition|suite à|reprend).*$/i, '')
+      .replace(/^(les|des|le|la|l['’])\s+/i, '')
       .trim();
   };
   const returnGroups = new Map();
@@ -268,6 +271,50 @@ export function keepDistinctProofCards(candidates, opts = {}) {
         if (/%/.test(row.blob || '')) s += 2;
         if (/×|x\s*\d/i.test(row.blob || '')) s += 2;
         if (row.horizon === 'short') s += 1;
+        return s;
+      };
+      return score(b) - score(a) || preferHorizon(a, b);
+    });
+    ranked.slice(1).forEach((row) => drop.add(row.index));
+  });
+
+  // Volume global : lecture attributive (span) bat le portrait descriptif (volume_shape).
+  const volumeRivalOf = (row) => {
+    const kind = String(ctxOf(row.candidate).kind || row.candidate?.kind || '');
+    const findings = row.candidate?.findings || [];
+    const hasAttribFinding = (findings || []).some((f) =>
+      /^volume_change:from_/.test(String(f || ''))
+    );
+    if (
+      kind === 'disc_volume_shape' ||
+      kind === 'span_volume_vs_frequency' ||
+      hasAttribFinding ||
+      /volume bouge surtout|intérieur des séances|nombre de séances bouge/i.test(row.blob || '')
+    ) {
+      return 'global_volume';
+    }
+    return '';
+  };
+  const volumeRivalGroups = new Map();
+  rows.forEach((row) => {
+    if (drop.has(row.index)) return;
+    const key = volumeRivalOf(row);
+    if (!key) return;
+    if (!volumeRivalGroups.has(key)) volumeRivalGroups.set(key, []);
+    volumeRivalGroups.get(key).push(row);
+  });
+  volumeRivalGroups.forEach((group) => {
+    if (group.length < 2) return;
+    const ranked = [...group].sort((a, b) => {
+      const score = (row) => {
+        const kind = String(ctxOf(row.candidate).kind || row.candidate?.kind || '');
+        const findings = row.candidate?.findings || [];
+        let s = Number(row.candidate?.weight || 0);
+        if (kind === 'span_volume_vs_frequency') s += 40;
+        if ((findings || []).some((f) => /^volume_change:from_/.test(String(f || '')))) s += 35;
+        if (/surtout|intérieur des séances|nombre de séances/i.test(row.blob || '')) s += 20;
+        if (kind === 'disc_volume_shape') s -= 25;
+        if (/pas seulement un total|dépasse la période précédente/i.test(row.blob || '')) s -= 10;
         return s;
       };
       return score(b) - score(a) || preferHorizon(a, b);

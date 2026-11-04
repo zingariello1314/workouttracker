@@ -1097,8 +1097,14 @@ export function buildHorizonEssayCandidates(opts = {}) {
   // ——— PARCOURS : depuis la première saisie (lifetime), complément de la trajectoire de fenêtre ———
   // disc_exercise_progress (fenêtre, shape/sets/témoins) et journey_progress (référence fiable → habituel)
   // sont complémentaires : on ne masque plus l'un dès que l'autre est sélectionné.
+  // Uniquement les mouvements encore présents dans la fenêtre (évite Pompes lestées / gilet d’une époque révolue).
+  const windowSpanDays = Math.max(1, Number(wins.currentLen) || 30);
   const progressRows = (journey?.narratives?.progress || []).filter(
-    (e) => e?.name && String(e.name).trim() && !/^un mouvement$/i.test(String(e.name))
+    (e) =>
+      e?.name &&
+      String(e.name).trim() &&
+      !/^un mouvement$/i.test(String(e.name)) &&
+      (e.daysSinceLast == null || e.daysSinceLast <= windowSpanDays)
   );
   if (progressRows.length) {
     const progressDiscSelected = selectedDisc.filter((d) => d.kind === 'disc_exercise_progress');
@@ -1198,6 +1204,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     prStory?.setLevel &&
     prStory?.name &&
     !/^un mouvement$/i.test(String(prStory.name)) &&
+    (prStory.daysSinceLast == null || prStory.daysSinceLast <= windowSpanDays) &&
     !progressRows.some((e) => e.exerciseId === prStory.exerciseId)
   ) {
     long(

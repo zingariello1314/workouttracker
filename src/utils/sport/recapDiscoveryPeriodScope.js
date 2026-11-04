@@ -144,6 +144,64 @@ export function assertDiscoveryPeriodScope(discovery, activityCtx) {
 }
 
 /**
+ * Kinds qui racontent un exercice nommé : exigent au moins 1 séance
+ * cochée dans la fenêtre Recap sélectionnée (pas seulement un arc hors fenêtre).
+ * Empêche p.ex. « Pompes lestées » (dernière séance hors période) de parasiter le pack.
+ */
+export const EXERCISE_WINDOW_REQUIRED_KINDS = Object.freeze([
+  'disc_exercise_progress',
+  'disc_emergence',
+  'disc_structural_memory',
+  'disc_ms_return',
+  'disc_ms_return_durable',
+  'disc_freq_progress_low',
+  'disc_freq_decline_low_exposure',
+  'journey_progress',
+  'journey_pr_vs_level'
+]);
+
+/**
+ * True si la carte d’exercice a une activité mesurée dans la fenêtre sélectionnée.
+ * - windowSessionCount === 0 → faux (historique hors fenêtre seul)
+ * - compteur absent → true (ne bloque pas les kinds sans trajectoire attachée)
+ */
+export function exerciseDiscoveryActiveInSelectedWindow(discoveryOrMetrics) {
+  const m =
+    discoveryOrMetrics?.metrics && typeof discoveryOrMetrics.metrics === 'object'
+      ? discoveryOrMetrics.metrics
+      : discoveryOrMetrics && typeof discoveryOrMetrics === 'object'
+        ? discoveryOrMetrics
+        : {};
+  const winCount =
+    m.volume?.windowSessionCount != null
+      ? Number(m.volume.windowSessionCount)
+      : m.temporalScope?.windowSessionCount != null
+        ? Number(m.temporalScope.windowSessionCount)
+        : null;
+  if (winCount != null && Number.isFinite(winCount) && winCount <= 0) return false;
+  if (
+    m.installation?.kind === 'insufficient' &&
+    /Aucune séance dans la fenêtre/i.test(String(m.installation?.detail || ''))
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Drop si kind exige la fenêtre et qu’aucune séance n’y figure.
+ * @returns {string} raison ou ''
+ */
+export function emptyWindowExerciseDropReason(discovery) {
+  const kind = String(discovery?.kind || '');
+  if (!EXERCISE_WINDOW_REQUIRED_KINDS.includes(kind)) return '';
+  if (!exerciseDiscoveryActiveInSelectedWindow(discovery)) {
+    return 'empty-window-exercise';
+  }
+  return '';
+}
+
+/**
  * Filtre une liste de découvertes ; conserve les raisons de drop.
  * @returns {{ kept: object[], dropped: Array<{ discovery: object, reason: string }> }}
  */
@@ -152,6 +210,11 @@ export function filterDiscoveriesByPeriodScope(discoveries, activityCtx) {
   const dropped = [];
   (discoveries || []).forEach((d) => {
     const scoped = withDiscoveryScope(d);
+    const emptyEx = emptyWindowExerciseDropReason(scoped);
+    if (emptyEx) {
+      dropped.push({ discovery: scoped, reason: emptyEx });
+      return;
+    }
     const { ok, reason } = assertDiscoveryPeriodScope(scoped, activityCtx);
     if (ok) kept.push(scoped);
     else dropped.push({ discovery: scoped, reason: reason || 'period_scope' });

@@ -3,6 +3,8 @@ import DateHelper from '../../dateHelper';
 import {
   assertDiscoveryPeriodScope,
   buildPeriodActivityContext,
+  emptyWindowExerciseDropReason,
+  exerciseDiscoveryActiveInSelectedWindow,
   filterDiscoveriesByPeriodScope,
   filterRunDaysToWindow,
   withDiscoveryScope
@@ -201,5 +203,45 @@ describe('recapDiscoveryPeriodScope — 22.I', () => {
     });
     expect(hist.scope.mode).toBe('historical_explicit');
     expect(assertDiscoveryPeriodScope(hist, activityCtx).ok).toBe(true);
+  });
+
+  it('refuse une trajectoire d’exercice sans séance dans la fenêtre (Pompes lestées hors calendrier)', () => {
+    const ghost = {
+      kind: 'disc_exercise_progress',
+      title: 'Pompes lestées : moins de répétitions par séance',
+      body: 'Sur 8 séances hors fenêtre…',
+      metrics: {
+        exerciseId: '201',
+        name: 'Pompes lestées',
+        volume: { windowSessionCount: 0, lifetimeSessionCount: 10 },
+        temporalScope: { windowSessionCount: 0, interpretingWithHistory: true },
+        installation: { kind: 'insufficient', detail: 'Aucune séance dans la fenêtre' }
+      }
+    };
+    expect(exerciseDiscoveryActiveInSelectedWindow(ghost)).toBe(false);
+    expect(emptyWindowExerciseDropReason(ghost)).toBe('empty-window-exercise');
+    const activityCtx = buildPeriodActivityContext({
+      strengthReps: 4000,
+      trainingDays: 14,
+      nightsInWindow: 10
+    });
+    const { kept, dropped } = filterDiscoveriesByPeriodScope([ghost], activityCtx);
+    expect(kept).toHaveLength(0);
+    expect(dropped[0]?.reason).toBe('empty-window-exercise');
+  });
+
+  it('conserve une progression avec séances dans la fenêtre', () => {
+    const live = {
+      kind: 'disc_exercise_progress',
+      title: 'Dips parallèles : davantage de répétitions par séance',
+      body: 'Sur 8 séances…',
+      metrics: {
+        exerciseId: '103',
+        volume: { windowSessionCount: 4 },
+        temporalScope: { windowSessionCount: 4 }
+      }
+    };
+    expect(exerciseDiscoveryActiveInSelectedWindow(live)).toBe(true);
+    expect(emptyWindowExerciseDropReason(live)).toBe('');
   });
 });

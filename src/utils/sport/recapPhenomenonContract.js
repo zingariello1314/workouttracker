@@ -35,10 +35,9 @@ function mechanismKey(d) {
 function timeKey(d) {
   const m = d?.metrics || {};
   if (m.gapDays != null && Number.isFinite(Number(m.gapDays))) {
-    // Buckets de gap pour fusionner 42j / 77j du même retour
+    // Buckets de gap : 42 j et 77 j = même épisode de reprise (pas gap:med vs gap:long)
     const g = Number(m.gapDays);
-    if (g >= 60) return 'gap:long';
-    if (g >= 21) return 'gap:med';
+    if (g >= 21) return 'gap:return';
     if (g >= 7) return 'gap:short';
   }
   const date = m.date || m.eventDate || m.ymd || null;

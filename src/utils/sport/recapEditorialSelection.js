@@ -374,11 +374,23 @@ export function editorialValueAdjustments(d, voiceKey = 'week') {
     factors.push({ id: 'sizable_delta', delta: 3 });
   }
 
-  // E — descriptif faible
+  // E — descriptif faible (volume_shape sans mécanisme : pénalité accrue)
   if (isWeakDescriptiveCard(d)) {
-    const pen = voiceKey === 'week' || voiceKey === 'today' ? -14 : -8;
+    const pen =
+      kind === 'disc_volume_shape'
+        ? voiceKey === 'week' || voiceKey === 'today'
+          ? -22
+          : -16
+        : voiceKey === 'week' || voiceKey === 'today'
+          ? -14
+          : -8;
     delta += pen;
     factors.push({ id: 'weak_descriptive', delta: pen });
+  }
+  // E2 — lecture attributive de volume (catalogue span) : pouvoir explicatif
+  if (kind === 'span_volume_vs_frequency' || /volume_change:from_/.test(String(m.finding || m.findings || ''))) {
+    delta += 18;
+    factors.push({ id: 'volume_attribution_span', delta: 18 });
   }
 
   // F — rest_assoc ne doit pas se faire passer pour du sommeil fort

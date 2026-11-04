@@ -407,13 +407,12 @@ export function discoveryInformativeValue(d, voiceKey = 'week', opts = {}) {
   // Arcs historiques multi-mois / course : forte valeur informative
   if (d?.kind === 'disc_monthly_volume_arc') v += 16;
   if (d?.kind === 'disc_running_gap') v += 12;
-  // Portraits « pas seulement un total » sans mécanisme → cèdent la place
-  if (
-    d?.kind === 'disc_volume_shape' &&
-    !m.trajectoryOk &&
-    /pas seulement un total/i.test(String(d?.title || ''))
-  ) {
-    v -= 14;
+  // Portraits volume descriptifs sans mécanisme → cèdent face à l’attribution
+  if (d?.kind === 'disc_volume_shape' && !m.trajectoryOk) {
+    v -= /pas seulement un total/i.test(String(d?.title || '')) ? 22 : 16;
+  }
+  if (d?.kind === 'span_volume_vs_frequency' || /volume_change:from_/.test(String(m.finding || ''))) {
+    v += 18;
   }
   if (d?.kind === 'disc_quarter_arc' && !m.arcKind) v -= 6;
   // Portraits composition / densité : descriptifs — ne gagnent pas contre une trajectoire riche
@@ -503,17 +502,28 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const phenCollapse = collapseByPhenomenon([...byIdentity.values()]);
   let unique = phenCollapse.unique;
   const phenomenonCollapsed = phenCollapse.collapsed;
-  // Un seul épisode de reprise par exercice (milestone 42 j + emergence 77 j, etc.).
-  // Clé : id de stockage, sinon nom normalisé (si deux ids hashés pour le même mouvement).
-  const returnEpisodeKey = (d) => {
-    const eid = d?.metrics?.exerciseId != null ? String(d.metrics.exerciseId) : '';
-    if (eid) return `id:${eid}`;
-    const name = String(d?.metrics?.name || d?.metrics?.exerciseName || d?.title || '')
+  // Un seul épisode de reprise par mouvement (milestone 42 j + emergence 77 j, etc.).
+  // Clé primaire = nom normalisé : deux storage ids pour le même mouvement = un épisode.
+  const normalizeReturnExerciseName = (d) => {
+    const raw = String(
+      d?.metrics?.name ||
+        d?.metrics?.exerciseName ||
+        d?.metrics?.historicalDisplayName ||
+        d?.title ||
+        ''
+    )
       .toLowerCase()
       .replace(/\s+/g, ' ')
-      .replace(/\s+(revient|reviennent|après).*$/i, '')
+      .replace(/\s+(revient|reviennent|après|réapparition|suite à|reprend).*$/i, '')
+      .replace(/^(les|des|le|la|l['’])\s+/i, '')
       .trim();
-    return name ? `name:${name}` : '';
+    return raw;
+  };
+  const returnEpisodeKey = (d) => {
+    const name = normalizeReturnExerciseName(d);
+    if (name) return `name:${name}`;
+    const eid = d?.metrics?.exerciseId != null ? String(d.metrics.exerciseId) : '';
+    return eid ? `id:${eid}` : '';
   };
   const looksReturnEpisode = (d) =>
     /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d.kind || '')) &&
@@ -530,37 +540,16 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     if (!looksReturnEpisode(d)) return;
     const key = returnEpisodeKey(d);
     if (!key) return;
-    // Fusionner aussi name:… avec id:… quand le nom d’affichage coincide.
-    const nameKey = (() => {
-      const name = String(d?.metrics?.name || d?.metrics?.exerciseName || '')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
-      return name ? `name:${name}` : '';
-    })();
     const prev = bestReturnByKey.get(key);
     if (!prev || (d.informativeValue || 0) > (prev.informativeValue || 0)) {
       bestReturnByKey.set(key, d);
-      if (nameKey && nameKey !== key) {
-        const prevName = bestReturnByKey.get(nameKey);
-        if (!prevName || (d.informativeValue || 0) > (prevName.informativeValue || 0)) {
-          bestReturnByKey.set(nameKey, d);
-        }
-      }
     }
   });
   if (bestReturnByKey.size) {
     unique = unique.filter((d) => {
       if (!looksReturnEpisode(d)) return true;
       const key = returnEpisodeKey(d);
-      const name = String(d?.metrics?.name || d?.metrics?.exerciseName || '')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
-      const nameKey = name ? `name:${name}` : '';
-      // Priorité au vainqueur par nom : deux storage ids pour le même mouvement = un épisode.
-      const winner =
-        (nameKey ? bestReturnByKey.get(nameKey) : null) || bestReturnByKey.get(key) || null;
+      const winner = key ? bestReturnByKey.get(key) : null;
       if (!winner) return true;
       return winner === d;
     });

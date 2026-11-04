@@ -534,6 +534,42 @@ describe('F5 — noms et abstention', () => {
     expect(returns.length).toBe(1);
   });
 
+  it('fusionne reprises 42 j / 77 j avec storage ids distincts (même nom)', () => {
+    const ms = card({
+      kind: 'disc_ms_return',
+      nature: 'now',
+      score: 86,
+      title: 'Relevés de genoux aux parallèles revient après un long silence',
+      body: 'Première séance depuis 42 jours.',
+      metrics: {
+        exerciseId: '504',
+        name: 'Relevés de genoux aux parallèles',
+        gapDays: 42,
+        trajectoryInstallation: 'returning',
+        composedEvidence: { continuity: { kind: 'punctual_return' } }
+      }
+    });
+    const em = card({
+      kind: 'disc_emergence',
+      nature: 'trajectory',
+      score: 88,
+      title: 'Relevés de genoux aux parallèles reviennent après une interruption',
+      body: 'Réapparition après 77 jours.',
+      metrics: {
+        exerciseId: '777',
+        name: 'Relevés de genoux aux parallèles',
+        gapDays: 77,
+        trajectoryInstallation: 'returning',
+        composedEvidence: { continuity: { kind: 'returning' } }
+      }
+    });
+    const traced = selectPeriodDiscoveriesWithTrace([ms, em], null, 'week');
+    const returns = traced.selected.filter((d) =>
+      /disc_ms_return|disc_emergence/.test(d.kind)
+    );
+    expect(returns.length).toBe(1);
+  });
+
   it('comptages pool/eligible/selected/rejected sont disjoints', () => {
     const pack = [
       card({ kind: 'disc_volume_shape', nature: 'now', score: 60 }),

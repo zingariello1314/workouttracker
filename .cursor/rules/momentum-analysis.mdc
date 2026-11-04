@@ -1,0 +1,27 @@
+---
+description: Conventions du moteur d'analyse Sport → Récap → Analyse
+globs:
+  - src/utils/sport/recap*.js
+  - src/utils/sport/exerciseTrajectory*.js
+  - src/utils/sport/insight*.js
+  - src/utils/sport/athlete*.js
+  - src/utils/sport/analysisEngine*.js
+  - src/utils/sport/monthlyVolume*.js
+  - src/components/sport/recap/**
+  - docs/analyses-documentation/analysis-engine/**
+alwaysApply: false
+---
+# Moteur d’analyse Momentum
+
+Avant toute modification substantielle du pipeline Récap / Analyse :
+
+1. Lire `docs/analyses-documentation/analysis-engine/README.md` (ordre de lecture).
+2. Consulter `ISSUES_AND_REGRESSIONS.md` pour les défauts ouverts et causes racines.
+3. Respecter les contrats dans `ARCHITECTURE_AND_CONTRACTS.md` (ne pas recréer F4, trajectoires, attribution, etc. sous d’autres noms).
+4. Préserver les invariants : vérité des métriques + référentiels explicites, identité de phénomène, sélection par valeur (pas de quotas arbitraires), français publiable.
+5. Ajouter un test de non-régression pour chaque correctif P0 / scénario golden.
+6. Mettre à jour `IMPLEMENTATION_PROGRESS.md`, et le registre défauts / décisions si la règle évolue.
+
+Ne pas charger toute la doc à chaque tour : cibler le document concerné.
+
+Référence contradictoire : `docs/analyses-documentation/VERIFICATION-ESSAI-DETECTION-VS-RAISONNEMENT-2026-11-04.md`.

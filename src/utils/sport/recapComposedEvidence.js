@@ -60,7 +60,16 @@ export function classifyVolumeAttribution({
       kind: totalPct > 0 ? 'combined_frequency_and_density_rise' : 'combined_frequency_and_density_decline',
       stance: 'probable',
       detail: `Le total change via les deux leviers à la fois : fréquence (${freqBit}) et volume par séance (${densBit}). On ne peut pas attribuer la variation à un seul facteur.`,
-      metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
+      metrics: {
+        sessionDelta,
+        perSessionPct,
+        totalPct,
+        windowSessionCount,
+        prevSessionCount,
+        meanPerSession,
+        prevMeanPerSession,
+        referent: 'window_vs_previous_window'
+      }
     };
   }
 
@@ -70,7 +79,16 @@ export function classifyVolumeAttribution({
       kind: 'frequency_driven_total_rise',
       stance: 'probable',
       detail: `Le total de la période augmente surtout parce que tu as pratiqué plus souvent (${prevSessionCount} → ${windowSessionCount} séances), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
-      metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
+      metrics: {
+        sessionDelta,
+        perSessionPct,
+        totalPct,
+        windowSessionCount,
+        prevSessionCount,
+        meanPerSession,
+        prevMeanPerSession,
+        referent: 'window_vs_previous_window'
+      }
     };
   }
 
@@ -80,7 +98,16 @@ export function classifyVolumeAttribution({
       kind: 'frequency_driven_total_decline',
       stance: 'probable',
       detail: `Le total de la période diminue surtout parce que tu as moins de séances (${prevSessionCount} → ${windowSessionCount}), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
-      metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
+      metrics: {
+        sessionDelta,
+        perSessionPct,
+        totalPct,
+        windowSessionCount,
+        prevSessionCount,
+        meanPerSession,
+        prevMeanPerSession,
+        referent: 'window_vs_previous_window'
+      }
     };
   }
 
@@ -90,7 +117,16 @@ export function classifyVolumeAttribution({
       kind: perSessionPct > 0 ? 'per_session_driven_rise' : 'per_session_driven_decline',
       stance: 'probable',
       detail: `Le nombre de séances est resté proche (${prevSessionCount} → ${windowSessionCount}), mais le volume par séance a changé (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)}, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
-      metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
+      metrics: {
+        sessionDelta,
+        perSessionPct,
+        totalPct,
+        windowSessionCount,
+        prevSessionCount,
+        meanPerSession,
+        prevMeanPerSession,
+        referent: 'window_vs_previous_window'
+      }
     };
   }
 

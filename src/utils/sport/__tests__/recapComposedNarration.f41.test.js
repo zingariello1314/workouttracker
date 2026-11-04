@@ -93,7 +93,9 @@ describe('F4.1 attribution fréquence démontrée', () => {
           prevSessionCount: 1,
           windowSessionCount: 3,
           perSessionPct: 0,
-          sessionDelta: 2
+          sessionDelta: 2,
+          prevMeanPerSession: 30,
+          meanPerSession: 31
         }
       },
       decomposition: {
@@ -111,6 +113,61 @@ describe('F4.1 attribution fréquence démontrée', () => {
       composed: c
     });
     expect(check.issues).not.toContain('frequency_title_without_frequency_in_body');
+  });
+
+  it('ne mélange pas early/late d’arc avec « volume par séance reste proche »', () => {
+    const c = baseComposed({
+      primaryPhenomenon: {
+        name: 'Dips',
+        primaryStory: 'net_rise',
+        earlyMean: 20,
+        lateMean: 48,
+        deltaPct: 140
+      },
+      continuity: { kind: 'directional_change' },
+      volumeAttribution: {
+        kind: 'frequency_driven_total_rise',
+        stance: 'probable',
+        detail: 'plus souvent',
+        metrics: {
+          prevSessionCount: 4,
+          windowSessionCount: 7,
+          perSessionPct: 3,
+          sessionDelta: 3,
+          prevMeanPerSession: 31,
+          meanPerSession: 30,
+          referent: 'window_vs_previous_window'
+        }
+      }
+    });
+    const narrated = narrateFromComposedEvidence(c, {});
+    expect(narrated.body).toMatch(/4.*7.*séances|de 4 à 7/i);
+    expect(narrated.body).toMatch(/reste proche|fenêtres comparées/i);
+    // Pas de swing 20→48 présenté comme la même moyenne « par séance » sans label d’arc
+    expect(narrated.body).not.toMatch(/passe d’environ 20 à 48 répétitions par séance(?!.*arc)/i);
+    const check = assertNarrationConsistency({
+      title: narrated.title,
+      body: narrated.body,
+      composed: c
+    });
+    expect(check.hardIssues || []).not.toContain('per_session_stable_vs_arc_swing');
+    expect(check.ok).toBe(true);
+  });
+
+  it('détecte la contradiction hard si un texte mélange les référentiels', () => {
+    const check = assertNarrationConsistency({
+      title: 'Dips',
+      body:
+        'Le volume moyen passe d’environ 20 à 48 répétitions par séance, soit une hausse de 140 %. Tu es passé de 4 à 7 séances, alors que le volume par séance reste proche.',
+      composed: baseComposed({
+        volumeAttribution: {
+          kind: 'frequency_driven_total_rise',
+          metrics: { prevSessionCount: 4, windowSessionCount: 7, perSessionPct: 3 }
+        }
+      })
+    });
+    expect(check.hardIssues).toContain('per_session_stable_vs_arc_swing');
+    expect(check.ok).toBe(false);
   });
 
   it('n’annonce pas l’attribution sans métriques de séances', () => {

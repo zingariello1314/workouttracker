@@ -228,6 +228,12 @@ function buildObservation(composed, name, lexicon, discovery = {}) {
   const story = composed.primaryPhenomenon?.primaryStory;
   const cont = composed.continuity?.kind;
   const dir = resolveVolumeDirection(composed);
+  const attrib = composed.volumeAttribution;
+  const attribMetrics = attrib?.metrics || {};
+  const frequencyDrivenNear =
+    String(attrib?.kind || '').startsWith('frequency_driven_') &&
+    attribMetrics.perSessionPct != null &&
+    Math.abs(Number(attribMetrics.perSessionPct)) <= 12;
 
   // Préservation F3 : chronologie creux/reprise déjà rédigée dans le fait principal
   if (
@@ -245,7 +251,24 @@ function buildObservation(composed, name, lexicon, discovery = {}) {
     return main;
   }
 
-  if (dir.early != null && dir.late != null && dir.direction !== 'flat') {
+  // Attribution fréquence (moyennes fenêtre vs fenêtre préc.) : ne pas raconter
+  // un early/late d’arc comme « répétitions par séance » — référentiels distincts.
+  if (frequencyDrivenNear) {
+    const prevN = attribMetrics.prevSessionCount;
+    const winN = attribMetrics.windowSessionCount;
+    const prevMean = attribMetrics.prevMeanPerSession;
+    const winMean = attribMetrics.meanPerSession;
+    if (prevN != null && winN != null) {
+      const meanBit =
+        prevMean != null && winMean != null
+          ? `, pour un volume moyen par séance qui reste proche (≈${formatFrNumber(prevMean, 0)} → ≈${formatFrNumber(winMean, 0)} sur les fenêtres comparées)`
+          : '';
+      return `Sur la période, tu es passé de ${prevN} à ${winN} séances${meanBit}`;
+    }
+    if (main && !/passe d’environ.*à.*répétitions par séance/i.test(main)) return main;
+  }
+
+  if (dir.early != null && dir.late != null && dir.direction !== 'flat' && !frequencyDrivenNear) {
     const noun = lexicon?.maySayPerformance ? 'tes performances' : 'le volume moyen de répétitions enregistré';
     const verb = lexicon?.maySayPerformance
       ? isPluralExerciseLabel(name)
@@ -258,7 +281,11 @@ function buildObservation(composed, name, lexicon, discovery = {}) {
       dir.deltaPct != null && Math.abs(dir.deltaPct) >= 8
         ? `, soit une ${volumeDeltaPhrase(dir.deltaPct)}`
         : '';
-    return `${nBit}${noun} pour ${name} ${verb} d’environ ${formatFrNumber(dir.early)} à ${formatFrNumber(dir.late)} répétitions par séance${pctBit}`;
+    const referentBit =
+      dir.source === 'shape' || dir.source === 'observations'
+        ? ' entre les premières et dernières séances de l’arc retenu'
+        : '';
+    return `${nBit}${noun} pour ${name} ${verb} d’environ ${formatFrNumber(dir.early)} à ${formatFrNumber(dir.late)} répétitions par séance${referentBit}${pctBit}`;
   }
 
   if (main) return main;
@@ -275,15 +302,19 @@ function buildMechanism(composed, dir) {
   const dec = composed.decomposition;
   const attrib = composed.volumeAttribution;
 
-  // Attribution fréquence : toujours démontrer les comptes de séances
+  // Attribution fréquence : comptes de séances + moyennes fenêtre (pas l’arc early/late)
   if (attrib?.kind?.startsWith('frequency_driven_') && attrib.metrics) {
     const m = attrib.metrics;
+    const meanBit =
+      m.prevMeanPerSession != null && m.meanPerSession != null
+        ? ` (≈${formatFrNumber(m.prevMeanPerSession, 0)} → ≈${formatFrNumber(m.meanPerSession, 0)} reps/séance sur les fenêtres comparées)`
+        : '';
     const per =
       m.perSessionPct != null && Math.abs(m.perSessionPct) <= 12
-        ? `alors que le volume par séance reste proche`
-        : `tandis que le volume par séance évolue aussi`;
+        ? `alors que le volume moyen par séance reste proche${meanBit}`
+        : `tandis que le volume par séance évolue aussi${meanBit}`;
     if (m.prevSessionCount != null && m.windowSessionCount != null) {
-      return `Tu es passé de ${m.prevSessionCount} à ${m.windowSessionCount} séances sur la période comparable, ${per}`;
+      return `La variation du total vient surtout du nombre de séances (${m.prevSessionCount} → ${m.windowSessionCount}), ${per}`;
     }
   }
 
@@ -472,7 +503,8 @@ const HARD_CONSISTENCY = new Set([
   'consolidation_vs_punctual_spike',
   'durable_return_vs_punctual',
   'mixed_peers_called_stable',
-  'developer_jargon_in_prose'
+  'developer_jargon_in_prose',
+  'per_session_stable_vs_arc_swing'
 ]);
 
 export function assertNarrationConsistency({ title, body, composed } = {}) {
@@ -520,6 +552,14 @@ export function assertNarrationConsistency({ title, body, composed } = {}) {
   }
   if (/primaryWindow|historicalContext|composedEvidence|trajectoryOk/i.test(text)) {
     issues.push('developer_jargon_in_prose');
+  }
+  // Interdit : « reste proche » + swing early/late non distingué (référentiels mélangés)
+  if (
+    /reste proche|restent proches/i.test(b) &&
+    /passe d’environ\s+[\d.,]+\s+à\s+[\d.,]+\s+répétitions par séance/i.test(b) &&
+    !/fenêtres comparées|arc retenu|premières et dernières séances/i.test(b)
+  ) {
+    issues.push('per_session_stable_vs_arc_swing');
   }
   if (/\bun mouvement\b/i.test(t)) {
     soft.push('unresolved_exercise_name');

@@ -1484,6 +1484,27 @@ export function buildAdaptiveRecapInsights(opts = {}) {
   const longPeriod = period === '30d' || period === '3m' || period === '6m' || period === '1y' || period === '2y' || period === 'all';
   const monthOrShorter = period === 'today' || period === '7d' || period === '30d';
   let candidates = [...spanStories, ...(composed.candidates || [])];
+  // Rivalité volume : si une lecture attributive existe, pénaliser le portrait descriptif.
+  const hasVolumeAttribution = candidates.some((c) => {
+    const kind = String(c?.context?.kind || c?.interpretation?.context?.kind || '');
+    const findings = c?.findings || [];
+    return (
+      kind === 'span_volume_vs_frequency' ||
+      findings.some((f) => /^volume_change:from_/.test(String(f || '')))
+    );
+  });
+  if (hasVolumeAttribution) {
+    candidates = candidates.map((c) => {
+      const kind = String(c?.context?.kind || c?.interpretation?.context?.kind || '');
+      if (kind === 'span_volume_vs_frequency') {
+        return { ...c, weight: Math.max(c.weight || 0, 98) };
+      }
+      if (kind === 'disc_volume_shape') {
+        return { ...c, weight: (c.weight || 0) - 36 };
+      }
+      return c;
+    });
+  }
   if (longPeriod) {
     candidates = candidates.map((c) => {
       if (String(c.id || '').includes('.span_')) return { ...c, weight: Math.max(c.weight || 0, 97) };

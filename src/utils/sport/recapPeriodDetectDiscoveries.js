@@ -1299,6 +1299,18 @@ export function detectDiscoveries(cmp, extras = {}) {
         computeScope: extras.computeScope || null
       })
     );
+    // Pas de carte si l’exercice n’apparaît pas dans la fenêtre (historique seul = époque révolue).
+    const winSessions =
+      traj?.volume?.windowSessionCount ?? traj?.temporalScope?.windowSessionCount ?? 0;
+    if (!(Number(winSessions) > 0)) return;
+    // Dernière baseline hors fenêtre → ignorer (ex. id 201 Pompes lestées arrêtées).
+    if (
+      progressLead.last?.date &&
+      p.window?.start &&
+      progressLead.last.date < p.window.start
+    ) {
+      return;
+    }
     const rendered = renderExerciseTrajectoryCopy(traj, {
       legacyBits: {
         title: legacyTitle,

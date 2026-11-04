@@ -6,6 +6,7 @@
  */
 
 import { isPluralExerciseLabel } from './recapComposedNarration';
+import { emptyWindowExerciseDropReason } from './recapDiscoveryPeriodScope';
 
 const CLOSE_PCT = 8;
 
@@ -128,6 +129,9 @@ function dropReason(card, voiceKey) {
   if (DEFERRED_REASONING.some((re) => re.test(text))) return 'deferred-reasoning';
   // Trajectoire vide / insuffisante : pas une découverte publiable.
   if (/Aucune séance dans la fenêtre/i.test(text)) return 'empty-window-trajectory';
+  // Exercice sans aucune séance dans la fenêtre Recap (ex. Pompes lestées hors calendrier).
+  const emptyEx = emptyWindowExerciseDropReason(card);
+  if (emptyEx) return emptyEx;
   if (!title.trim() && /étirements|alignement|réalisé est inférieur/i.test(text)) {
     return 'title-missing';
   }

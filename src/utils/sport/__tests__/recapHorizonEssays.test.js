@@ -280,6 +280,9 @@ describe('lectures de coach', () => {
     [5, 5, 6, 7, 8, 8, 8, 9].forEach((reps, i) => {
       add(DateHelper.addDays('2026-03-08', i * 7), reps);
     });
+    // Séance dans la fenêtre Recap : pas de parcours sur un mouvement abandonné.
+    add('2026-08-12', 9);
+    add('2026-08-26', 10);
     const cands = buildHorizonEssayCandidates({
       snapshot,
       window: { start: '2026-08-01', end: '2026-08-31' },
@@ -296,6 +299,28 @@ describe('lectures de coach', () => {
     expect(cands.some((c) => c.id.includes('continuity_level'))).toBe(false);
   });
 
+  it('n’émet pas de parcours sur Pompes lestées absentes de la fenêtre', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const add = (date, reps) => {
+      snapshot.reps[`${date}_201`] = reps;
+      snapshot.checkedExercises[`${date}_201`] = true;
+    };
+    // Historique été uniquement — plus rien en octobre/novembre
+    ['2026-07-07', '2026-07-14', '2026-07-28', '2026-08-12', '2026-08-18', '2026-08-25', '2026-09-15'].forEach(
+      (d, i) => add(d, 40 + i)
+    );
+    const cands = buildHorizonEssayCandidates({
+      snapshot,
+      window: { start: '2026-10-06', end: '2026-11-04' },
+      period: '30d',
+      getExerciseNameById: () => 'Pompes lestées'
+    });
+    expect(cands.some((c) => c.id.includes('journey_progress'))).toBe(false);
+    expect(cands.some((c) => /Pompes lestées|gilet/i.test(`${c.title || ''} ${c.body || ''}`))).toBe(
+      false
+    );
+  });
+
   it('émet journey_progress même si disc_exercise_progress est déjà sélectionné', () => {
     const snapshot = { reps: {}, checkedExercises: {} };
     const add = (date, reps) => {
@@ -306,6 +331,8 @@ describe('lectures de coach', () => {
     [5, 5, 6, 7, 8, 8, 8, 9].forEach((reps, i) => {
       add(DateHelper.addDays('2026-03-08', i * 7), reps);
     });
+    add('2026-08-12', 9);
+    add('2026-08-26', 10);
     const cands = buildHorizonEssayCandidates({
       snapshot,
       window: { start: '2026-08-01', end: '2026-08-31' },

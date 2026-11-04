@@ -133,6 +133,64 @@ describe('parenté des cartes', () => {
     expect(kept[0].interpretation.context.kind).toBe('disc_ms_return');
   });
 
+  it('fusionne 42 j / 77 j même si le kind est absent du context (blob seul)', () => {
+    const kept = keepDistinctProofCards([
+      {
+        id: 'a',
+        horizon: 'short',
+        text: 'x',
+        interpretation: {
+          context: {
+            title: 'Relevés de genoux aux parallèles revient après un long silence',
+            body: 'Première séance depuis 42 jours. 40 répétitions.',
+            kind: ''
+          }
+        }
+      },
+      {
+        id: 'b',
+        horizon: 'medium',
+        text: 'y',
+        interpretation: {
+          context: {
+            title: 'Relevés de genoux aux parallèles reviennent après une interruption',
+            body: 'Réapparition après 77 jours. Format 2 × 20.',
+            kind: ''
+          }
+        }
+      }
+    ]);
+    expect(kept).toHaveLength(1);
+  });
+
+  it('préfère span_volume_vs_frequency à disc_volume_shape sur le même phénomène', () => {
+    const kept = keepDistinctProofCards([
+      {
+        id: 'relation.reading.medium.span_volume_vs_frequency',
+        horizon: 'medium',
+        weight: 88,
+        findings: ['volume_change:from_density'],
+        text: 'Le volume bouge surtout à l’intérieur des séances',
+        interpretation: {
+          context: {
+            kind: 'span_volume_vs_frequency',
+            title: 'Le volume bouge surtout à l’intérieur des séances',
+            body: 'La variation vient surtout du contenu des séances (+22 % par séance), la fréquence bouge de +7 %.'
+          }
+        }
+      },
+      card({
+        horizon: 'short',
+        kind: 'disc_volume_shape',
+        title: 'Ces 30 jours, le volume dépasse la période précédente',
+        body: 'Ces 30 jours comptent 4 502 répétitions sur 14 séances. Les 30 jours d\'avant en comptaient moins (+31 %).',
+        nature: 'now'
+      })
+    ]);
+    expect(kept.some((c) => c.interpretation?.context?.kind === 'span_volume_vs_frequency')).toBe(true);
+    expect(kept.some((c) => c.interpretation?.context?.kind === 'disc_volume_shape')).toBe(false);
+  });
+
   it('nomme la fenêtre Garmin réelle sur 6 mois', () => {
     const kept = keepDistinctProofCards([
       card({

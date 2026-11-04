@@ -162,7 +162,26 @@ export function sameExerciseIdentity(a, b) {
  * Épisode historique commun : même identité + continuité / fenêtre compatible.
  */
 export function sameHistoricalEpisode(a, b) {
-  if (!sameExerciseIdentity(a, b)) return false;
+  const rel = relateExerciseIdentities(a, b);
+  const titleReturn = (d) =>
+    /revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(
+      `${d?.title || ''} ${d?.body || ''}`
+    );
+  const kindReturn = (d) =>
+    /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d?.kind || ''));
+  const bothReturn =
+    (titleReturn(a) || kindReturn(a) || Number(a?.metrics?.gapDays) >= 21) &&
+    (titleReturn(b) || kindReturn(b) || Number(b?.metrics?.gapDays) >= 21);
+
+  // Même storage id, ou même famille de mouvement pour un épisode de reprise (42 j / 77 j).
+  // Homonyme seul hors reprise ≠ épisode commun.
+  const identityOk =
+    rel.relation === IDENTITY_RELATION.SAME_EXERCISE ||
+    (bothReturn &&
+      (rel.relation === IDENTITY_RELATION.SAME_MOVEMENT_FAMILY ||
+        rel.relation === IDENTITY_RELATION.SAME_DISPLAY_NAME));
+  if (!identityOk) return false;
+
   const ca = a?.metrics?.composedEvidence?.continuity?.kind;
   const cb = b?.metrics?.composedEvidence?.continuity?.kind;
   const returnLike = new Set(['punctual_return', 'confirmed_return', 'returning', 'decline_then_recovery']);
@@ -172,16 +191,7 @@ export function sameHistoricalEpisode(a, b) {
   const sb = b?.metrics?.trajectoryPrimaryStory;
   if (sa && sb && sa === sb && (sa === 'partial_recovery' || sa === 'recovered')) return true;
   // Reprises / interruptions : deux gaps (42 j vs 77 j) sur le même mouvement = un seul épisode
-  // si les titres ou gapDays racontent un retour, même sans continuity taguée.
-  const titleReturn = (d) =>
-    /revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(
-      `${d?.title || ''} ${d?.body || ''}`
-    );
-  const kindReturn = (d) =>
-    /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d?.kind || ''));
-  if ((titleReturn(a) || kindReturn(a)) && (titleReturn(b) || kindReturn(b))) {
-    return true;
-  }
+  if (bothReturn) return true;
   return false;
 }
 
