@@ -272,7 +272,14 @@ function normText(s) {
 
 /** Reconstruit le titre producteur quand le brouillon n’a pas survécu au match. */
 function reconstructDraftTitle(kind, metrics, finalTitle) {
-  const name = metrics.exerciseName || metrics.name || null;
+  const rawName = metrics.exerciseName || metrics.name || null;
+  const name =
+    rawName &&
+    !/^Tu reprends\b/i.test(String(rawName)) &&
+    !/^après \d+\s*jours/i.test(String(rawName)) &&
+    !/^Première apparition\b/i.test(String(rawName))
+      ? rawName
+      : null;
   const gap = metrics.gapDays ?? metrics.gap ?? null;
   if (kind === 'disc_ms_return' && name && gap != null) {
     return `Tu reprends ${name} après ${Math.round(Number(gap))} jours d'absence`;

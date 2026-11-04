@@ -27,13 +27,14 @@ export const NATURE_TO_HORIZON = {
  * Un maximum, jamais un plancher : slot vide si le signal n'est pas publiable.
  * Sommeil volontairement bas : 2/angle saturait le pack (rythme + assoc + RPE).
  */
-const SPORT_HEAVY = { sport: 8, sleep: 1, milestone: 1 };
+/** Plafonds souples par angle — jamais un quota à remplir ; refusent les cartes faibles. */
+const SPORT_HEAVY = { sport: 10, sleep: 1, milestone: 2 };
 
 export const SIGNAL_FAMILY_CAPS = {
   today: {
-    now: { ...SPORT_HEAVY },
-    trajectory: { sport: 8, sleep: 1, milestone: 0 },
-    journey: { sport: 8, sleep: 0, milestone: 1 }
+    now: { sport: 6, sleep: 1, milestone: 1 },
+    trajectory: { sport: 6, sleep: 1, milestone: 0 },
+    journey: { sport: 6, sleep: 0, milestone: 1 }
   },
   week: {
     now: { ...SPORT_HEAVY },
@@ -84,9 +85,9 @@ export function angleCapsFromFamilies(voiceKey, { hasMilestone = false } = {}) {
   return { short: tot('now'), medium: tot('trajectory'), long: tot('journey') };
 }
 
-/** Totaux UI semaine sans jalon — dérivés des familles. */
-export const NATURE_COLUMN_CAPS = { short: 10, medium: 10, long: 10 };
-export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 11, medium: 11, long: 11 };
+/** Totaux UI semaine sans jalon — dérivés des familles (sport 10 + sleep 1). */
+export const NATURE_COLUMN_CAPS = { short: 11, medium: 11, long: 11 };
+export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 13, medium: 13, long: 13 };
 
 /**
  * @param {object[]} [candidates]

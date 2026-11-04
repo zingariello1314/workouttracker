@@ -25,6 +25,10 @@ import {
 } from './recapExerciseIdentity';
 import { sameDayCompanions } from './recapFactReading';
 import { buildExerciseTrajectory, trajectoryToMetrics } from './exerciseTrajectoryAnalysis';
+import {
+  resolveExerciseNameForRecap,
+  userFacingExerciseLabel
+} from './recapStrengthPeriodStats';
 
 export const REP_CUMUL_THRESHOLDS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
 export const SESSION_THRESHOLDS = [10, 25, 50, 100, 250, 500];
@@ -373,13 +377,18 @@ export function detectRecapMilestones({
   const out = [];
   const sessions = (catalog || []).filter((s) => (s.totalReps || 0) >= 20).sort((a, b) => a.date.localeCompare(b.date));
   const nameOf = (id, fallback) => {
-    const n = parseInt(String(id), 10);
-    if (typeof getExerciseNameById === 'function') {
-      const label = getExerciseNameById(Number.isFinite(n) ? n : id);
-      if (label?.trim() && !/^Exercice\s+\d+$/i.test(label)) return label.trim();
+    const resolved = resolveExerciseNameForRecap(id, getExerciseNameById);
+    const facing = userFacingExerciseLabel(resolved, id);
+    if (facing && facing !== 'un mouvement') return facing;
+    if (fallback) {
+      const fb = userFacingExerciseLabel(fallback, id);
+      if (fb && fb !== 'un mouvement') return fb;
     }
-    if (fallback && !/^Exercice\s+\d+$/i.test(String(fallback))) return fallback;
     return '';
+  };
+  const hasResolvedName = (name) => {
+    const n = String(name || '').trim();
+    return Boolean(n) && n !== 'un mouvement' && !/^Exercice\s+\d+$/i.test(n);
   };
 
   if (sessions[0] && eligible(sessions[0].date, window, voiceKey, { firstAbsolute: true })) {
@@ -413,7 +422,7 @@ export function detectRecapMilestones({
   const newEx = [...firstByEx.values()]
     .filter((e) => eligible(e.date, window, voiceKey, { firstAbsolute: true }) && (e.reps || 0) >= 8)
     .sort((a, b) => (b.reps || 0) - (a.reps || 0));
-  if (newEx[0]) {
+  if (newEx[0] && hasResolvedName(newEx[0].name)) {
     const e = newEx[0];
     const day = sessions.find((s) => s.date === e.date);
     const pushReps = (day?.exercises || []).reduce((s, x) => s + (x.reps || 0), 0);
@@ -425,6 +434,8 @@ export function detectRecapMilestones({
         family: 'ms_first',
         type: 'FIRST_EXERCISE',
         date: e.date,
+        exerciseId: e.id,
+        exerciseName: e.name,
         title: `Première apparition : ${e.name}`,
         body: `Première apparition ${e.name.startsWith('Les ') || e.name.startsWith('Traction') ? `des ${e.name.toLowerCase()}` : `de ${e.name.toLowerCase()}`} dans ton historique.${
           share != null && share >= 8
@@ -432,7 +443,8 @@ export function detectRecapMilestones({
             : ` Cette séance devient la référence initiale de ce mouvement.`
         }`,
         evidence: `${formatDayFr(e.date, true)} · ${fmtInt(e.reps)} reps`,
-        importance: 0.88
+        importance: 0.88,
+        metrics: { name: e.name, exerciseId: String(e.id), exerciseName: e.name }
       })
     );
   }
@@ -529,6 +541,8 @@ export function detectRecapMilestones({
     const gap = daysBetweenYmd(prev.date, last.date);
     const med = medianInterval(dates.slice(0, -1));
     if (!eligible(last.date, window, voiceKey) || !isMeaningfulAbsence(gap, med)) return;
+    last.name = hasResolvedName(last.name) ? last.name : nameOf(last.id, last.name);
+    if (!hasResolvedName(last.name)) return;
     const day = sessions.find((s) => s.date === last.date);
     if (isHoldExerciseName(last.name) && volumeSharedWithRepSibling(day, last.id, last.reps)) return;
     const prior = byDate.slice(0, -1).slice(-8);
@@ -541,14 +555,14 @@ export function detectRecapMilestones({
     const mates = sameDayCompanions(
       { id: last.id, name: last.name, dates: [last.date] },
       { [last.date]: day?.exercises || [] }
-    );
+    ).filter((other) => hasResolvedName(other.name));
     const mateBit = mates.length
       ? ` Le même jour, ${mates
           .map((other) => `${fmtInt(other.reps)} répétitions de ${String(other.name).toLowerCase()}`)
-          .join(' et ')} portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte.`
+          .join(' et ')} portent sur le même muscle principal.`
       : '';
     const oneParam = /restent du même ordre|reste le même/.test(setBit || '')
-      ? ` Un seul paramètre a bougé. Le répéter avant d'en changer un autre garde la mesure lisible.`
+      ? ` Un seul paramètre a bougé entre le nombre de séries et les répétitions par série.`
       : '';
     const trajWin = {
       start: addCalendarDays(last.date, -Math.max(28, gap + 7)),
@@ -578,9 +592,15 @@ export function detectRecapMilestones({
       }
     }
     const legacyTitle = `Tu reprends ${last.name} après ${fmtInt(gap)} jours d'absence`;
+    // Accord : « Relevés / Pompes / Tractions… » → reviennent ; nom singulier → revient.
+    const nm = String(last.name || '').trim();
+    const nameLooksPlural =
+      /[sx]$/i.test(nm) ||
+      /^(pompes|relevés|tractions|élévations|dips|extensions|flexions)\b/i.test(nm);
+    const returnVerb = nameLooksPlural ? 'reviennent' : 'revient';
     const title =
       trajMetrics.trajectoryOk && traj?.installation?.kind === 'returning'
-        ? `${last.name} revient après ${fmtInt(gap)} jours`
+        ? `${last.name} ${returnVerb} après ${fmtInt(gap)} jours`
         : legacyTitle;
     const schemeBit = setBit ? ` ${setBit}` : mechBit;
     const core = `${phraseTuViensDe({
@@ -598,8 +618,8 @@ export function detectRecapMilestones({
         : ''
     }${schemeBit}${oneParam}${mateBit}`;
     const close = schemeBit
-      ? ` Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données.`
-      : ` Reproduire ce volume sur les prochaines séances confirme le retour dans l'entraînement.`;
+      ? ` Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement.`
+      : ` Ce volume de reprise sert de référence pour juger les prochaines séances sur le même mouvement.`;
     returns.push({
       gap,
       ratio: ratio || 0,
@@ -628,6 +648,7 @@ export function detectRecapMilestones({
       importance: 0.93,
       metrics: {
         name: last.name,
+        exerciseName: last.name,
         exerciseId: String(last.id),
         draftTitle: legacyTitle,
         ...trajMetrics
@@ -888,6 +909,8 @@ export function detectRecapMilestones({
       return;
     }
     if (last.reps - priorMax < 1) return;
+    last.name = hasResolvedName(last.name) ? last.name : nameOf(id, last.name);
+    if (!hasResolvedName(last.name)) return;
     const official = resolveExercisePerformance(snapshot, `${last.date}_${id}`).official;
     const officialReps =
       official && (!official.performanceType || official.performanceType === 'reps') ? official.reps : 0;
@@ -901,10 +924,13 @@ export function detectRecapMilestones({
       family: 'ms_pr',
       type: 'PR_REPS',
       date: last.date,
+      exerciseId: String(id),
+      exerciseName: last.name,
       title: `Meilleure série observée : ${fmtInt(last.reps)} ${last.name.toLowerCase()}`,
       body: `Meilleure série observée : ${fmtInt(last.reps)} ${last.name.toLowerCase()}. Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent ${fmtInt(priorMax)}).${aboveDeclared}`,
       evidence: `${fmtInt(priorMax)} → ${fmtInt(last.reps)}`,
-      importance: 0.92
+      importance: 0.92,
+      metrics: { name: last.name, exerciseName: last.name, exerciseId: String(id) }
     });
   });
   prs.sort((a, b) => (b.importance || 0) - (a.importance || 0));
@@ -1233,12 +1259,24 @@ function pushSleepComboMilestones(out, { sessions, window, voiceKey }) {
   const eff = nightEfficiency(s);
   const dens = sessionDensity(s);
   const jalon = (out || []).find((m) => m.date === s.date && String(m.kind).startsWith('disc_ms_'));
-  const densBit =
-    dens != null
-      ? ` Cette séance atteint ${fmtInt(dens)} répétitions par heure, avec ${fmtInt(s.totalReps)} reps en ${fmtInt(s.minutes)} min.`
-      : jalon?.title
-        ? ` Elle coïncide avec ${jalon.title.toLowerCase()}.`
-        : '';
+  const jalonSubject = String(
+    jalon?.exerciseName || jalon?.metrics?.exerciseName || jalon?.metrics?.name || ''
+  ).trim();
+  const jalonSubjectOk =
+    jalonSubject &&
+    jalonSubject !== 'un mouvement' &&
+    !/^Tu reprends/i.test(jalonSubject) &&
+    !/^Première apparition/i.test(jalonSubject);
+  let densBit = '';
+  if (dens != null) {
+    densBit = ` Cette séance atteint ${fmtInt(dens)} répétitions par heure, avec ${fmtInt(s.totalReps)} reps en ${fmtInt(s.minutes)} min.`;
+  } else if (jalonSubjectOk && jalon?.kind === 'disc_ms_return') {
+    densBit = ` Elle coïncide avec la reprise de ${jalonSubject.toLowerCase()}.`;
+  } else if (jalonSubjectOk) {
+    densBit = ` Elle coïncide avec un jalon sur ${jalonSubject.toLowerCase()}.`;
+  } else if (jalon?.kind === 'disc_ms_pr') {
+    densBit = ` Elle coïncide avec une meilleure série observée le même jour.`;
+  }
   const effBit = eff != null ? `, avec une efficacité de ${fmtInt(eff)} %` : '';
   out.push(
     row({
@@ -1444,6 +1482,11 @@ function pushMixShiftMilestones(out, { sessions, window, voiceKey }) {
   );
 }
 
+function milestoneNameResolved(name) {
+  const n = String(name || '').trim();
+  return Boolean(n) && n !== 'un mouvement' && !/^Exercice\s+\d+$/i.test(n) && !/^cet exercice$/i.test(n);
+}
+
 function pushReturnDurableMilestones(out, { sessions, window, voiceKey }) {
   if (voiceKey === 'today') return;
   const byEx = new Map();
@@ -1489,7 +1532,9 @@ function pushReturnDurableMilestones(out, { sessions, window, voiceKey }) {
   });
   const top = hits[0];
   if (!top) return;
-  const name = (top.ex.name || 'cet exercice').toLowerCase();
+  const rawName = String(top.ex.name || '').trim();
+  if (!milestoneNameResolved(rawName)) return;
+  const name = rawName.toLowerCase();
   out.push(
     row({
       kind: 'disc_ms_return_durable',
@@ -1497,6 +1542,8 @@ function pushReturnDurableMilestones(out, { sessions, window, voiceKey }) {
       family: 'ms_return',
       type: top.durable ? 'RETURN_DURABLE' : 'RETURN_FOLLOWUP',
       date: top.last,
+      exerciseId: String(top.ex.id || ''),
+      exerciseName: rawName,
       title: top.durable
         ? `La reprise de ${name} est devenue durable`
         : `${fmtInt(top.n)} séances ${/^[aeiouéèêh]/i.test(name) ? "d'" : 'de '}${name} depuis le retour`,
@@ -1504,7 +1551,8 @@ function pushReturnDurableMilestones(out, { sessions, window, voiceKey }) {
         ? `La reprise de ${name} est devenue durable : ${fmtInt(top.n)} séances en ${fmtInt(top.daysSince)} jours, alors que l'interruption avait duré ${fmtInt(top.gap)} jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.`
         : `Depuis la reprise de ${name} le ${formatDayFr(top.ret, true)}, tu as enchaîné ${fmtInt(top.n)} séances en ${fmtInt(top.daysSince)} jours. L'interruption de ${fmtInt(top.gap)} jours n'est plus l'événement : c'est la suite qui se construit.`,
       evidence: `${fmtInt(top.n)} séances · J+${fmtInt(top.daysSince)}`,
-      importance: top.durable ? 0.9 : 0.86
+      importance: top.durable ? 0.9 : 0.86,
+      metrics: { name: rawName, exerciseName: rawName, exerciseId: String(top.ex.id || '') }
     })
   );
 }

@@ -119,7 +119,10 @@ describe('analyzeSleepRhythm', () => {
     expect(profile.patterns).toContain('duration_stable_clock_shift');
     const drift = buildSleepRhythmDiscoveries({ nights }).find((c) => c.kind === 'disc_sleep_drift');
     expect(drift.body).toMatch(/coucher et le lever/);
+    expect(drift.body).toMatch(/se décalent/);
     expect(drift.body).toMatch(/durée reste/);
+    expect(drift.title).not.toEqual(drift.body);
+    expect(drift.title.length).toBeLessThan(drift.body.length);
   });
 
   it('le repère général ne juge pas et ne répète pas l’heure en titre', () => {

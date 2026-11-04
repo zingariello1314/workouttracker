@@ -313,7 +313,7 @@ export function renderInterpretationText(c, state = null) {
         m.exoPct != null && m.stretchPct != null
           ? `Les séances d'exercices sont bien plus tenues (~${m.exoPct} %) que les étirements (~${m.stretchPct} %)`
           : 'Les étirements restent nettement moins tenus que le travail de force',
-        '. Sur la durée, cet écart de pratique pèse davantage qu\'un déficit de capacité : la mobilité prévue n\'entre presque pas dans l\'exposition réelle.',
+        '. Sur la durée, les étirements enregistrés restent nettement en retrait du travail de force : l’écart de pratique est observable, sans conclure à un déficit de capacité.',
         goalBit
       ].join('');
 

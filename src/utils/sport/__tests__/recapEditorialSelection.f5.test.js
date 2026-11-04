@@ -349,8 +349,9 @@ describe('F5 — rivalités et contradictions', () => {
   });
 
   it('saturation emergence : cap épisode sur long', () => {
-    const pack = [1, 2, 3, 4, 5].map((i) =>
-      card({
+    const pack = Array.from({ length: 12 }, (_, idx) => {
+      const i = idx + 1;
+      return card({
         kind: 'disc_emergence',
         nature: 'journey',
         score: 70 + i,
@@ -362,13 +363,15 @@ describe('F5 — rivalités et contradictions', () => {
           composedEvidence: { continuity: { kind: 'punctual_return' } },
           f4Narration: { used: true, consistencyOk: true, resolvedName: `Ex ${i}` }
         }
-      })
-    );
+      });
+    });
     const traced = selectPeriodDiscoveriesWithTrace(pack, null, 'long');
     const emergences = traced.selected.filter((d) => d.kind === 'disc_emergence');
-    expect(emergences.length).toBeLessThanOrEqual(3);
+    // Cap long = 8, dépassement souple limité à +2 pour IV élevées distinctes.
+    expect(emergences.length).toBeLessThanOrEqual(10);
+    expect(emergences.length).toBeLessThan(pack.length);
     expect(
-      traced.dropped.some((d) => d.reason === 'episode_cap' || d.reason === 'family')
+      traced.dropped.some((d) => d.reason === 'episode_cap' || d.reason === 'family' || d.reason === 'cap')
     ).toBe(true);
   });
 });
@@ -478,6 +481,57 @@ describe('F5 — noms et abstention', () => {
     const traced = selectPeriodDiscoveriesWithTrace(pack, null, 'week');
     expect(traced.selected.length).toBeLessThanOrEqual(2);
     expect(traced.counts.rejected + traced.counts.selected).toBe(traced.counts.eligible);
+  });
+
+  it('fusionne reprise milestone et émergence du même exercice', () => {
+    const ms = card({
+      kind: 'disc_ms_return',
+      nature: 'now',
+      score: 91,
+      title: 'Relevés de genoux aux parallèles revient après un long silence',
+      body: 'Reprise après 42 jours avec 40 répétitions.',
+      metrics: {
+        exerciseId: '777',
+        name: 'Relevés de genoux aux parallèles',
+        gapDays: 42,
+        trajectoryOk: true,
+        trajectoryRichness: 7,
+        composedOk: true,
+        composedFactCount: 4
+      }
+    });
+    const em = card({
+      kind: 'disc_emergence',
+      nature: 'trajectory',
+      score: 88,
+      title: 'Relevés de genoux aux parallèles reviennent après une interruption',
+      body: 'Réapparition après 77 jours. Format 2 × 20.',
+      metrics: {
+        exerciseId: '777',
+        name: 'Relevés de genoux aux parallèles',
+        gapDays: 77,
+        trajectoryOk: true,
+        trajectoryInstallation: 'returning',
+        trajectoryRichness: 5,
+        composedOk: true,
+        composedFactCount: 3,
+        composedEvidence: { continuity: { kind: 'returning' } }
+      }
+    });
+    const other = card({
+      kind: 'disc_volume_shape',
+      nature: 'now',
+      score: 70,
+      title: 'Le volume a une forme',
+      body: 'Constat de volume sur la période avec mécanismes observables et chiffres.'
+    });
+    const traced = selectPeriodDiscoveriesWithTrace([ms, em, other], null, 'month');
+    const returns = traced.selected.filter(
+      (d) =>
+        String(d.metrics?.exerciseId) === '777' &&
+        /disc_ms_return|disc_emergence/.test(d.kind)
+    );
+    expect(returns.length).toBe(1);
   });
 
   it('comptages pool/eligible/selected/rejected sont disjoints', () => {

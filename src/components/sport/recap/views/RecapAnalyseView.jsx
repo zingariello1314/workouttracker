@@ -124,14 +124,24 @@ export default function RecapAnalyseView({
   const [periodAnalytics, setPeriodAnalytics] = useState(null);
   // F7.0e : dates = fenêtre demandée (periodWindow), jamais enrichment d’une autre période.
   const resolvedWindow = periodWindow || null;
-  const publicationReady = assessment?.insightsPublication?.status === 'ready';
+  const pub = assessment?.insightsPublication || null;
+  const publicationMatchesPeriod =
+    pub?.status === 'ready' &&
+    (pub.period == null || String(pub.period) === String(period)) &&
+    (!resolvedWindow?.start ||
+      !pub.windowStart ||
+      String(pub.windowStart) === String(resolvedWindow.start)) &&
+    (!resolvedWindow?.end ||
+      !pub.windowEnd ||
+      String(pub.windowEnd) === String(resolvedWindow.end));
+  const publicationReady = Boolean(publicationMatchesPeriod);
   const legacyReady =
-    assessment?.insightsPublication == null &&
+    pub == null &&
     !analysisLoading &&
     analysisStatus !== 'loading' &&
     Boolean(assessment);
-  const showInsightCards =
-    analysisStatus === 'refreshing' || publicationReady || legacyReady;
+  // Jamais de cartes d’une autre période : « refreshing » sans publication alignée = écran vide/loader.
+  const showInsightCards = publicationReady || legacyReady;
   // Ne jamais afficher des analytics dont la fenêtre ≠ période sélectionnée.
   const coherentAnalytics =
     periodAnalytics &&

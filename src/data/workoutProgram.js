@@ -183,7 +183,7 @@ export const workoutProgram = {
     exercices: [
       { id: 501, name: "Tractions supination", series: "4×4-6", materiel: "barre", notes: "Focus traction contrôlée" },
       { id: 502, name: "Tractions australiennes pieds surélevés", series: "4×10-12", materiel: "barre", notes: "Pieds surélevés" },
-      { id: 503, name: "Dips sur barre parallèle avec gilet", series: "4×12", materiel: "parallèles + gilet lesté", notes: "Gilet si disponible" },
+      { id: 503, name: "Dips sur barre parallèle", series: "4×12", materiel: "parallèles", notes: "Gilet lesté optionnel si disponible — ne pas coller le lest au nom" },
       { id: 504, name: "Pompes déclinées (pieds sur banc)", series: "5×10", materiel: "banc", notes: "Haut des pecs" },
       { id: 505, name: "Relevés de genoux à la barre", series: "3×20", materiel: "barre" },
       { id: 506, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },

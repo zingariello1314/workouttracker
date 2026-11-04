@@ -39,8 +39,14 @@ function weekWords(text, voiceKey) {
     .replace(/cette semaine/g, 'ces 7 jours')
     .replace(/de la semaine/g, 'de ces 7 jours')
     .replace(/\bces 7 jours est\b/g, 'ces 7 jours sont')
-    .replace(/\bCes 7 jours est\b/g, 'Ces 7 jours sont');
-}
+    .replace(/\bCes 7 jours est\b/g, 'Ces 7 jours sont')
+    .replace(/\bCes 7 jours répartit\b/g, 'Ces 7 jours répartissent')
+    .replace(/\bCes 7 jours représente\b/g, 'Ces 7 jours représentent')
+    .replace(/\bCes 7 jours confirme\b/g, 'Ces 7 jours confirment')
+    .replace(/\bCes 30 jours répartit\b/g, 'Ces 30 jours répartissent')
+    .replace(/\bCes 30 jours représente\b/g, 'Ces 30 jours représentent')
+    .replace(/\bCes 30 jours confirme\b/g, 'Ces 30 jours confirment');
+  }
 
 function thin(text) {
   const t = String(text || '').trim();
@@ -96,7 +102,24 @@ const DEFERRED_REASONING = [
 function dropReason(card, voiceKey) {
   const kind = card?.kind || '';
   const text = blob(card);
+  const title = String(card?.title || '');
+  if (/Première apparition\s*:?\s*$/i.test(title.trim())) return 'incomplete-subject';
+  if (/Tu reprends\s+après\b/i.test(title)) return 'incomplete-subject';
+  if (/^après \d+\s*jours d'absence\b/i.test(title.trim())) return 'incomplete-subject';
+  if (/depuis \d+\s*jours sur\s*[.]/i.test(text)) return 'incomplete-subject';
+  if (/Elle mêle\s+\d+(\s*,\s*\d+)+\s*[.]?/i.test(text)) return 'numbers-without-context';
+  if (/coïncide avec tu reprends/i.test(text)) return 'broken-combo-prose';
+  if (/va plus vite que les données/i.test(text)) return 'mechanical-coaching';
   if (DEFERRED_REASONING.some((re) => re.test(text))) return 'deferred-reasoning';
+  // Trajectoire vide / insuffisante : pas une découverte publiable.
+  if (/Aucune séance dans la fenêtre/i.test(text)) return 'empty-window-trajectory';
+  if (!title.trim() && /étirements|alignement|réalisé est inférieur/i.test(text)) {
+    return 'title-missing';
+  }
+  if (/^[\d.,\s~]+%?\s*$/i.test(title.trim())) return 'title-is-metric-only';
+  if (/dans la période/i.test(title) && /Aucune séance|Détail des séries absent/i.test(text)) {
+    return 'empty-window-trajectory';
+  }
   if (/une seule nuit ne suffit|observation\s*:/i.test(text) && !/nuits/i.test(text)) return 'one-night';
   if (/les familles identifiées portent/i.test(text)) return 'family-list';
   if (/^la poussée compte/i.test(String(card.title || '')) && !/nuit/i.test(text)) return 'push-pull-bare';
@@ -182,7 +205,12 @@ function rewrite(card, voiceKey) {
         .replace(/^Tu reprends\s+/i, '')
         .replace(/\s+après[\s\S]*$/i, '')
         .trim();
-      if (name) title = `${name} revient après un long silence`;
+      if (name) {
+        const plural =
+          /^(les|des)\s/i.test(name) ||
+          /\b(pompes|dips|tractions|relevés|extensions|hyperextensions|oiseaux|développés)\b/i.test(name);
+        title = `${name} ${plural ? 'reviennent' : 'revient'} après un long silence`;
+      }
     }
     nature = 'now';
   }

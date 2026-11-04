@@ -91,18 +91,31 @@ export function matchesWorkerPublicationGate(request, response) {
 
 /**
  * Dictionnaire de noms sérialisable pour le Worker.
+ * Priorité : getter live → exerciseDisplayNames persistés (historique hors programme actuel).
+ * Ne invente jamais de libellé ; laisse vide si non résolu (le gate éditorial s’abstient).
  */
 export function buildExerciseNameMap(snapshot, getExerciseNameById) {
   const map = Object.create(null);
-  if (typeof getExerciseNameById !== 'function') return map;
+  const persisted =
+    snapshot?.exerciseDisplayNames && typeof snapshot.exerciseDisplayNames === 'object'
+      ? snapshot.exerciseDisplayNames
+      : {};
   const ids = collectExerciseIdsForNameMap(snapshot);
+  for (const key of Object.keys(persisted)) ids.add(String(key));
   for (const id of ids) {
-    try {
-      const name = getExerciseNameById(id);
-      if (name) map[String(id)] = String(name);
-    } catch {
-      /* ignore */
+    let name = '';
+    if (typeof getExerciseNameById === 'function') {
+      try {
+        name = getExerciseNameById(id) || '';
+      } catch {
+        name = '';
+      }
     }
+    if (!name || /^Exercice\s+\d+$/i.test(String(name).trim())) {
+      const snap = persisted[String(id)] || persisted[id];
+      if (snap && !/^Exercice\s+\d+$/i.test(String(snap).trim())) name = snap;
+    }
+    if (name) map[String(id)] = String(name);
   }
   return map;
 }

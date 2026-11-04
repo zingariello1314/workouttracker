@@ -477,6 +477,11 @@ export function aggregateCheckedRepsByDateAndExerciseId(reps, checked) {
     }
   });
 
+  // Ne pas dédupliquer complementary_endurance_pushups contre « n’importe quel »
+  // exercice au même total (ex. mollets/squats à 100) — faux négatif.
+  // Les fantômes pompes (legacy 104 / variantes) sont déjà nettoyés à la sync
+  // (stripPhantomPushupEnduranceDuplicates). Ici on garde la meilleure clé cochée.
+
   return best;
 }
 

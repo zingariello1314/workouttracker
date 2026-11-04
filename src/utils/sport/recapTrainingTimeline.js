@@ -7,6 +7,10 @@ import {
   extractExerciseIdFromWorkoutKey
 } from '../exerciseKeyGenerator';
 import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from '../sessionCalendarDate';
+import {
+  resolveExerciseNameForRecap,
+  userFacingExerciseLabel
+} from './recapStrengthPeriodStats';
 
 export function formatDayFr(ymd, withYear = true) {
   if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
@@ -29,13 +33,8 @@ export function daysBetweenYmd(fromYmd, toYmd) {
 }
 
 function exerciseLabel(id, getExerciseNameById) {
-  const n = parseInt(String(id), 10);
-  if (typeof getExerciseNameById === 'function') {
-    const label = Number.isFinite(n) ? getExerciseNameById(n) : getExerciseNameById(id);
-    const cleaned = String(label || '').trim();
-    if (cleaned && !/^Exercice\s+\d+$/i.test(cleaned) && !/^#\d+$/.test(cleaned)) return cleaned;
-  }
-  return 'un mouvement';
+  const facing = userFacingExerciseLabel(resolveExerciseNameForRecap(id, getExerciseNameById), id);
+  return facing && facing !== 'un mouvement' ? facing : '';
 }
 
 /**

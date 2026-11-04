@@ -134,7 +134,7 @@ export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod 
   return {
     title: reading.title,
     body: reading.body,
-    evidence: `${trained.length} jours entraînés · ${quietCount} jours sans séance`,
+    evidence: `${trained.length} jours avec répétitions · ${quietCount} jours sans séance (contrat positive_reps)`,
     readingBeats: reading.beats
   };
 }

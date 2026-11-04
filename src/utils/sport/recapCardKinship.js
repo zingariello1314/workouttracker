@@ -233,6 +233,48 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     ranked.slice(1).forEach((row) => drop.add(row.index));
   });
 
+  // Reprises du même mouvement (42 j vs 77 j, milestone + émergence) :
+  // une seule carte sur tout le pack short/medium/long — pas une par horizon.
+  const returnNameOf = (row) => {
+    const ctx = ctxOf(row.candidate);
+    const kind = String(ctx.kind || row.candidate?.kind || '');
+    const blob = row.blob || '';
+    const isReturn =
+      /disc_ms_return|disc_emergence|disc_structural_memory/.test(kind) &&
+      /revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(blob);
+    if (!isReturn) return '';
+    return String(ctx.name || ctx.exerciseName || row.title || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\s+(revient|reviennent|après|réapparition).*$/i, '')
+      .trim();
+  };
+  const returnGroups = new Map();
+  rows.forEach((row) => {
+    if (drop.has(row.index)) return;
+    const name = returnNameOf(row);
+    if (!name) return;
+    if (!returnGroups.has(name)) returnGroups.set(name, []);
+    returnGroups.get(name).push(row);
+  });
+  returnGroups.forEach((group) => {
+    if (group.length < 2) return;
+    const ranked = [...group].sort((a, b) => {
+      // Préférer le jalon (preuve gap + % du moyen) à l’émergence seule.
+      const score = (row) => {
+        const kind = String(ctxOf(row.candidate).kind || row.candidate?.kind || '');
+        let s = 0;
+        if (/disc_ms_return/.test(kind)) s += 4;
+        if (/%/.test(row.blob || '')) s += 2;
+        if (/×|x\s*\d/i.test(row.blob || '')) s += 2;
+        if (row.horizon === 'short') s += 1;
+        return s;
+      };
+      return score(b) - score(a) || preferHorizon(a, b);
+    });
+    ranked.slice(1).forEach((row) => drop.add(row.index));
+  });
+
   const groups = new Map();
   rows.forEach((row, index) => {
     row.index = index;

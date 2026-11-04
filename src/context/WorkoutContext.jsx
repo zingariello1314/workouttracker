@@ -493,20 +493,27 @@ const WorkoutProvider = ({ children }) => {
   // ⚠️ IMPORTANT : Définie avant useWorkoutHistory pour éviter l'erreur "Cannot access before initialization"
   const getExerciseNameById = useCallback((exerciseId) => {
     const searchId = typeof exerciseId === 'string' ? parseInt(exerciseId) : exerciseId;
+    /** Corrige uniquement le faux template dips 503 — conserve les variantes « avec gilet » distinctes. */
+    const cleanLabel = (raw) => {
+      const s = String(raw || '').trim();
+      if (!s) return s;
+      if (/^Dips sur barre parallèle avec gilet$/i.test(s)) return 'Dips sur barre parallèle';
+      return s;
+    };
 
     const snapName = getCurrentData()?.exerciseDisplayNames?.[String(searchId)];
     if (snapName && !isFallbackExerciseLabel(snapName)) {
-      return snapName;
+      return cleanLabel(snapName);
     }
 
     const mappedExercise = exerciseIdMappingRef.current.get(searchId);
     if (mappedExercise?.name) {
-      return mappedExercise.name;
+      return cleanLabel(mappedExercise.name);
     }
 
     const fromPrograms = resolveExerciseNameFromIndex(searchId, programNameIndexRef.current);
     if (fromPrograms) {
-      return fromPrograms;
+      return cleanLabel(fromPrograms);
     }
     
     // ✅ PRIORITÉ 2 : Chercher dans le programme actif si disponible (fallback)
@@ -520,8 +527,9 @@ const WorkoutProvider = ({ children }) => {
           for (const ex of list) {
             const expectedNumericId = convertToStableNumericId(ex.id);
             if (expectedNumericId === searchId || ex.id === exerciseId || ex.id === searchId) {
-              exerciseIdMappingRef.current.set(searchId, { name: ex.name, originalId: ex.id });
-              return ex.name;
+              const label = cleanLabel(ex.name);
+              exerciseIdMappingRef.current.set(searchId, { name: label, originalId: ex.id });
+              return label;
             }
           }
           return null;
@@ -544,7 +552,7 @@ const WorkoutProvider = ({ children }) => {
       if (day.exercices) {
         const exercise = day.exercices.find(ex => ex.id === parseInt(exerciseId));
         if (exercise) {
-          return exercise.name;
+          return cleanLabel(exercise.name);
         }
       }
       
@@ -554,7 +562,7 @@ const WorkoutProvider = ({ children }) => {
           if (variant.exercices) {
             const exercise = variant.exercices.find(ex => ex.id === parseInt(exerciseId));
             if (exercise) {
-              return exercise.name;
+              return cleanLabel(exercise.name);
             }
           }
         }
@@ -565,7 +573,7 @@ const WorkoutProvider = ({ children }) => {
     try {
       const dbExercise = findExerciseInDatabase(`Exercice ${exerciseId}`);
       if (dbExercise) {
-        return dbExercise.name;
+        return cleanLabel(dbExercise.name);
       }
     } catch (e) {
       // Ignorer les erreurs

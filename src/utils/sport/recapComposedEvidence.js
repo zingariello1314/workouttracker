@@ -40,48 +40,56 @@ export function classifyVolumeAttribution({
       ? Math.round(((windowTotal - prevComparable) / prevComparable) * 1000) / 10
       : null;
 
-  // Hausse de total surtout via fréquence (séances ↑, volume/séance ≈ stable)
+  const perNear =
+    perSessionPct != null && Math.abs(perSessionPct) <= 8;
+  const perMoved =
+    perSessionPct != null && Math.abs(perSessionPct) >= 15;
+  const freqMovedUp = sessionDelta >= 2;
+  const freqMovedDown = sessionDelta <= -2;
+
+  // Les deux leviers bougent : ne jamais dire « volume/séance reste proche »
   if (
-    sessionDelta >= 2 &&
     totalPct != null &&
-    totalPct >= 15 &&
-    perSessionPct != null &&
-    Math.abs(perSessionPct) <= 12
+    Math.abs(totalPct) >= 15 &&
+    perMoved &&
+    (freqMovedUp || freqMovedDown)
   ) {
+    const freqBit = `${prevSessionCount} → ${windowSessionCount} séances`;
+    const densBit = `≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps/séance (${perSessionPct > 0 ? '+' : ''}${perSessionPct} %)`;
+    return {
+      kind: totalPct > 0 ? 'combined_frequency_and_density_rise' : 'combined_frequency_and_density_decline',
+      stance: 'probable',
+      detail: `Le total change via les deux leviers à la fois : fréquence (${freqBit}) et volume par séance (${densBit}). On ne peut pas attribuer la variation à un seul facteur.`,
+      metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
+    };
+  }
+
+  // Hausse de total surtout via fréquence (séances ↑, volume/séance ≈ stable)
+  if (freqMovedUp && totalPct != null && totalPct >= 15 && perNear) {
     return {
       kind: 'frequency_driven_total_rise',
       stance: 'probable',
-      detail: `Le total de la période augmente surtout parce que tu as pratiqué plus souvent (${prevSessionCount} → ${windowSessionCount} séances), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps).`,
+      detail: `Le total de la période augmente surtout parce que tu as pratiqué plus souvent (${prevSessionCount} → ${windowSessionCount} séances), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
       metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
     };
   }
 
   // Baisse de total surtout via fréquence
-  if (
-    sessionDelta <= -2 &&
-    totalPct != null &&
-    totalPct <= -15 &&
-    perSessionPct != null &&
-    Math.abs(perSessionPct) <= 12
-  ) {
+  if (freqMovedDown && totalPct != null && totalPct <= -15 && perNear) {
     return {
       kind: 'frequency_driven_total_decline',
       stance: 'probable',
-      detail: `Le total de la période diminue surtout parce que tu as moins de séances (${prevSessionCount} → ${windowSessionCount}), alors que le volume par séance reste proche.`,
+      detail: `Le total de la période diminue surtout parce que tu as moins de séances (${prevSessionCount} → ${windowSessionCount}), alors que le volume par séance reste proche (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)} reps, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
       metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
     };
   }
 
   // Contenu de séance change, fréquence stable
-  if (
-    Math.abs(sessionDelta) <= 1 &&
-    perSessionPct != null &&
-    Math.abs(perSessionPct) >= 15
-  ) {
+  if (Math.abs(sessionDelta) <= 1 && perMoved) {
     return {
       kind: perSessionPct > 0 ? 'per_session_driven_rise' : 'per_session_driven_decline',
       stance: 'probable',
-      detail: `Le nombre de séances est resté proche (${prevSessionCount} → ${windowSessionCount}), mais le volume par séance a changé (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)}, ${perSessionPct} %).`,
+      detail: `Le nombre de séances est resté proche (${prevSessionCount} → ${windowSessionCount}), mais le volume par séance a changé (≈${Math.round(prevMeanPerSession)} → ≈${Math.round(meanPerSession)}, ${perSessionPct > 0 ? '+' : ''}${perSessionPct} %).`,
       metrics: { sessionDelta, perSessionPct, totalPct, windowSessionCount, prevSessionCount }
     };
   }

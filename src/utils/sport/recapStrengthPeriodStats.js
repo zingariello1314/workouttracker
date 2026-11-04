@@ -57,11 +57,28 @@ function maxRecordedWeightKgInWindow(allData, window) {
 }
 
 /**
+ * Corrige uniquement le faux template historique des dips (id 503) où « avec gilet »
+ * était collé alors que le gilet est optionnel / distinct.
+ * Ne touche PAS aux variantes réellement nommées « … avec gilet » (ex. pompes 701) :
+ * deux identités distinctes ne doivent jamais être fusionnées.
+ * Une charge enregistrée n'est pas déduite ici — elle reste une métrique séparée.
+ */
+export function sanitizeAnalysisExerciseDisplayName(rawName) {
+  const name = String(rawName || '').trim();
+  if (!name) return '';
+  // Uniquement le libellé template exact des dips non lestés mal étiquetés.
+  if (/^Dips sur barre parallèle avec gilet$/i.test(name)) {
+    return 'Dips sur barre parallèle';
+  }
+  return name;
+}
+
+/**
  * Libellé utilisateur : jamais d’identifiant technique (#123, « Exercice 1596… », digits seuls).
  * Les ids restent dans metrics / identity — pas dans title/body.
  */
 export function userFacingExerciseLabel(name, _exerciseId = null) {
-  const cleaned = String(name || '').trim();
+  const cleaned = sanitizeAnalysisExerciseDisplayName(name);
   if (
     !cleaned ||
     /^Exercice\s+\d+$/i.test(cleaned) ||
@@ -82,7 +99,9 @@ export const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => 
   ) {
     return 'Pompes (endurance)';
   }
-  if (EXERCISE_DB_NAME_BY_ID[idStr]) return EXERCISE_DB_NAME_BY_ID[idStr];
+  if (EXERCISE_DB_NAME_BY_ID[idStr]) {
+    return sanitizeAnalysisExerciseDisplayName(EXERCISE_DB_NAME_BY_ID[idStr]);
+  }
 
   const rawId = idStr.replace(/_semaineA$|_semaineB$/, '');
 
@@ -90,7 +109,7 @@ export const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => 
     for (const candidate of [idStr, rawId, Number(rawId)]) {
       if (candidate === '' || (typeof candidate === 'number' && !Number.isFinite(candidate))) continue;
       const byGetter = getExerciseNameById(candidate);
-      const label = String(byGetter || '').trim();
+      const label = sanitizeAnalysisExerciseDisplayName(byGetter);
       if (label && !/^Exercice\s*$/i.test(label) && !/^Exercice\s+\d+$/i.test(label)) {
         return label;
       }
@@ -99,7 +118,7 @@ export const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => 
 
   for (const candidate of [idStr, rawId]) {
     const stub = lookupProgramExerciseStub(candidate);
-    const stubName = String(stub?.name || '').trim();
+    const stubName = sanitizeAnalysisExerciseDisplayName(stub?.name);
     if (stubName && stubName !== 'Exercice') return stubName;
   }
 

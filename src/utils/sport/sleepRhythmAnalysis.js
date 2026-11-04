@@ -227,15 +227,17 @@ export function analyzeSleepRhythm(nights) {
   };
 }
 
-function card(kind, nature, family, body, evidence, metrics, score) {
+function card(kind, nature, family, body, evidence, metrics, score, title = null) {
+  const cleanBody = String(body || '').replace(/\s+/g, ' ').trim();
   return {
     id: kind,
     kind,
     nature,
     family,
     score,
-    title: body,
-    body,
+    // Titre court distinct du corps — éviter de publier le paragraphe entier en titre.
+    title: String(title || cleanBody).replace(/\s+/g, ' ').trim(),
+    body: cleanBody,
     evidence,
     relevance: 0.9,
     metrics
@@ -374,18 +376,23 @@ function weekendCard(profile) {
   const gap = Math.round(
     Math.max(Math.abs(weekend.bedGap), Math.abs(weekend.wakeGap), Math.abs(weekend.durationGap))
   );
+  const verb = names.length > 1 ? 'se décalent' : 'se décale';
+  const body = `Le week-end, c’est ${names.join(' et ')} qui ${verb}, d’environ ${gap} min par rapport aux nuits de semaine.`;
   return card(
     'disc_sleep_weekend',
     'trajectory',
     'sleep_weekend',
-    `Le week-end, c’est ${names.join(' et ')} qui se décale, d’environ ${gap} min par rapport aux nuits de semaine.`,
+    body,
     names.join(' et '),
     {
       sleepClockBand: profile.sleepClockBand,
       axis: weekend.axes.join('+'),
       weekendGapMin: gap
     },
-    76
+    76,
+    names.length > 1
+      ? `Le week-end, ${names.join(' et ')} se décalent`
+      : `Le week-end, ${names[0] || 'le rythme'} se décale`
   );
 }
 
@@ -405,6 +412,8 @@ function driftCard(profile) {
     !wake.returned &&
     Math.sign(bed.net) === Math.sign(wake.net);
   const subject = together ? 'le coucher et le lever' : bedMoves ? 'le coucher' : 'le lever';
+  const ofSubject = together ? 'du coucher et du lever' : bedMoves ? 'du coucher' : 'du lever';
+  const driftVerb = together ? 'se décalent' : 'se décale';
   const lead = together ? bed : bedMoves ? bed : wake;
   const minutes = Math.round(Math.abs(lead.returned ? lead.mid - lead.first : lead.net));
   const durationBit = profile.patterns.includes('duration_stable_clock_shift')
@@ -413,17 +422,23 @@ function driftCard(profile) {
       ? ` La durée change aussi, d’environ ${Math.round(Math.abs(duration?.net || 0))} min.`
       : '';
   const body = lead.returned
-    ? `Le décalage de ${subject} s’est ensuite résorbé d’environ ${minutes} min.${durationBit}`
-    : `Sur la période, ${subject} se décale d’environ ${minutes} min dans le même sens.${durationBit}`;
+    ? `Le décalage ${ofSubject} s’est ensuite résorbé d’environ ${minutes} min.${durationBit}`
+    : `Sur la période, ${subject} ${driftVerb} d’environ ${minutes} min dans le même sens.${durationBit}`;
+  const title = lead.returned
+    ? `Le décalage ${ofSubject} s’est résorbé (~${minutes} min)`
+    : together
+      ? `Coucher et lever se décalent (~${minutes} min)`
+      : `${subject.charAt(0).toUpperCase()}${subject.slice(1)} se décale (~${minutes} min)`;
 
   return card(
     'disc_sleep_drift',
     'journey',
     'sleep_drift',
-    body.replace(/\s+/g, ' ').trim(),
+    body,
     `${minutes} min`,
     { sleepClockBand: profile.sleepClockBand, driftMin: Math.round(lead.net), axis: together ? 'rhythm' : bedMoves ? 'bed' : 'wake' },
-    80
+    80,
+    title
   );
 }
 

@@ -1336,11 +1336,30 @@ function stripTitleEcho(title, body) {
   return b;
 }
 
+const INTERNAL_KIND_TITLE = {
+  program_gap_mixed: 'Le réalisé reste sous le plan, sans cause unique encore lisible',
+  program_gap_adherence: 'Le volume réalisé reste inférieur au plan',
+  program_gap_completion: 'Les séances commencées restent souvent incomplètes',
+  stretch_gap: 'Les étirements restent nettement en retrait du travail de force',
+  costly_progression: 'Plusieurs indicateurs de charge montent ensemble'
+};
+
+function humanizeKindTitle(kind, fallback = '') {
+  const k = String(kind || '').trim();
+  if (INTERNAL_KIND_TITLE[k]) return INTERNAL_KIND_TITLE[k];
+  if (/^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/i.test(k)) return fallback || '';
+  return fallback || '';
+}
+
 function toInsightCard(p) {
   const ctx = p.interpretation?.context || {};
-  const kind = ctx.kind || p.kind || '';
+  const kind = ctx.kind || p.kind || p.interpretation?.type || '';
   const rewardTone = ctx.rewardTone || rewardToneForKind(kind);
-  const title = ctx.title || p.title || '';
+  let title = ctx.title || p.title || '';
+  // Ne jamais publier un identifiant technique comme titre.
+  if (!title || /^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/i.test(String(title).trim())) {
+    title = humanizeKindTitle(kind, title && !/^[a-z_]+$/i.test(title) ? title : '');
+  }
   const rawBody = ctx.body || p.body || (typeof p.text === 'string' ? p.text : '');
   const evidence =
     ctx.evidenceLine ||

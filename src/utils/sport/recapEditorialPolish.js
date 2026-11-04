@@ -25,6 +25,23 @@ export function fixKnownGrammarInProse(text) {
     const verb = N <= 1 ? 'devient' : 'deviennent';
     return `${ces} ${n} ${subj} ${verb}`;
   });
+  // Accords pluriel période
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+répartit\b/g, '$1 $2 jours répartissent');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+représente\b/g, '$1 $2 jours représentent');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+porte\b/g, '$1 $2 jours portent');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+confirme\b/g, '$1 $2 jours confirment');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+concentre\b/g, '$1 $2 jours concentrent');
+  s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+totalise\b/g, '$1 $2 jours totalisent');
+  s = s.replace(/\.\s*,\s*/g, '. ');
+  s = s.replace(/:\s+(\d+)\s+\./g, ': $1.');
+  // Articles contractés
+  s = s.replace(/\bde le (coucher|lever)\b/gi, 'du $1');
+  s = s.replace(/\bLes pectoraux porte\b/g, 'Les pectoraux portent');
+  s = s.replace(/\bLes épaules porte\b/g, 'Les épaules portent');
+  s = s.replace(/\bLes triceps porte\b/g, 'Les triceps portent');
+  s = s.replace(/\bLes jambes porte\b/g, 'Les jambes portent');
+  // Sujet manquant
+  s = s.replace(/\bTes séances de\s+se situent\b/gi, 'Tes séances se situent');
   // « 1 séance … n’ont » → n’a
   s = s.replace(/\b(1|une)\s+séance([^.]{0,80}?)\bn[’']ont\b/gi, (_, one, mid) => {
     return `${one} séance${mid}n’a`;
@@ -129,6 +146,21 @@ export function editorialValidateDiscovery(discovery, ctx = {}) {
 
   if (/\bexercice\s+\d{4,}\b/i.test(text) || /#\d{5,}/.test(text) || /\b\d{9,}\b/.test(text)) {
     rejects.push('raw_exercise_id');
+  }
+  if (
+    /Première apparition\s*:?\s*$/i.test(title.trim()) ||
+    /Tu reprends\s+après\b/i.test(title) ||
+    /^après \d+\s*jours d'absence\b/i.test(title.trim()) ||
+    /depuis \d+\s*jours sur\s*[.]/i.test(body) ||
+    /apparition de\s+dans ton historique/i.test(body)
+  ) {
+    rejects.push('incomplete_exercise_subject');
+  }
+  if (/Elle mêle\s+\d+(\s*,\s*\d+)+\s*[.]?/i.test(body) || /coïncide avec tu reprends/i.test(body)) {
+    rejects.push('broken_number_or_combo_prose');
+  }
+  if (/va plus vite que les données/i.test(text)) {
+    warnings.push('mechanical_coaching_close');
   }
   if (/\b20\d{2}-\d{2}-\d{2}\b/.test(text)) {
     warnings.push('iso_date_in_prose');

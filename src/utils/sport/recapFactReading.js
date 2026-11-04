@@ -106,11 +106,11 @@ export function writeExerciseEvent({
     ? ` ${peer.name} revient aussi dans la même fenêtre (${peer.reps} répétitions), sur le même groupe. Les deux ne se lisent pas comme deux progrès séparés.`
     : '';
   const step = oneParameter(setBit)
-    ? ` Un seul paramètre a bougé, les répétitions par série ou le nombre de séries, pas les deux. Le garder ${hold} avant d'en changer un autre laisse la comparaison lisible.`
+    ? ` Un seul paramètre a bougé : les répétitions par série ou le nombre de séries, pas les deux.`
     : emerging
-      ? ` La prochaine séance confirme ce départ. Monter tout de suite vers une fois et demie ce total mélangerait l'apprentissage du geste et une dose nouvelle.`
+      ? ` La séance suivante sur le même mouvement confirmera si ce départ tient.`
       : gapDays != null && gapDays >= 21
-        ? ` Après une absence de cet ordre, répéter ce volume ${hold} dit s'il tient. Le prendre tout de suite pour la nouvelle habitude va plus vite que les données.`
+        ? ` Après une absence de cet ordre, ce volume de reprise reste la référence la plus proche pour lire la séance suivante.`
         : '';
   return `${status}${ofGroup}${setBit ? ` ${setBit}` : ''}${together}${pair}${pullNote}${step}`;
 }

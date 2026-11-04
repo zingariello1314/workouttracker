@@ -14,6 +14,10 @@ import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { classifyMovement } from './recapMovementClassification';
+import {
+  resolveExerciseNameForRecap,
+  userFacingExerciseLabel
+} from './recapStrengthPeriodStats';
 
 export const MUSCLE_FR = {
   [MuscleGroups.CHEST]: 'pectoraux',
@@ -114,14 +118,8 @@ function muscleLabel(g) {
 }
 
 function exerciseName(exId, getExerciseNameById) {
-  const n = parseInt(String(exId), 10);
-  if (typeof getExerciseNameById === 'function') {
-    const label = Number.isFinite(n) ? getExerciseNameById(n) : getExerciseNameById(exId);
-    if (label && String(label).trim() && !/^Exercice\s+/i.test(String(label))) {
-      return String(label).trim();
-    }
-  }
-  return 'un mouvement';
+  const facing = userFacingExerciseLabel(resolveExerciseNameForRecap(exId, getExerciseNameById), exId);
+  return facing && facing !== 'un mouvement' ? facing : '';
 }
 
 /**

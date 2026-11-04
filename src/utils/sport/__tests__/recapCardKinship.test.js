@@ -112,6 +112,27 @@ describe('parenté des cartes', () => {
     expect(kept[0].noveltyKey).toBe('cumul_reps:25000');
   });
 
+  it('ne publie qu’une reprise pour le même mouvement sur short+medium', () => {
+    const kept = keepDistinctProofCards([
+      card({
+        horizon: 'short',
+        kind: 'disc_ms_return',
+        title: 'Relevés de genoux aux parallèles revient après un long silence',
+        body: 'Première séance depuis 42 jours. Avec 40 répétitions, tu reviens à 100 % du volume moyen. Format 2 × 20.',
+        nature: 'now'
+      }),
+      card({
+        horizon: 'medium',
+        kind: 'disc_emergence',
+        title: 'Relevés de genoux aux parallèles reviennent après une interruption',
+        body: 'Réapparition après 77 jours. Le format de séries observé est resté identique (2 × 20).',
+        nature: 'trajectory'
+      })
+    ]);
+    expect(kept).toHaveLength(1);
+    expect(kept[0].interpretation.context.kind).toBe('disc_ms_return');
+  });
+
   it('nomme la fenêtre Garmin réelle sur 6 mois', () => {
     const kept = keepDistinctProofCards([
       card({

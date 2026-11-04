@@ -173,7 +173,11 @@ describe('recapPeriodDiscoveries', () => {
     const text = cands.map(blob).join('\n');
     expect(text).not.toMatch(/cycle de quelques semaines/i);
     expect(cands.some((c) => String(c.id).includes('disc_'))).toBe(true);
-    expect(cands.filter((c) => String(c.id).includes('continuity')).length).toBe(0);
+    // Continuité chiffrée autorisée sur aujourd’hui ; on refuse seulement le template vague.
+    const continuity = cands.filter((c) => String(c.id).includes('continuity'));
+    continuity.forEach((c) => {
+      expect(blob(c)).toMatch(/\d|%|séance/i);
+    });
     expect(text).toMatch(/%/);
     expect(text).toMatch(/360|reps par heure|épaules|dips/i);
   });
@@ -558,15 +562,15 @@ describe('recapPeriodDiscoveries', () => {
       { kind: 'disc_sleep_volume', nature: 'trajectory', family: 'sleep_volume', score: 84 },
       { kind: 'disc_cardio_strength', nature: 'trajectory', family: 'cardio_strength', score: 83 }
     ];
-    // sport 8 + sleep 1 = 9 (plafond sommeil resserré)
-    expect(observationCaps('long', many).journey).toBe(9);
+    // sport 10 + sleep 1 = 11 (plafond sommeil resserré)
+    expect(observationCaps('long', many).journey).toBe(11);
     const long = selectPeriodDiscoveries(many, null, 'long');
     const journeyKinds = long.filter((d) => d.nature === 'journey').map((d) => d.kind);
     // sleep_quarter et sleep_freq sont rivaux : une seule assoc long-terme sommeil
     expect(journeyKinds).toContain('disc_best_month');
     expect(journeyKinds).toContain('disc_kcal_profile');
     expect(journeyKinds.filter((k) => String(k).startsWith('disc_sleep_')).length).toBeLessThanOrEqual(1);
-    expect(observationCaps('today', many).trajectory).toBe(9);
+    expect(observationCaps('today', many).trajectory).toBe(7);
   });
 
   it('traite 1 an comme une voix distincte, avec plafond sommeil resserré', () => {
@@ -574,9 +578,9 @@ describe('recapPeriodDiscoveries', () => {
     expect(periodVoice('1y', 365).thisPeriod).toMatch(/année/);
     expect(PERIOD_QUESTIONS['1y']).toMatch(/année/);
     expect(periodVoice('3m', 92).key).toBe('long');
-    expect(observationCaps('year').journey).toBe(9);
-    expect(observationCaps('week').journey).toBe(9);
-    expect(observationCaps('year').trajectory).toBe(9);
+    expect(observationCaps('year').journey).toBe(11);
+    expect(observationCaps('week').journey).toBe(11);
+    expect(observationCaps('year').trajectory).toBe(11);
   });
 
   it('plafonne le sommeil globalement (budget) et dédoublonne les associations', () => {

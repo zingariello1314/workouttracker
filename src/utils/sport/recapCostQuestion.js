@@ -315,8 +315,8 @@ function writeCost(ctx, evidence, s) {
       ? ' Tu n’as pas renseigné le ressenti de séance sur cette période, donc le signal repose sur la charge et la récupération mesurée, pas sur l’effort perçu.'
       : '';
     return {
-      title: 'Le coût objectif des séances semble avoir augmenté',
-      body: `${bits[0].charAt(0).toUpperCase()}${bits[0].slice(1)}${bits.length > 1 ? `, et ${bits.slice(1).join(', ')}` : ''}.${limit}`
+      title: 'Plusieurs indicateurs de charge montent ensemble',
+      body: `${bits[0].charAt(0).toUpperCase()}${bits[0].slice(1)}${bits.length > 1 ? `, et ${bits.slice(1).join(', ')}` : ''}. Cela décrit une hausse de charge enregistrée, pas une preuve directe de fatigue ressentie.${limit}`
     };
   }
 

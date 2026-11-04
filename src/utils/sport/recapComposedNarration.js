@@ -388,7 +388,7 @@ function buildComparatorNote(composed) {
     return 'Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé';
   }
   if (c.verdict === 'shared') {
-    return 'Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique';
+    return 'Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse ce mouvement seul, sans prouver une cause unique';
   }
   // Ne pas affirmer « stables » si mixed — localized* OK via detail
   if (c.verdict === 'localized' || c.verdict === 'localized_rise' || c.verdict === 'localized_recovery') {
@@ -643,8 +643,33 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
   };
 }
 
+/** Kinds dont le corps structurel (parts familiales, reprise, etc.) ne doit pas être écrasé par F4. */
+const PRESERVE_STRUCTURAL_BODY = new Set([
+  'disc_family_fade',
+  'disc_structural_memory',
+  'disc_best_month',
+  'disc_ms_return',
+  'disc_ms_return_durable',
+  'disc_ms_first_exercise',
+  'disc_ms_pr'
+]);
+
 export function applyComposedNarrationToDiscovery(discovery, { getExerciseNameById = null } = {}) {
   if (!discovery?.metrics?.composedEvidence?.composed) return discovery;
+  if (PRESERVE_STRUCTURAL_BODY.has(String(discovery.kind || ''))) {
+    return {
+      ...discovery,
+      metrics: {
+        ...(discovery.metrics || {}),
+        f4Narration: {
+          used: false,
+          abstained: true,
+          abstainReasons: ['preserve_structural_body'],
+          depth: 'none'
+        }
+      }
+    };
+  }
   const draftTitle = discovery.metrics?.draftTitleBeforeF4 || discovery.title;
   const draftBody = discovery.metrics?.draftBodyBeforeF4 || discovery.body;
 

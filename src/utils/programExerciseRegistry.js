@@ -83,6 +83,14 @@ export function buildProgramExerciseRegistry(options = {}) {
   return map;
 }
 
+/** Corrige uniquement le faux template dips 503 — ne fusionne pas les variantes « avec gilet » légitimes. */
+function sanitizeStubDisplayName(raw) {
+  const name = String(raw || '').trim();
+  if (!name) return 'Exercice';
+  if (/^Dips sur barre parallèle avec gilet$/i.test(name)) return 'Dips sur barre parallèle';
+  return name;
+}
+
 /** @param {object} ex */
 export function toProgramExerciseStub(ex) {
   if (!ex) {
@@ -90,7 +98,7 @@ export function toProgramExerciseStub(ex) {
   }
   return {
     id: ex.id,
-    name: ex.name || 'Exercice',
+    name: sanitizeStubDisplayName(ex.name),
     materiel: ex.materiel || ex.equipment || '',
     series: ex.series || '',
     notes: ex.notes || '',

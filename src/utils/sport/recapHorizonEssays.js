@@ -1097,7 +1097,9 @@ export function buildHorizonEssayCandidates(opts = {}) {
   // ——— PARCOURS : depuis la première saisie (lifetime), complément de la trajectoire de fenêtre ———
   // disc_exercise_progress (fenêtre, shape/sets/témoins) et journey_progress (référence fiable → habituel)
   // sont complémentaires : on ne masque plus l'un dès que l'autre est sélectionné.
-  const progressRows = journey?.narratives?.progress || [];
+  const progressRows = (journey?.narratives?.progress || []).filter(
+    (e) => e?.name && String(e.name).trim() && !/^un mouvement$/i.test(String(e.name))
+  );
   if (progressRows.length) {
     const progressDiscSelected = selectedDisc.filter((d) => d.kind === 'disc_exercise_progress');
     const progressDiscIds = new Set(
@@ -1194,11 +1196,13 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const prStory = journey?.narratives?.prVsLevel;
   if (
     prStory?.setLevel &&
+    prStory?.name &&
+    !/^un mouvement$/i.test(String(prStory.name)) &&
     !progressRows.some((e) => e.exerciseId === prStory.exerciseId)
   ) {
     long(
       'journey_pr_vs_level',
-      `Ta meilleure série de ${prStory.pr.reps} reps reste éloignée de la série que tu reproduis`,
+      `Ta meilleure série de ${prStory.pr.reps} reps sur ${prStory.name} reste éloignée de la série que tu reproduis`,
       `La meilleure série observée de ${prStory.name} est de ${prStory.pr.reps} reps, le ${formatDayFr(prStory.pr.date, true)}${
         prStory.prAgeDays != null ? `, il y a ${prStory.prAgeDays} j.` : ''
       }. Sur ${prStory.setLevel.sessions} séances avec des séries saisies, le niveau de série habituel reste autour de ${Math.round(
@@ -1215,7 +1219,12 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   const mileLead = journey?.narratives?.milestoneStory;
-  if (!progressRows.length && mileLead && (mileLead.milestones?.hits || []).length >= 3) {
+  if (
+    !progressRows.length &&
+    mileLead?.name &&
+    !/^un mouvement$/i.test(String(mileLead.name)) &&
+    (mileLead.milestones?.hits || []).length >= 3
+  ) {
     long(
       'journey_milestones',
       `${mileLead.name} : ${mileLead.milestones.hits.length} paliers depuis tes débuts`,
@@ -1231,7 +1240,12 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   const plateauRow = journey?.narratives?.plateau;
-  if (plateauRow?.plateau && !selectedKinds.has('disc_pending_session')) {
+  if (
+    plateauRow?.plateau &&
+    plateauRow?.name &&
+    !/^un mouvement$/i.test(String(plateauRow.name)) &&
+    !selectedKinds.has('disc_pending_session')
+  ) {
     medium(
       'journey_plateau',
       `Plateau — ${plateauRow.name}`,

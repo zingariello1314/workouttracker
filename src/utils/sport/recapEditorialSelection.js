@@ -182,11 +182,22 @@ export function phenomenonIdentity(d) {
 }
 
 export function isUnresolvedExerciseName(d) {
+  const title = String(d?.title || '');
+  const body = String(d?.body || '');
+  const blob = `${title} ${body} ${d?.metrics?.name || ''} ${d?.metrics?.f4Narration?.resolvedName || ''}`;
+
+  // Prose cassée : sujet manquant — rejeter même si metrics.name contient un draftTitle.
+  if (/Première apparition\s*:?\s*$/i.test(title.trim())) return true;
+  if (/Tu reprends\s+après\b/i.test(title)) return true;
+  if (/^après \d+\s*jours d'absence\b/i.test(title.trim())) return true;
+  if (/depuis \d+\s*jours sur\s*[.]/i.test(body)) return true;
+  if (/apparition de\s+dans ton historique/i.test(body)) return true;
+  if (/Elle mêle\s+\d+(\s*,\s*\d+)+\s*[.]?/i.test(body)) return true;
+
   const repaired = repairDisplayNameFromIdentity(d);
   if (repaired.status === 'name_repaired_from_historical_id' || repaired.status === 'name_present') {
     return false;
   }
-  const blob = `${d?.title || ''} ${d?.body || ''} ${d?.metrics?.name || ''} ${d?.metrics?.f4Narration?.resolvedName || ''}`;
   if (/\bun mouvement\b/i.test(blob)) return true;
   if (/\bExercice\s+\d{2,}\b/i.test(blob)) return true;
   if (/\bExercice inconnu\b/i.test(blob)) return true;
@@ -324,6 +335,34 @@ export function editorialValueAdjustments(d, voiceKey = 'week') {
     factors.push({ id: 'rest_assoc_demote', delta: -6 });
   }
 
+  // F2 — sommeil associatif faible (seuil + moyenne) vs séances structurées
+  if (
+    (voiceKey === 'week' || voiceKey === 'today') &&
+    (kind === 'disc_sleep_assoc' || kind === 'disc_sleep_volume' || kind === 'disc_sleep_j2')
+  ) {
+    const nHigh = Number(m.nHigh ?? m.highN ?? m.nAbove ?? 0);
+    const nLow = Number(m.nLow ?? m.lowN ?? m.nBelow ?? 0);
+    const sample = nHigh + nLow || Number(m.n || m.sampleSize || 0);
+    const pct = Math.abs(Number(m.deltaPct ?? m.pctDiff ?? m.diffPct ?? 0));
+    if (sample > 0 && sample < 12) {
+      delta -= 8;
+      factors.push({ id: 'sleep_small_sample', delta: -8 });
+    }
+    if (pct > 0 && pct < 15) {
+      delta -= 10;
+      factors.push({ id: 'sleep_weak_separation', delta: -10 });
+    }
+  }
+
+  // G — favoriser les cartes avec attribution fréquence vs perf sur 7 j
+  if (
+    (voiceKey === 'week' || voiceKey === 'today') &&
+    (attrib === 'frequency_driven_total_rise' || attrib === 'frequency_driven_total_decline' || attrib === 'per_session_driven_rise')
+  ) {
+    delta += 5;
+    factors.push({ id: 'week_mechanism_clarity', delta: 5 });
+  }
+
   // Composition triviale : composedOk mais factCount bas et pas de mécanisme
   if (m.composedOk && Number(m.composedFactCount || 0) <= 2 && !attrib && !m.trajectorySetAvailable) {
     delta -= 5;
@@ -357,8 +396,16 @@ export function findPhenomenonRival(d, selectedList = []) {
 
   const hit = (selectedList || []).find((s) => {
     if (s === d) return false;
-    if (!sameExerciseIdentity(d, s) && !sameHistoricalEpisode(d, s)) return false;
-    return classifyPhenomenon(s) === phen;
+    // Même épisode de reprise (42 j / 77 j, emergence + milestone) → un seul phénomène.
+    if (sameHistoricalEpisode(d, s)) return true;
+    if (!sameExerciseIdentity(d, s)) return false;
+    const other = classifyPhenomenon(s);
+    if (other === phen) return true;
+    // Compléments sur le même exercice : retour + hausse de fréquence / structure
+    // du même retour → rivaliser ; conserver la carte la plus informative.
+    const returnFamily = new Set(['return_after_gap', 'emergence_generic', 'format_or_install']);
+    if (returnFamily.has(phen) && returnFamily.has(other)) return true;
+    return false;
   });
   if (!hit) return null;
 
@@ -374,11 +421,12 @@ export function findPhenomenonRival(d, selectedList = []) {
 
 /** Paires de phénomènes incompatibles sur le même exercice (pack illisible). */
 const INCOMPATIBLE_PHENOMENA = Object.freeze({
-  volume_decline: ['volume_stable', 'volume_rise', 'decline_then_recovery'],
+  // Reprise après absence et arc creux→reprise restent complémentaires (épisodes distincts).
+  volume_decline: ['volume_stable', 'volume_rise'],
   volume_stable: ['volume_decline', 'volume_rise'],
   volume_rise: ['volume_decline', 'volume_stable'],
-  decline_then_recovery: ['volume_decline', 'return_after_gap'],
-  return_after_gap: ['decline_then_recovery']
+  decline_then_recovery: ['volume_decline'],
+  return_after_gap: []
 });
 
 /**
@@ -463,10 +511,12 @@ export function countEpisodeCards(selectedList = []) {
 }
 
 export function episodeCapForVoice(voiceKey) {
-  if (voiceKey === 'today') return 1;
-  if (voiceKey === 'week') return 2;
-  if (voiceKey === 'month') return 3;
-  return 3; // long / year
+  // Plafonds souples : une fenêtre riche peut porter plusieurs épisodes d’exercices distincts.
+  // Ce n’est pas un quota à remplir — editorialCanTake refuse toujours les cartes anonymes / faibles.
+  if (voiceKey === 'today') return 3;
+  if (voiceKey === 'week') return 8;
+  if (voiceKey === 'month') return 12;
+  return 14; // long / year
 }
 
 /**
@@ -506,8 +556,14 @@ export function editorialCanTake(d, selectedList, voiceKey = 'week') {
     const n = countEpisodeCards(selectedList);
     const cap = episodeCapForVoice(voiceKey);
     if (n >= cap) {
-      // Exception souple : une 4ᵉ carte seulement si clairement plus informative
-      if (n >= cap + 1 || (d.informativeValue || 0) < 110) {
+      // Dépassement limité (+2) : autre exercice + IV élevée — pas un open bar.
+      const sameEx = (selectedList || []).some(
+        (s) =>
+          (EXERCISE_EPISODE_KINDS.includes(s.kind) || String(s.kind || '').startsWith('disc_ms_return')) &&
+          sameExerciseIdentity(d, s)
+      );
+      // Soft overflow : exercices DISTINCTS à forte IV (pas le même mouvement en double).
+      if (sameEx || (d.informativeValue || 0) < 72 || n >= cap + 4) {
         return { ok: false, reason: 'episode_cap' };
       }
     }

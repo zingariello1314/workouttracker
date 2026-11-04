@@ -13,6 +13,10 @@ import { classifyExercisePerformanceLevel } from './performanceRobustness';
 import { sessionsAsStructuredSets } from './exercisePerformanceUnit';
 import { daysBetweenYmd, isRunningLikeName } from './recapTrainingTimeline';
 import { movementFamily } from './recapExposureNarratives';
+import {
+  resolveExerciseNameForRecap,
+  userFacingExerciseLabel
+} from './recapStrengthPeriodStats';
 
 function median(nums) {
   const v = (nums || []).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
@@ -33,13 +37,8 @@ function round1(n) {
 }
 
 function exerciseName(id, getExerciseNameById) {
-  const n = parseInt(String(id), 10);
-  if (typeof getExerciseNameById === 'function') {
-    const label = Number.isFinite(n) ? getExerciseNameById(n) : getExerciseNameById(id);
-    const cleaned = String(label || '').trim();
-    if (cleaned && !/^Exercice\s+\d+$/i.test(cleaned) && !/^#\d+$/.test(cleaned)) return cleaned;
-  }
-  return 'un mouvement';
+  const facing = userFacingExerciseLabel(resolveExerciseNameForRecap(id, getExerciseNameById), id);
+  return facing && facing !== 'un mouvement' ? facing : '';
 }
 
 /**
@@ -201,6 +200,7 @@ function medianIntervalDays(sessions) {
 
 function describeExercise(exId, sessions, endYmd, getExerciseNameById, snapshot) {
   const name = exerciseName(exId, getExerciseNameById);
+  if (!name) return null;
   if (isRunningLikeName(name)) return null;
   if (sessions.length < 4) return null;
 

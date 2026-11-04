@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-02T01:28:39.670Z",
+  "generatedAt": "2026-11-03T23:26:11.326Z",
   "note": "F5 replay — sélection éditoriale (phénomène, IV, caps, abstention) ; F2/F3/F4 non retunés",
   "liveProfileInspected": false,
   "periods": {
     "7d": {
-      "ms": 646,
+      "ms": 450,
       "window": {
         "start": "2026-10-24",
         "end": "2026-10-30",
@@ -12,7 +12,7 @@
       },
       "pool": 31,
       "eligible": 31,
-      "selected": 10,
+      "selected": 9,
       "rejected": 15,
       "counts": {
         "pool": 31,
@@ -23,11 +23,9 @@
       },
       "rejectedByReason": {
         "rival": 2,
-        "episode_cap": 1,
         "abstain_low_value": 2,
-        "unresolved_exercise_name": 2,
-        "score": 2,
-        "cap": 3,
+        "unresolved_exercise_name": 3,
+        "score": 5,
         "methodology_demoted": 3
       },
       "selectedKinds": [
@@ -37,15 +35,14 @@
         "disc_structural_memory",
         "disc_emergence",
         "disc_rest_assoc",
+        "disc_ms_return_durable",
         "disc_exercise_progress",
-        "disc_freq_continuity",
-        "disc_muscle_reorient",
-        "disc_push_pull"
+        "disc_freq_continuity"
       ],
       "beforeF4SelectedKinds": null,
       "composedCount": 3,
       "descriptiveCount": 1,
-      "episodeCount": 2,
+      "episodeCount": 3,
       "duplicatePhenomena": 0,
       "packVolumeContradictions": 0,
       "unresolvedNameCount": 0,
@@ -213,6 +210,25 @@
           "volumeDirection": null
         },
         {
+          "kind": "disc_ms_return_durable",
+          "nature": "trajectory",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "body": "Depuis la reprise de relevés de genoux à la barre le 12 octobre 2026, tu as enchaîné 3 séances en 18 jours. L'interruption de 35 jours n'est plus l'événement : c'est la suite qui se construit.",
+          "score": 72,
+          "informativeValue": 72,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "global|return_after_gap",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
           "kind": "disc_exercise_progress",
           "nature": "journey",
           "title": "Pompes déclinées : recul puis retour près du niveau de départ",
@@ -266,44 +282,6 @@
           "continuity": null,
           "attribution": null,
           "volumeDirection": null
-        },
-        {
-          "kind": "disc_muscle_reorient",
-          "nature": "journey",
-          "title": "Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre",
-          "body": "Les biceps représentent ces 7 jours 97 reps attribuées (répartition indicative), contre 218 sur les 30 derniers jours. À elle seule, ces 7 jours concentre environ 44,5 % de l’exposition attribuée biceps du dernier mois. Lecture de composition (parts conventionnelles), pas une mesure de stimulation musculaire. Parts issues d’une attribution conventionnelle des répétitions ; pas une preuve d’hypertrophie ni de déséquilibre à corriger. Cela décrit ce groupe sur le mois, pas le stimulus de toute la fenêtre.",
-          "score": 31,
-          "informativeValue": 20,
-          "phenomenon": "other",
-          "phenomenonId": "global|other",
-          "composedOk": false,
-          "trajectoryOk": false,
-          "weakDescriptive": false,
-          "unresolvedName": false,
-          "editorialFactors": [],
-          "exerciseId": null,
-          "continuity": null,
-          "attribution": null,
-          "volumeDirection": null
-        },
-        {
-          "kind": "disc_push_pull",
-          "nature": "trajectory",
-          "title": "La poussée domine nettement le tirage de ces 7 jours",
-          "body": "Ces 7 jours totalise environ 101 reps attribuées dos contre 332 reps pectoraux + triceps (et 423 en comptant aussi les épaules de poussée). La composition attribuée du haut du corps penche nettement poussée plutôt que tirage. Avec 101 reps dos, tu réalises ces 7 jours environ 30,1 % du volume de dos des 30 derniers jours. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte.",
-          "score": 26,
-          "informativeValue": 15,
-          "phenomenon": "other",
-          "phenomenonId": "global|other",
-          "composedOk": false,
-          "trajectoryOk": false,
-          "weakDescriptive": false,
-          "unresolvedName": false,
-          "editorialFactors": [],
-          "exerciseId": null,
-          "continuity": null,
-          "attribution": null,
-          "volumeDirection": null
         }
       ],
       "texts": [
@@ -338,6 +316,11 @@
           "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
         },
         {
+          "kind": "disc_ms_return_durable",
+          "title": "3 séances de relevés de genoux à la barre depuis le retour",
+          "body": "Depuis la reprise de relevés de genoux à la barre le 12 octobre 2026, tu as enchaîné 3 séances en 18 jours. L'interruption de 35 jours n'est plus l'événement : c'est la suite qui se construit."
+        },
+        {
           "kind": "disc_exercise_progress",
           "title": "Pompes déclinées : recul puis retour près du niveau de départ",
           "body": "Sur les 8 dernières séances (dont 7 avant la période affichée, 1 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
@@ -346,16 +329,6 @@
           "kind": "disc_freq_continuity",
           "title": "Ces 7 jours s'inscrit dans une pratique déjà documentée",
           "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 4 jours sur les 7 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 57 % sur ces 7 jours. Ces 7 jours n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement."
-        },
-        {
-          "kind": "disc_muscle_reorient",
-          "title": "Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre",
-          "body": "Les biceps représentent ces 7 jours 97 reps attribuées (répartition indicative), contre 218 sur les 30 derniers jours. À elle seule, ces 7 jours concentre environ 44,5 % de l’exposition attribuée biceps du dernier mois. Lecture de composition (parts conventionnelles), pas une mesure de stimulation musculaire. Parts issues d’une attribution conventionnelle des répétitions ; pas une preuve d’hypertrophie ni de déséquilibre à corriger. Cela décrit ce groupe sur le mois, pas le stimulus de toute la fenêtre."
-        },
-        {
-          "kind": "disc_push_pull",
-          "title": "La poussée domine nettement le tirage de ces 7 jours",
-          "body": "Ces 7 jours totalise environ 101 reps attribuées dos contre 332 reps pectoraux + triceps (et 423 en comptant aussi les épaules de poussée). La composition attribuée du haut du corps penche nettement poussée plutôt que tirage. Avec 101 reps dos, tu réalises ces 7 jours environ 30,1 % du volume de dos des 30 derniers jours. L’exposition attribuée au haut du corps est clairement orientée poussée : le tirage ne suit pas dans les mêmes proportions sur cette fenêtre. Répartition indicative (parts conventionnelles), pas un jugement d’équilibre idéal ni une mesure anatomique exacte."
         }
       ],
       "editorialDecisions": [
@@ -388,13 +361,19 @@
           ]
         },
         {
-          "action": "select",
+          "action": "reject",
           "identity": "disc_exercise_base",
           "kind": "disc_exercise_base",
-          "informativeValue": 52,
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
           "phenomenonId": "global|other",
-          "phenomenon": "other",
-          "editorialFactors": []
+          "informativeValue": 30,
+          "editorialFactors": [
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
         },
         {
           "action": "select",
@@ -666,16 +645,6 @@
         },
         {
           "action": "reject",
-          "identity": "disc_exercise_base",
-          "kind": "disc_exercise_base",
-          "reason": "identity",
-          "blockedBy": null,
-          "phenomenonId": "global|other",
-          "informativeValue": 52,
-          "editorialFactors": []
-        },
-        {
-          "action": "reject",
           "identity": "disc_density",
           "kind": "disc_density",
           "reason": "identity",
@@ -773,6 +742,21 @@
         },
         {
           "action": "reject",
+          "identity": "disc_exercise_base",
+          "kind": "disc_exercise_base",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 30,
+          "editorialFactors": [
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
+          "action": "reject",
           "identity": "disc_anchor",
           "kind": "disc_anchor",
           "reason": "rival",
@@ -821,8 +805,28 @@
         },
         {
           "action": "reject",
+          "identity": "disc_muscle_reorient",
+          "kind": "disc_muscle_reorient",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 20,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
           "identity": "disc_muscle_now",
           "kind": "disc_muscle_now",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_push_pull",
+          "kind": "disc_push_pull",
           "reason": "score",
           "blockedBy": null,
           "phenomenonId": "global|other",
@@ -848,6 +852,21 @@
           ]
         },
         {
+          "action": "reject",
+          "identity": "disc_muscle_share_shift",
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": -1,
+          "editorialFactors": [
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
           "action": "select_milestone",
           "identity": "disc_ms_pr",
           "kind": "disc_ms_pr",
@@ -856,13 +875,12 @@
           "phenomenon": "other"
         },
         {
-          "action": "reject_milestone",
+          "action": "select_milestone",
           "identity": "disc_ms_return_durable",
           "kind": "disc_ms_return_durable",
-          "reason": "episode_cap",
-          "blockedBy": null,
+          "informativeValue": 72,
           "phenomenonId": "global|return_after_gap",
-          "informativeValue": 72
+          "phenomenon": "return_after_gap"
         },
         {
           "action": "abstain",
@@ -896,30 +914,30 @@
       ]
     },
     "30d": {
-      "ms": 1305,
+      "ms": 871,
       "window": {
         "start": "2026-10-01",
         "end": "2026-10-30",
         "voiceHint": "month"
       },
-      "pool": 43,
-      "eligible": 43,
+      "pool": 42,
+      "eligible": 42,
       "selected": 14,
-      "rejected": 26,
+      "rejected": 23,
       "counts": {
-        "pool": 43,
-        "eligible": 43,
-        "selected": 17,
-        "rejected": 26,
+        "pool": 42,
+        "eligible": 42,
+        "selected": 19,
+        "rejected": 23,
         "identityCollapsed": 0
       },
       "rejectedByReason": {
         "unresolved_exercise_name": 8,
         "phenomenon_rival": 1,
-        "rival": 2,
-        "cap": 7,
+        "rival": 3,
         "abstain_low_value": 3,
-        "score": 2,
+        "story_duplicate_composition": 1,
+        "score": 4,
         "methodology_demoted": 3
       },
       "selectedKinds": [
@@ -927,21 +945,21 @@
         "disc_volume_shape",
         "disc_vs_habit",
         "disc_ms_return",
+        "disc_ms_pr",
         "disc_p35_gtg_coexistence",
         "disc_p36_weekday_regularity",
         "disc_freq_decline_low_exposure",
         "disc_emergence",
         "disc_emergence",
         "disc_muscle_exposure_shift",
-        "disc_exercise_progress",
-        "disc_anchor",
         "disc_rest_assoc",
-        "disc_p35_gtg_outside_classic"
+        "disc_ms_return_durable",
+        "disc_exercise_progress"
       ],
       "beforeF4SelectedKinds": null,
       "composedCount": 4,
-      "descriptiveCount": 2,
-      "episodeCount": 3,
+      "descriptiveCount": 1,
+      "episodeCount": 4,
       "duplicatePhenomena": 0,
       "packVolumeContradictions": 0,
       "unresolvedNameCount": 0,
@@ -968,8 +986,8 @@
         {
           "kind": "disc_volume_shape",
           "nature": "now",
-          "title": "Le volume du mois dépasse la période précédente",
-          "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée.",
+          "title": "Le volume de ces 30 jours dépasse la période précédente",
+          "body": "Ces 30 jours totalisent 4 367 répétitions sur 16 jours avec répétitions de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée.",
           "score": 75,
           "informativeValue": 64,
           "phenomenon": "descriptive_weak",
@@ -1012,7 +1030,7 @@
           "kind": "disc_ms_return",
           "nature": "now",
           "title": "Relevés de genoux aux parallèles revient après un long silence",
-          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte. Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données.",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement.",
           "score": 91,
           "informativeValue": 91,
           "phenomenon": "return_after_gap",
@@ -1023,6 +1041,25 @@
           "unresolvedName": false,
           "editorialFactors": [],
           "exerciseId": "107",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_pr",
+          "nature": "now",
+          "title": "Meilleure série observée : 12",
+          "body": "Meilleure série observée : 12 . Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent 10).",
+          "score": 77,
+          "informativeValue": 77,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
           "continuity": null,
           "attribution": null,
           "volumeDirection": null
@@ -1205,66 +1242,6 @@
           "volumeDirection": null
         },
         {
-          "kind": "disc_exercise_progress",
-          "nature": "journey",
-          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
-          "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
-          "score": 63,
-          "informativeValue": 116,
-          "phenomenon": "decline_then_recovery",
-          "phenomenonId": "ex:104|decline_then_recovery",
-          "composedOk": true,
-          "trajectoryOk": true,
-          "weakDescriptive": false,
-          "unresolvedName": false,
-          "editorialFactors": [
-            {
-              "id": "composed_ok",
-              "delta": 8
-            },
-            {
-              "id": "trusted_sets",
-              "delta": 5
-            },
-            {
-              "id": "coherent_narration",
-              "delta": 4
-            },
-            {
-              "id": "continuity",
-              "delta": 4
-            }
-          ],
-          "exerciseId": "104",
-          "continuity": "decline_then_recovery",
-          "attribution": null,
-          "volumeDirection": "down"
-        },
-        {
-          "kind": "disc_anchor",
-          "nature": "journey",
-          "title": "Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique",
-          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'ancrage.",
-          "score": 59,
-          "informativeValue": 51,
-          "phenomenon": "descriptive_weak",
-          "phenomenonId": "global|descriptive_weak",
-          "composedOk": false,
-          "trajectoryOk": false,
-          "weakDescriptive": true,
-          "unresolvedName": false,
-          "editorialFactors": [
-            {
-              "id": "weak_descriptive",
-              "delta": -8
-            }
-          ],
-          "exerciseId": null,
-          "continuity": null,
-          "attribution": null,
-          "volumeDirection": null
-        },
-        {
           "kind": "disc_rest_assoc",
           "nature": "trajectory",
           "title": "Tes données montrent une association entre repos et volume de séance",
@@ -1289,14 +1266,14 @@
           "volumeDirection": null
         },
         {
-          "kind": "disc_p35_gtg_outside_classic",
+          "kind": "disc_ms_return_durable",
           "nature": "trajectory",
-          "title": "GTG hors séances classiques",
-          "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
-          "score": 47,
-          "informativeValue": 47,
-          "phenomenon": "gtg_channel",
-          "phenomenonId": "global|gtg_channel",
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.",
+          "score": 76,
+          "informativeValue": 76,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "global|return_after_gap",
           "composedOk": false,
           "trajectoryOk": false,
           "weakDescriptive": false,
@@ -1306,6 +1283,46 @@
           "continuity": null,
           "attribution": null,
           "volumeDirection": null
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "score": 63,
+          "informativeValue": 123,
+          "phenomenon": "decline_then_recovery",
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "104",
+          "continuity": "decline_then_recovery",
+          "attribution": "combined_frequency_and_density_rise",
+          "volumeDirection": "down"
         }
       ],
       "texts": [
@@ -1316,8 +1333,8 @@
         },
         {
           "kind": "disc_volume_shape",
-          "title": "Le volume du mois dépasse la période précédente",
-          "body": "Ces 30 jours totalisent 4 367 répétitions en 16 jours de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps en 13 jours de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
+          "title": "Le volume de ces 30 jours dépasse la période précédente",
+          "body": "Ces 30 jours totalisent 4 367 répétitions sur 16 jours avec répétitions de renforcement, soit environ 273 répétitions et 3 min par séance, contre 3 728 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (+17,1 %, fréquence +23,1 %, 273 vs 287 reps/séance). La comparaison utile est donc période contre période de même durée."
         },
         {
           "kind": "disc_vs_habit",
@@ -1327,7 +1344,12 @@
         {
           "kind": "disc_ms_return",
           "title": "Relevés de genoux aux parallèles revient après un long silence",
-          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte. Reproduire ce format sur la prochaine séance confirme le retour ; en faire tout de suite une nouvelle norme va plus vite que les données."
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement."
+        },
+        {
+          "kind": "disc_ms_pr",
+          "title": "Meilleure série observée : 12",
+          "body": "Meilleure série observée : 12 . Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent 10)."
         },
         {
           "kind": "disc_p35_gtg_coexistence",
@@ -1360,24 +1382,19 @@
           "body": "Sur deux fenêtres comparables de 16+ jours d’activité (1 septembre 2026→30 septembre 2026 puis 1 octobre 2026→30 octobre 2026), les jours d’exposition primaire aux biceps passent de 4 à 10 (Δ +6). Les reps mono associées vont de 240 à 432 (Δ +192). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
         },
         {
-          "kind": "disc_exercise_progress",
-          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
-          "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
-        },
-        {
-          "kind": "disc_anchor",
-          "title": "Ces 30 jours deviennent un nouveau point d'ancrage dans ton historique",
-          "body": "Sur les 30 derniers jours, tu as accumulé 4 367 reps en 12 jours entraînés, et ces 30 jours représente à elle seule 100,0 % de tout ce volume mensuel. À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ces 30 jours sert de nouveau point d'ancrage."
-        },
-        {
           "kind": "disc_rest_assoc",
           "title": "Tes données montrent une association entre repos et volume de séance",
           "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
         },
         {
-          "kind": "disc_p35_gtg_outside_classic",
-          "title": "GTG hors séances classiques",
-          "body": "Sur les 18 journées sans séance classique (hors reps GTG synchronisées), 4 comportent du GTG (22,2 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 4 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés."
+          "kind": "disc_ms_return_durable",
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe."
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Sur les 8 dernières séances (dont 2 avant la période affichée, 6 dedans), Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé. Cette lecture s’appuie aussi sur 2 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
         }
       ],
       "editorialDecisions": [
@@ -1454,12 +1471,12 @@
         },
         {
           "action": "reject",
-          "identity": "disc_freq_progress_low:146651247",
+          "identity": "disc_freq_progress_low:1433469569",
           "kind": "disc_freq_progress_low",
           "reason": "unresolved_exercise_name",
           "blockedBy": null,
-          "phenomenonId": "ex:146651247|volume_rise",
-          "informativeValue": 84,
+          "phenomenonId": "ex:1433469569|volume_rise",
+          "informativeValue": 87,
           "editorialFactors": [
             {
               "id": "composed_ok",
@@ -1478,8 +1495,8 @@
               "delta": -22
             },
             {
-              "id": "set_mechanism",
-              "delta": 6
+              "id": "volume_attribution",
+              "delta": 7
             },
             {
               "id": "sizable_delta",
@@ -1575,7 +1592,7 @@
           "action": "select",
           "identity": "disc_exercise_progress:104",
           "kind": "disc_exercise_progress",
-          "informativeValue": 116,
+          "informativeValue": 123,
           "phenomenonId": "ex:104|decline_then_recovery",
           "phenomenon": "decline_then_recovery",
           "editorialFactors": [
@@ -1590,6 +1607,10 @@
             {
               "id": "coherent_narration",
               "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
             },
             {
               "id": "continuity",
@@ -1682,7 +1703,7 @@
           "reason": "identity",
           "blockedBy": null,
           "phenomenonId": "ex:104|decline_then_recovery",
-          "informativeValue": 116,
+          "informativeValue": 123,
           "editorialFactors": [
             {
               "id": "composed_ok",
@@ -1695,6 +1716,10 @@
             {
               "id": "coherent_narration",
               "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
             },
             {
               "id": "continuity",
@@ -1931,6 +1956,41 @@
         },
         {
           "action": "reject",
+          "identity": "disc_freq_progress_low:1433469569",
+          "kind": "disc_freq_progress_low",
+          "reason": "unresolved_exercise_name",
+          "blockedBy": null,
+          "phenomenonId": "ex:1433469569|volume_rise",
+          "informativeValue": 87,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "sizable_delta",
+              "delta": 3
+            }
+          ]
+        },
+        {
+          "action": "reject",
           "identity": "disc_gtg_unplanned_role",
           "kind": "disc_gtg_unplanned_role",
           "reason": "rival",
@@ -2013,37 +2073,6 @@
           ]
         },
         {
-          "action": "reject",
-          "identity": "disc_freq_progress_low:1433469569",
-          "kind": "disc_freq_progress_low",
-          "reason": "unresolved_exercise_name",
-          "blockedBy": null,
-          "phenomenonId": "ex:1433469569|volume_rise",
-          "informativeValue": 80,
-          "editorialFactors": [
-            {
-              "id": "composed_ok",
-              "delta": 8
-            },
-            {
-              "id": "trusted_sets",
-              "delta": 5
-            },
-            {
-              "id": "coherent_narration",
-              "delta": 4
-            },
-            {
-              "id": "unresolved_name",
-              "delta": -22
-            },
-            {
-              "id": "sizable_delta",
-              "delta": 3
-            }
-          ]
-        },
-        {
           "action": "select",
           "identity": "disc_muscle_exposure_shift",
           "kind": "disc_muscle_exposure_shift",
@@ -2095,16 +2124,26 @@
           "editorialFactors": []
         },
         {
+          "action": "reject",
+          "identity": "disc_stimulus_mix",
+          "kind": "disc_stimulus_mix",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 59,
+          "editorialFactors": []
+        },
+        {
           "action": "select",
-          "identity": "disc_anchor",
-          "kind": "disc_anchor",
-          "informativeValue": 51,
-          "phenomenonId": "global|descriptive_weak",
-          "phenomenon": "descriptive_weak",
+          "identity": "disc_rest_assoc",
+          "kind": "disc_rest_assoc",
+          "informativeValue": 49,
+          "phenomenonId": "global|rest_sleep_assoc",
+          "phenomenon": "rest_sleep_assoc",
           "editorialFactors": [
             {
-              "id": "weak_descriptive",
-              "delta": -8
+              "id": "rest_assoc_demote",
+              "delta": -6
             }
           ]
         },
@@ -2123,6 +2162,16 @@
           ]
         },
         {
+          "action": "reject",
+          "identity": "disc_p35_gtg_outside_classic",
+          "kind": "disc_p35_gtg_outside_classic",
+          "reason": "rival",
+          "blockedBy": "disc_p35_gtg_coexistence",
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 47,
+          "editorialFactors": []
+        },
+        {
           "action": "select",
           "identity": "disc_calendar_rhythm",
           "kind": "disc_calendar_rhythm",
@@ -2138,6 +2187,26 @@
         },
         {
           "action": "reject",
+          "identity": "disc_p35_gtg_coexistence",
+          "kind": "disc_p35_gtg_coexistence",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|gtg_channel",
+          "informativeValue": 43,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_p36_weekday_regularity",
+          "kind": "disc_p36_weekday_regularity",
+          "reason": "identity",
+          "blockedBy": null,
+          "phenomenonId": "global|habit_p36",
+          "informativeValue": 42,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
           "identity": "disc_quarter_profile",
           "kind": "disc_quarter_profile",
           "reason": "identity",
@@ -2150,6 +2219,16 @@
               "delta": -8
             }
           ]
+        },
+        {
+          "action": "reject",
+          "identity": "disc_ratio_structure",
+          "kind": "disc_ratio_structure",
+          "reason": "story_duplicate_composition",
+          "blockedBy": "disc_muscle_exposure_shift",
+          "phenomenonId": "global|other",
+          "informativeValue": 38,
+          "editorialFactors": []
         },
         {
           "action": "select",
@@ -2181,6 +2260,31 @@
           "editorialFactors": []
         },
         {
+          "action": "reject",
+          "identity": "disc_push_pull",
+          "kind": "disc_push_pull",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": 15,
+          "editorialFactors": []
+        },
+        {
+          "action": "reject",
+          "identity": "disc_muscle_share_shift",
+          "kind": "disc_muscle_share_shift",
+          "reason": "score",
+          "blockedBy": null,
+          "phenomenonId": "global|other",
+          "informativeValue": -1,
+          "editorialFactors": [
+            {
+              "id": "unresolved_name",
+              "delta": -22
+            }
+          ]
+        },
+        {
           "action": "select_milestone",
           "identity": "disc_ms_return:107",
           "kind": "disc_ms_return",
@@ -2190,11 +2294,27 @@
         },
         {
           "action": "select_milestone",
+          "identity": "disc_ms_pr",
+          "kind": "disc_ms_pr",
+          "informativeValue": 77,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
+          "action": "select_milestone",
           "identity": "disc_ms_event_combo",
           "kind": "disc_ms_event_combo",
           "informativeValue": 76,
           "phenomenonId": "global|other",
           "phenomenon": "other"
+        },
+        {
+          "action": "select_milestone",
+          "identity": "disc_ms_return_durable",
+          "kind": "disc_ms_return_durable",
+          "informativeValue": 76,
+          "phenomenonId": "global|return_after_gap",
+          "phenomenon": "return_after_gap"
         },
         {
           "action": "abstain",
@@ -2235,35 +2355,35 @@
       ]
     },
     "3m": {
-      "ms": 2133,
+      "ms": 1406,
       "window": {
         "start": "2026-08-01",
         "end": "2026-10-30",
         "voiceHint": "long"
       },
-      "pool": 53,
-      "eligible": 53,
-      "selected": 17,
-      "rejected": 35,
+      "pool": 51,
+      "eligible": 51,
+      "selected": 22,
+      "rejected": 27,
       "counts": {
-        "pool": 53,
-        "eligible": 53,
-        "selected": 18,
-        "rejected": 35,
+        "pool": 51,
+        "eligible": 51,
+        "selected": 24,
+        "rejected": 27,
         "identityCollapsed": 0
       },
       "rejectedByReason": {
-        "episode_cap": 10,
-        "rival": 4,
-        "unresolved_exercise_name": 1,
-        "cap": 11,
-        "abstain_low_value": 4,
+        "unresolved_exercise_name": 7,
+        "cap": 9,
+        "rival": 3,
+        "abstain_low_value": 3,
         "score": 2,
         "methodology_demoted": 3
       },
       "selectedKinds": [
         "disc_gtg_unplanned_now",
         "disc_vs_habit",
+        "disc_ms_return",
         "disc_ms_pr",
         "disc_p35_gtg_coexistence",
         "disc_p36_weekday_regularity",
@@ -2273,17 +2393,21 @@
         "disc_freq_progress_low",
         "disc_structural_memory",
         "disc_muscle_exposure_shift",
+        "disc_ms_return_durable",
         "disc_monthly_volume_arc",
         "disc_best_month",
         "disc_exercise_progress",
+        "disc_freq_continuity",
         "disc_ms_sessions",
-        "disc_ms_first_exercise",
-        "disc_th_pushPull_trajectory"
+        "disc_ms_cumul",
+        "disc_rest_assoc",
+        "disc_p36_freq_vs_volume_weekday",
+        "disc_p35_gtg_outside_classic"
       ],
       "beforeF4SelectedKinds": null,
       "composedCount": 6,
       "descriptiveCount": 0,
-      "episodeCount": 3,
+      "episodeCount": 5,
       "duplicatePhenomena": 0,
       "packVolumeContradictions": 0,
       "unresolvedNameCount": 0,
@@ -2322,6 +2446,30 @@
           "unresolvedName": false,
           "editorialFactors": [],
           "exerciseId": "306",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_return",
+          "nature": "now",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement.",
+          "score": 91,
+          "informativeValue": 95,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "ex:107|return_after_gap",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "107",
           "continuity": null,
           "attribution": null,
           "volumeDirection": null
@@ -2511,7 +2659,7 @@
           "kind": "disc_freq_progress_low",
           "nature": "trajectory",
           "title": "Élévations latérales : davantage de répétitions par séance",
-          "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Le nombre de séances est resté proche (4 → 4), mais le volume par séance a changé (≈41 → ≈53, 27,3 %). Le retour s’observe sur plusieurs séances de la période. Cette lecture s’appuie aussi sur 4 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Le nombre de séances est resté proche (4 → 4), mais le volume par séance a changé (≈41 → ≈53, +27,3 %). Le retour s’observe sur plusieurs séances de la période. Cette lecture s’appuie aussi sur 4 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
           "score": 56,
           "informativeValue": 113,
           "phenomenon": "volume_rise",
@@ -2607,6 +2755,30 @@
           "volumeDirection": null
         },
         {
+          "kind": "disc_ms_return_durable",
+          "nature": "trajectory",
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.",
+          "score": 76,
+          "informativeValue": 80,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "global|return_after_gap",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
           "kind": "disc_monthly_volume_arc",
           "nature": "journey",
           "title": "octobre 2026 interrompt la baisse depuis août 2026",
@@ -2628,8 +2800,8 @@
         {
           "kind": "disc_best_month",
           "nature": "journey",
-          "title": "août 2026 concentre la part la plus productive de la période",
-          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition.",
+          "title": "août 2026 (portion dans la fenêtre) concentre la part la plus productive de la période",
+          "body": "août 2026 (portion dans la fenêtre) totalise 5 438 reps en 17 jours avec séance dans la fenêtre, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026 (portion dans la fenêtre). Ce sont des portions de mois calendaires dans la fenêtre glissante, pas des mois complets comparés à durée égale.",
           "score": 65,
           "informativeValue": 65,
           "phenomenon": "other",
@@ -2650,7 +2822,7 @@
           "title": "Pompes déclinées : recul puis retour près du niveau de départ",
           "body": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Pompes lestées (autour de 40 répétitions par séance) reste stable. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
           "score": 63,
-          "informativeValue": 124,
+          "informativeValue": 131,
           "phenomenon": "decline_then_recovery",
           "phenomenonId": "ex:104|decline_then_recovery",
           "composedOk": true,
@@ -2675,6 +2847,10 @@
               "delta": 4
             },
             {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
               "id": "peer_scope",
               "delta": 5
             },
@@ -2685,8 +2861,27 @@
           ],
           "exerciseId": "104",
           "continuity": "decline_then_recovery",
-          "attribution": null,
+          "attribution": "combined_frequency_and_density_rise",
           "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "nature": "journey",
+          "title": "Cette période s'inscrit dans une pratique déjà documentée",
+          "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 41 jours sur les 91 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 45 % sur cette période. Cette période n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement.",
+          "score": 36,
+          "informativeValue": 36,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
         },
         {
           "kind": "disc_ms_sessions",
@@ -2708,12 +2903,12 @@
           "volumeDirection": null
         },
         {
-          "kind": "disc_ms_first_exercise",
-          "nature": "trajectory",
-          "title": "Première apparition :",
-          "body": "Première apparition de dans ton historique. Ils représentent déjà 23 % de ton volume de séance ce jour-là.",
-          "score": 74,
-          "informativeValue": 74,
+          "kind": "disc_ms_cumul",
+          "nature": "journey",
+          "title": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées",
+          "body": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées depuis ta première saisie, le 2 juillet 2026, soit 60 jours de parcours. Elles ont été réalisées en 36 séances, soit une moyenne de 278 reps par séance. Ça représente environ 4,2 séances par semaine sur cette durée.",
+          "score": 77,
+          "informativeValue": 77,
           "phenomenon": "other",
           "phenomenonId": "global|other",
           "composedOk": false,
@@ -2727,14 +2922,57 @@
           "volumeDirection": null
         },
         {
-          "kind": "disc_th_pushPull_trajectory",
+          "kind": "disc_rest_assoc",
           "nature": "trajectory",
-          "title": "Le haut du corps travaille surtout en poussée",
-          "body": "Ces trois mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 3 897 répétitions de poussée contre 1 808 de tirage, soit environ 2,2 répétitions de poussée pour 1 de tirage. Le ratio vient en second : c’est la répartition du volume qui décrit la fenêtre.",
-          "score": 64,
-          "informativeValue": 64,
-          "phenomenon": "other",
-          "phenomenonId": "global|other",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique.",
+          "score": 55,
+          "informativeValue": 49,
+          "phenomenon": "rest_sleep_assoc",
+          "phenomenonId": "global|rest_sleep_assoc",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "rest_assoc_demote",
+              "delta": -6
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "nature": "trajectory",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé).",
+          "score": 49,
+          "informativeValue": 49,
+          "phenomenon": "habit_p36",
+          "phenomenonId": "global|habit_p36",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "nature": "trajectory",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 50 journées sans séance classique (hors reps GTG synchronisées), 5 comportent du GTG (10 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 5 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés.",
+          "score": 47,
+          "informativeValue": 47,
+          "phenomenon": "gtg_channel",
+          "phenomenonId": "global|gtg_channel",
           "composedOk": false,
           "trajectoryOk": false,
           "weakDescriptive": false,
@@ -2756,6 +2994,11 @@
           "kind": "disc_vs_habit",
           "title": "Face pull : cette période est au-dessus de ton niveau habituel",
           "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur cette période, tu as accumulé 210 répétitions de ce mouvement (4 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement."
         },
         {
           "kind": "disc_ms_pr",
@@ -2790,7 +3033,7 @@
         {
           "kind": "disc_freq_progress_low",
           "title": "Élévations latérales : davantage de répétitions par séance",
-          "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Le nombre de séances est resté proche (4 → 4), mais le volume par séance a changé (≈41 → ≈53, 27,3 %). Le retour s’observe sur plusieurs séances de la période. Cette lecture s’appuie aussi sur 4 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+          "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 40 à 55 répétitions par séance, soit une hausse d’environ 37,5 %. Le nombre de séances est resté proche (4 → 4), mais le volume par séance a changé (≈41 → ≈53, +27,3 %). Le retour s’observe sur plusieurs séances de la période. Cette lecture s’appuie aussi sur 4 séances antérieures pour situer l’évolution. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
         },
         {
           "kind": "disc_structural_memory",
@@ -2803,14 +3046,19 @@
           "body": "Sur deux fenêtres comparables de 46+ jours d’activité (2 mai 2026→31 juillet 2026 puis 1 août 2026→30 octobre 2026), les jours d’exposition primaire aux pectoraux passent de 11 à 40 (Δ +29). Les reps mono associées vont de 491 à 1 399 (Δ +908). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire."
         },
         {
+          "kind": "disc_ms_return_durable",
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe."
+        },
+        {
           "kind": "disc_monthly_volume_arc",
           "title": "octobre 2026 interrompt la baisse depuis août 2026",
           "body": "août 2026 : 5 438 reps en 17 jours entraînés (≈320 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour actif), soit -32 % de volume, -29 % de jours, -4 % de volume par jour actif. La baisse vient surtout d’une diminution des jours entraînés, plus que d’un effondrement du volume par journée active. octobre 2026 remonte à 4 301 reps en 12 jours (≈358 / jour actif, +16 % vs septembre 2026), sans retrouver le sommet de août 2026 (5 438 reps)."
         },
         {
           "kind": "disc_best_month",
-          "title": "août 2026 concentre la part la plus productive de la période",
-          "body": "août 2026 totalise 5 438 reps en 17 jours entraînés, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026. Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition."
+          "title": "août 2026 (portion dans la fenêtre) concentre la part la plus productive de la période",
+          "body": "août 2026 (portion dans la fenêtre) totalise 5 438 reps en 17 jours avec séance dans la fenêtre, soit 40,2 % du volume de la période, contre 4 367 en octobre 2026 (portion dans la fenêtre). Ce sont des portions de mois calendaires dans la fenêtre glissante, pas des mois complets comparés à durée égale."
         },
         {
           "kind": "disc_exercise_progress",
@@ -2818,19 +3066,34 @@
           "body": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que Pompes lestées (autour de 40 répétitions par séance) reste stable. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
         },
         {
+          "kind": "disc_freq_continuity",
+          "title": "Cette période s'inscrit dans une pratique déjà documentée",
+          "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 41 jours sur les 91 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 45 % sur cette période. Cette période n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement."
+        },
+        {
           "kind": "disc_ms_sessions",
           "title": "50e séance enregistrée",
           "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance."
         },
         {
-          "kind": "disc_ms_first_exercise",
-          "title": "Première apparition :",
-          "body": "Première apparition de dans ton historique. Ils représentent déjà 23 % de ton volume de séance ce jour-là."
+          "kind": "disc_ms_cumul",
+          "title": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées",
+          "body": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées depuis ta première saisie, le 2 juillet 2026, soit 60 jours de parcours. Elles ont été réalisées en 36 séances, soit une moyenne de 278 reps par séance. Ça représente environ 4,2 séances par semaine sur cette durée."
         },
         {
-          "kind": "disc_th_pushPull_trajectory",
-          "title": "Le haut du corps travaille surtout en poussée",
-          "body": "Ces trois mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 3 897 répétitions de poussée contre 1 808 de tirage, soit environ 2,2 répétitions de poussée pour 1 de tirage. Le ratio vient en second : c’est la répartition du volume qui décrit la fenêtre."
+          "kind": "disc_rest_assoc",
+          "title": "Tes données montrent une association entre repos et volume de séance",
+          "body": "Tes séances réalisées après au moins 48 h depuis la précédente produisent en moyenne 10,4 % moins de répétitions que celles enchaînées le lendemain (269 vs 301, 29 et 31 séances). Ce n'est pas une preuve que le repos provoque ce résultat : c'est une association dans ton historique."
+        },
+        {
+          "kind": "disc_p36_freq_vs_volume_weekday",
+          "title": "Fréquence et charge ne coïncident pas",
+          "body": "Tu t’entraînes plus régulièrement le lundi et le vendredi (76,9 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent généralement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~300 sur ton jour régulier le plus chargé)."
+        },
+        {
+          "kind": "disc_p35_gtg_outside_classic",
+          "title": "GTG hors séances classiques",
+          "body": "Sur les 50 journées sans séance classique (hors reps GTG synchronisées), 5 comportent du GTG (10 %). Ce n’est pas la même chose que des passages hors horaires prévus. Pour 5 jours, le programme historique n’est pas démontré : ce ne sont pas des « repos » affirmés."
         }
       ],
       "editorialDecisions": [
@@ -2978,6 +3241,44 @@
         },
         {
           "action": "select",
+          "identity": "disc_exercise_progress:104",
+          "kind": "disc_exercise_progress",
+          "informativeValue": 131,
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "phenomenon": "decline_then_recovery",
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            },
+            {
+              "id": "volume_attribution",
+              "delta": 7
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "action": "select",
           "identity": "disc_emergence:107",
           "kind": "disc_emergence",
           "informativeValue": 128,
@@ -3037,40 +3338,6 @@
             {
               "id": "sizable_delta",
               "delta": 3
-            }
-          ]
-        },
-        {
-          "action": "select",
-          "identity": "disc_exercise_progress:104",
-          "kind": "disc_exercise_progress",
-          "informativeValue": 124,
-          "phenomenonId": "ex:104|decline_then_recovery",
-          "phenomenon": "decline_then_recovery",
-          "editorialFactors": [
-            {
-              "id": "composed_ok",
-              "delta": 8
-            },
-            {
-              "id": "trusted_sets",
-              "delta": 5
-            },
-            {
-              "id": "coherent_narration",
-              "delta": 4
-            },
-            {
-              "id": "long_horizon_episode",
-              "delta": 4
-            },
-            {
-              "id": "peer_scope",
-              "delta": 5
-            },
-            {
-              "id": "continuity",
-              "delta": 4
             }
           ]
         },
@@ -3148,7 +3415,7 @@
           "action": "reject",
           "identity": "disc_emergence:1433469569",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
+          "reason": "unresolved_exercise_name",
           "blockedBy": null,
           "phenomenonId": "ex:1433469569|volume_rise",
           "informativeValue": 104,
@@ -3179,7 +3446,7 @@
           "action": "reject",
           "identity": "disc_emergence:703294235",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
+          "reason": "unresolved_exercise_name",
           "blockedBy": null,
           "phenomenonId": "ex:703294235|volume_stable",
           "informativeValue": 103,
@@ -3210,7 +3477,7 @@
           "action": "reject",
           "identity": "disc_emergence:466084426",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
+          "reason": "unresolved_exercise_name",
           "blockedBy": null,
           "phenomenonId": "ex:466084426|volume_stable",
           "informativeValue": 102,
@@ -3241,7 +3508,7 @@
           "action": "reject",
           "identity": "disc_emergence:1979012181",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
+          "reason": "unresolved_exercise_name",
           "blockedBy": null,
           "phenomenonId": "ex:1979012181|volume_stable",
           "informativeValue": 100,
@@ -3282,7 +3549,7 @@
           "action": "reject",
           "identity": "disc_emergence:448199957",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
+          "reason": "unresolved_exercise_name",
           "blockedBy": null,
           "phenomenonId": "ex:448199957|volume_stable",
           "informativeValue": 89,
@@ -3301,7 +3568,7 @@
           "action": "reject",
           "identity": "disc_emergence:77780789",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
+          "reason": "unresolved_exercise_name",
           "blockedBy": null,
           "phenomenonId": "ex:77780789|volume_stable",
           "informativeValue": 88,
@@ -3387,6 +3654,15 @@
         },
         {
           "action": "select",
+          "identity": "disc_th_pushPull_trajectory",
+          "kind": "disc_th_pushPull_trajectory",
+          "informativeValue": 64,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
+        },
+        {
+          "action": "select",
           "identity": "disc_th_pushPull_journey",
           "kind": "disc_th_pushPull_journey",
           "informativeValue": 64,
@@ -3396,17 +3672,12 @@
         },
         {
           "action": "select",
-          "identity": "disc_anchor",
-          "kind": "disc_anchor",
-          "informativeValue": 51,
-          "phenomenonId": "global|descriptive_weak",
-          "phenomenon": "descriptive_weak",
-          "editorialFactors": [
-            {
-              "id": "weak_descriptive",
-              "delta": -8
-            }
-          ]
+          "identity": "disc_stimulus_mix",
+          "kind": "disc_stimulus_mix",
+          "informativeValue": 59,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
+          "editorialFactors": []
         },
         {
           "action": "reject",
@@ -3481,13 +3752,12 @@
           ]
         },
         {
-          "action": "reject",
+          "action": "select",
           "identity": "disc_freq_continuity",
           "kind": "disc_freq_continuity",
-          "reason": "rival",
-          "blockedBy": "disc_anchor",
-          "phenomenonId": "global|other",
           "informativeValue": 36,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
           "editorialFactors": []
         },
         {
@@ -3520,31 +3790,12 @@
           "editorialFactors": []
         },
         {
-          "action": "reject_milestone",
+          "action": "select_milestone",
           "identity": "disc_ms_return:107",
           "kind": "disc_ms_return",
-          "reason": "episode_cap",
-          "blockedBy": null,
+          "informativeValue": 95,
           "phenomenonId": "ex:107|return_after_gap",
-          "informativeValue": 95
-        },
-        {
-          "action": "reject_milestone",
-          "identity": "disc_ms_return:701",
-          "kind": "disc_ms_return",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:701|return_after_gap",
-          "informativeValue": 95
-        },
-        {
-          "action": "reject_milestone",
-          "identity": "disc_ms_return:702",
-          "kind": "disc_ms_return",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:702|return_after_gap",
-          "informativeValue": 95
+          "phenomenon": "return_after_gap"
         },
         {
           "action": "select_milestone",
@@ -3555,13 +3806,12 @@
           "phenomenon": "other"
         },
         {
-          "action": "reject_milestone",
+          "action": "select_milestone",
           "identity": "disc_ms_return_durable",
           "kind": "disc_ms_return_durable",
-          "reason": "episode_cap",
-          "blockedBy": null,
+          "informativeValue": 80,
           "phenomenonId": "global|return_after_gap",
-          "informativeValue": 80
+          "phenomenon": "return_after_gap"
         },
         {
           "action": "select_milestone",
@@ -3580,18 +3830,19 @@
           "phenomenon": "other"
         },
         {
+          "action": "select_milestone",
+          "identity": "disc_ms_cumul",
+          "kind": "disc_ms_cumul",
+          "informativeValue": 77,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
           "action": "abstain",
           "identity": "disc_calendar_rhythm",
           "kind": "disc_calendar_rhythm",
           "reason": "abstain_low_value",
           "informativeValue": 44
-        },
-        {
-          "action": "abstain",
-          "identity": "disc_anchor",
-          "kind": "disc_anchor",
-          "reason": "abstain_low_value",
-          "informativeValue": 51
         },
         {
           "action": "abstain",
@@ -3625,35 +3876,38 @@
       ]
     },
     "6m": {
-      "ms": 1991,
+      "ms": 1404,
       "window": {
         "start": "2026-05-01",
         "end": "2026-10-30",
         "voiceHint": "long"
       },
-      "pool": 54,
-      "eligible": 54,
-      "selected": 14,
-      "rejected": 37,
+      "pool": 52,
+      "eligible": 52,
+      "selected": 21,
+      "rejected": 28,
       "counts": {
-        "pool": 54,
-        "eligible": 54,
-        "selected": 17,
-        "rejected": 37,
+        "pool": 52,
+        "eligible": 52,
+        "selected": 24,
+        "rejected": 28,
         "identityCollapsed": 0
       },
       "rejectedByReason": {
-        "episode_cap": 10,
-        "volume_contradiction": 3,
-        "rival": 4,
-        "cap": 12,
-        "abstain_low_value": 4,
+        "phenomenon_rival": 1,
+        "volume_contradiction": 1,
+        "cap": 15,
+        "episode_cap": 1,
+        "family": 1,
+        "rival": 2,
+        "abstain_low_value": 3,
         "score": 1,
         "methodology_demoted": 3
       },
       "selectedKinds": [
         "disc_gtg_unplanned_now",
         "disc_vs_habit",
+        "disc_ms_return",
         "disc_ms_pr",
         "disc_p35_gtg_coexistence",
         "disc_p36_weekday_regularity",
@@ -3661,16 +3915,22 @@
         "disc_emergence",
         "disc_emergence",
         "disc_emergence",
+        "disc_emergence",
         "disc_freq_progress_low",
+        "disc_emergence",
+        "disc_emergence",
+        "disc_ms_return_durable",
         "disc_monthly_volume_arc",
+        "disc_exercise_progress",
+        "disc_freq_continuity",
         "disc_ms_sessions",
-        "disc_ms_week_freq",
-        "disc_p36_freq_vs_volume_weekday"
+        "disc_ms_cumul",
+        "disc_ms_week_freq"
       ],
       "beforeF4SelectedKinds": null,
-      "composedCount": 5,
+      "composedCount": 7,
       "descriptiveCount": 0,
-      "episodeCount": 4,
+      "episodeCount": 9,
       "duplicatePhenomena": 0,
       "packVolumeContradictions": 0,
       "unresolvedNameCount": 0,
@@ -3709,6 +3969,30 @@
           "unresolvedName": false,
           "editorialFactors": [],
           "exerciseId": "306",
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_return",
+          "nature": "now",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement.",
+          "score": 91,
+          "informativeValue": 95,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "ex:107|return_after_gap",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "107",
           "continuity": null,
           "attribution": null,
           "volumeDirection": null
@@ -3927,6 +4211,42 @@
           "volumeDirection": "flat"
         },
         {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Relevés de genoux à la barre : volume par séance stable",
+          "body": "Relevés de genoux à la barre apparaît sur 11 séances réparties sur 112 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
+          "score": 93,
+          "informativeValue": 128,
+          "phenomenon": "volume_stable",
+          "phenomenonId": "ex:106|volume_stable",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "106",
+          "continuity": "stable_plateau",
+          "attribution": null,
+          "volumeDirection": "flat"
+        },
+        {
           "kind": "disc_freq_progress_low",
           "nature": "trajectory",
           "title": "Face pull : progression malgré une exposition faible",
@@ -3971,6 +4291,73 @@
           "volumeDirection": "up"
         },
         {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Tractions australiennes — prise pronation s'installe dans ton entraînement",
+          "body": "Tractions australiennes — prise pronation apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 11 à environ 4 × 12 (9,1 %), et ce format se maintient sur les séances suivantes. Au total, 612 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 612 répétitions font 43,4 % des 1 411 répétitions de dos de la période.",
+          "score": 91,
+          "informativeValue": 117,
+          "phenomenon": "volume_rise",
+          "phenomenonId": "ex:502|volume_rise",
+          "composedOk": false,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            }
+          ],
+          "exerciseId": "502",
+          "continuity": "unclear",
+          "attribution": null,
+          "volumeDirection": "up"
+        },
+        {
+          "kind": "disc_emergence",
+          "nature": "trajectory",
+          "title": "Pompes (endurance) dans la période",
+          "body": "Aucune séance dans la fenêtre. Détail des séries absent (pas de exerciseSetLogs structurés). Ces 1 900 répétitions font 77,3 % des 2 457 répétitions de pectoraux de la période.",
+          "score": 94,
+          "informativeValue": 107,
+          "phenomenon": "emergence_generic",
+          "phenomenonId": "ex:complementary_endurance_pushups|emergence_generic",
+          "composedOk": false,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": "complementary_endurance_pushups",
+          "continuity": "unclear",
+          "attribution": null,
+          "volumeDirection": "unknown"
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "nature": "trajectory",
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.",
+          "score": 76,
+          "informativeValue": 80,
+          "phenomenon": "return_after_gap",
+          "phenomenonId": "global|return_after_gap",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            }
+          ],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
           "kind": "disc_monthly_volume_arc",
           "nature": "journey",
           "title": "octobre 2026 interrompt la baisse depuis juillet 2026",
@@ -3990,12 +4377,94 @@
           "volumeDirection": null
         },
         {
+          "kind": "disc_exercise_progress",
+          "nature": "journey",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise.",
+          "score": 63,
+          "informativeValue": 124,
+          "phenomenon": "decline_then_recovery",
+          "phenomenonId": "ex:104|decline_then_recovery",
+          "composedOk": true,
+          "trajectoryOk": true,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [
+            {
+              "id": "composed_ok",
+              "delta": 8
+            },
+            {
+              "id": "trusted_sets",
+              "delta": 5
+            },
+            {
+              "id": "coherent_narration",
+              "delta": 4
+            },
+            {
+              "id": "long_horizon_episode",
+              "delta": 4
+            },
+            {
+              "id": "peer_scope",
+              "delta": 5
+            },
+            {
+              "id": "continuity",
+              "delta": 4
+            }
+          ],
+          "exerciseId": "104",
+          "continuity": "decline_then_recovery",
+          "attribution": null,
+          "volumeDirection": "down"
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "nature": "journey",
+          "title": "Ces derniers mois s'inscrit dans une pratique déjà documentée",
+          "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 71 jours sur les 183 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 39 % sur ces derniers mois. Ces derniers mois n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement.",
+          "score": 36,
+          "informativeValue": 36,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
           "kind": "disc_ms_sessions",
           "nature": "journey",
           "title": "50e séance enregistrée",
           "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance.",
           "score": 79,
           "informativeValue": 79,
+          "phenomenon": "other",
+          "phenomenonId": "global|other",
+          "composedOk": false,
+          "trajectoryOk": false,
+          "weakDescriptive": false,
+          "unresolvedName": false,
+          "editorialFactors": [],
+          "exerciseId": null,
+          "continuity": null,
+          "attribution": null,
+          "volumeDirection": null
+        },
+        {
+          "kind": "disc_ms_cumul",
+          "nature": "journey",
+          "title": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées",
+          "body": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées depuis ta première saisie, le 2 juillet 2026, soit 60 jours de parcours. Elles ont été réalisées en 36 séances, soit une moyenne de 278 reps par séance. Ça représente environ 4,2 séances par semaine sur cette durée.",
+          "score": 77,
+          "informativeValue": 77,
           "phenomenon": "other",
           "phenomenonId": "global|other",
           "composedOk": false,
@@ -4026,25 +4495,6 @@
           "continuity": null,
           "attribution": null,
           "volumeDirection": null
-        },
-        {
-          "kind": "disc_p36_freq_vs_volume_weekday",
-          "nature": "trajectory",
-          "title": "Fréquence et charge ne coïncident pas",
-          "body": "Tu t’entraînes plus régulièrement le lundi, le vendredi et le mardi (50 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent régulièrement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~315 sur ton jour régulier le plus chargé).",
-          "score": 51,
-          "informativeValue": 51,
-          "phenomenon": "habit_p36",
-          "phenomenonId": "global|habit_p36",
-          "composedOk": false,
-          "trajectoryOk": false,
-          "weakDescriptive": false,
-          "unresolvedName": false,
-          "editorialFactors": [],
-          "exerciseId": null,
-          "continuity": null,
-          "attribution": null,
-          "volumeDirection": null
         }
       ],
       "texts": [
@@ -4057,6 +4507,11 @@
           "kind": "disc_vs_habit",
           "title": "Face pull : ces derniers mois sont au-dessus de ton niveau habituel",
           "body": "Tes séances de face pull se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–52,5). Les 60 répétitions du 14 octobre 2026 placent cette séance environ 33,3 % au-dessus de ton niveau habituel. D'habitude, environ 3 séries d'environ 15 répétitions. Cette séance : 4 séries de 15 répétitions. Le nombre de séries augmente. Les répétitions dans chaque série restent du même ordre. Sur ces derniers mois, tu as accumulé 375 répétitions de ce mouvement (8 séances). Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude."
+        },
+        {
+          "kind": "disc_ms_return",
+          "title": "Relevés de genoux aux parallèles revient après un long silence",
+          "body": "Il y a 2 semaines, tu as enregistré ta première séance depuis 42 jours sur relevés de genoux aux parallèles. L'écart dépasse 6 fois ton intervalle habituel. Avec 40 répétitions, tu reviens à 100 % de ton volume moyen avant l'interruption. Format observé autour du retour : environ 2 × 20 avant l'interruption, puis environ 2 × 20 à la reprise. Le même jour, 60 répétitions de relevés de genoux à la barre portent sur le même muscle principal. Ce format de reprise sert de référence pour juger la séance suivante sur le même mouvement."
         },
         {
           "kind": "disc_ms_pr",
@@ -4094,9 +4549,29 @@
           "body": "Dips apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (4 × 12). Le volume par séance reste récemment stable. Les autres mouvements comparables ne permettent pas d’isoler clairement si le signal est local ou partagé."
         },
         {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre : volume par séance stable",
+          "body": "Relevés de genoux à la barre apparaît sur 11 séances réparties sur 112 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable."
+        },
+        {
           "kind": "disc_freq_progress_low",
           "title": "Face pull : progression malgré une exposition faible",
           "body": "Face pull n’apparaît que sur 8 jours d’exposition (8 classiques) — rythme ≈ 0.31/semaine — avec un volume de 375 répétitions. Les niveaux comparés par la trajectoire P0 passent d’environ 40 à 55 répétitions (comparaison bornée à la fenêtre). La trajectoire indique une hausse nette des performances. Une progression avec peu d’expositions peut coïncider avec des séances plus denses ou un contexte hors séance ; ce n’est pas une preuve de cause. La fréquence prévue n’est pas utilisée ici : le plan historique n’est pas assez fiable sur la fenêtre."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Tractions australiennes — prise pronation s'installe dans ton entraînement",
+          "body": "Tractions australiennes — prise pronation apparaît sur 13 séances réparties sur 120 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 4 × 11 à environ 4 × 12 (9,1 %), et ce format se maintient sur les séances suivantes. Au total, 612 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 612 répétitions font 43,4 % des 1 411 répétitions de dos de la période."
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Pompes (endurance) dans la période",
+          "body": "Aucune séance dans la fenêtre. Détail des séries absent (pas de exerciseSetLogs structurés). Ces 1 900 répétitions font 77,3 % des 2 457 répétitions de pectoraux de la période."
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "title": "La reprise de pompes déclinées est devenue durable",
+          "body": "La reprise de pompes déclinées est devenue durable : 5 séances en 63 jours, alors que l'interruption avait duré 28 jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe."
         },
         {
           "kind": "disc_monthly_volume_arc",
@@ -4104,19 +4579,29 @@
           "body": "juillet 2026 : 5 827 reps en 20 jours entraînés (≈291 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour actif), soit -36 % de volume, -40 % de jours, +6 % de volume par jour actif. La baisse vient surtout d’une diminution des jours entraînés, plus que d’un effondrement du volume par journée active. octobre 2026 remonte à 4 301 reps en 12 jours (≈358 / jour actif, +16 % vs septembre 2026), sans retrouver le sommet de juillet 2026 (5 827 reps)."
         },
         {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul puis retour près du niveau de départ",
+          "body": "Pompes déclinées est passé par un creux (≈10 (1 octobre 2026)) puis la dernière séance est revenue à ≈36 répétitions, proche du départ de l’arc (≈27,3). La moyenne des dernières séances de l’arc (≈25,3) mélange encore creux et reprise : ce n’est pas le niveau final. Sur les séances où les séries sont détaillées, le format reste identique (3 × 12) : l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séances documentées. Plusieurs mouvements comparables évoluent dans le même sens : le signal dépasse cet exercice seul, sans prouver une cause unique. Maintenir ce niveau sur les prochaines séances dira s’il se stabilise."
+        },
+        {
+          "kind": "disc_freq_continuity",
+          "title": "Ces derniers mois s'inscrit dans une pratique déjà documentée",
+          "body": "La période se lit avec 12 jours entraînés sur les 30 derniers jours et 71 jours sur les 183 derniers jours, soit une fréquence d'environ 40 % des jours sur 30 jours contre environ 39 % sur ces derniers mois. Ces derniers mois n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement."
+        },
+        {
           "kind": "disc_ms_sessions",
           "title": "50e séance enregistrée",
           "body": "50e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé 13 838 répétitions pour y parvenir, soit environ 277 reps par séance."
         },
         {
+          "kind": "disc_ms_cumul",
+          "title": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées",
+          "body": "Le 31 août 2026, tu as dépassé 10 000 répétitions cumulées depuis ta première saisie, le 2 juillet 2026, soit 60 jours de parcours. Elles ont été réalisées en 36 séances, soit une moyenne de 278 reps par séance. Ça représente environ 4,2 séances par semaine sur cette durée."
+        },
+        {
           "kind": "disc_ms_week_freq",
           "title": "Première semaine à 5 entraînements",
           "body": "Première semaine à 5 entraînements : cette fréquence dépasse ton précédent maximum hebdomadaire de 2 séances."
-        },
-        {
-          "kind": "disc_p36_freq_vs_volume_weekday",
-          "title": "Fréquence et charge ne coïncident pas",
-          "body": "Tu t’entraînes plus régulièrement le lundi, le vendredi et le mardi (50 % des occurrences éligibles enregistrées), mais tes séances du mercredi comportent régulièrement davantage de répétitions (médiane ~496 reps par mercredi actif, contre ~315 sur ton jour régulier le plus chargé)."
         }
       ],
       "editorialDecisions": [
@@ -4318,14 +4803,6 @@
           ]
         },
         {
-          "action": "displace",
-          "kept": "disc_emergence:104",
-          "dropped": "disc_exercise_progress:104",
-          "reason": "contradiction_outranked",
-          "keptValue": 137,
-          "droppedValue": 124
-        },
-        {
           "action": "select",
           "identity": "disc_emergence:104",
           "kind": "disc_emergence",
@@ -4382,13 +4859,12 @@
           ]
         },
         {
-          "action": "reject",
+          "action": "select",
           "identity": "disc_emergence:106",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:106|volume_stable",
           "informativeValue": 128,
+          "phenomenonId": "ex:106|volume_stable",
+          "phenomenon": "volume_stable",
           "editorialFactors": [
             {
               "id": "composed_ok",
@@ -4412,8 +4888,8 @@
           "action": "reject",
           "identity": "disc_exercise_progress:104",
           "kind": "disc_exercise_progress",
-          "reason": "volume_contradiction",
-          "blockedBy": "disc_emergence",
+          "reason": "identity",
+          "blockedBy": null,
           "phenomenonId": "ex:104|decline_then_recovery",
           "informativeValue": 124,
           "editorialFactors": [
@@ -4488,13 +4964,12 @@
           ]
         },
         {
-          "action": "reject",
+          "action": "select",
           "identity": "disc_emergence:502",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:502|volume_rise",
           "informativeValue": 117,
+          "phenomenonId": "ex:502|volume_rise",
+          "phenomenon": "volume_rise",
           "editorialFactors": [
             {
               "id": "trusted_sets",
@@ -4506,8 +4981,8 @@
           "action": "reject",
           "identity": "disc_freq_progress_low:104",
           "kind": "disc_freq_progress_low",
-          "reason": "volume_contradiction",
-          "blockedBy": "disc_emergence",
+          "reason": "phenomenon_rival",
+          "blockedBy": "disc_exercise_progress",
           "phenomenonId": "ex:104|decline_then_recovery",
           "informativeValue": 117,
           "editorialFactors": [
@@ -4569,72 +5044,13 @@
           ]
         },
         {
-          "action": "reject",
+          "action": "select",
           "identity": "disc_emergence:complementary_endurance_pushups",
           "kind": "disc_emergence",
-          "reason": "episode_cap",
-          "blockedBy": null,
+          "informativeValue": 107,
           "phenomenonId": "ex:complementary_endurance_pushups|emergence_generic",
-          "informativeValue": 107,
+          "phenomenon": "emergence_generic",
           "editorialFactors": []
-        },
-        {
-          "action": "reject",
-          "identity": "disc_structural_memory:505",
-          "kind": "disc_structural_memory",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:505|volume_stable",
-          "informativeValue": 107,
-          "editorialFactors": [
-            {
-              "id": "composed_ok",
-              "delta": 8
-            },
-            {
-              "id": "trusted_sets",
-              "delta": 5
-            },
-            {
-              "id": "coherent_narration",
-              "delta": 4
-            },
-            {
-              "id": "continuity",
-              "delta": 4
-            }
-          ]
-        },
-        {
-          "action": "reject",
-          "identity": "disc_emergence:1970493985",
-          "kind": "disc_emergence",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:1970493985|volume_stable",
-          "informativeValue": 100,
-          "editorialFactors": [
-            {
-              "id": "composed_ok",
-              "delta": 8
-            },
-            {
-              "id": "trusted_sets",
-              "delta": 5
-            },
-            {
-              "id": "coherent_narration",
-              "delta": 4
-            },
-            {
-              "id": "unresolved_name",
-              "delta": -22
-            },
-            {
-              "id": "continuity",
-              "delta": 4
-            }
-          ]
         },
         {
           "action": "reject",
@@ -4644,16 +5060,6 @@
           "blockedBy": null,
           "phenomenonId": "global|gtg_channel",
           "informativeValue": 90,
-          "editorialFactors": []
-        },
-        {
-          "action": "reject",
-          "identity": "disc_gtg_unplanned_role",
-          "kind": "disc_gtg_unplanned_role",
-          "reason": "rival",
-          "blockedBy": "disc_gtg_unplanned_now",
-          "phenomenonId": "global|gtg_channel",
-          "informativeValue": 86,
           "editorialFactors": []
         },
         {
@@ -4676,35 +5082,12 @@
         },
         {
           "action": "select",
-          "identity": "disc_th_pushPull_trajectory",
-          "kind": "disc_th_pushPull_trajectory",
-          "informativeValue": 64,
-          "phenomenonId": "global|other",
-          "phenomenon": "other",
-          "editorialFactors": []
-        },
-        {
-          "action": "select",
           "identity": "disc_th_pushPull_journey",
           "kind": "disc_th_pushPull_journey",
           "informativeValue": 64,
           "phenomenonId": "global|other",
           "phenomenon": "other",
           "editorialFactors": []
-        },
-        {
-          "action": "select",
-          "identity": "disc_anchor",
-          "kind": "disc_anchor",
-          "informativeValue": 51,
-          "phenomenonId": "global|descriptive_weak",
-          "phenomenon": "descriptive_weak",
-          "editorialFactors": [
-            {
-              "id": "weak_descriptive",
-              "delta": -8
-            }
-          ]
         },
         {
           "action": "reject",
@@ -4779,13 +5162,12 @@
           ]
         },
         {
-          "action": "reject",
+          "action": "select",
           "identity": "disc_freq_continuity",
           "kind": "disc_freq_continuity",
-          "reason": "rival",
-          "blockedBy": "disc_anchor",
-          "phenomenonId": "global|other",
           "informativeValue": 36,
+          "phenomenonId": "global|other",
+          "phenomenon": "other",
           "editorialFactors": []
         },
         {
@@ -4808,31 +5190,12 @@
           "editorialFactors": []
         },
         {
-          "action": "reject_milestone",
+          "action": "select_milestone",
           "identity": "disc_ms_return:107",
           "kind": "disc_ms_return",
-          "reason": "episode_cap",
-          "blockedBy": null,
+          "informativeValue": 95,
           "phenomenonId": "ex:107|return_after_gap",
-          "informativeValue": 95
-        },
-        {
-          "action": "reject_milestone",
-          "identity": "disc_ms_return:701",
-          "kind": "disc_ms_return",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:701|return_after_gap",
-          "informativeValue": 95
-        },
-        {
-          "action": "reject_milestone",
-          "identity": "disc_ms_return:702",
-          "kind": "disc_ms_return",
-          "reason": "episode_cap",
-          "blockedBy": null,
-          "phenomenonId": "ex:702|return_after_gap",
-          "informativeValue": 95
+          "phenomenon": "return_after_gap"
         },
         {
           "action": "reject_milestone",
@@ -4852,13 +5215,12 @@
           "phenomenon": "other"
         },
         {
-          "action": "reject_milestone",
+          "action": "select_milestone",
           "identity": "disc_ms_return_durable",
           "kind": "disc_ms_return_durable",
-          "reason": "episode_cap",
-          "blockedBy": null,
+          "informativeValue": 80,
           "phenomenonId": "global|return_after_gap",
-          "informativeValue": 80
+          "phenomenon": "return_after_gap"
         },
         {
           "action": "select_milestone",
@@ -4877,18 +5239,19 @@
           "phenomenon": "other"
         },
         {
+          "action": "select_milestone",
+          "identity": "disc_ms_cumul",
+          "kind": "disc_ms_cumul",
+          "informativeValue": 77,
+          "phenomenonId": "global|other",
+          "phenomenon": "other"
+        },
+        {
           "action": "abstain",
           "identity": "disc_calendar_rhythm",
           "kind": "disc_calendar_rhythm",
           "reason": "abstain_low_value",
           "informativeValue": 44
-        },
-        {
-          "action": "abstain",
-          "identity": "disc_anchor",
-          "kind": "disc_anchor",
-          "reason": "abstain_low_value",
-          "informativeValue": 51
         },
         {
           "action": "abstain",
@@ -4913,14 +5276,6 @@
           "keptValue": 118,
           "droppedValue": 49,
           "phenomenonId": "global|other"
-        },
-        {
-          "kept": "disc_emergence:104",
-          "dropped": "disc_exercise_progress:104",
-          "reason": "contradiction_outranked",
-          "keptValue": 137,
-          "droppedValue": 124,
-          "phenomenonId": "ex:104|volume_decline"
         }
       ],
       "reliabilityNotes": [
@@ -4937,20 +5292,21 @@
         "end": "2026-10-30"
       },
       "pool": 21,
-      "selected": 6,
+      "selected": 7,
       "selectedKinds": [
         "disc_ms_first_session",
         "disc_p36_weekday_regularity",
         "disc_p36_exercise_dominant_volume",
         "disc_emergence",
+        "disc_p36_weekday_volume",
         "disc_ms_first_exercise",
         "disc_ms_cumul"
       ],
       "counts": {
         "pool": 21,
         "eligible": 21,
-        "selected": 11,
-        "rejected": 10,
+        "selected": 12,
+        "rejected": 9,
         "identityCollapsed": 0
       },
       "note": "Fenêtre longue, densite réelle faible — le moteur doit s’abstenir plutôt que filler."
@@ -4961,20 +5317,21 @@
         "end": "2026-10-30"
       },
       "pool": 18,
-      "selected": 6,
+      "selected": 7,
       "selectedKinds": [
         "disc_ms_first_session",
         "disc_p36_weekday_regularity",
         "disc_p36_exercise_dominant_volume",
         "disc_emergence",
+        "disc_p36_weekday_volume",
         "disc_ms_first_exercise",
         "disc_ms_cumul"
       ],
       "counts": {
         "pool": 18,
         "eligible": 18,
-        "selected": 8,
-        "rejected": 10,
+        "selected": 9,
+        "rejected": 9,
         "identityCollapsed": 0
       },
       "note": "Fenêtre longue, densite réelle faible — le moteur doit s’abstenir plutôt que filler."
@@ -4985,20 +5342,21 @@
         "end": "2026-10-30"
       },
       "pool": 18,
-      "selected": 6,
+      "selected": 7,
       "selectedKinds": [
         "disc_ms_first_session",
         "disc_p36_weekday_regularity",
         "disc_p36_exercise_dominant_volume",
         "disc_emergence",
+        "disc_p36_weekday_volume",
         "disc_ms_first_exercise",
         "disc_ms_cumul"
       ],
       "counts": {
         "pool": 18,
         "eligible": 18,
-        "selected": 8,
-        "rejected": 10,
+        "selected": 9,
+        "rejected": 9,
         "identityCollapsed": 0
       },
       "note": "Fenêtre longue, densite réelle faible — le moteur doit s’abstenir plutôt que filler."

@@ -170,6 +170,17 @@ export function sameHistoricalEpisode(a, b) {
   const sa = a?.metrics?.trajectoryPrimaryStory;
   const sb = b?.metrics?.trajectoryPrimaryStory;
   if (sa && sb && sa === sb && (sa === 'partial_recovery' || sa === 'recovered')) return true;
+  // Reprises / interruptions : deux gaps (42 j vs 77 j) sur le même mouvement = un seul épisode
+  // si les titres ou gapDays racontent un retour, même sans continuity taguée.
+  const titleReturn = (d) =>
+    /revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(
+      `${d?.title || ''} ${d?.body || ''}`
+    );
+  const kindReturn = (d) =>
+    /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d?.kind || ''));
+  if ((titleReturn(a) || kindReturn(a)) && (titleReturn(b) || kindReturn(b))) {
+    return true;
+  }
   return false;
 }
 
@@ -200,10 +211,22 @@ export function measuresComparableForContradiction(a, b) {
  * Tente de réparer un libellé « un mouvement » via id historique / banque —
  * sans inventer d’alias entre storage ids.
  */
+function looksLikeDraftTitleNotExerciseName(label) {
+  const s = String(label || '').trim();
+  if (!s) return true;
+  if (/^Tu reprends\b/i.test(s)) return true;
+  if (/^Première apparition\b/i.test(s)) return true;
+  if (/^après \d+\s*jours/i.test(s)) return true;
+  if (/\brevient après\b/i.test(s) && /\bjours\b/i.test(s)) return true;
+  if (/volume par séance|meilleure série|jalon sous/i.test(s)) return true;
+  return false;
+}
+
 export function repairDisplayNameFromIdentity(d, getExerciseNameById = null) {
   const m = d?.metrics || {};
   const id = m.exerciseId ?? m.storageId;
-  const current = String(m.name || m.exerciseName || m.f4Narration?.resolvedName || '').trim();
+  const rawCurrent = String(m.exerciseName || m.name || m.f4Narration?.resolvedName || '').trim();
+  const current = looksLikeDraftTitleNotExerciseName(rawCurrent) ? '' : rawCurrent;
   if (current && !/^un mouvement$/i.test(current)) {
     return {
       name: current,

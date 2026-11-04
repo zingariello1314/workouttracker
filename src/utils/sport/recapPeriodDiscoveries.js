@@ -116,6 +116,7 @@ import {
   buildMonthlyVolumeArcDiscoveries,
   buildRunningGapDiscoveries
 } from './monthlyVolumeArcDiscoveries';
+import { buildTrainingRhythmDiscoveries } from './trainingRhythmDiscoveries';
 import {
   collectRunDays,
   formatSleepHoursFr,
@@ -187,6 +188,13 @@ export function observationCaps(voiceKey, _discoveries = []) {
     trajectory: fam.trajectory.sport + fam.trajectory.sleep,
     journey: fam.journey.sport + fam.journey.sleep
   };
+}
+
+/** Accord verbal pour « ces N jours » / « cette semaine » / « ce mois ». */
+function periodVerb(thisPeriod, singular, plural) {
+  const p = String(thisPeriod || '').toLowerCase();
+  if (/\bjours?\b/.test(p) || /\bces\b/.test(p)) return plural;
+  return singular;
 }
 
 function muscleLabel(group) {
@@ -272,6 +280,14 @@ function isLongVoice(v) {
 
 function agreeEst(v) {
   return /^(ces|les)\b/i.test(String(v?.thisPeriod || '')) ? 'sont' : 'est';
+}
+
+function agreeVerb(v, singular, plural) {
+  return /^(ces|les)\b/i.test(String(v?.thisPeriod || '')) ? plural : singular;
+}
+
+function agreePorteLabel(cappedLabel) {
+  return /^(Les|Des)\b/i.test(String(cappedLabel || '')) ? 'portent' : 'porte';
 }
 
 function weekdayFr(ymd) {
@@ -719,6 +735,13 @@ export function measureRecapWindow({
   if (peakDay) {
     peakDay.sharePct = share(peakDay.reps, totalReps);
     peakDay.exercises = (exercisesByDate.get(peakDay.date) || [])
+      .map((e) => ({
+        ...e,
+        name: userFacingExerciseLabel(
+          e.name || resolveExerciseNameForRecap(e.id, getExerciseNameById),
+          e.id
+        )
+      }))
       .slice()
       .sort((a, b) => b.reps - a.reps);
   }
@@ -1207,18 +1230,18 @@ function detectDiscoveries(cmp, extras = {}) {
             ? 'Une séance légèrement moins dense que ton rythme récent, mais avec un volume par séance toujours élevé'
             : 'Une densité de séance proche de ton rythme récent'
         : denser
-          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} est plus dense que ton rythme habituel`
+          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'est', 'sont')} plus dense${/jours/i.test(v.thisPeriod) ? 's' : ''} que ton rythme habituel`
           : lighter
-            ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} concentre le travail sur moins de temps`
+            ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'concentre', 'concentrent')} le travail sur moins de temps`
             : `La densité ${v.ofPeriod} reste proche de ton rythme habituel`;
       const hourBit = `${fmtInt(p.totalReps)} répétitions en ${formatDurationFr(p.minutes)}, soit environ ${fmtInt(p.repsPerHour)} reps par heure`;
       const monthBit =
         vs30 != null
           ? isMonth
-            ? `Le mois précédent était à environ ${fmtInt(prev30.repsPerHour)} reps par heure : ${v.thisPeriod} est donc ${fmtPct(Math.abs(vs30))} ${vs30 >= 0 ? 'plus dense' : 'moins dense'} que les 30 jours d'avant`
+            ? `Le mois précédent était à environ ${fmtInt(prev30.repsPerHour)} reps par heure : ${v.thisPeriod} ${periodVerb(v.thisPeriod, 'est', 'sont')} donc ${fmtPct(Math.abs(vs30))} ${vs30 >= 0 ? 'plus dense' : 'moins dense'}${/jours/i.test(v.thisPeriod) ? 's' : ''} que les 30 jours d'avant`
             : isLongVoice(v)
-              ? `Le premier mois de la fenêtre était à environ ${fmtInt(first30.repsPerHour)} reps/h : ${v.thisPeriod} est ${fmtPct(Math.abs(vs30))} ${vs30 >= 0 ? 'plus dense' : 'moins dense'} que ce début de période`
-              : `Sur tes 30 derniers jours, tu réalises en moyenne environ ${fmtInt(d30.repsPerHour)} reps par heure : ${v.thisPeriod} est donc ${fmtPct(Math.abs(vs30))} ${vs30 >= 0 ? 'plus dense' : 'moins dense'} que ton rythme mensuel`
+              ? `Le premier mois de la fenêtre était à environ ${fmtInt(first30.repsPerHour)} reps/h : ${v.thisPeriod} ${periodVerb(v.thisPeriod, 'est', 'sont')} ${fmtPct(Math.abs(vs30))} ${vs30 >= 0 ? 'plus dense' : 'moins dense'}${/jours/i.test(v.thisPeriod) ? 's' : ''} que ce début de période`
+              : `Sur tes 30 derniers jours, tu réalises en moyenne environ ${fmtInt(d30.repsPerHour)} reps par heure : ${v.thisPeriod} ${periodVerb(v.thisPeriod, 'est', 'sont')} donc ${fmtPct(Math.abs(vs30))} ${vs30 >= 0 ? 'plus dense' : 'moins dense'}${/jours/i.test(v.thisPeriod) ? 's' : ''} que ton rythme mensuel`
           : '';
       const weekBit =
         vs7 != null
@@ -1228,7 +1251,7 @@ function detectDiscoveries(cmp, extras = {}) {
       const vsMain = vs30 ?? vs7;
       const densReading = composeAnalyticalReading({
         titleThesis: title,
-        constat: `${isToday ? 'Tu as réalisé' : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} concentre`} ${hourBit}`,
+        constat: `${isToday ? 'Tu as réalisé' : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'concentre', 'concentrent')}`} ${hourBit}`,
         mechanism: monthBit || null,
         scope: `${weekBit ? weekBit.replace(/^,\s*/, '') : ''}${sessBit || ''}`.trim() || null,
         implication: densityImplication({
@@ -1345,7 +1368,7 @@ function detectDiscoveries(cmp, extras = {}) {
     const freqPct = baseStrengthDays >= 1 ? pctChange(strengthDays, baseStrengthDays) : null;
     const vsPrev =
       base?.totalReps >= 200
-        ? `, contre ${fmtInt(base.totalReps)} reps en ${baseStrengthDays} jours de renforcement sur ${volumeBaselineLabel} (${fmtSignedPct(volPct)}${
+        ? `, contre ${fmtInt(base.totalReps)} reps sur ${baseStrengthDays} jours avec répétitions de renforcement sur ${volumeBaselineLabel} (${fmtSignedPct(volPct)}${
             freqPct != null ? `, fréquence ${fmtSignedPct(freqPct)}` : ''
           }${
             base.repsPerSession != null && p.repsPerSession != null
@@ -1360,20 +1383,20 @@ function detectDiscoveries(cmp, extras = {}) {
             : freqPct != null && volPct < -4 && Math.abs(freqPct) < 6
             ? 'La fréquence tient, mais chaque séance produit moins de répétitions'
             : freqPct != null && volPct < -8 && freqPct < -8
-              ? `Une partie du recul vient du nombre de jours de renforcement (${baseStrengthDays} → ${strengthDays}), pas seulement de séances plus petites`
+              ? `Une partie du recul vient du nombre de jours avec répétitions de renforcement (${baseStrengthDays} → ${strengthDays}), pas seulement de séances plus petites`
               : 'La comparaison utile est donc période contre période de même durée'
-        : 'Sans période précédente assez fournie, on lit le mois par son rythme interne';
+        : 'Sans période précédente assez fournie, on lit ces 30 jours par leur rythme interne';
     const monthVolTitle =
       volPct == null
-        ? 'Le mois a un volume, un rythme et une composition'
+        ? 'Ces 30 jours ont un volume, un rythme et une composition'
         : Math.abs(volPct) < 8
-          ? 'Le volume du mois reste proche de la période précédente'
+          ? 'Le volume de ces 30 jours reste proche de la période précédente'
           : volPct > 0
-            ? 'Le volume du mois dépasse la période précédente'
-            : 'Le volume du mois recule par rapport à la période précédente';
+            ? 'Le volume de ces 30 jours dépasse la période précédente'
+            : 'Le volume de ces 30 jours recule par rapport à la période précédente';
     const monthVolReading = composeAnalyticalReading({
       titleThesis: monthVolTitle,
-      constat: `Ces 30 jours totalisent ${fmtInt(p.totalReps)} répétitions en ${strengthDays} jours de renforcement${sessionRhythmClause(p)}${vsPrev}`,
+      constat: `Ces 30 jours totalisent ${fmtInt(p.totalReps)} répétitions sur ${strengthDays} jours avec répétitions de renforcement${sessionRhythmClause(p)}${vsPrev}`,
       mechanism: vsRead,
       scope:
         Number.isFinite(features.volumeDelta28Pct) && Number.isFinite(features.volumeDelta7Pct)
@@ -1503,7 +1526,7 @@ function detectDiscoveries(cmp, extras = {}) {
       const titleThesis = isToday
         ? `${capLabel(top[0].label)} mène le volume d’aujourd’hui`
         : topShare != null
-          ? `${capLabel(top[0].label)} porte ${fmtPct(topShare)} du volume de ${v.thisPeriod}`
+          ? `${capLabel(top[0].label)} ${agreePorteLabel(capLabel(top[0].label))} ${fmtPct(topShare)} du volume de ${v.thisPeriod}`
           : `${capLabel(top[0].label)} mène le volume de ${v.thisPeriod}`;
       const muscleReading = composeAnalyticalReading({
         titleThesis,
@@ -1555,9 +1578,14 @@ function detectDiscoveries(cmp, extras = {}) {
         ? sessionValues[mid]
         : (sessionValues[mid - 1] + sessionValues[mid]) / 2
       : null;
-    const leadPeak = peakEx[0];
+    const namedPeak = peakEx.filter(
+      (e) => e?.name && String(e.name).trim() && !/^un mouvement$/i.test(String(e.name))
+    );
+    const leadPeak = namedPeak[0] || peakEx[0];
     const peakMates = leadPeak
-      ? sameDayCompanions(leadPeak, { [p.peakDay.date]: p.peakDay.exercises || [] })
+      ? sameDayCompanions(leadPeak, { [p.peakDay.date]: p.peakDay.exercises || [] }).filter(
+          (m) => m?.name && !/^un mouvement$/i.test(String(m.name))
+        )
       : [];
     const aboveMedian = sessionMedian != null && p.peakDay.reps > sessionMedian * 1.12;
     const peakReading = composeAnalyticalReading({
@@ -1565,16 +1593,18 @@ function detectDiscoveries(cmp, extras = {}) {
       constat: `La séance du ${formatDayFr(p.peakDay.date, true)} concentre ${fmtInt(p.peakDay.reps)} reps, soit ${fmtPct(p.peakDay.sharePct)} de la fenêtre${
         otherReps > 0 ? ` ; les autres jours cumulent ${fmtInt(otherReps)} reps` : ''
       }`,
-      mechanism: peakEx.length
-        ? `Elle mêle ${peakEx.map((e) => `${fmtInt(e.reps)} ${e.name.toLowerCase()}`).join(', ')}${
-            peakMates.length
-              ? ` — ${fmtInt(leadPeak.reps + peakMates[0].reps)} de ces reps (${leadPeak.name.toLowerCase()} et ${String(peakMates[0].name).toLowerCase()}) portent sur le même groupe`
+      mechanism: namedPeak.length
+        ? `Les volumes du jour se répartissent surtout ainsi : ${namedPeak
+            .map((e) => `${fmtInt(e.reps)} reps de ${String(e.name).toLowerCase()}`)
+            .join(', ')}${
+            peakMates.length && leadPeak?.name
+              ? ` — ${fmtInt(leadPeak.reps + peakMates[0].reps)} de ces reps (${String(leadPeak.name).toLowerCase()} et ${String(peakMates[0].name).toLowerCase()}) portent sur le même groupe`
               : ''
           }`
         : null,
       scope: aboveMedian
-        ? `La médiane des séances est ${fmtInt(Math.round(sessionMedian))} reps`
-        : null,
+        ? `La médiane des séances de la fenêtre est ${fmtInt(Math.round(sessionMedian))} reps : ce pic dépasse ce niveau, sans en faire à lui seul une exception hors historique`
+        : `Sur une fenêtre courte, le jour le plus volumineux n'est pas forcément exceptionnel : c'est d'abord le maximum de ces ${fmtInt(p.trainingDays)} séances`,
       implication: peakDayImplication({
         sharePct: p.peakDay.sharePct,
         aboveMedian
@@ -1818,10 +1848,11 @@ function detectDiscoveries(cmp, extras = {}) {
     const gap = inclusiveCalendarSpanDays(gapDate, p.window.start) - 1;
     return gap >= 21 && e.reps >= 24;
   });
+  // Fenêtre riche : jusqu’à 14 épisodes émergence/retour distincts (pas un quota).
   const named = [...emerging, ...returning]
     .filter((e, i, arr) => arr.findIndex((x) => x.id === e.id) === i)
     .sort((a, b) => b.reps - a.reps)
-    .slice(0, 8);
+    .slice(0, v.key === 'today' ? 4 : v.key === 'week' ? 10 : 14);
   if (named.length) {
     const eventReader = createSetShiftReader(extras.snapshot, p.window?.end);
     named.forEach((e) => {
@@ -1835,7 +1866,15 @@ function detectDiscoveries(cmp, extras = {}) {
         : null;
       const setBit = lastDate ? eventReader.forSession(e.id, lastDate, dayReps) : '';
       const gapDate = p.lastSeenBefore?.[e.id];
-      const gapDays = !neu && gapDate ? Math.max(0, inclusiveCalendarSpanDays(gapDate, p.window.start) - 1) : null;
+      // Gap = dernière séance avant → première séance DANS la fenêtre (pas → début calendaire).
+      // Évite 77 j vs 42 j pour le même retour selon la borne de période.
+      const firstInWindow = dates[0] || null;
+      const gapDays =
+        !neu && gapDate && firstInWindow
+          ? Math.max(0, inclusiveCalendarSpanDays(gapDate, firstInWindow) - 1)
+          : !neu && gapDate
+            ? Math.max(0, inclusiveCalendarSpanDays(gapDate, p.window.start) - 1)
+            : null;
       const companions = sameDayCompanions(e, p.exercisesByDate);
       const groupId = primaryGroup(e.name);
       const group = groupId ? p.muscles?.find((muscle) => muscle.group === groupId) : null;
@@ -1940,7 +1979,16 @@ function detectDiscoveries(cmp, extras = {}) {
   }
 
   const ofMonthVol = share(p.totalReps, d30.totalReps);
-  if (ofMonthVol != null && d30.totalReps >= 400 && (isToday ? ofMonthVol >= 5 : ofMonthVol >= 12)) {
+  // Tautologie : la fenêtre de 30 j. ne peut pas « représenter » 100 % d’elle-même.
+  const anchorIsSelf =
+    (p.spanDays != null && p.spanDays >= 28 && p.spanDays <= 31) ||
+    (ofMonthVol != null && ofMonthVol >= 95);
+  if (
+    ofMonthVol != null &&
+    !anchorIsSelf &&
+    d30.totalReps >= 400 &&
+    (isToday ? ofMonthVol >= 5 : ofMonthVol >= 12)
+  ) {
     out.push(
       discovery({
         kind: 'disc_anchor',
@@ -1949,14 +1997,20 @@ function detectDiscoveries(cmp, extras = {}) {
         title: isToday
           ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ajoute une confirmation de ton profil d'entraînement actuel`
           : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} devient un nouveau point d'ancrage dans ton historique`,
-        body: `Sur les 30 derniers jours, tu as accumulé ${fmtInt(d30.totalReps)} reps en ${d30.trainingDays} jours entraînés, et ${v.thisPeriod} représente à elle seule ${fmtPct(ofMonthVol)} de tout ce volume mensuel.${
+        body: `Sur les 30 derniers jours, tu as accumulé ${fmtInt(d30.totalReps)} reps en ${d30.trainingDays} jours calendaires d’entraînement, et ${v.thisPeriod} représente ${fmtPct(ofMonthVol)} de ce volume glissant (pas un mois calendaire complet).${
           isToday
-            ? ` Une seule journée pèse donc une part importante de ton mois d'entraînement.`
+            ? ` Une seule journée pèse donc une part importante de ces 30 jours.`
             : ` À cette échelle, le long terme ne doit pas produire une deuxième version du court terme : ${v.thisPeriod} sert de nouveau point d'ancrage.`
         }`,
         evidence: `${fmtInt(p.totalReps)} / ${fmtInt(d30.totalReps)} · ${fmtPct(ofMonthVol)}`,
         weights: { importance: 0.85, reliability: 0.93, novelty: 0.8, fit: 0.94 },
-        metrics: { ofMonthVol, monthReps: d30.totalReps, monthDays: d30.trainingDays }
+        metrics: {
+          ofMonthVol,
+          monthReps: d30.totalReps,
+          monthDays: d30.trainingDays,
+          dayContract: 'calendar_training',
+          windowSpanDays: p.spanDays
+        }
       })
     );
   }
@@ -2062,7 +2116,12 @@ function detectDiscoveries(cmp, extras = {}) {
     .filter((b) => b.established && b.median != null && b.last?.date >= p.window.start && Math.abs(b.vsHabitPct || 0) >= 12)
     .sort((a, b) => Math.abs(b.vsHabitPct) - Math.abs(a.vsHabitPct));
   const habitLead = habitHits[0];
-  if (habitLead && habitLead.last?.date >= p.window.start) {
+  if (
+    habitLead &&
+    habitLead.last?.date >= p.window.start &&
+    String(habitLead.name || '').trim() &&
+    !/^un mouvement$/i.test(String(habitLead.name))
+  ) {
     const above = habitLead.vsHabitPct > 0;
     const windowEx = p.byExercise?.[habitLead.id] || p.byExercise?.[String(habitLead.id)];
     const periodBit =
@@ -2176,10 +2235,12 @@ function detectDiscoveries(cmp, extras = {}) {
     }
   }
 
-  const progressLead = baselines
+  // Plusieurs progressions distinctes (pas seulement le top 1) — limite adaptative.
+  const progressLeads = baselines
     .filter((b) => b.established && b.vsInitialPct != null && Math.abs(b.vsInitialPct) >= 15 && b.historicalMean >= 5)
-    .sort((a, b) => Math.abs(b.vsInitialPct) - Math.abs(a.vsInitialPct))[0];
-  if (progressLead) {
+    .sort((a, b) => Math.abs(b.vsInitialPct) - Math.abs(a.vsInitialPct))
+    .slice(0, v.key === 'today' ? 2 : v.key === 'week' ? 4 : 6);
+  progressLeads.forEach((progressLead, progressIdx) => {
     const setLevel = setShifts.acrossLevel(progressLead.id);
     const legacyTitle = `${progressLead.name} a ${progressLead.vsInitialPct >= 0 ? 'progressé' : 'reculé'} de ${fmtPct(Math.abs(progressLead.vsInitialPct))} depuis tes premières séances comparables`;
     const legacyBody = `Niveau initial (moyenne des ${Math.min(5, progressLead.sessions)} premières séances) : environ ${fmt1(progressLead.historicalMean)} reps. Niveau actuel (moyenne des dernières séances, dernière saisie comprise) : environ ${fmt1(progressLead.currentMean)} reps, soit ${fmtSignedPct(progressLead.vsInitialPct)}. Les premières séances servent aussi à apprendre le geste : une partie de l'écart avec ce départ peut venir de là.${
@@ -2233,7 +2294,12 @@ function detectDiscoveries(cmp, extras = {}) {
         evidence:
           rendered.evidence ||
           `${fmt1(progressLead.historicalMean)} → ${fmt1(progressLead.currentMean)} · ${fmtSignedPct(progressLead.vsInitialPct)}`,
-        weights: { importance: 0.9, reliability: 0.88, novelty: 0.86, fit: 0.92 },
+        weights: {
+          importance: Math.max(0.78, 0.9 - progressIdx * 0.03),
+          reliability: 0.88,
+          novelty: Math.max(0.72, 0.86 - progressIdx * 0.02),
+          fit: 0.92
+        },
         metrics: {
           ...baselineTraceMetrics(progressLead),
           draftTitle: legacyTitle,
@@ -2244,7 +2310,7 @@ function detectDiscoveries(cmp, extras = {}) {
         }
       })
     );
-  }
+  });
 
   const night = sleepCtx?.night;
   const catalogNights = (catalog || [])
@@ -2797,11 +2863,11 @@ function detectDiscoveries(cmp, extras = {}) {
         nature: 'journey',
         family: 'sleep_j2',
         title: isToday
-          ? "Cette séance s'inscrit dans un effet de la nuit d'avant-hier"
+          ? "Cette séance suit un schéma connu autour de la nuit d'avant-hier"
           : isWeek
-            ? "Cette semaine confirme que la nuit d'avant-hier pèse encore"
-            : 'Le sommeil d’avant-hier pèse encore, même après une nuit correcte',
-        body: `Même après une nuit précédente d'au moins 7 h 30, un sommeil sous 7 h deux nuits plus tôt est associé à ${fmtInt(j2.isolatedVol)} reps le jour J, contre ${fmtInt(j2.okVol)} lorsque les deux nuits dépassent 7 h 30 (${j2.isolatedN} et ${j2.okN} cas). La nuit d'avant-hier n'est donc pas un détail : elle sépare encore deux régimes de volume.`,
+            ? "Ces 7 jours rappellent le schéma de la nuit d'avant-hier"
+            : 'Le volume du jour J reste associé au sommeil d’avant-hier',
+        body: `Même après une nuit précédente d'au moins 7 h 30, un sommeil sous 7 h deux nuits plus tôt est associé à ${fmtInt(j2.isolatedVol)} reps le jour J, contre ${fmtInt(j2.okVol)} lorsque les deux nuits dépassent 7 h 30 (${j2.isolatedN} et ${j2.okN} cas). C’est une association observée, pas une preuve que la nuit d’avant-hier cause à elle seule le volume.`,
         evidence: `J-2 court ${fmtInt(j2.isolatedVol)} · deux nuits ok ${fmtInt(j2.okVol)}`,
         weights: { importance: 0.86, reliability: 0.8, novelty: 0.95, fit: 0.88 },
         metrics: j2
@@ -2957,10 +3023,10 @@ function detectDiscoveries(cmp, extras = {}) {
   const structSrc = isToday || isWeek ? d30 : p;
   const structThen = prev30;
   const structural = detectStructuralShifts(structSrc, structThen);
-  const structLead = structural.find((row) =>
-    (p.byExercise[row.id]?.reps || 0) >= 24
-  );
-  if (structLead) {
+  const structLeads = structural
+    .filter((row) => (p.byExercise[row.id]?.reps || 0) >= 24)
+    .slice(0, v.key === 'today' ? 1 : v.key === 'week' ? 2 : 3);
+  structLeads.forEach((structLead, structIdx) => {
     const thenBit =
       structLead.thenReps >= 12
         ? `contre ${fmtInt(structLead.thenReps)} reps (${fmtPct(structLead.thenShare)} de la ${structLead.family}) sur les 30 jours d'avant`
@@ -3038,7 +3104,12 @@ function detectDiscoveries(cmp, extras = {}) {
         evidence:
           rendered.evidence ||
           `${structLead.name} ${fmtPct(structLead.thenShare)} → ${fmtPct(structLead.nowShare)} de la ${structLead.family}`,
-        weights: { importance: 0.91, reliability: 0.88, novelty: 0.94, fit: 0.96 },
+        weights: {
+          importance: Math.max(0.8, 0.91 - structIdx * 0.04),
+          reliability: 0.88,
+          novelty: Math.max(0.84, 0.94 - structIdx * 0.03),
+          fit: 0.96
+        },
         metrics: {
           name: structLead.name,
           family: structLead.family,
@@ -3053,7 +3124,7 @@ function detectDiscoveries(cmp, extras = {}) {
         }
       })
     );
-  }
+  });
 
   const nowMix = tallyStimulus(p);
   const refMix = tallyStimulus(isToday || isWeek ? d30 : prev30 && prev30.totalReps >= 80 ? prev30 : d30);
@@ -3091,7 +3162,7 @@ function detectDiscoveries(cmp, extras = {}) {
         nature: 'trajectory',
         family: 'stimulus_mix',
         title: `Le mix force / endurance / poly ${v.ofPeriod} se lit dans les parts, pas dans le total`,
-        body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} répartit ${fmtInt(nowMix.buckets.total)} reps identifiées ainsi : ${bits.join(', ')}.${
+        body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${agreeVerb(v, 'répartit', 'répartissent')} ${fmtInt(nowMix.buckets.total)} reps identifiées ainsi : ${bits.join(', ')}.${
           shiftBits.length
             ? ` Par rapport à ta référence récente, ${shiftBits.join(' et ')}.`
             : ' Ces parts décrivent le type de stimulus reçu, pas seulement la quantité de travail.'
@@ -3203,34 +3274,49 @@ function detectDiscoveries(cmp, extras = {}) {
   }
 
   if ((isMonth || isLongVoice(v)) && p.repsByDate) {
-    const months = bestCalendarMonths(p.repsByDate);
+    const months = bestCalendarMonths(p.repsByDate, p.window);
     if (months.length >= 2 && months[0].reps >= 200) {
       const lead = months[0];
       const rest = months.slice(1).reduce((s, m) => s + m.reps, 0);
       const leadShare = share(lead.reps, p.totalReps);
-      if (leadShare != null && (leadShare >= 38 || lead.reps >= (months[1]?.reps || 0) * 1.15)) {
+      // Tautologie : un mois qui couvre ~toute la fenêtre n’apporte rien.
+      if (
+        leadShare != null &&
+        leadShare < 92 &&
+        (leadShare >= 38 || lead.reps >= (months[1]?.reps || 0) * 1.15)
+      ) {
+        const leadLabel = lead.partial
+          ? `${formatYmFr(lead.ym)} (portion dans la fenêtre)`
+          : formatYmFr(lead.ym);
+        const other = months[1];
+        const otherLabel = other
+          ? other.partial
+            ? `${formatYmFr(other.ym)} (portion dans la fenêtre)`
+            : formatYmFr(other.ym)
+          : null;
         out.push(
           discovery({
             kind: 'disc_best_month',
             nature: 'journey',
             family: 'best_month',
-            title: `${formatYmFr(lead.ym)} concentre la part la plus productive de la période`,
-            body: `${formatYmFr(lead.ym)} totalise ${fmtInt(lead.reps)} reps en ${lead.days} jours entraînés, soit ${fmtPct(leadShare)} du volume ${v.ofPeriod}${
-              months[1]
-                ? `, contre ${fmtInt(months[1].reps)} en ${formatYmFr(months[1].ym)}`
-                : ''
+            title: `${leadLabel} concentre la part la plus productive de la période`,
+            body: `${leadLabel} totalise ${fmtInt(lead.reps)} reps en ${lead.days} jours avec séance dans la fenêtre, soit ${fmtPct(leadShare)} du volume ${v.ofPeriod}${
+              other ? `, contre ${fmtInt(other.reps)} en ${otherLabel}` : ''
             }. ${
               rest > 0
-                ? 'Le trimestre (ou le mois) n’est donc pas un volume uniforme : une période précise autorise davantage d’exposition.'
+                ? lead.partial || other?.partial
+                  ? 'Ce sont des portions de mois calendaires dans la fenêtre glissante, pas des mois complets comparés à durée égale.'
+                  : 'La période n’est donc pas un volume uniforme : un mois concentre davantage d’exposition que les autres.'
                 : ''
             }${monthSleepExplain(lead, extras.allNights, extras.catalog)}`,
-            evidence: `${formatYmFr(lead.ym)} · ${fmtInt(lead.reps)} reps · ${fmtPct(leadShare)}`,
+            evidence: `${formatYmFr(lead.ym)} · ${fmtInt(lead.reps)} reps · ${fmtPct(leadShare)}${lead.partial ? ' · partiel' : ''}`,
             weights: { importance: 0.88, reliability: 0.9, novelty: 0.86, fit: 0.95 },
             metrics: {
               ym: lead.ym,
               reps: lead.reps,
               days: lead.days,
               share: leadShare,
+              partial: Boolean(lead.partial),
               dates: lead.dates || [],
               daysDetail: (lead.dates || []).map((date) => ({
                 date,
@@ -3261,6 +3347,13 @@ function detectDiscoveries(cmp, extras = {}) {
     buildRunningGapDiscoveries(extras.runDays, {
       windowStartYmd: p.window?.start || null,
       windowEndYmd: p.window?.end || null
+    }).forEach((partial) => out.push(discovery(partial)));
+  }
+
+  // Rythme transversal : streaks, coupures, répartition hebdomadaire.
+  if (!emptyPeriod && (isWeek || isMonth || isLongVoice(v))) {
+    buildTrainingRhythmDiscoveries(p.repsByDate || {}, p.window || {}, {
+      minActiveDays: isWeek ? 2 : 4
     }).forEach((partial) => out.push(discovery(partial)));
   }
 
@@ -3320,6 +3413,7 @@ function appendMilestoneDiscoveries(out, extras, v) {
         },
         score: m.exerciseId ? 91 : undefined,
         metrics: {
+          ...(m.metrics && typeof m.metrics === 'object' ? m.metrics : {}),
           type: m.type,
           date: m.date,
           prevDate: m.prevDate || null,
@@ -3327,9 +3421,9 @@ function appendMilestoneDiscoveries(out, extras, v) {
           sessions,
           daysDetail: dates.map((d) => ({ date: d })),
           threshold: m.threshold != null ? m.threshold : undefined,
-          exerciseId: m.exerciseId || undefined,
+          exerciseId: m.exerciseId || m.metrics?.exerciseId || undefined,
           exerciseName: m.exerciseName || null,
-          gapDays: m.gap ?? null,
+          gapDays: m.gap ?? m.metrics?.gapDays ?? null,
           habitMedianGap: m.habitMedianGap ?? null,
           habitIntervalRatio: m.ratio ?? null,
           returnReps: m.returnReps ?? null,
@@ -3399,7 +3493,7 @@ function formatYmFr(ym) {
   return `${MONTHS_FR[m - 1]} ${y}`;
 }
 
-function bestCalendarMonths(repsByDate) {
+function bestCalendarMonths(repsByDate, window = null) {
   const by = {};
   Object.entries(repsByDate || {}).forEach(([ymd, reps]) => {
     const ym = String(ymd).slice(0, 7);
@@ -3409,7 +3503,19 @@ function bestCalendarMonths(repsByDate) {
     by[ym].days += 1;
     by[ym].dates.push(ymd);
   });
-  return Object.values(by).sort((a, b) => b.reps - a.reps);
+  const winStart = window?.start ? String(window.start).slice(0, 10) : null;
+  const winEnd = window?.end ? String(window.end).slice(0, 10) : null;
+  return Object.values(by)
+    .map((row) => {
+      const [y, m] = String(row.ym).split('-').map(Number);
+      const monthStart = `${row.ym}-01`;
+      const lastDay = new Date(y, m, 0).getDate();
+      const monthEnd = `${row.ym}-${String(lastDay).padStart(2, '0')}`;
+      const partial =
+        (winStart && winStart > monthStart) || (winEnd && winEnd < monthEnd) || row.days < lastDay;
+      return { ...row, partial: Boolean(partial), monthDayCount: lastDay };
+    })
+    .sort((a, b) => b.reps - a.reps);
 }
 
 /** Trace diagnostic depuis une fenêtre période (repsByDate). */
@@ -3900,7 +4006,69 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     const prev = byIdentity.get(key);
     if (!prev || (d.informativeValue || 0) > (prev.informativeValue || 0)) byIdentity.set(key, d);
   });
-  const unique = [...byIdentity.values()];
+  let unique = [...byIdentity.values()];
+  // Un seul épisode de reprise par exercice (milestone 42 j + emergence 77 j, etc.).
+  // Clé : id de stockage, sinon nom normalisé (si deux ids hashés pour le même mouvement).
+  const returnEpisodeKey = (d) => {
+    const eid = d?.metrics?.exerciseId != null ? String(d.metrics.exerciseId) : '';
+    if (eid) return `id:${eid}`;
+    const name = String(d?.metrics?.name || d?.metrics?.exerciseName || d?.title || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\s+(revient|reviennent|après).*$/i, '')
+      .trim();
+    return name ? `name:${name}` : '';
+  };
+  const looksReturnEpisode = (d) =>
+    /disc_ms_return|disc_emergence|disc_structural_memory/.test(String(d.kind || '')) &&
+    (/revient|réapparition|interruption|long silence|après \d+\s*jours/i.test(
+      `${d.title || ''} ${d.body || ''}`
+    ) ||
+      Number(d.metrics?.gapDays) >= 21 ||
+      d.metrics?.trajectoryInstallation === 'returning' ||
+      d.metrics?.composedEvidence?.continuity?.kind === 'returning' ||
+      d.metrics?.composedEvidence?.continuity?.kind === 'punctual_return' ||
+      d.metrics?.composedEvidence?.continuity?.kind === 'confirmed_return');
+  const bestReturnByKey = new Map();
+  unique.forEach((d) => {
+    if (!looksReturnEpisode(d)) return;
+    const key = returnEpisodeKey(d);
+    if (!key) return;
+    // Fusionner aussi name:… avec id:… quand le nom d’affichage coincide.
+    const nameKey = (() => {
+      const name = String(d?.metrics?.name || d?.metrics?.exerciseName || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+      return name ? `name:${name}` : '';
+    })();
+    const prev = bestReturnByKey.get(key);
+    if (!prev || (d.informativeValue || 0) > (prev.informativeValue || 0)) {
+      bestReturnByKey.set(key, d);
+      if (nameKey && nameKey !== key) {
+        const prevName = bestReturnByKey.get(nameKey);
+        if (!prevName || (d.informativeValue || 0) > (prevName.informativeValue || 0)) {
+          bestReturnByKey.set(nameKey, d);
+        }
+      }
+    }
+  });
+  if (bestReturnByKey.size) {
+    unique = unique.filter((d) => {
+      if (!looksReturnEpisode(d)) return true;
+      const key = returnEpisodeKey(d);
+      const name = String(d?.metrics?.name || d?.metrics?.exerciseName || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+      const nameKey = name ? `name:${name}` : '';
+      // Priorité au vainqueur par nom : deux storage ids pour le même mouvement = un épisode.
+      const winner =
+        (nameKey ? bestReturnByKey.get(nameKey) : null) || bestReturnByKey.get(key) || null;
+      if (!winner) return true;
+      return winner === d;
+    });
+  }
   // Tri : valeur informative d’abord, puis score (priority ne force plus les methodology_limit)
   const sorted = unique.sort(
     (a, b) => (b.informativeValue || 0) - (a.informativeValue || 0) || (b.score || 0) - (a.score || 0)
@@ -3995,8 +4163,9 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     }
 
     const seenFamily = usedFamilyByNature[nature].get(d.family) || 0;
-    // Famille déjà peuplée : laisser passer une trajectoire nettement plus informative
-    if (d.family && seenFamily >= 2 && (d.score || 0) < 86 && info < 95) {
+    // Famille déjà peuplée : laisser passer davantage d’exercices distincts riches
+    const familySoftCap = voiceKey === 'today' ? 2 : voiceKey === 'week' ? 3 : 4;
+    if (d.family && seenFamily >= familySoftCap && (d.score || 0) < 82 && info < 92) {
       return { ok: false, reason: 'family' };
     }
     return { ok: true };

@@ -676,17 +676,17 @@ function analyzePeers(
   let detail = '';
   if (subjDelta != null && subjDelta <= -15 && stablePeers.length >= 1 && decliningPeers.length === 0) {
     verdict = 'localized';
-    detail = `Le recul est concentré sur cet exercice : ${peerPhrase(stablePeers)} restent du même ordre. Ce n’est donc pas une baisse générale de la famille ${fam === 'pushup' || fam === 'push' ? 'poussée' : fam}.`;
+    detail = `Le recul reste localisé : ${peerPhrase(stablePeers)} restent du même ordre. Ce n’est donc pas une baisse générale de la famille ${fam === 'pushup' || fam === 'push' ? 'poussée' : fam}.`;
   } else if (subjDelta != null && subjDelta <= -15 && decliningPeers.length >= 2) {
     verdict = 'shared';
-    detail = `Plusieurs mouvements comparables baissent aussi (${peerPhrase(decliningPeers)}) : le signal dépasse cet exercice seul, sans que les données prouvent une cause unique.`;
+    detail = `Plusieurs mouvements comparables baissent aussi (${peerPhrase(decliningPeers)}) : le signal dépasse ce mouvement seul, sans que les données prouvent une cause unique.`;
   } else if (isReboundStory && stablePeers.length >= 1) {
     // Ne pas appeler « hausse localisée » une reprise après creux
     verdict = 'localized_recovery';
-    detail = `La trajectoire (creux puis reprise) porte surtout sur cet exercice, tandis que ${peerPhrase(stablePeers)} ${stablePeers.length > 1 ? 'restent' : 'reste'} stable${stablePeers.length > 1 ? 's' : ''}.`;
+    detail = `La trajectoire (creux puis reprise) porte surtout ici, tandis que ${peerPhrase(stablePeers)} ${stablePeers.length > 1 ? 'restent' : 'reste'} stable${stablePeers.length > 1 ? 's' : ''}.`;
   } else if (subjDelta != null && subjDelta >= 15 && stablePeers.length >= 1) {
     verdict = 'localized_rise';
-    detail = `La hausse porte surtout sur cet exercice, tandis que ${peerPhrase(stablePeers)} ${stablePeers.length > 1 ? 'restent' : 'reste'} stable${stablePeers.length > 1 ? 's' : ''}.`;
+    detail = `La hausse porte surtout ici, tandis que ${peerPhrase(stablePeers)} ${stablePeers.length > 1 ? 'restent' : 'reste'} stable${stablePeers.length > 1 ? 's' : ''}.`;
   } else {
     verdict = 'mixed';
     detail = 'Les témoins disponibles ne permettent pas d’isoler clairement si le signal est local ou partagé.';
@@ -805,8 +805,76 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         text: 'Reproduire ce volume sur la prochaine séance confirme le départ ; augmenter tout de suite le total mélangerait l’apprentissage du geste et une dose nouvelle.'
       };
     } else if (installation.kind === 'returning') {
-      titleHint = `${identity.name} revient après une interruption`;
-      main = { stance: 'established', text: `${identity.name} : ${installation.detail}.` };
+      titleHint = `${identity.name} ${
+        /\b(pompes|dips|tractions|relevés|extensions|hyperextensions|oiseaux|développés)\b/i.test(
+          String(identity.name || '')
+        )
+          ? 'reviennent'
+          : 'revient'
+      } après une interruption`;
+      const returnTotal = volume.windowTotal;
+      const returnPerSession =
+        volume.windowSessionCount > 0
+          ? round1(returnTotal / volume.windowSessionCount)
+          : volume.firstSessionTotal;
+      const priorMean =
+        volume.prevComparable != null && volume.prevSessionCount > 0
+          ? round1(volume.prevComparable / volume.prevSessionCount)
+          : null;
+      const vsPrior =
+        priorMean != null && priorMean > 0 && returnPerSession != null
+          ? Math.round((returnPerSession / priorMean) * 100)
+          : null;
+      let returnScheme = '';
+      if (setMechanism.available && setMechanism.after) {
+        const a = setMechanism.after;
+        const b = setMechanism.before;
+        if (a.setCount != null && a.perSet != null) {
+          const lateSample = (a.sample || []).map((s) => s.scheme).filter(Boolean);
+          returnScheme =
+            b?.setCount != null && b?.perSet != null
+              ? ` Format habituel environ ${b.setCount} × ${b.perSet}, reprise en environ ${a.setCount} × ${a.perSet}`
+              : ` Format de reprise observé : environ ${a.setCount} × ${a.perSet}`;
+          if (lateSample.length === 1) returnScheme += ` (${lateSample[0]})`;
+        }
+      }
+      const vsBit =
+        vsPrior != null
+          ? `, soit ${vsPrior} % du volume moyen des séances antérieures (≈${priorMean} reps/séance)`
+          : '';
+      main = {
+        stance: 'established',
+        text: `${identity.name} : ${installation.detail}. La reprise totalise ${returnTotal} répétitions sur ${
+          volume.windowSessionCount || 1
+        } séance${(volume.windowSessionCount || 1) > 1 ? 's' : ''}${vsBit}.${
+          returnScheme ? `${returnScheme}.` : ''
+        }`.replace(/\.\./g, '.')
+      };
+      if (setMechanism.available && setMechanism.before && setMechanism.after) {
+        const lostSets =
+          setMechanism.before.setCount != null &&
+          setMechanism.after.setCount != null &&
+          setMechanism.after.setCount < setMechanism.before.setCount;
+        const lostPerSet =
+          setMechanism.before.perSet != null &&
+          setMechanism.after.perSet != null &&
+          setMechanism.after.perSet < setMechanism.before.perSet;
+        if (lostSets || lostPerSet) {
+          mechanism = {
+            stance: 'probable',
+            text: lostSets && lostPerSet
+              ? 'La baisse de volume vient à la fois d’une série en moins et de répétitions par série plus basses.'
+              : lostSets
+                ? 'La baisse de volume vient surtout de la perte d’une série, pas d’un effondrement des répétitions par série.'
+                : 'Le nombre de séries tient ; ce qui baisse, ce sont surtout les répétitions par série.'
+          };
+        } else if (setMechanism.detail) {
+          mechanism = {
+            stance: setMechanism.stance || 'established',
+            text: setMechanism.detail
+          };
+        }
+      }
     } else if (installation.kind === 'already_known') {
       titleHint = `${identity.name} repasse dans la période`;
       main = {
@@ -951,13 +1019,13 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         implication = {
           stance: 'probable',
           ruleId: 'stabilize_at_recent_level_when_localized_decline',
-          text: `Plutôt que d’augmenter la difficulté, conserve les mêmes conditions d’exécution et cherche d’abord à stabiliser le volume récent observé (autour de ${recent} répétitions par séance) avant de remonter. Ne confonds pas une hausse éventuelle d’activité globale avec une progression sur cet exercice.`
+          text: `Plutôt que d’augmenter la difficulté, conserve les mêmes conditions d’exécution et cherche d’abord à stabiliser le volume récent observé (autour de ${recent} répétitions par séance) avant de remonter. Ne confonds pas une hausse éventuelle d’activité globale avec une progression sur ce mouvement.`
         };
       } else if (netDown && shape.deltaPct != null && shape.deltaPct <= -20 && peers.verdict === 'shared') {
         implication = {
           stance: 'watch',
           ruleId: 'shared_decline_no_isolate_fix',
-          text: `Plusieurs mouvements comparables reculent aussi : traiter ce signal comme une baisse de famille, pas comme un problème isolé à cet exercice.`
+          text: `Plusieurs mouvements comparables reculent aussi : traiter ce signal comme une baisse de famille, pas comme un problème isolé à ce mouvement.`
         };
       } else if (netUp && shape.deltaPct != null && shape.deltaPct >= 15) {
         const recent = Math.max(1, Math.round(shape.lateMean));
@@ -1348,13 +1416,19 @@ export function renderExerciseTrajectoryCopy(trajectory, { legacyBits = {} } = {
     limit
   });
 
+  const rawStory = trajectory.shape?.primaryStory || trajectory.shape?.path || null;
+  // Ne jamais exposer les labels techniques unclear / insufficient dans l’UI.
+  const storyChip =
+    rawStory && !/^(unclear|insufficient|indeterminate)$/i.test(String(rawStory))
+      ? String(rawStory).replace(/_/g, ' ')
+      : null;
   const evidenceParts = [
     trajectory.temporalScope?.interpretingWithHistory
       ? `arc ${trajectory.temporalScope.arcSessionCount} (fenêtre ${trajectory.temporalScope.windowSessionCount})`
       : trajectory.volume.windowSessionCount != null
         ? `${trajectory.volume.windowSessionCount} séances`
         : null,
-    trajectory.shape?.primaryStory || trajectory.shape?.path || null,
+    storyChip,
     trajectory.shape?.deltaPct != null ? `${trajectory.shape.deltaPct} %` : null,
     trajectory.setMechanism?.available
       ? `${trajectory.setMechanism.before?.setCount}×${trajectory.setMechanism.before?.perSet}→${trajectory.setMechanism.after?.setCount}×${trajectory.setMechanism.after?.perSet}`

@@ -73,6 +73,40 @@ export function insightRejectReason(card, ctx = {}) {
     return 'non_textual_evidence';
   }
 
+  // Sujet / grammaire cassés — tous chemins de publication (disc_* et span_*)
+  if (/\bun mouvement\b/i.test(text) || /\bun mouvement\b/i.test(title)) {
+    return 'anonymous_exercise_label';
+  }
+  if (/\bcet exercice\b/i.test(title) || /^La reprise de cet exercice\b/i.test(title)) {
+    return 'anonymous_exercise_label';
+  }
+  // Prose générique « cet exercice » dans le corps publié (identité non résolue / placeholder).
+  if (/\bcet exercice\b/i.test(text) && !/\b(pompes|dips|tractions|relevés|développé|élévations)\b/i.test(text)) {
+    return 'anonymous_exercise_label';
+  }
+  if (/\bUNCLEAR\b/.test(evidence) || /\bUNCLEAR\b/.test(text)) {
+    return 'internal_chip';
+  }
+  if (/pèse encore/i.test(title) && /sommeil|nuit|avant-hier/i.test(title)) {
+    return 'forbidden_sleep_causality';
+  }
+  // Titre = identifiant technique snake_case (ex. program_gap_mixed)
+  if (/^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/i.test(title.trim())) {
+    return 'internal_kind_as_title';
+  }
+  if (/Première apparition\s*:?\s*$/i.test(title.trim())) return 'incomplete_exercise_subject';
+  if (/Tu reprends\s+après\b/i.test(title)) return 'incomplete_exercise_subject';
+  if (/^après \d+\s*jours d'absence\b/i.test(title.trim())) return 'incomplete_exercise_subject';
+  if (/depuis \d+\s*jours sur\s*[.]/i.test(text)) return 'incomplete_exercise_subject';
+  if (/apparition de\s+dans ton historique/i.test(text)) return 'incomplete_exercise_subject';
+  if (/Tes séances de\s+se situent/i.test(text)) return 'incomplete_exercise_subject';
+  if (/Elle mêle\s+\d+(\s*,\s*\d+)+\s*[.]?/i.test(text)) return 'numbers_without_context';
+  if (/coïncide avec tu reprends/i.test(text)) return 'broken_sleep_combo_prose';
+  if (/\bde le (coucher|lever)\b/i.test(text)) return 'broken_french_article';
+  if (/\bCes \d+ jours (répartit|représente|devient|porte)\b/i.test(text)) {
+    return 'broken_french_agreement';
+  }
+
   if (RAW_ID_RE.test(text) || RAW_ID_RE.test(title)) return 'raw_exercise_id';
 
   if (INTERNAL_CHIP_RE.test(evidence.trim()) && evidence.trim().split(/\s+/).length <= 3) {
