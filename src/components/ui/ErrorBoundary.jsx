@@ -22,6 +22,27 @@ import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from './Card';
 import Button from './Button';
 
+const STALE_CHUNK_KEY = 'momentum:stale-chunk-reload';
+const STALE_CHUNK_WINDOW_MS = 10000;
+
+function isStaleChunkError(error) {
+  const message = String(error?.message || '');
+  return (
+    message.includes('Failed to fetch dynamically imported module') ||
+    message.includes('Outdated Optimize Dep') ||
+    message.includes('error loading dynamically imported module')
+  );
+}
+
+function reloadOnceForStaleChunk() {
+  if (typeof window === 'undefined' || !window.sessionStorage) return false;
+  const last = Number(window.sessionStorage.getItem(STALE_CHUNK_KEY) || 0);
+  if (Number.isFinite(last) && Date.now() - last < STALE_CHUNK_WINDOW_MS) return false;
+  window.sessionStorage.setItem(STALE_CHUNK_KEY, String(Date.now()));
+  window.location.reload();
+  return true;
+}
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -43,6 +64,10 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Vite 504 « Outdated Optimize Dep » : le chunk lazy (Garmin, Anatomie, …)
+    // échoue tant que l’onglet n’a pas repris les nouveaux hashes. Un seul reload.
+    if (isStaleChunkError(error) && reloadOnceForStaleChunk()) return;
+
     // Logger l'erreur
     this.logError(error, errorInfo);
     
