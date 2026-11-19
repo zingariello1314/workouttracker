@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import {
   defaultGtgProtocolGoal,
@@ -12,6 +12,7 @@ import {
   updateGtgProtocolExercise
 } from '../../../../services/endurance/gtgService';
 import { applyGtgDeclaredMaxToData } from '../../../../services/endurance/gtgMaxPerformance';
+import { isConfirmedSave, saveOutcomeNotice } from '../../../../services/workout/saveOutcome';
 
 /**
  * Module protocole (Pratique) — repliable.
@@ -86,6 +87,8 @@ export default function GtgProtocolDataBanner({
   }, [rows, bodyW.known]);
 
   const [drafts, setDrafts] = useState({});
+  const [saveNotice, setSaveNotice] = useState(null);
+  const pendingPayloadRef = useRef(null);
   const [weightDraft, setWeightDraft] = useState('');
   const [collapsed, setCollapsed] = useState(() => !gaps.incomplete);
   const [userToggled, setUserToggled] = useState(false);
@@ -128,7 +131,15 @@ export default function GtgProtocolDataBanner({
         ctx
       });
     }
-    await updateData(nextData);
+    pendingPayloadRef.current = nextData;
+    const outcome = await updateData(nextData, { reportOutcome: true });
+    if (isConfirmedSave(outcome)) {
+      pendingPayloadRef.current = null;
+      setSaveNotice(null);
+      return true;
+    }
+    setSaveNotice(saveOutcomeNotice(outcome));
+    return false;
   };
 
   const parsePositive = (raw) => {
@@ -152,16 +163,16 @@ export default function GtgProtocolDataBanner({
     if (repsN) {
       next = updateGtgExerciseConfig(next, row.id, { repsPerSet: repsN });
     }
-    await persist(next, maxN ? { exerciseId: row.id, reps: maxN } : null);
-    setUserToggled(false);
+    const confirmed = await persist(next, maxN ? { exerciseId: row.id, reps: maxN } : null);
+    if (confirmed) setUserToggled(false);
   };
 
   const onSaveWeight = async () => {
     const n = Number(String(weightDraft || bodyW.kg || '').replace(',', '.'));
     if (!Number.isFinite(n) || n <= 0) return;
     const next = updateGtgConfig(gtgData, { bodyWeightKg: Math.round(n * 10) / 10 });
-    await persist(next);
-    setUserToggled(false);
+    const confirmed = await persist(next);
+    if (confirmed) setUserToggled(false);
   };
 
   const toggleCollapse = () => {
@@ -210,6 +221,25 @@ export default function GtgProtocolDataBanner({
       {!collapsed && (
         <div style={{ padding: '0 0 22px' }}>
           <p className="tiny" style={{ margin: '0 0 16px' }}>{t('endurance.gtg.protocolData.hint')}</p>
+          {saveNotice ? (
+            <p role="status" className="tiny" style={{ margin: '0 0 16px', color: 'var(--t-fract)' }}>
+              {saveNotice}{' '}
+              <button
+                type="button"
+                disabled={!pendingPayloadRef.current}
+                onClick={() => updateData(pendingPayloadRef.current, { reportOutcome: true }).then((outcome) => {
+                  if (isConfirmedSave(outcome)) {
+                    pendingPayloadRef.current = null;
+                    setSaveNotice(null);
+                  } else {
+                    setSaveNotice(saveOutcomeNotice(outcome));
+                  }
+                })}
+              >
+                Réessayer la même sauvegarde
+              </button>
+            </p>
+          ) : null}
 
           <div className="cf" style={{ padding: '16px 0' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 14px' }}>

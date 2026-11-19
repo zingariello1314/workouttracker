@@ -12,12 +12,16 @@ import {
   returnEpisodeCollapseKey
 } from './recapEditorialIdentity';
 
-const PARASITE = [
-  /~[+-]/,
-  /dynamique favorable/i,
-  /reste prudent/i,
-  /hypertrophie\s*\/\s*définition/i
-];
+const PARASITE = [/dynamique favorable/i, /reste prudent/i];
+
+function markKinshipDrop(candidate, reason, keeper = null) {
+  if (!candidate || candidate.kinshipDrop) return;
+  candidate.kinshipDrop = {
+    reason,
+    keptId: keeper?.candidate?.id || keeper?.id || null,
+    keptTitle: keeper?.title || null
+  };
+}
 
 function ctxOf(candidate) {
   return candidate?.interpretation?.context || candidate?.context || {};
@@ -201,7 +205,10 @@ function preferHorizon(a, b) {
 export function keepDistinctProofCards(candidates, opts = {}) {
   const rows = (candidates || []).map((candidate) => {
     const view = visible(candidate);
-    if (parasite(view.blob)) return null;
+    if (parasite(view.blob)) {
+      markKinshipDrop(candidate, 'parasite_marker');
+      return null;
+    }
     let title = softenTitle(view.title, view.body);
     let body = dropSensitiveClaim(rewritePullVerb(view.body));
     title = rewritePullVerb(title);
@@ -235,7 +242,10 @@ export function keepDistinctProofCards(candidates, opts = {}) {
   noveltyGroups.forEach((group) => {
     if (group.length < 2) return;
     const ranked = [...group].sort(preferHorizon);
-    ranked.slice(1).forEach((row) => drop.add(row.index));
+    ranked.slice(1).forEach((row) => {
+      markKinshipDrop(row.candidate, 'novelty_key', ranked[0]);
+      drop.add(row.index);
+    });
   });
 
   // Reprises du même mouvement (42 j vs 77 j) : clé structurée (nom+date ou id).
@@ -289,7 +299,10 @@ export function keepDistinctProofCards(candidates, opts = {}) {
       };
       return score(b) - score(a) || preferHorizon(a, b);
     });
-    ranked.slice(1).forEach((row) => drop.add(row.index));
+    ranked.slice(1).forEach((row) => {
+      markKinshipDrop(row.candidate, 'return_episode', ranked[0]);
+      drop.add(row.index);
+    });
   });
 
   // Volume GLOBAL de période uniquement — pas les volumes d’exercice / densité / GTG / muscle.
@@ -329,7 +342,10 @@ export function keepDistinctProofCards(candidates, opts = {}) {
       };
       return score(b) - score(a) || preferHorizon(a, b);
     });
-    ranked.slice(1).forEach((row) => drop.add(row.index));
+    ranked.slice(1).forEach((row) => {
+      markKinshipDrop(row.candidate, 'volume_rival', ranked[0]);
+      drop.add(row.index);
+    });
   });
 
   const groups = new Map();
@@ -348,6 +364,7 @@ export function keepDistinctProofCards(candidates, opts = {}) {
     ranked.slice(1).forEach((row) => {
       const already = coveredBy(row.blob, keeper.blob) || row.blob.replace(/\s+/g, ' ') === keeper.blob.replace(/\s+/g, ' ');
       if (already || row.horizon === 'short') {
+        markKinshipDrop(row.candidate, already ? 'volume_fingerprint' : 'short_same_volume', keeper);
         drop.add(row.index);
         return;
       }
@@ -359,6 +376,7 @@ export function keepDistinctProofCards(candidates, opts = {}) {
         longKept = true;
         return;
       }
+      markKinshipDrop(row.candidate, 'volume_fingerprint', keeper);
       drop.add(row.index);
     });
   });
@@ -367,8 +385,10 @@ export function keepDistinctProofCards(candidates, opts = {}) {
   rows.forEach((row) => {
     if (drop.has(row.index)) return;
     const key = row.blob.toLowerCase().replace(/\s+/g, ' ').trim();
-    if (seen.has(key)) drop.add(row.index);
-    else seen.add(key);
+    if (seen.has(key)) {
+      markKinshipDrop(row.candidate, 'same_blob');
+      drop.add(row.index);
+    } else seen.add(key);
   });
 
   // Même corps, titres différents (ex. doublon cumul 25k) → une seule carte.
@@ -380,15 +400,20 @@ export function keepDistinctProofCards(candidates, opts = {}) {
       .replace(/\s+/g, ' ')
       .trim();
     if (bodyKey.length < 64) return;
-    if (seenBody.has(bodyKey)) drop.add(row.index);
-    else seenBody.add(bodyKey);
+    if (seenBody.has(bodyKey)) {
+      markKinshipDrop(row.candidate, 'same_body');
+      drop.add(row.index);
+    } else seenBody.add(bodyKey);
   });
 
   const survivors = rows.filter((row) => !drop.has(row.index));
   survivors.forEach((row) => {
     if (drop.has(row.index)) return;
     const host = survivors.find((other) => other.index !== row.index && !drop.has(other.index) && coveredBy(row.blob, other.blob));
-    if (host) drop.add(row.index);
+    if (host) {
+      markKinshipDrop(row.candidate, 'covered_by', host);
+      drop.add(row.index);
+    }
   });
 
   return rows.filter((row) => !drop.has(row.index)).map((row) => row.candidate);

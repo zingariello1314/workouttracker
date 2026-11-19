@@ -444,11 +444,13 @@ export function applyNatureWeights(candidates, phenomena) {
     const kind = kindFromCandidateId(c.id) || c.interpretation?.context?.kind;
     const nature = c.interpretation?.nature || c.nature || natureForKind(kind);
     const boost = natureSelectionBoost(c, phenomena);
+    const before = c.weight || 0;
     return {
       ...c,
       nature,
       horizon: c.horizon || horizonForNature(nature),
-      weight: Math.min(98, Math.max(0, (c.weight || 0) + boost))
+      natureBoostApplied: boost,
+      weight: Math.min(98, Math.max(0, before + boost))
     };
   });
 }

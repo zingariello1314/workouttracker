@@ -32,9 +32,22 @@ function rangeLabel(start, end, withYear) {
 /**
  * @returns {{ title: string, body: string, evidence: string } | null}
  */
-export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod = 'cette période' } = {}) {
+export function describeCalendarShape({
+  repsByDate = {},
+  start,
+  end,
+  thisPeriod = 'cette période',
+  openEnd = false
+} = {}) {
   if (!start || !end) return null;
-  const dates = enumerateDatesInclusive(start, end);
+  let dates = enumerateDatesInclusive(start, end);
+  const repsOfPreview = (date) => {
+    const n = Number(repsByDate?.[date] || 0);
+    return Number.isFinite(n) ? n : 0;
+  };
+  if (openEnd && dates[dates.length - 1] === end && repsOfPreview(end) === 0) {
+    dates = dates.slice(0, -1);
+  }
   if (dates.length < 3) return null;
   const repsOf = (date) => {
     const n = Number(repsByDate?.[date] || 0);
@@ -141,7 +154,7 @@ export function describeCalendarShape({ repsByDate = {}, start, end, thisPeriod 
   return {
     title: reading.title,
     body: reading.body,
-    evidence: `${trained.length} jours avec répétitions · ${quietCount} jours sans séance (contrat positive_reps)`,
+    evidence: `${trained.length} jours avec répétitions · ${quietCount} jours sans séance enregistrée`,
     readingBeats: reading.beats,
     metrics: {
       windowStart: start,

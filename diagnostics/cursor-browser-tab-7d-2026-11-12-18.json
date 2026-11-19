@@ -1,0 +1,303 @@
+{
+  "schema": "momentum.analysisEnvironmentDossier.v1",
+  "capturedAt": "2026-11-18T19:54:56.455Z",
+  "mode": "development",
+  "environment": {
+    "runtime": "browser",
+    "href": "http://localhost:3001/",
+    "origin": "http://localhost:3001",
+    "language": "en-US",
+    "languages": [
+      "en-US",
+      "fr-FR"
+    ],
+    "timeZone": "Europe/Paris",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/3.30.14 Chrome/150.0.7871.250 Electron/43.8.9 Safari/537.36",
+    "serviceWorker": null
+  },
+  "period": "7d",
+  "window": {
+    "start": "2026-11-12",
+    "end": "2026-11-18",
+    "endAt": "2026-11-18T19:53:18.506Z",
+    "timeZone": "Europe/Paris",
+    "mode": "inclusive-calendar",
+    "spanDays": 7,
+    "partialEnd": true
+  },
+  "analysisStatus": "refreshing",
+  "analysisPeriod": "7d",
+  "publication": {
+    "status": "ready",
+    "period": "7d",
+    "windowStart": "2026-11-12",
+    "windowEnd": "2026-11-18",
+    "complete": true
+  },
+  "snapshot": {
+    "repKeys": 768,
+    "checkedKeys": 774,
+    "totalReps": 32768
+  },
+  "banner": {
+    "totalReps": 1002,
+    "trainingDays": 3,
+    "totalMinutes": 195,
+    "otherExerciseMinutes": 195,
+    "runningMinutes": 0,
+    "totalKg": 1464,
+    "activeKcal": 3162,
+    "longestStreak": 2,
+    "streakRange": {
+      "length": 2,
+      "startDate": "2026-11-13",
+      "endDate": "2026-11-14"
+    }
+  },
+  "measure": {
+    "totalReps": 1002,
+    "trainingDays": 3,
+    "strengthDays": 3,
+    "minutes": 195,
+    "totalMinutes": 195,
+    "runningMinutes": 0,
+    "activeKcal": 3162
+  },
+  "durationAgreement": {
+    "bannerTotalMinutes": 195,
+    "measureTotalMinutes": 195,
+    "measureOtherMinutes": 195,
+    "sameTotal": true
+  },
+  "cardCount": 20,
+  "cards": [
+    {
+      "column": "shortTerm",
+      "kind": "disc_peak_day",
+      "title": "La séance du 13 novembre 2026 concentre une part importante de ces 7 jours",
+      "family": "",
+      "evidence": "13 novembre 2026 · 351 reps · 35,0 %"
+    },
+    {
+      "column": "shortTerm",
+      "kind": "disc_calendar_rhythm",
+      "title": "Ces 7 jours : le volume repose sur peu de journées",
+      "family": "",
+      "evidence": "3 jours avec répétitions · 4 jours sans séance (contrat positive_reps)"
+    },
+    {
+      "column": "shortTerm",
+      "kind": "disc_sleep_night",
+      "title": "Une nuit plus courte que ton niveau récent",
+      "family": "",
+      "evidence": "2026-11-13 · 8 h 23 vs 9 h 12 · 7 nuits"
+    },
+    {
+      "column": "shortTerm",
+      "kind": "program_gap_completion",
+      "title": "Les séances commencées restent souvent incomplètes",
+      "family": "",
+      "evidence": ""
+    },
+    {
+      "column": "shortTerm",
+      "kind": "",
+      "title": "",
+      "family": "",
+      "evidence": ""
+    },
+    {
+      "column": "shortTerm",
+      "kind": "journey_abandoned",
+      "title": "Pompes déclinées a été remplacé, pas abandonné au hasard",
+      "family": "",
+      "evidence": "22 juillet 2026 · 119 j. · habitude ~7 j."
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "disc_sleep_volume",
+      "title": "Tes journées à fort volume s’alignent sur un seuil de sommeil personnel",
+      "family": "",
+      "evidence": "≥ 7 h 30 291 · < 7 h 30 233 · n=20"
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "disc_ms_pr_consolidated",
+      "title": "Ces 20 reps sont devenues ton niveau récemment reproductible",
+      "family": "",
+      "evidence": "20 reps · 5/5"
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "",
+      "title": "",
+      "family": "",
+      "evidence": ""
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "disc_family_fade",
+      "title": "Dips sur barre parallèle s'efface de de ta poussée",
+      "family": "",
+      "evidence": "Dips sur barre parallèle 17,1 % → 7,0 % de ta poussée"
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "disc_steps_level",
+      "title": "Les pas de ces 7 jours sont au-dessus de ton niveau des 30 jours d'avant",
+      "family": "",
+      "evidence": "8 418 vs 7 491 pas"
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "journey_plateau",
+      "title": "Plateau — Relevés de genoux aux parallèles",
+      "family": "",
+      "evidence": "~40 reps · 127 j."
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes inclinées mains sur banc : volume par séance en hausse",
+      "family": "",
+      "evidence": "arc 8 (fenêtre 1) · net rise · 17.4 % · 2×18→2×18"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_structural_memory",
+      "title": "Relevés de genoux à la barre repasse dans la période",
+      "family": "",
+      "evidence": "4 séances · plateau · 0 % · 3×20→3×20"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_exercise_progress",
+      "title": "Dips sur barre parallèle : volume par séance stable",
+      "family": "",
+      "evidence": "arc 8 (fenêtre 1) · plateau · 0 % · 4×12→4×12"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances",
+      "family": "",
+      "evidence": "arc 8 (fenêtre 1) · net decline · -28 % · 5×10→4×9"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_kcal_profile",
+      "title": "La dépense de la période distingue densité et fréquence",
+      "family": "",
+      "evidence": "3 162 kcal · 9 min hors course"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_freq_continuity",
+      "title": "Ces 7 jours s'inscrit dans une pratique déjà documentée",
+      "family": "",
+      "evidence": "15/30 j. · 3/7 j."
+    },
+    {
+      "column": "longTerm",
+      "kind": "adherence_gap",
+      "title": "",
+      "family": "",
+      "evidence": ""
+    },
+    {
+      "column": "longTerm",
+      "kind": "journey_progress",
+      "title": "Tes niveaux de référence ont progressé sur plusieurs mouvements",
+      "family": "",
+      "evidence": "Pompes inclinées mains sur banc 24→36 · Tractions supination 16→20 · Tractions australiennes pieds surélevés 40→48"
+    }
+  ],
+  "editorialHistory": {
+    "version": 1,
+    "count": 73,
+    "signature": "7d|2026-11-12|2026-11-18|0|0|0|44.8|1002|22|3182380822",
+    "recent": [
+      {
+        "id": "relation.reading.medium.disc_emergence.emergence-505",
+        "theme": "medium.disc_emergence.emergence-505",
+        "seenAt": 1795020381846,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.short.disc_ms_return.ms-disc_ms_return-306",
+        "theme": "short.disc_ms_return.ms-disc_ms_return-306",
+        "seenAt": 1795020213720,
+        "count": 2
+      },
+      {
+        "id": "relation.reading.medium.disc_muscle_exposure_shift",
+        "theme": "medium.disc_muscle_exposure_shift",
+        "seenAt": 1795020213720,
+        "count": 2
+      },
+      {
+        "id": "relation.reading.medium.disc_emergence.emergence-202",
+        "theme": "medium.disc_emergence.emergence-202",
+        "seenAt": 1795020213720,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.span_variety_shift",
+        "theme": "medium.span_variety_shift",
+        "seenAt": 1795020213720,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.disc_gtg_unplanned_role",
+        "theme": "medium.disc_gtg_unplanned_role",
+        "seenAt": 1795020166735,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.disc_p36_weekday_regularity",
+        "theme": "medium.disc_p36_weekday_regularity",
+        "seenAt": 1795020166735,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.disc_freq_progress_low.103",
+        "theme": "medium.disc_freq_progress_low.103",
+        "seenAt": 1795020166735,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.disc_rhythm_streak.rhythm-streak-5",
+        "theme": "medium.disc_rhythm_streak.rhythm-streak-5",
+        "seenAt": 1795020166735,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.span_session_cost",
+        "theme": "medium.span_session_cost",
+        "seenAt": 1795020166735,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.disc_sleep_month",
+        "theme": "medium.disc_sleep_month",
+        "seenAt": 1795020166735,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.short.disc_pending_session",
+        "theme": "short.disc_pending_session",
+        "seenAt": 1795020141748,
+        "count": 1
+      }
+    ]
+  },
+  "experiment": null,
+  "packState": "refreshing",
+  "environmentLabel": "cursor-browser-tab",
+  "requestedWindow": {
+    "start": "2026-11-12",
+    "end": "2026-11-18",
+    "period": "7d"
+  },
+  "windowMatchesRequested": true
+}

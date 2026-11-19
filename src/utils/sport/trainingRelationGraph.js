@@ -98,6 +98,8 @@ rule({
   horizon: 'long',
   when: (c) => {
     const comp = c.enrichment?.completion;
+    const prescribed = Number(comp?.stretchTotal);
+    if (!Number.isFinite(prescribed) || prescribed < 1) return false;
     return comp?.exoPct != null && comp?.stretchPct != null && comp.exoPct - comp.stretchPct >= 22;
   },
   confidence: () => 0.72,
@@ -108,7 +110,9 @@ rule({
   },
   metrics: (c) => ({
     exoPct: c.enrichment?.completion?.exoPct,
-    stretchPct: c.enrichment?.completion?.stretchPct
+    stretchPct: c.enrichment?.completion?.stretchPct,
+    stretchTotal: c.enrichment?.completion?.stretchTotal ?? null,
+    stretchReading: 'prescribed_slots_checked'
   })
 });
 

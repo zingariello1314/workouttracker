@@ -837,3 +837,24 @@ La version écrite avant la recette décrivait le mécanisme et citait les plafo
 
 La section 9 reste la carte d’intention. La section 12 est ce que le compte montrait le 18 novembre. Quand les deux divergent, la section 12 a raison pour l’écran, le code a raison pour la cause (start null, deux calculs de série, budget sommeil, pénalités contournées par le mot « lifetime »).
 
+---
+
+## 16. Livraison du 18 novembre — corrections dont la cause était établie
+
+Fenêtre observée dans Cursor, compte @zingariello1314, 7 jours (12 → 18 novembre 2026), avant rechargement de la page.
+
+| Surface | Avant | Après, sur l’écran ou sur un passage frais du moteur |
+| --- | --- | --- |
+| Tuile « Best streak » | 5, série de novembre entier | 2 · novembre 2026 (portion) |
+| Phrase sous le module | 2 j. · 13 → 14 novembre | BEST STREAK : 2 j. · vendredi 13 novembre 2026 → samedi 14 novembre 2026 |
+| Durée de la carte kcal | paquet publié : « 9 min d'exercices » | passage frais : « 3 h 15 hors course », 3 162 kcal |
+| Bandeau et mesure | — | 195 min des deux côtés, course 0, 1 002 reps, 3 jours |
+
+La carte encore affichée disait 9 min parce que le paquet publié ne portait pas d’édition du moteur : la mesure fraîche du même instant valait déjà 195 min. La clé de cache inclut désormais `m1-window-streak-v1`. Les anciens paquets restent en base ; le prochain calcul de la période ne les reprend pas comme vérité.
+
+Expérience isolée, même page, historique non réécrit, snapshot réel non modifié. Moteur actuel sur les données telles quelles : 22 cartes. Même passage après ajout d’une séance synthétique de 332 reps le 17 novembre : 21 cartes, aucune identité `kind + titre` disparue, aucune nouvelle. L’écart d’un exemplaire est un doublon, pas une conclusion perdue. Le paquet affiché à ce moment en comptait 20 : il n’était pas le passage frais.
+
+`exercice 301` est rejeté par `insightRejectReason` (`anonymous_exercise_label`). « Toujours » prend comme début la première preuve datée, sans année inventée ; `getRecapDateWindow('all')` reste sans début pour les autres appelants.
+
+Tests : `recapMission1Metrics.test.js` et le cas « exercice 301 » dans `recapExerciseIdentityDisplay.test.js`, 23 tests verts.
+

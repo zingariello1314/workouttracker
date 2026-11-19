@@ -115,9 +115,11 @@ describe('lectures de coach', () => {
     expect(allText).not.toMatch(/\+703/);
     expect(allText).toMatch(/semaine|séances par semaine|7 derniers jours/i);
     expect(cands.some((c) => c.id.includes('volume_traj'))).toBe(false);
-    const nowCard =
-      cands.find((c) => c.id.includes('disc_volume_shape')) ||
-      cands.find((c) => c.id.includes('continuity'));
+    const nowCard = cands.find(
+      (c) =>
+        c.horizon === 'short' &&
+        (c.id.includes('disc_volume_shape') || c.id.includes('continuity'))
+    );
     expect(nowCard).toBeTruthy();
     expect(nowCard.nature).toBe('now');
     expect(renderInterpretationText(nowCard)).toMatch(/rebond|repart|7 derniers jours|mois précédent|30 jours d'avant/i);
@@ -249,9 +251,11 @@ describe('lectures de coach', () => {
         }
       }
     });
-    const nowCard =
-      cands.find((c) => c.id.includes('disc_volume_shape')) ||
-      cands.find((c) => c.id.includes('continuity'));
+    const nowCard = cands.find(
+      (c) =>
+        c.horizon === 'short' &&
+        (c.id.includes('disc_volume_shape') || c.id.includes('continuity'))
+    );
     expect(nowCard).toBeTruthy();
     expect(nowCard.horizon).toBe('short');
     expect(nowCard.nature).toBe('now');

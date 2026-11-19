@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
-import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
+import { resolveRecapPeriodWindow } from '../../utils/sport/recapMuscleLoadEngine';
 import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
 import { useRecapSynthesisCoach } from '../../hooks/useRecapSynthesisCoach';
 import { useRecapCrossCoachNutrition } from '../../hooks/useRecapCrossCoachNutrition';
@@ -17,6 +17,10 @@ const RecapSessionsView = lazy(() => import('../sport/recap/views/RecapSessionsV
 const RecapGradesView = lazy(() => import('../sport/recap/views/RecapGradesView'));
 import { isAdminUser } from '../../utils/accessControl';
 import { useGarminData } from '../../hooks/useGarminData';
+import { analysisEditionKey } from '../../utils/sport/analysisEdition';
+import { RECAP_ADAPTIVE_WORKER_CONTRACT } from '../../utils/sport/recapAdaptiveWorkerContract';
+import { tracePublication } from '../../utils/sport/publicationLifecycleTrace';
+import { loadAnalyticalMemory, noteExposure, saveAnalyticalMemory } from '../../utils/sport/analyticalMemory';
 import {
   buildGarminCardioById,
   computeRunningVolumeTotals,
@@ -219,7 +223,13 @@ const RecapTab = ({ isActive = true }) => {
     requestOpenEnduranceSubTab?.(id);
   }, [requestOpenEnduranceSubTab]);
 
-  const periodWindow = useMemo(() => getRecapDateWindow(deferredPeriod), [deferredPeriod]);
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminBundle, setGarminBundle] = useState(() => sessionGarminBundle);
+
+  const periodWindow = useMemo(
+    () => resolveRecapPeriodWindow(deferredPeriod, snapshotForRecap, garminBundle),
+    [deferredPeriod, snapshotForRecap, garminBundle]
+  );
 
   const garminRangeForRecap = useMemo(() => {
     const end = periodWindow.end;
@@ -241,9 +251,6 @@ const RecapTab = ({ isActive = true }) => {
     manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null,
     manualSleepByDate: snapshotForRecap?.manualSleepByDate ?? null
   });
-
-  const { loadAllData, dbReady } = useGarminData();
-  const [garminBundle, setGarminBundle] = useState(() => sessionGarminBundle);
 
   useEffect(() => {
     if (!isActive || !dbReady || !isAuthenticated) {
@@ -300,6 +307,118 @@ const RecapTab = ({ isActive = true }) => {
     activeProgram: activeProgram ?? null,
     profileQuestionnaireRaw: currentUser?.profileQuestionnaire
   });
+
+  useEffect(() => {
+    if (analysisStatus !== 'ready') return;
+    if (recapAssessment?.insightsPublication?.status !== 'ready') return;
+    tracePublication('render_committed', {
+      period: deferredPeriod,
+      windowStart: periodWindow?.start || null,
+      windowEnd: periodWindow?.end || null,
+      analysisEdition: analysisEditionKey(),
+      workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+      before: analysisStatus,
+      after: 'react_commit',
+      reason: 'react_commit_not_dom_proof'
+    });
+    if (activeView !== RECAP_VIEW_IDS.ANALYSE) return;
+    const profile = currentUser?.id ? `u:${currentUser.id}` : 'local';
+    const memory = loadAnalyticalMemory(profile);
+    const noted = noteExposure(memory, {
+      kind: 'presented',
+      editionKey: analysisEditionKey(),
+      period: deferredPeriod,
+      windowStart: periodWindow?.start || null,
+      windowEnd: periodWindow?.end || null,
+      at: new Date().toISOString()
+    });
+    if (noted.written) saveAnalyticalMemory(noted.memory);
+  }, [analysisStatus, recapAssessment, deferredPeriod, periodWindow, activeView, currentUser?.id]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    window.momentumExportAnalysisDossier = async (opts = {}) => {
+      const dossierMod = await import('../../utils/sport/analysisEnvironmentDossier');
+      const historyMod = await import('../../utils/sport/insightNoveltyStore');
+      const calendarMod = await import('../../utils/sport/recapCalendarPeriodAnalytics');
+      const measureMod = await import('../../utils/sport/recapPeriodMeasure');
+      const calendar = periodWindow?.start
+        ? calendarMod.buildRecapPeriodCalendarAnalytics({
+            workoutData: snapshotForRecap,
+            garminData: garminBundle,
+            period: deferredPeriod,
+            periodWindow,
+            getExerciseNameById,
+            recapState,
+            phase: 'full'
+          })
+        : null;
+      const measure = periodWindow?.start
+        ? measureMod.measureRecapWindow({
+            snapshot: snapshotForRecap,
+            window: periodWindow,
+            getExerciseNameById,
+            garminData: garminBundle,
+            recapState,
+            periodId: deferredPeriod
+          })
+        : null;
+      let experiment = null;
+      if (opts.experiment) {
+        experiment = await dossierMod.runIsolatedRepExperiment({
+          snapshot: snapshotForRecap,
+          addition: opts.experiment,
+          window: periodWindow,
+          period: deferredPeriod,
+          garminData: garminBundle,
+          garminDailyMetrics: garminPartialForRecap?.dailyMetrics || null,
+          getExerciseNameById,
+          profileQuestionnaireRaw: currentUser?.profileQuestionnaire || null,
+          activeProgram: activeProgram || null,
+          programs: programs || null,
+          assessment: recapAssessment,
+          recapState,
+          enrichment,
+          publishedInsights: recapAssessment?.insights
+        });
+      }
+      const dossier = dossierMod.buildAnalysisEnvironmentDossier({
+        period: deferredPeriod,
+        periodWindow,
+        assessment: recapAssessment,
+        calendar,
+        measure,
+        history: historyMod.loadInsightHistory(),
+        signature: historyMod.loadLastInsightSignature(),
+        snapshot: snapshotForRecap,
+        analysisStatus,
+        analysisPeriod,
+        experiment,
+        mode: import.meta.env.MODE,
+        publicationTrace: Array.isArray(window.__f70iPub) ? window.__f70iPub.slice(-40) : null
+      });
+      if (opts.download !== false) dossierMod.downloadAnalysisDossier(dossier);
+      return dossier;
+    };
+    return () => {
+      delete window.momentumExportAnalysisDossier;
+    };
+  }, [
+    periodWindow,
+    deferredPeriod,
+    snapshotForRecap,
+    garminBundle,
+    garminPartialForRecap,
+    getExerciseNameById,
+    recapState,
+    recapAssessment,
+    enrichment,
+    currentUser,
+    activeProgram,
+    programs,
+    analysisStatus,
+    analysisPeriod
+  ]);
 
   useEffect(() => {
     try {

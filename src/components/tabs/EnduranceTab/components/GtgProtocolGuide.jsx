@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
 import { useTranslation } from '../../../../utils/translations';
@@ -16,6 +16,7 @@ import {
   updateGtgProtocolExercise
 } from '../../../../services/endurance/gtgService';
 import { applyGtgDeclaredMaxToData } from '../../../../services/endurance/gtgMaxPerformance';
+import { isConfirmedSave, saveOutcomeNotice } from '../../../../services/workout/saveOutcome';
 import '../../../../styles/gtg-protocol.css';
 
 const RAIL = [
@@ -233,6 +234,8 @@ function ProtocolExerciseCard({
 
 export default function GtgProtocolGuide() {
   const rootRef = useRef(null);
+  const pendingPayloadRef = useRef(null);
+  const [saveNotice, setSaveNotice] = useState(null);
   const { data, updateData } = useWorkout();
   const { questionnaire: profileQuestionnaire } = useProfileQuestionnaire();
   const t = useTranslation();
@@ -352,6 +355,19 @@ export default function GtgProtocolGuide() {
   const pushStartLow = Math.max(1, Math.round(pushMax * 0.25));
   const pushStartHigh = Math.max(pushStartLow, Math.round(pushMax * 0.35));
 
+  const commitGtg = useCallback((nextData) => {
+    if (typeof updateData !== 'function') return;
+    pendingPayloadRef.current = nextData;
+    updateData(nextData, { reportOutcome: true }).then((outcome) => {
+      if (isConfirmedSave(outcome)) {
+        pendingPayloadRef.current = null;
+        setSaveNotice(null);
+      } else {
+        setSaveNotice(saveOutcomeNotice(outcome));
+      }
+    });
+  }, [updateData]);
+
   const persistProtocol = useCallback(
     (exerciseId, patch) => {
       if (typeof updateData !== 'function') return;
@@ -374,9 +390,9 @@ export default function GtgProtocolGuide() {
           ctx
         });
       }
-      updateData(nextData);
+      commitGtg(nextData);
     },
-    [data, gtgData, updateData, ctx]
+    [data, gtgData, updateData, ctx, commitGtg]
   );
 
   const persistWorkingReps = useCallback(
@@ -391,7 +407,7 @@ export default function GtgProtocolGuide() {
       if (!(proto.currentMax > 0) && repsPerSet > 0) {
         // no-op on protocol.currentMax — l’UI estimera via estimateGtgMaxFromWorkingReps
       }
-      updateData({
+      commitGtg({
         ...data,
         enduranceData: {
           ...(data.enduranceData || {}),
@@ -400,7 +416,7 @@ export default function GtgProtocolGuide() {
         }
       });
     },
-    [data, gtgData, updateData]
+    [data, gtgData, updateData, commitGtg]
   );
 
   useEffect(() => {
@@ -484,6 +500,18 @@ export default function GtgProtocolGuide() {
             Comment répéter un mouvement des dizaines de fois par jour sans jamais l’épuiser — et
             où le lest s’intègre là-dedans.
           </p>
+          {saveNotice ? (
+            <p role="status">
+              {saveNotice}{' '}
+              <button
+                type="button"
+                disabled={!pendingPayloadRef.current}
+                onClick={() => commitGtg(pendingPayloadRef.current)}
+              >
+                Réessayer la même sauvegarde
+              </button>
+            </p>
+          ) : null}
 
           {selectedIds.length > 0 && (
             <div className="hero-picks" role="group" aria-label="Exercices du protocole">

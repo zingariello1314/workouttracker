@@ -295,6 +295,42 @@ export default function RecapAnalyseView({
         </div>
       )}
 
+      {!waitingInsights &&
+      (assessment?.insights?.accessibleReserve || []).some(
+        (item) => item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority'
+      ) ? (
+        <details className="emp">
+          <summary>
+            Conclusions conservées (
+            {
+              (assessment.insights.accessibleReserve || []).filter(
+                (item) => item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority'
+              ).length
+            }
+            )
+          </summary>
+          <div>
+            {(assessment.insights.accessibleReserve || [])
+              .filter(
+                (item) =>
+                  (item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority') &&
+                  item.title
+              )
+              .map((item) => (
+                <article key={item.id || item.title}>
+                  <h3>{item.title}</h3>
+                  {item.period ? <div className="meta">{item.period}</div> : null}
+                  {item.body ? <p className="whitespace-pre-line">{item.body}</p> : null}
+                  {item.evidence ? <div className="meta">{item.evidence}</div> : null}
+                  {item.disposition === 'demoted_priority' ? (
+                    <div className="meta">Conclusion admissible, non mise en avant</div>
+                  ) : null}
+                </article>
+              ))}
+          </div>
+        </details>
+      ) : null}
+
       {detailsOn && !waitingInsights ? (
         <RecapAnalyseDetails
           assessment={assessment}

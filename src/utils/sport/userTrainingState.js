@@ -10,6 +10,7 @@ import { acuteChronicRepsRatio, garminStatsForWindow } from './recapInsightHelpe
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { computeRepsWeeklyVelocity } from './trainingProgressionVelocity';
 import { buildRecapTrainingFeatures } from './recapTrainingFeatures';
+import { countFrozenPlanDays } from './recapCompletionTruth';
 
 /** @typedef {'rising'|'stable'|'falling'|'unknown'} TrendDir */
 /** @typedef {'high'|'medium'|'low'|'unknown'} LevelBand */
@@ -523,6 +524,13 @@ function buildUserTrainingStateUncached({
       sleepDeltaPct: sleepHalf.deltaPct,
       difficultyDeltaPct: diffHalf.deltaPct,
       programCompletionPct: programRatio != null ? Math.round(programRatio * 100) : null,
+      frozenPlanDays: countFrozenPlanDays(snapshot, window),
+      windowSpanDays:
+        window?.start && window?.end
+          ? Math.round(
+              (new Date(`${window.end}T12:00:00`) - new Date(`${window.start}T12:00:00`)) / 86400000
+            ) + 1
+          : null,
       acuteChronicRatio: acuteLoad?.ratio ?? null,
       progressionEfficiency,
       progressionVelocityPerWeek: repsVelocity.velocityPerWeek,

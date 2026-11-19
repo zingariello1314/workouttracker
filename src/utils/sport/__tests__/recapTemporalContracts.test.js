@@ -7,16 +7,42 @@ import {
   assertFactRoleAllowed,
   assessWindowComparability,
   todayWindowMode,
+  calendarDayEvidence,
   FIXED_HISTORICAL_HORIZONS
 } from '../recapTemporalContracts';
+import { getRecapDateWindow, RECAP_PERIOD_SPANS } from '../recapMuscleLoadEngine';
 
 describe('recapTemporalContracts F2', () => {
-  it('getRecapDateWindow today = rolling-24h', () => {
-    expect(todayWindowMode().mode).toBe('rolling-24h');
-    const w = primaryWindowForPeriod('today', new Date('2026-11-01T15:00:00'));
-    expect(w.role).toBe(WINDOW_ROLE.PRIMARY);
-    expect(w.end).toBe('2026-11-01');
-    expect(w.start).toBeTruthy();
+  it('getRecapDateWindow today = jour calendaire Europe/Paris', () => {
+    expect(todayWindowMode().mode).toBe('calendar-day');
+    const lateUtc = primaryWindowForPeriod('today', new Date('2026-11-18T23:30:00Z'));
+    expect(lateUtc.start).toBe('2026-11-19');
+    expect(lateUtc.end).toBe('2026-11-19');
+    expect(lateUtc.spanDays).toBe(1);
+    const eveningParis = primaryWindowForPeriod('today', new Date('2026-11-17T22:30:00Z'));
+    expect(eveningParis.start).toBe('2026-11-17');
+    expect(eveningParis.end).toBe('2026-11-17');
+  });
+
+  it('les huit périodes sont des dates inclusives Europe/Paris', () => {
+    const ref = new Date('2026-11-18T15:00:00Z');
+    expect(getRecapDateWindow('today', ref)).toMatchObject({
+      start: '2026-11-18',
+      end: '2026-11-18',
+      mode: 'calendar-day',
+      timeZone: 'Europe/Paris',
+      partial: true
+    });
+    ['7d', '30d', '3m', '6m', '1y', '2y'].forEach((period) => {
+      const window = getRecapDateWindow(period, ref);
+      expect(window.end).toBe('2026-11-18');
+      expect(window.spanDays).toBe(RECAP_PERIOD_SPANS[period]);
+      expect(window.mode).toBe('inclusive-calendar');
+      expect(window.timeZone).toBe('Europe/Paris');
+      expect(window.partialEnd).toBe(true);
+    });
+    expect(getRecapDateWindow('all', ref).start).toBeNull();
+    expect(calendarDayEvidence({ reps: {}, checkedExercises: {} }, '2026-11-18')).toBe('no-recording');
   });
 
   it('7d / 30d / 3m ont des spanDays cohérents', () => {

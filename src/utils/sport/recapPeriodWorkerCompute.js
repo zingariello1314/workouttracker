@@ -70,6 +70,7 @@ export async function computeRecapPeriodWorkerBundle(msg, coop = {}) {
     const t1 =
       typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     timings[label] = Math.round((t1 - t0) * 100) / 100;
+    if (typeof coop.onStage === 'function') coop.onStage(label, timings[label]);
     await yieldFn();
     return out;
   };

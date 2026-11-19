@@ -568,10 +568,13 @@ function summarizeExercisePlace(snapshot, window, getExerciseNameById) {
       id: r.id,
       dayCount: r.days.size,
       exclusiveReps: r.exclusiveReps,
-      label:
-        (typeof getExerciseNameById === 'function' && getExerciseNameById(r.id)) ||
-        `exercice ${r.id}`
-    }));
+      label: (() => {
+        const resolved = typeof getExerciseNameById === 'function' ? getExerciseNameById(r.id) : '';
+        if (!resolved || /^Exercice\s+\d+/i.test(String(resolved))) return null;
+        return String(resolved);
+      })()
+    }))
+    .filter((row) => row.label);
 
   const totalReps = list.reduce((s, r) => s + r.exclusiveReps, 0);
   const byFreq = [...list].sort((a, b) => b.dayCount - a.dayCount || b.exclusiveReps - a.exclusiveReps);

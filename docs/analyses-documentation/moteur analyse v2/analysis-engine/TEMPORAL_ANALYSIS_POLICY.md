@@ -19,6 +19,14 @@ Chaque plan retenu doit déclarer : question, découpage, population, couverture
 
 **Interdit :** choisir le découpage uniquement parce qu’il maximise un %.
 
+## Convention retenue le 18 novembre 2026
+
+Aujourd’hui est le jour civil Europe/Paris, pas les 24 heures glissantes. La journée en cours est partielle et peut se réécrire quand une séance est enregistrée. Une date sans répétition ni cochage, dans un snapshot déjà chargé, est une journée sans enregistrement. Ce n’est pas une absence de couverture. Les séances déjà datées ne sont pas réattribuées, y compris si elles ont traversé minuit : la clé de stockage reste la date d’origine.
+
+Les autres périodes sont des plages inclusives, même fuseau, dernier jour partiel tant qu’il est le jour courant : 7 jours, 30 jours, 92 jours, 183 jours, 365 jours, 730 jours. Toujours commence à la première preuve datée, sans année inventée.
+
+Garmin, le tableau de bord sport et la console d’analyse lisent `getRecapDateWindow`. Ils suivent donc la même borne.
+
 ## Périodes partielles
 
 Un mois / trimestre incomplet ne sert pas de borne « récente » sans marquage (`isIncompleteRecentMonth`).

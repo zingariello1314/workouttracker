@@ -8,6 +8,7 @@ import {
   matchesWorkerPublicationGate,
   makeWorkerRequestId
 } from './recapAdaptiveWorkerContract';
+import { tracePublication, workerGateMismatch } from './publicationLifecycleTrace';
 
 /** @type {Worker|null} */
 let workerInstance = null;
@@ -24,22 +25,79 @@ function attachHandlers(w) {
   w.onmessage = (event) => {
     const data = event.data || {};
     const requestId = data.requestId != null ? String(data.requestId) : '';
+    if (data.type === WORKER_MSG.PROGRESS) {
+      const stage = data.stage || null;
+      const common = {
+        requestId,
+        period: data.period || null,
+        stage,
+        ms: data.ms ?? null,
+        workerContract: data.contractVersion || RECAP_ADAPTIVE_WORKER_CONTRACT
+      };
+      if (stage === 'received') tracePublication('worker_received', common);
+      else if (stage === 'response_ready') tracePublication('worker_response_sent', common);
+      else if (stage === 'recapState') tracePublication('compute_started', common);
+      else if (stage) tracePublication('compute_stage', common);
+      try {
+        const log = (window.__f70iPub = window.__f70iPub || []);
+        log.push({
+          t: Date.now(),
+          event: 'worker_progress',
+          requestId,
+          period: data.period || null,
+          stage: data.stage || null,
+          ms: data.ms ?? null
+        });
+        if (log.length > 100) log.splice(0, log.length - 100);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
     const entry = pending.get(requestId);
     if (!entry) return;
 
     if (data.type === WORKER_MSG.RESULT) {
       pending.delete(requestId);
       if (busyRequestId === requestId) busyRequestId = null;
+      const identity = {
+        requestId,
+        period: data.period || null,
+        windowStart: data.windowStart ?? null,
+        windowEnd: data.windowEnd ?? null,
+        workerContract: data.contractVersion || null,
+        dataFingerprint: data.dataRevision || null,
+        ms: data.workerMs ?? null
+      };
+      tracePublication('main_received', identity);
+      tracePublication('compute_finished', identity);
+      const mismatch = workerGateMismatch(entry.request, data);
+      tracePublication('message_validated', { ...identity, reason: mismatch || 'ok' });
+      tracePublication('signature_checked', {
+        ...identity,
+        reason: mismatch && mismatch !== 'result_missing' && mismatch !== 'status' ? mismatch : 'match'
+      });
       if (!matchesWorkerPublicationGate(entry.request, data)) {
+        tracePublication('publication_rejected', { ...identity, reason: mismatch || 'gate' });
+        tracePublication('request_rejected', { ...identity, reason: mismatch || 'gate' });
         entry.reject(Object.assign(new Error('worker_publication_gate_failed'), { code: 'gate' }));
         return;
       }
+      tracePublication('publication_accepted', { ...identity, before: 'response', after: 'accepted' });
+      tracePublication('request_resolved', identity);
       entry.resolve(data);
       return;
     }
     if (data.type === WORKER_MSG.CANCELLED) {
       pending.delete(requestId);
       if (busyRequestId === requestId) busyRequestId = null;
+      tracePublication('request_cancelled', {
+        requestId,
+        period: data.period || null,
+        reason: 'cancelled',
+        before: 'in_flight',
+        after: 'cancelled'
+      });
       entry.reject(Object.assign(new Error('worker_cancelled'), { code: 'cancelled' }));
       return;
     }
@@ -75,12 +133,14 @@ function createWorker() {
     type: 'module'
   });
   attachHandlers(w);
+  tracePublication('worker_created', { reason: 'new_worker' });
   return w;
 }
 
 function ensureWorker() {
   if (!canUseWorker()) return null;
   if (!workerInstance) workerInstance = createWorker();
+  else tracePublication('worker_reused', { reason: 'existing_worker' });
   return workerInstance;
 }
 
@@ -164,6 +224,16 @@ export function requestAdaptiveInsightsViaWorker(payload = {}, opts = {}) {
       queueMicrotask(() => {
         try {
           if (!pending.has(requestId)) return;
+          tracePublication('request_sent', {
+            requestId,
+            period: request.period || null,
+            windowStart: request.windowStart ?? null,
+            windowEnd: request.windowEnd ?? null,
+            dataFingerprint: request.dataRevision || null,
+            workerContract: request.contractVersion || null,
+            before: 'prepared',
+            after: 'posted'
+          });
           w.postMessage(request);
         } catch (err) {
           pending.delete(requestId);

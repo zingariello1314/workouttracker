@@ -9,6 +9,7 @@ import { formatRateFr } from './athleteTrainingIdentity';
 import { formatDayFr, daysBetweenYmd } from './recapTrainingTimeline';
 import { createSetShiftReader } from './recapSetShift';
 import { describeCalendarShape } from './recapCalendarShape';
+import { parisTodayYmd } from './recapTemporalContracts';
 import { describeStepReadings } from './recapStepReading';
 import { describeRestDay } from './recapRestDayReading';
 import { primaryGroup, sameDayCompanions, writeExerciseEvent } from './recapFactReading';
@@ -18,6 +19,9 @@ import {
   renderExerciseTrajectoryCopy,
   trajectoryToMetrics
 } from './exerciseTrajectoryAnalysis';
+import { runExerciseFormatConsolidationShadow } from './exerciseFormatConsolidation';
+import { decideInformativePriority } from './analyticalMemory';
+import { muscleWindowRelation } from './muscleExposureLedger';
 import {
   composeAnalyticalReading,
   densityImplication,
@@ -26,7 +30,7 @@ import {
   peakDayImplication
 } from './recapAnalyticalReading';
 import { baselineTraceMetrics } from './recapPersonalBaselines';
-import { possessiveMuscleShare } from './recapPeriodVoice';
+import { familyFadeTitle, possessiveMuscleShare } from './recapPeriodVoice';
 import {
   detectFamilyFades,
   detectStructuralShifts,
@@ -63,6 +67,7 @@ import {
   fmtPct,
   fmtSignedPct,
   formatDurationFr,
+  describeActivityDuration,
   pctChange,
   share,
   discovery
@@ -177,7 +182,7 @@ export function detectDiscoveries(cmp, extras = {}) {
           title: isToday
             ? "En attendant la séance, ta semaine récente a déjà une forme"
             : `Le rythme autour ${v.ofPeriod} reste lisible`,
-          body: `${isToday ? 'Les 7 derniers jours' : 'Les 30 derniers jours'} représentent ${ctxSrc.trainingDays} séance${ctxSrc.trainingDays > 1 ? 's' : ''}, ${fmtInt(ctxSrc.totalReps)} répétitions et ${formatDurationFr(ctxSrc.minutes || ctxSrc.totalMinutes)} d'entraînement${per}.${periodPortraitTail(ctxSrc, {
+          body: `${isToday ? 'Les 7 derniers jours' : 'Les 30 derniers jours'} représentent ${ctxSrc.trainingDays} séance${ctxSrc.trainingDays > 1 ? 's' : ''}, ${fmtInt(ctxSrc.totalReps)} répétitions et ${describeActivityDuration(ctxSrc)}${per}.${periodPortraitTail(ctxSrc, {
             ...v,
             thisPeriod: isToday ? 'cette semaine récente' : 'ces 30 jours',
             ofPeriod: isToday ? 'de la semaine récente' : 'du mois récent'
@@ -195,7 +200,8 @@ export function detectDiscoveries(cmp, extras = {}) {
         repsByDate: p.repsByDate,
         start: p.window?.start,
         end: p.window?.end,
-        thisPeriod: v.thisPeriod
+        thisPeriod: v.thisPeriod,
+        openEnd: p.window?.end === parisTodayYmd()
       })
     : null;
   if (calendar) {
@@ -319,8 +325,8 @@ export function detectDiscoveries(cmp, extras = {}) {
         : null
       : Math.round((p.trainingDays / Math.max(1, p.spanDays)) * 7 * 10) / 10;
     const sessionsBit = isToday
-      ? `Tu as réalisé ${fmtInt(p.totalReps)} répétitions en ${formatDurationFr(p.minutes || p.totalMinutes)}`
-      : `${p.trainingDays} séance${p.trainingDays > 1 ? 's' : ''}, ${fmtInt(p.totalReps)} répétitions et ${formatDurationFr(p.minutes || p.totalMinutes)} d'entraînement`;
+      ? `Tu as réalisé ${fmtInt(p.totalReps)} répétitions en ${describeActivityDuration(p)}`
+      : `${p.trainingDays} séance${p.trainingDays > 1 ? 's' : ''}, ${fmtInt(p.totalReps)} répétitions et ${describeActivityDuration(p)}`;
     const perSess = isToday ? '' : sessionRhythmClause(p);
     const habitBit =
       habitRate != null && weekRate != null
@@ -684,10 +690,15 @@ export function detectDiscoveries(cmp, extras = {}) {
     const contrasts = p.muscles
       .map((m) => {
         const month = d30.byMuscle[m.group]?.reps || 0;
-        const pct = share(m.reps, month);
-        return { ...m, monthReps: month, ofMonthPct: pct };
+        const relation = muscleWindowRelation({
+          periodReps: m.reps,
+          referenceReps: month,
+          periodDays: p.spanDays
+        });
+        if (!relation.ok) return null;
+        return { ...m, monthReps: month, ofMonthPct: relation.sharePct, relation: relation.role };
       })
-      .filter((m) => m.monthReps >= 80 && m.reps >= 25 && m.ofMonthPct != null)
+      .filter((m) => m && m.monthReps >= 80 && m.reps >= 25 && m.ofMonthPct != null && m.ofMonthPct <= 100)
       .sort((a, b) => b.ofMonthPct - a.ofMonthPct);
     const lead = contrasts[0];
     const low = contrasts.filter((m) => m.group !== lead?.group && m.ofMonthPct < 12).slice(0, 2);
@@ -703,8 +714,14 @@ export function detectDiscoveries(cmp, extras = {}) {
         titleThesis: isToday
           ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} concentre une part élevée des ${lead.label} du mois`
           : `La part attribuée aux ${lead.label} ${v.ofPeriod} ressort face aux 30 derniers jours`,
-        constat: `Les ${lead.label} représentent ${v.now} ${fmtInt(lead.reps)} reps attribuées (répartition indicative), contre ${fmtInt(lead.monthReps)} sur les 30 derniers jours`,
-        mechanism: `À elle seule, ${v.thisPeriod} concentre environ ${fmtPct(lead.ofMonthPct)} de l’exposition attribuée ${lead.label} du dernier mois`,
+        constat:
+          lead.relation === 'recent_month_inside_period'
+            ? `Sur l'ensemble de la période, ${fmtInt(lead.reps)} répétitions sont attribuées aux ${lead.label}. Les 30 derniers jours en portent ${fmtInt(lead.monthReps)}, soit ${fmtPct(lead.ofMonthPct)} de ce total`
+            : `Les ${lead.label} représentent ${v.now} ${fmtInt(lead.reps)} répétitions attribuées, soit ${fmtPct(lead.ofMonthPct)} des ${fmtInt(lead.monthReps)} répétitions attribuées à ce groupe sur les 30 derniers jours`,
+        mechanism:
+          lead.relation === 'recent_month_inside_period'
+            ? `Le mois récent est une partie du total long. Le rapport inverse, qui dépasserait 100 %, n'est pas une concentration`
+            : `Cette part reste intérieure au mois de référence`,
         scope: low.length
           ? `Le contraste est notable avec ${low
               .map((m) => `${fmtInt(m.reps)} reps ${m.label} (≈${fmtPct(m.ofMonthPct)} de leur volume mensuel attribué)`)
@@ -1072,13 +1089,13 @@ export function detectDiscoveries(cmp, extras = {}) {
           kind: 'disc_freq_continuity',
           nature: 'journey',
           family: 'freq_span',
-          title: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} s'inscrit dans une pratique déjà documentée`,
+          title: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, "s'inscrit", "s'inscrivent")} dans une pratique déjà documentée`,
           body: `La période se lit avec ${d30.trainingDays} jours entraînés sur les 30 derniers jours et ${p.trainingDays} jour${p.trainingDays > 1 ? 's' : ''} sur ${p.spanDays === 1 ? 'cette séance' : `les ${p.spanDays} derniers jours`}, soit une fréquence d'environ ${fmtPct(monthPct, 0)} des jours sur 30 jours${
             p.spanDays > 1 ? ` contre environ ${fmtPct(recentPct, 0)} sur ${v.thisPeriod}` : ''
           }. ${
             isToday
               ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} s'inscrit donc dans une pratique déjà suffisamment documentée pour que ses performances soient replacées dans ton historique plutôt que jugées isolément.`
-              : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} n'est donc pas une rupture brutale de continuité : elle s'inscrit dans une pratique où l'entraînement reste présent régulièrement.`
+              : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, "n'est", 'ne sont')} donc pas une rupture brutale de continuité : ${periodVerb(v.thisPeriod, 'elle', 'ils')} ${periodVerb(v.thisPeriod, "s'inscrit", "s'inscrivent")} dans une pratique où l'entraînement reste présent régulièrement.`
           }`,
           evidence: `${d30.trainingDays}/30 j. · ${p.trainingDays}/${p.spanDays} j.`,
           weights: { importance: 0.78, reliability: 0.92, novelty: 0.72, fit: isWeek || isToday ? 0.88 : 0.7 }
@@ -1094,12 +1111,12 @@ export function detectDiscoveries(cmp, extras = {}) {
         nature: 'journey',
         family: 'kcal_profile',
         title: 'La dépense de la période distingue densité et fréquence',
-        body: `Les ${fmtInt(p.activeKcal)} kcal actives enregistrées ${v.now} donnent une mesure de la charge globale indépendante des seules répétitions. Croisée avec ${formatDurationFr(p.minutes || p.totalMinutes)} d'exercices, cette donnée permet de distinguer une période où l'activité est élevée parce que les séances sont nombreuses d'une période où elle est élevée parce que les séances sont particulièrement denses. ${
+        body: `Les ${fmtInt(p.activeKcal)} kcal actives enregistrées ${v.now} donnent une mesure de la charge globale indépendante des seules répétitions. Croisée avec ${describeActivityDuration(p)}, cette donnée permet de distinguer une période où l'activité est élevée parce que les séances sont nombreuses d'une période où elle est élevée parce que les séances sont particulièrement denses. ${
           p.trainingDays <= 4
             ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} correspond au second profil : peu de journées d'entraînement, mais une dépense et un volume concentrés sur ces journées.`
             : `Ici la dépense se répartit sur ${p.trainingDays} journées.`
         }`,
-        evidence: `${fmtInt(p.activeKcal)} kcal · ${formatDurationFr(p.minutes || p.totalMinutes)}`,
+        evidence: `${fmtInt(p.activeKcal)} kcal · ${describeActivityDuration(p)}`,
         weights: { importance: 0.72, reliability: 0.85, novelty: 0.78, fit: 0.86 }
       })
     );
@@ -1714,17 +1731,23 @@ export function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_sleep_zones',
         nature: 'journey',
         family: 'sleep_zones',
-        title: isToday
-          ? "Cette séance s'inscrit dans trois zones de récupération déjà visibles"
+        title: zones.z75
+          ? isToday
+            ? "Cette séance s'inscrit dans trois zones de sommeil déjà visibles"
+            : isWeek
+              ? 'Cette semaine sépare trois zones de sommeil'
+              : 'Le sommeil se sépare en trois zones de volume'
           : isWeek
-            ? 'Cette semaine confirme trois zones de récupération'
-            : isLongVoice(v)
-              ? 'Ton historique établit trois zones de récupération'
-              : 'Ton profil de récupération se précise en trois zones',
-        body: `${zoneScope}, tes données établissent trois zones : au-dessus de 8 h, environ ${fmtInt(zones.z8.vol)} reps le lendemain${
-          zones.z75 ? ` ; entre 7 h 30 et 8 h, environ ${fmtInt(zones.z75.vol)}` : ''
-        } ; sous 7 h 30, environ ${fmtInt(zones.zLow.vol)}. L'écart entre la première et la troisième zone atteint ${fmtInt(zones.delta)} reps (${fmtPct(zones.deltaPct)}).${exposeBit} Le seuil ne dit pas qu'une nuit courte empêche l'entraînement : il sépare deux régimes de volume.`,
-        evidence: `≥ 8 h ${fmtInt(zones.z8.vol)} · < 7 h 30 ${fmtInt(zones.zLow.vol)}`,
+            ? 'Cette semaine sépare deux zones de sommeil'
+            : 'Le sommeil se sépare en deux zones de volume',
+        body: `${zoneScope}, ${
+          zones.z75
+            ? `trois zones ont assez de nuits : au-dessus de 8 h, ${zones.z8.n} nuits et environ ${fmtInt(zones.z8.vol)} répétitions le lendemain ; entre 7 h 30 et 8 h, ${zones.z75.n} nuits et environ ${fmtInt(zones.z75.vol)} ; sous 7 h 30, ${zones.zLow.n} nuits et environ ${fmtInt(zones.zLow.vol)}`
+            : `deux zones ont assez de nuits : au-dessus de 8 h, ${zones.z8.n} nuits et environ ${fmtInt(zones.z8.vol)} répétitions le lendemain ; sous 7 h 30, ${zones.zLow.n} nuits et environ ${fmtInt(zones.zLow.vol)}. La zone intermédiaire n'a pas assez de nuits pour être décrite`
+        }. L'écart entre les nuits longues et les nuits courtes atteint ${fmtInt(zones.delta)} répétitions (${fmtPct(zones.deltaPct)}).${exposeBit} C'est une association dans l'historique, pas une cause.`,
+        evidence: zones.z75
+          ? `≥ 8 h n=${zones.z8.n} · 7 h 30–8 h n=${zones.z75.n} · < 7 h 30 n=${zones.zLow.n}`
+          : `≥ 8 h n=${zones.z8.n} · < 7 h 30 n=${zones.zLow.n}`,
         weights: { importance: 0.9, reliability: 0.88, novelty: 0.9, fit: 0.96 },
         metrics: zones
       })
@@ -2067,9 +2090,9 @@ export function detectDiscoveries(cmp, extras = {}) {
   structLeads.forEach((structLead, structIdx) => {
     const thenBit =
       structLead.thenReps >= 12
-        ? `contre ${fmtInt(structLead.thenReps)} reps (${fmtPct(structLead.thenShare)} de la ${structLead.family}) sur les 30 jours d'avant`
+        ? `contre ${fmtInt(structLead.thenReps)} reps (${fmtPct(structLead.thenShare)} ${possessiveMuscleShare(structLead.family)}) sur les 30 jours d'avant`
         : `alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant`;
-    const structWin = structSrc.window || p.window;
+    const structWin = (isToday || isWeek) && p.window?.start ? p.window : structSrc.window || p.window;
     const traj = measureTraj(() =>
       buildExerciseTrajectory({
         snapshot: extras.snapshot,
@@ -2081,7 +2104,10 @@ export function detectDiscoveries(cmp, extras = {}) {
         computeScope: extras.computeScope || null
       })
     );
-    const shareLead = `${structLead.name} pèsent désormais ${fmtInt(structLead.nowReps)} reps sur ${structLead.nowDays} séances des 30 derniers jours, soit ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}.`;
+    const weekReps = p.byExercise?.[structLead.id]?.reps || 0;
+    const shareLead = isWeek
+      ? `${structLead.name} compte ${fmtInt(weekReps)} répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}. La comparaison longue n'est pas l'événement de la semaine.`
+      : `${structLead.name} pèsent désormais ${fmtInt(structLead.nowReps)} reps sur ${structLead.nowDays} séances des 30 derniers jours, soit ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}.`;
     const legacyTitle =
       structLead.nowDays < 6
         ? `${structLead.name} entre dans ${possessiveMuscleShare(structLead.family)}`
@@ -2095,16 +2121,23 @@ export function detectDiscoveries(cmp, extras = {}) {
       legacyBits: {
         title: legacyTitle,
         body: legacyBody,
-        evidence: `${structLead.name} ${fmtPct(structLead.thenShare)} → ${fmtPct(structLead.nowShare)} de la ${structLead.family}`
+        evidence: `${structLead.name} ${fmtPct(structLead.thenShare)} → ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}`
       }
     });
     let body = shareLead;
     if (rendered.usedTrajectory && traj?.ok) {
+      const beforeFmt = traj.setMechanism?.before;
+      const afterFmt = traj.setMechanism?.after;
+      const formatChanged =
+        beforeFmt &&
+        afterFmt &&
+        (Math.abs(Number(beforeFmt.setCount) - Number(afterFmt.setCount)) >= 0.75 ||
+          Math.abs(Number(beforeFmt.perSet) - Number(afterFmt.perSet)) > 1);
       const mech =
-        traj.setMechanism?.available && traj.setMechanism.before && traj.setMechanism.after
-          ? ` Le volume par séance passe d’environ ${traj.setMechanism.before.setCount} × ${traj.setMechanism.before.perSet} à environ ${traj.setMechanism.after.setCount} × ${traj.setMechanism.after.perSet}${
+        traj.setMechanism?.available && formatChanged
+          ? ` D'après les séries enregistrées (${beforeFmt.n} séances avant, ${afterFmt.n} après), le volume passe d'environ ${beforeFmt.setCount} × ${beforeFmt.perSet} à environ ${afterFmt.setCount} × ${afterFmt.perSet}${
               traj.setMechanism.maintained ? ', format maintenu sur les séances suivantes' : ''
-            }.`
+            }. Les séries reconstruites ne servent pas à cette phrase.`
           : '';
       const installBit =
         traj.installation?.kind === 'installed' ||
@@ -2141,7 +2174,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         body,
         evidence:
           rendered.evidence ||
-          `${structLead.name} ${fmtPct(structLead.thenShare)} → ${fmtPct(structLead.nowShare)} de la ${structLead.family}`,
+          `${structLead.name} ${fmtPct(structLead.thenShare)} → ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}`,
         weights: {
           importance: Math.max(0.8, 0.91 - structIdx * 0.04),
           reliability: 0.88,
@@ -2297,7 +2330,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_family_fade',
         nature: 'trajectory',
         family: 'family_fade',
-        title: `${fadeLead.name} s'efface de ${possessiveMuscleShare(fadeLead.family)}`,
+        title: familyFadeTitle(fadeLead.name, fadeLead.family),
         body: `${fadeLead.name} représentaient ${fmtPct(fadeLead.thenShare)} ${possessiveMuscleShare(fadeLead.family)} sur les 30 jours d'avant (${fmtInt(fadeLead.thenReps)} reps), contre ${fmtPct(fadeLead.nowShare)} aujourd'hui${
           fadeLead.nowReps > 0 ? ` (${fmtInt(fadeLead.nowReps)} reps)` : ''
         }.${fadeExtra} Leur disparition explique une part de la baisse d'exposition de cette famille.`,
@@ -2396,6 +2429,106 @@ export function detectDiscoveries(cmp, extras = {}) {
     buildTrainingRhythmDiscoveries(p.repsByDate || {}, p.window || {}, {
       minActiveDays: isWeek ? 2 : 4
     }).forEach((partial) => out.push(discovery(partial)));
+  }
+
+  if (extras.snapshot && p.window?.start && p.window?.end) {
+    const span = inclusiveCalendarSpanDays(p.window.start, p.window.end);
+    const horizonPeriod =
+      span <= 1
+        ? 'today'
+        : span <= 8
+          ? '7d'
+          : span <= 40
+            ? '30d'
+            : span <= 100
+              ? '3m'
+              : span <= 200
+                ? '6m'
+                : span <= 400
+                  ? '1y'
+                  : span <= 800
+                    ? '2y'
+                    : 'all';
+    const shadow = runExerciseFormatConsolidationShadow({
+      snapshot: extras.snapshot,
+      window: p.window,
+      period: horizonPeriod,
+      getExerciseNameById: extras.getExerciseNameById || null,
+      computeScope: extras.computeScope || null,
+      programChanges: extras.programChanges || null
+    });
+    const seenPhenomenon = new Set();
+    const nameCount = new Map();
+    for (const row of shadow.phenomena || []) {
+      const label = row.exerciseName || '';
+      nameCount.set(label, (nameCount.get(label) || 0) + 1);
+    }
+    for (const row of shadow.phenomena || []) {
+      if (!row?.phenomenonId || seenPhenomenon.has(row.phenomenonId)) continue;
+      seenPhenomenon.add(row.phenomenonId);
+      const inWindow = (row.claimEvidenceDates || []).length;
+      const priority = decideInformativePriority({
+        transition: row.state === 'maintained' ? 'confirmed' : row.transition,
+        supportCount: row.supportCount,
+        newFacts: row.newPriorityCard === true && row.state !== 'maintained' && inWindow > 0,
+        quietDays: inWindow === 0 ? Math.max(span, 6) : 0,
+        horizonDays: span <= 8 ? span : 30
+      });
+      const volumeOnly = (row.limits || []).some((line) =>
+        /total de séance|séries est incomplet/i.test(line)
+      );
+      out.push(
+        discovery({
+          kind: 'disc_format_consolidation',
+          nature: 'trajectory',
+          family: 'format_consolidation',
+          title: `${(nameCount.get(row.exerciseName || '') || 0) > 1 ? `${row.exerciseName} (${row.exerciseId})` : row.exerciseName} : ${
+            {
+              higher_level_consolidation: 'un niveau plus haut se répète',
+              stabilized_after_drop: 'un niveau plus bas se stabilise',
+              historical_maintenance: 'le niveau historique se maintient',
+              resumed_former_level: 'un ancien niveau est retrouvé',
+              interrupted_progression: 'la progression s’interrompt',
+              partial_resume: 'la reprise reste incomplète',
+              load_variation: 'la charge change à volume tenu',
+              format_change: 'le format de séries change'
+            }[row.mechanism] || (volumeOnly ? 'un volume de séance se répète' : 'un format de séance se répète')
+          }`,
+          body: row.prose,
+          evidence: (row.claimEvidenceDates || []).join(' · '),
+          weights: {
+            importance: priority.newPriorityCard ? 0.86 : 0.4,
+            reliability: row.solidity || 0.6,
+            novelty: priority.newPriorityCard ? 0.62 : 0.2,
+            fit: 0.9
+          },
+          metrics: {
+            state: row.state,
+            mechanism: row.mechanism || null,
+            level: row.level ?? null,
+            reversible: true,
+            volumeOnly,
+            editorialPriority: priority.newPriorityCard,
+            exerciseId: String(row.exerciseId),
+            phenomenonId: row.phenomenonId,
+            phenomenon: 'format_consolidation',
+            links:
+              row.previousConclusionId &&
+              row.transition &&
+              row.transition !== 'new' &&
+              row.transition !== 'confirmed' &&
+              row.transition !== 'unchanged'
+                ? [
+                    {
+                      rel: row.transition === 'contradicted' ? 'contradicts' : 'supersedes',
+                      target: row.previousConclusionId
+                    }
+                  ]
+                : []
+          }
+        })
+      );
+    }
   }
 
   appendMilestoneDiscoveries(out, extras, v);

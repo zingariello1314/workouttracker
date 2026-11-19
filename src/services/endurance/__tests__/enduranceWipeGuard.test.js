@@ -5,6 +5,7 @@ import {
   writeEnduranceLocalBackup,
   hydratePushupSessionsFromWorkoutMirrors
 } from '../enduranceWipeGuard';
+import { persistEnduranceData } from '../enduranceDataService';
 
 describe('mergeEnduranceWithoutSilentWipe', () => {
   const previous = {
@@ -34,6 +35,106 @@ describe('mergeEnduranceWithoutSilentWipe', () => {
     );
     expect(next.sessions.pushups).toHaveLength(0);
     expect(next.challenges).toHaveLength(1);
+  });
+
+  const gtgPrevious = {
+    sessions: {
+      pushups: [{ id: 'pu_1', reps: 20 }],
+      running: [{ id: 'run_1', distance: 5 }],
+      gtg: [{ id: 'list_1', reps: 4 }]
+    },
+    challenges: [{ id: 'c1' }],
+    gtg: {
+      schemaNote: 'gardé',
+      days: {
+        '2026-06-01': { adHoc: [{ id: 'ah_1', reps: 5 }, { id: 'ah_2', reps: 3 }] },
+        '2026-06-02': { adHoc: [{ id: 'ah_3', reps: 2 }] }
+      }
+    },
+    customField: { keep: true }
+  };
+
+  it('refuse sessions.gtg vide et gtg.days vide sans ordre dédié', () => {
+    const before = JSON.stringify(gtgPrevious);
+    const incoming = {
+      sessions: { gtg: [], pushups: [{ id: 'pu_1', reps: 30 }] },
+      gtg: { days: {} },
+      challenges: []
+    };
+    const incomingBefore = JSON.stringify(incoming);
+    const next = mergeEnduranceWithoutSilentWipe(gtgPrevious, incoming);
+    expect(next.sessions.gtg).toEqual([{ id: 'list_1', reps: 4 }]);
+    expect(next.gtg.days['2026-06-01'].adHoc).toHaveLength(2);
+    expect(next.sessions.pushups[0].reps).toBe(30);
+    expect(next.sessions.running[0].id).toBe('run_1');
+    expect(next.challenges).toEqual([{ id: 'c1' }]);
+    expect(next.customField).toEqual({ keep: true });
+    expect(JSON.stringify(gtgPrevious)).toBe(before);
+    expect(JSON.stringify(incoming)).toBe(incomingBefore);
+  });
+
+  it('conserve le GTG absent et un héritage sans days', () => {
+    const legacy = { sessions: { pushups: [{ id: 'pu_1' }] }, gtg: { foo: 1 } };
+    const absent = mergeEnduranceWithoutSilentWipe(legacy, { sessions: { pushups: [{ id: 'pu_1' }] } });
+    expect(absent.gtg).toEqual({ foo: 1 });
+    const blank = mergeEnduranceWithoutSilentWipe(legacy, { gtg: { days: {} } });
+    expect(blank.gtg).toEqual({ foo: 1 });
+  });
+
+  it('garde sessions.gtg quand une écriture de pompes omet la clé', () => {
+    const next = mergeEnduranceWithoutSilentWipe(gtgPrevious, {
+      sessions: { pushups: [{ id: 'pu_2', reps: 40 }] }
+    });
+    expect(next.sessions.gtg).toEqual([{ id: 'list_1', reps: 4 }]);
+    expect(next.sessions.pushups[0].id).toBe('pu_2');
+    expect(next.sessions.running[0].id).toBe('run_1');
+    expect(next.gtg.days['2026-06-01'].adHoc).toHaveLength(2);
+  });
+
+  it('retire un passage ou une journée quand le snapshot contient encore des jours', () => {
+    const onePassage = mergeEnduranceWithoutSilentWipe(gtgPrevious, {
+      gtg: {
+        days: {
+          '2026-06-01': { adHoc: [{ id: 'ah_2', reps: 3 }] },
+          '2026-06-02': { adHoc: [{ id: 'ah_3', reps: 2 }] }
+        }
+      }
+    });
+    expect(onePassage.gtg.days['2026-06-01'].adHoc.map((p) => p.id)).toEqual(['ah_2']);
+    expect(onePassage.sessions.pushups[0].id).toBe('pu_1');
+
+    const oneDay = mergeEnduranceWithoutSilentWipe(gtgPrevious, {
+      gtg: { days: { '2026-06-02': { adHoc: [{ id: 'ah_3', reps: 2 }] } } }
+    });
+    expect(oneDay.gtg.days['2026-06-01']).toBeUndefined();
+    expect(oneDay.gtg.days['2026-06-02'].adHoc[0].id).toBe('ah_3');
+  });
+
+  it('efface tout le GTG seulement avec explicitGtgClear, pas avec sessionTypesTouched', () => {
+    const touched = mergeEnduranceWithoutSilentWipe(
+      gtgPrevious,
+      { sessions: { gtg: [] }, gtg: { days: {} } },
+      { sessionTypesTouched: ['gtg'] }
+    );
+    expect(touched.sessions.gtg).toHaveLength(1);
+    expect(touched.gtg.days['2026-06-01']).toBeTruthy();
+
+    const cleared = mergeEnduranceWithoutSilentWipe(
+      gtgPrevious,
+      { sessions: { gtg: [] }, gtg: { days: {} } },
+      { explicitGtgClear: true }
+    );
+    expect(cleared.sessions.gtg).toEqual([]);
+    expect(cleared.gtg).toEqual({ days: {} });
+    expect(cleared.sessions.pushups).toHaveLength(1);
+    expect(cleared.sessions.running).toHaveLength(1);
+  });
+
+  it('ne concatène pas deux listes de pompes', () => {
+    const next = mergeEnduranceWithoutSilentWipe(gtgPrevious, {
+      sessions: { pushups: [{ id: 'pu_1', reps: 20 }] }
+    });
+    expect(next.sessions.pushups).toHaveLength(1);
   });
 });
 
@@ -122,5 +223,41 @@ describe('restoreEnduranceIfWiped', () => {
     expect(restored.enduranceData.sessions.pushups[0].count).toBe(100);
     expect(restored.enduranceData.sessions.running).toHaveLength(1);
     expect(restored.enduranceData.repWorkoutSync['2026-08-12'].pushups).toBe(100);
+  });
+});
+
+describe('persistEnduranceData et le GTG', () => {
+  const current = {
+    enduranceData: {
+      sessions: { pushups: [{ id: 'pu_1', reps: 20 }], gtg: [{ id: 'list_1' }] },
+      challenges: [],
+      gtg: { days: { '2026-06-01': { adHoc: [{ id: 'ah_1', reps: 5 }] } } }
+    }
+  };
+
+  it('un patch vide ne retire pas le GTG, un patch explicite oui', async () => {
+    const seen = [];
+    const updateData = async (next) => {
+      seen.push(next);
+    };
+    await persistEnduranceData({
+      currentData: current,
+      patch: { gtg: { days: {} }, sessions: { gtg: [] } },
+      updateData
+    });
+    expect(seen[0].enduranceData.gtg.days['2026-06-01'].adHoc[0].id).toBe('ah_1');
+    expect(seen[0].enduranceData.sessions.gtg).toEqual([{ id: 'list_1' }]);
+    expect(seen[0].enduranceData.sessions.pushups[0].id).toBe('pu_1');
+    expect(seen[0].enduranceData.explicitGtgClear).toBeUndefined();
+
+    await persistEnduranceData({
+      currentData: current,
+      patch: { gtg: { days: {} }, sessions: { gtg: [] }, explicitGtgClear: true },
+      updateData
+    });
+    expect(seen[1].enduranceData.gtg).toEqual({ days: {} });
+    expect(seen[1].enduranceData.sessions.gtg).toEqual([]);
+    expect(seen[1].enduranceData.sessions.pushups[0].id).toBe('pu_1');
+    expect(seen[1].enduranceData.explicitGtgClear).toBeUndefined();
   });
 });

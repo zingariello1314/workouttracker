@@ -29,14 +29,6 @@ function phaseHint(phase) {
   return '';
 }
 
-const GOAL_LABELS = {
-  muscular_defined: 'hypertrophie / définition',
-  strength_lean: 'force sèche',
-  endurance_lean: 'endurance',
-  balanced_functional: 'polyvalence',
-  street_skills: 'skills street'
-};
-
 /**
  * @param {InterpretationCandidate} c
  * @param {UserTrainingState|null} [state]
@@ -51,9 +43,7 @@ export function renderInterpretationText(c, state = null) {
   const diff = fmtPct(m.difficultyDeltaPct);
   const perf = fmtPct(m.performanceMomentumPct);
   const phase = c.context?.phase;
-  const goalKey = c.context?.goal;
-  const goalLabel = goalKey ? GOAL_LABELS[goalKey] || null : null;
-  const goalBit = goalLabel ? ` (objectif ${goalLabel})` : '';
+  const goalBit = '';
 
   switch (c.type) {
     case 'adaptation_with_recovery_warning':
@@ -78,23 +68,22 @@ export function renderInterpretationText(c, state = null) {
       ].join('');
 
     case 'adaptation_success':
+      if (!vol) return null;
       return [
-        vol ? `Volume ${vol}` : 'Charge montée',
-        perf ? ` et performance ${perf}` : ' et progression visible',
-        ' — adaptation réussie pour l\'instant',
+        `Le volume comparé à la période précédente est ${vol}`,
+        perf ? `, et l'élan de répétitions est ${perf}` : '',
+        '. Cette lecture décrit la même adaptation',
         recoveryOkPhrase(state),
-        goalBit,
         '.'
       ].join('');
 
     case 'adaptation_under_load':
+      if (!vol) return null;
       return [
-        vol ? `Volume ${vol}` : 'Charge en hausse',
-        ' : tes performances tiennent le cap',
-        perf ? ` (${perf} vs ta baseline récente)` : '',
-        recoveryOkPhrase(state) ? ` malgré ${recoveryOkPhrase(state)}` : '',
-        ' — ça ressemble davantage à une adaptation qu\'à une surcharge.',
-        goalBit,
+        `Le volume comparé à la période précédente est ${vol}`,
+        perf ? ` (${perf} par rapport à la baseline récente)` : '',
+        '. Les répétitions tiennent, sans que cette carte répète une autre lecture du même volume',
+        recoveryOkPhrase(state) ? `${recoveryOkPhrase(state)}` : '',
         '.'
       ].join('');
 
@@ -161,7 +150,8 @@ export function renderInterpretationText(c, state = null) {
       ].join('');
 
     case 'pr_under_fatigue': {
-      const ex = c.context?.exerciseName || 'un exercice clé';
+      const ex = c.context?.exerciseName;
+      if (!ex || /exercice clé/i.test(ex)) return null;
       const eventYmd = c.context?.date || c.context?.ymd || c.date || null;
       const lead = phraseTuViensDe({
         eventYmd,
@@ -178,16 +168,20 @@ export function renderInterpretationText(c, state = null) {
       ].join('');
     }
 
-    case 'costly_progression':
+    case 'costly_progression': {
+      const eff = m.progressionEfficiency;
+      const mom = m.performanceMomentumPct;
       return [
-        vol ? `Progression obtenue avec un volume ${vol}` : 'Progression obtenue avec plus de charge',
-        m.progressionEfficiency != null
-          ? ` — rendement modeste (efficacité ~${m.progressionEfficiency})`
-          : ' — rendement modeste par rapport à l\'effort',
-        ' : le résultat est là, mais le coût d\'entraînement est élevé ; consolider avant d\'ajouter.',
+        vol ? `Le volume suivi est ${vol}` : 'Le volume suivi monte',
+        mom != null ? ` pendant que l'élan de répétitions est à ${mom} %` : '',
+        eff != null
+          ? `. L'efficacité de progression, ce rapport entre l'élan et le volume, vaut ${eff}`
+          : '',
+        '. Le nombre négatif est ce rapport, pas une charge : la performance recule alors que le volume augmente.',
         goalBit,
         '.'
       ].join('');
+    }
 
     case 'pr_outlier': {
       const ex = c.context?.exerciseName || 'un exercice';
@@ -200,7 +194,8 @@ export function renderInterpretationText(c, state = null) {
     }
 
     case 'level_established': {
-      const ex = c.context?.exerciseName || 'un exercice clé';
+      const ex = c.context?.exerciseName;
+      if (!ex || /exercice clé/i.test(ex)) return null;
       return [
         `Nouveau palier consolidé sur ${ex}`,
         m.maxReps != null ? ` (~${m.maxReps} reps de façon répétée)` : '',
@@ -311,10 +306,9 @@ export function renderInterpretationText(c, state = null) {
     case 'adherence_gap':
       return [
         m.exoPct != null && m.stretchPct != null
-          ? `Les séances d'exercices sont bien plus tenues (~${m.exoPct} %) que les étirements (~${m.stretchPct} %)`
-          : 'Les étirements restent nettement moins tenus que le travail de force',
-        '. Sur la durée, les étirements enregistrés restent nettement en retrait du travail de force : l’écart de pratique est observable, sans conclure à un déficit de capacité.',
-        goalBit
+          ? `Sur les étirements prescrits, ${m.stretchPct} % ont été cochés, contre ${m.exoPct} % pour les exercices`
+          : 'Les étirements prescrits sont moins cochés que les exercices',
+        '. C’est un écart entre les cases prévues et les cases cochées, pas une donnée absente et pas le non-respect d’un objectif séparé.'
       ].join('');
 
     case 'exposure_rhythm': {

@@ -1,0 +1,488 @@
+{
+  "schema": "momentum.analysisDossierDiff.v1",
+  "labels": {
+    "left": "chrome",
+    "right": "cursor"
+  },
+  "limits": [
+    "Les dossiers ne contiennent pas les répétitions, les séries ni les charges : seulement des compteurs.",
+    "L’identité de phénomène retombe sur kind + preuve + titre, faute de sujet et d’ancre dans l’export.",
+    "Les historiques complets sont absents. Les douze entrées exportées le 18 novembre sont les plus anciennes de la liste, pas les dernières consultations. Aucun rejeu des 180 et 73 entrées n’est fait à partir d’elles.",
+    "Le passage frais n’existe dans le fichier que pour le dossier qui a lancé l’expérience."
+  ],
+  "environment": {
+    "left": {
+      "runtime": "browser",
+      "href": "http://localhost:3001/",
+      "origin": "http://localhost:3001",
+      "language": "fr-FR",
+      "languages": [
+        "fr-FR",
+        "fr",
+        "en-US",
+        "en"
+      ],
+      "timeZone": "Europe/Paris",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "serviceWorker": "http://localhost:3001/sw-garmin-sync.js"
+    },
+    "right": {
+      "runtime": "browser",
+      "href": "http://localhost:3001/",
+      "origin": "http://localhost:3001",
+      "language": "en-US",
+      "languages": [
+        "en-US",
+        "fr-FR"
+      ],
+      "timeZone": "Europe/Paris",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/3.30.14 Chrome/150.0.7871.250 Electron/43.8.9 Safari/537.36",
+      "serviceWorker": null
+    },
+    "sameOrigin": true,
+    "serviceWorker": {
+      "left": "http://localhost:3001/sw-garmin-sync.js",
+      "right": null
+    },
+    "language": {
+      "left": "fr-FR",
+      "right": "en-US"
+    },
+    "engine": {
+      "left": null,
+      "right": null,
+      "comparable": false
+    }
+  },
+  "window": {
+    "left": {
+      "start": "2026-11-12",
+      "end": "2026-11-18",
+      "endAt": "2026-11-18T18:29:44.802Z"
+    },
+    "right": {
+      "start": "2026-11-12",
+      "end": "2026-11-18",
+      "endAt": "2026-11-18T19:53:18.506Z",
+      "timeZone": "Europe/Paris",
+      "mode": "inclusive-calendar",
+      "spanDays": 7,
+      "partialEnd": true
+    },
+    "sameCalendarBounds": true
+  },
+  "snapshot": {
+    "repKeys": {
+      "left": 775,
+      "right": 768,
+      "delta": -7
+    },
+    "checkedKeys": {
+      "left": 781,
+      "right": 774,
+      "delta": -7
+    },
+    "totalReps": {
+      "left": 33100,
+      "right": 32768,
+      "delta": -332
+    }
+  },
+  "banner": {
+    "totalReps": {
+      "left": 1334,
+      "right": 1002,
+      "delta": -332
+    },
+    "trainingDays": {
+      "left": 4,
+      "right": 3,
+      "delta": -1
+    },
+    "totalMinutes": {
+      "left": 266,
+      "right": 195,
+      "delta": -71
+    },
+    "totalKg": {
+      "left": 4040,
+      "right": 1464,
+      "delta": -2576
+    },
+    "activeKcal": {
+      "left": 3703,
+      "right": 3162,
+      "delta": -541
+    }
+  },
+  "publication": {
+    "left": {
+      "state": "previous_edition_while_refreshing",
+      "analysisStatus": "refreshing",
+      "publicationStatus": "ready",
+      "complete": true,
+      "definitive": false
+    },
+    "right": {
+      "state": "previous_edition_while_refreshing",
+      "analysisStatus": "refreshing",
+      "publicationStatus": "ready",
+      "complete": true,
+      "definitive": false
+    }
+  },
+  "signatures": {
+    "left": {
+      "raw": "7d|2026-11-12|2026-11-18|0|0|2|41.9|1334|16|4274603330",
+      "complete": true,
+      "period": "7d",
+      "windowStart": "2026-11-12",
+      "windowEnd": "2026-11-18",
+      "runningKm": "0",
+      "runningSessions": "0",
+      "streakCurrent": "2",
+      "completionPct": "41.9",
+      "periodRepsField": "1334",
+      "candidateCount": 16,
+      "hash": "4274603330",
+      "note": "candidateCount compte les candidats du dernier calcul enregistré, pas les cartes publiées."
+    },
+    "right": {
+      "raw": "7d|2026-11-12|2026-11-18|0|0|0|44.8|1002|22|3182380822",
+      "complete": true,
+      "period": "7d",
+      "windowStart": "2026-11-12",
+      "windowEnd": "2026-11-18",
+      "runningKm": "0",
+      "runningSessions": "0",
+      "streakCurrent": "0",
+      "completionPct": "44.8",
+      "periodRepsField": "1002",
+      "candidateCount": 22,
+      "hash": "3182380822",
+      "note": "candidateCount compte les candidats du dernier calcul enregistré, pas les cartes publiées."
+    }
+  },
+  "history": {
+    "leftCount": 180,
+    "rightCount": 73,
+    "replayable": false,
+    "leftListed": 12,
+    "rightListed": 12
+  },
+  "cards": {
+    "leftCount": 7,
+    "rightCount": 20,
+    "shared": [
+      {
+        "key": "disc_sleep_night|2026-11-13 · 8 h 23 vs 9 h 12 · 7 nuits|Une nuit plus courte que ton niveau récent",
+        "kind": "disc_sleep_night",
+        "title": "Une nuit plus courte que ton niveau récent",
+        "evidence": "2026-11-13 · 8 h 23 vs 9 h 12 · 7 nuits"
+      },
+      {
+        "key": "disc_ms_pr_consolidated|20 reps · 5/5|Ces 20 reps sont devenues ton niveau récemment reproductible",
+        "kind": "disc_ms_pr_consolidated",
+        "title": "Ces 20 reps sont devenues ton niveau récemment reproductible",
+        "evidence": "20 reps · 5/5"
+      },
+      {
+        "key": "||",
+        "kind": "",
+        "title": "",
+        "evidence": ""
+      },
+      {
+        "key": "disc_exercise_progress|arc 8 (fenêtre 1) · net decline · -28 % · 5×10→4×9|Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances",
+        "kind": "disc_exercise_progress",
+        "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances",
+        "evidence": "arc 8 (fenêtre 1) · net decline · -28 % · 5×10→4×9"
+      },
+      {
+        "key": "disc_structural_memory|4 séances · plateau · 0 % · 3×20→3×20|Relevés de genoux à la barre repasse dans la période",
+        "kind": "disc_structural_memory",
+        "title": "Relevés de genoux à la barre repasse dans la période",
+        "evidence": "4 séances · plateau · 0 % · 3×20→3×20"
+      }
+    ],
+    "leftOnly": [
+      {
+        "key": "disc_family_fade|Dips sur barre parallèle 17,1 % → 6,4 % de ta poussée|Dips sur barre parallèle s'efface de de ta poussée",
+        "column": "mediumTerm",
+        "kind": "disc_family_fade",
+        "title": "Dips sur barre parallèle s'efface de de ta poussée",
+        "family": "",
+        "evidence": "Dips sur barre parallèle 17,1 % → 6,4 % de ta poussée"
+      },
+      {
+        "key": "journey_pr_vs_level|19 séances observées|Ta meilleure série de 12 reps sur Curl Zottman reste éloignée de la série que tu reproduis",
+        "column": "longTerm",
+        "kind": "journey_pr_vs_level",
+        "title": "Ta meilleure série de 12 reps sur Curl Zottman reste éloignée de la série que tu reproduis",
+        "family": "",
+        "evidence": "19 séances observées"
+      }
+    ],
+    "rightOnly": [
+      {
+        "key": "disc_peak_day|13 novembre 2026 · 351 reps · 35,0 %|La séance du 13 novembre 2026 concentre une part importante de ces 7 jours",
+        "column": "shortTerm",
+        "kind": "disc_peak_day",
+        "title": "La séance du 13 novembre 2026 concentre une part importante de ces 7 jours",
+        "family": "",
+        "evidence": "13 novembre 2026 · 351 reps · 35,0 %"
+      },
+      {
+        "key": "disc_calendar_rhythm|3 jours avec répétitions · 4 jours sans séance (contrat positive_reps)|Ces 7 jours : le volume repose sur peu de journées",
+        "column": "shortTerm",
+        "kind": "disc_calendar_rhythm",
+        "title": "Ces 7 jours : le volume repose sur peu de journées",
+        "family": "",
+        "evidence": "3 jours avec répétitions · 4 jours sans séance (contrat positive_reps)"
+      },
+      {
+        "key": "program_gap_completion||Les séances commencées restent souvent incomplètes",
+        "column": "shortTerm",
+        "kind": "program_gap_completion",
+        "title": "Les séances commencées restent souvent incomplètes",
+        "family": "",
+        "evidence": ""
+      },
+      {
+        "key": "journey_abandoned|22 juillet 2026 · 119 j. · habitude ~7 j.|Pompes déclinées a été remplacé, pas abandonné au hasard",
+        "column": "shortTerm",
+        "kind": "journey_abandoned",
+        "title": "Pompes déclinées a été remplacé, pas abandonné au hasard",
+        "family": "",
+        "evidence": "22 juillet 2026 · 119 j. · habitude ~7 j."
+      },
+      {
+        "key": "disc_sleep_volume|≥ 7 h 30 291 · < 7 h 30 233 · n=20|Tes journées à fort volume s’alignent sur un seuil de sommeil personnel",
+        "column": "mediumTerm",
+        "kind": "disc_sleep_volume",
+        "title": "Tes journées à fort volume s’alignent sur un seuil de sommeil personnel",
+        "family": "",
+        "evidence": "≥ 7 h 30 291 · < 7 h 30 233 · n=20"
+      },
+      {
+        "key": "disc_family_fade|Dips sur barre parallèle 17,1 % → 7,0 % de ta poussée|Dips sur barre parallèle s'efface de de ta poussée",
+        "column": "mediumTerm",
+        "kind": "disc_family_fade",
+        "title": "Dips sur barre parallèle s'efface de de ta poussée",
+        "family": "",
+        "evidence": "Dips sur barre parallèle 17,1 % → 7,0 % de ta poussée"
+      },
+      {
+        "key": "disc_steps_level|8 418 vs 7 491 pas|Les pas de ces 7 jours sont au-dessus de ton niveau des 30 jours d'avant",
+        "column": "mediumTerm",
+        "kind": "disc_steps_level",
+        "title": "Les pas de ces 7 jours sont au-dessus de ton niveau des 30 jours d'avant",
+        "family": "",
+        "evidence": "8 418 vs 7 491 pas"
+      },
+      {
+        "key": "journey_plateau|~40 reps · 127 j.|Plateau — Relevés de genoux aux parallèles",
+        "column": "mediumTerm",
+        "kind": "journey_plateau",
+        "title": "Plateau — Relevés de genoux aux parallèles",
+        "family": "",
+        "evidence": "~40 reps · 127 j."
+      },
+      {
+        "key": "disc_exercise_progress|arc 8 (fenêtre 1) · net rise · 17.4 % · 2×18→2×18|Pompes inclinées mains sur banc : volume par séance en hausse",
+        "column": "longTerm",
+        "kind": "disc_exercise_progress",
+        "title": "Pompes inclinées mains sur banc : volume par séance en hausse",
+        "family": "",
+        "evidence": "arc 8 (fenêtre 1) · net rise · 17.4 % · 2×18→2×18"
+      },
+      {
+        "key": "disc_exercise_progress|arc 8 (fenêtre 1) · plateau · 0 % · 4×12→4×12|Dips sur barre parallèle : volume par séance stable",
+        "column": "longTerm",
+        "kind": "disc_exercise_progress",
+        "title": "Dips sur barre parallèle : volume par séance stable",
+        "family": "",
+        "evidence": "arc 8 (fenêtre 1) · plateau · 0 % · 4×12→4×12"
+      },
+      {
+        "key": "disc_kcal_profile|3 162 kcal · 9 min hors course|La dépense de la période distingue densité et fréquence",
+        "column": "longTerm",
+        "kind": "disc_kcal_profile",
+        "title": "La dépense de la période distingue densité et fréquence",
+        "family": "",
+        "evidence": "3 162 kcal · 9 min hors course"
+      },
+      {
+        "key": "disc_freq_continuity|15/30 j. · 3/7 j.|Ces 7 jours s'inscrit dans une pratique déjà documentée",
+        "column": "longTerm",
+        "kind": "disc_freq_continuity",
+        "title": "Ces 7 jours s'inscrit dans une pratique déjà documentée",
+        "family": "",
+        "evidence": "15/30 j. · 3/7 j."
+      },
+      {
+        "key": "adherence_gap||",
+        "column": "longTerm",
+        "kind": "adherence_gap",
+        "title": "",
+        "family": "",
+        "evidence": ""
+      },
+      {
+        "key": "journey_progress|Pompes inclinées mains sur banc 24→36 · Tractions supination 16→20 · Tractions australiennes pieds surélevés 40→48|Tes niveaux de référence ont progressé sur plusieurs mouvements",
+        "column": "longTerm",
+        "kind": "journey_progress",
+        "title": "Tes niveaux de référence ont progressé sur plusieurs mouvements",
+        "family": "",
+        "evidence": "Pompes inclinées mains sur banc 24→36 · Tractions supination 16→20 · Tractions australiennes pieds surélevés 40→48"
+      }
+    ],
+    "changedProof": [],
+    "sameKindDifferentProof": [
+      {
+        "kind": "disc_family_fade",
+        "left": [
+          {
+            "title": "Dips sur barre parallèle s'efface de de ta poussée",
+            "evidence": "Dips sur barre parallèle 17,1 % → 6,4 % de ta poussée"
+          }
+        ],
+        "right": [
+          {
+            "title": "Dips sur barre parallèle s'efface de de ta poussée",
+            "evidence": "Dips sur barre parallèle 17,1 % → 7,0 % de ta poussée"
+          }
+        ]
+      },
+      {
+        "kind": "disc_exercise_progress",
+        "left": [
+          {
+            "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances",
+            "evidence": "arc 8 (fenêtre 1) · net decline · -28 % · 5×10→4×9"
+          }
+        ],
+        "right": [
+          {
+            "title": "Pompes inclinées mains sur banc : volume par séance en hausse",
+            "evidence": "arc 8 (fenêtre 1) · net rise · 17.4 % · 2×18→2×18"
+          },
+          {
+            "title": "Dips sur barre parallèle : volume par séance stable",
+            "evidence": "arc 8 (fenêtre 1) · plateau · 0 % · 4×12→4×12"
+          },
+          {
+            "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances",
+            "evidence": "arc 8 (fenêtre 1) · net decline · -28 % · 5×10→4×9"
+          }
+        ]
+      }
+    ],
+    "duplicates": {
+      "left": [],
+      "right": [
+        {
+          "key": "||",
+          "n": 2,
+          "titles": [
+            "",
+            ""
+          ]
+        }
+      ]
+    },
+    "blankTitle": {
+      "left": [
+        {
+          "column": "mediumTerm",
+          "kind": "",
+          "title": "",
+          "body": "",
+          "evidence": "",
+          "exportOmittedBody": true
+        }
+      ],
+      "right": [
+        {
+          "column": "shortTerm",
+          "kind": "",
+          "title": "",
+          "body": "",
+          "evidence": "",
+          "exportOmittedBody": true
+        },
+        {
+          "column": "mediumTerm",
+          "kind": "",
+          "title": "",
+          "body": "",
+          "evidence": "",
+          "exportOmittedBody": true
+        },
+        {
+          "column": "longTerm",
+          "kind": "adherence_gap",
+          "title": "",
+          "body": "",
+          "evidence": "",
+          "exportOmittedBody": true
+        }
+      ]
+    }
+  },
+  "experiments": {
+    "left": {
+      "fieldSemantics": "inverted-names-2026-11-18",
+      "displayedCount": 7,
+      "freshCount": 11,
+      "afterIsolatedAdditionCount": 11,
+      "disappeared": [],
+      "appeared": [],
+      "freshAbsentFromDisplayed": [
+        {
+          "kind": "disc_vs_habit",
+          "title": "Pompes inclinées : ces 7 jours sont au-dessus de ton niveau habituel"
+        },
+        {
+          "kind": "disc_density",
+          "title": "Ces 7 jours concentrent le travail sur moins de temps"
+        },
+        {
+          "kind": "disc_ms_return_durable",
+          "title": "La reprise de relevés de genoux à la barre est devenue durable"
+        },
+        {
+          "kind": "disc_sleep_intensity",
+          "title": "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume"
+        },
+        {
+          "kind": "disc_exercise_share",
+          "title": "3 mouvements concentrent une part importante de ton travail récent"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées : recul confirmé sur plusieurs séances"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Hyperextension repasse dans la période"
+        }
+      ],
+      "displayedAbsentFromFresh": [
+        {
+          "kind": "disc_family_fade",
+          "title": "Dips sur barre parallèle s'efface de de ta poussée"
+        },
+        {
+          "kind": "disc_exercise_progress",
+          "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Relevés de genoux à la barre repasse dans la période"
+        }
+      ]
+    },
+    "right": null
+  }
+}

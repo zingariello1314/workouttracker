@@ -19,6 +19,8 @@ import { enrichDiagnosticReport } from './analysisEngineDiagnosticModel';
 import { buildAnalysisEngineDataCatalog } from './analysisEngineDataCatalog';
 import { buildRunManifest } from './analysisEngineRunManifest';
 import { buildCoherenceReport } from './analysisEngineCoherence';
+import { analysisEditionKey } from './analysisEdition';
+import { RECAP_ADAPTIVE_WORKER_CONTRACT } from './recapAdaptiveWorkerContract';
 
 const PERIODS = ['today', '7d', '30d', '3m', '6m', '1y', '2y', 'all'];
 
@@ -100,7 +102,11 @@ function annotateCandidate(row, status, reason = null, stage = null) {
     signalFamily: signalFamilyOfKind(t.kind),
     title: t.title,
     body: t.body,
-    evidence: typeof row.evidence === 'string' ? row.evidence : t.evidence,
+    evidence:
+      (typeof row.evidence === 'string' && row.evidence) ||
+      (Array.isArray(evidenceList) && evidenceList.length ? evidenceList.join(' · ') : '') ||
+      t.evidence ||
+      '',
     evidenceList,
     weight: row.weight ?? null,
     score: row.score ?? null,
@@ -109,7 +115,11 @@ function annotateCandidate(row, status, reason = null, stage = null) {
     horizon: row.horizon || row.interpretation?.horizon || null,
     nature: row.nature || row.interpretation?.nature || row.interpretation?.context?.nature || null,
     status,
-    reason: reason || row.reason || null,
+    reason: reason || row.kinshipDrop?.reason || row.reason || null,
+    kinshipDrop: row.kinshipDrop || null,
+    selectionTrace: row.selectionTrace || null,
+    weightTrace: row.weightTrace || null,
+    admission: row.selectionTrace?.admission || (stage === 'dedup' ? 'dropped' : null),
     stage,
     metrics,
     scope: row.scope || row.interpretation?.scope || null,
@@ -126,6 +136,69 @@ function annotateCandidate(row, status, reason = null, stage = null) {
  * Construit un rapport de diagnostic exécuté sur les données réelles.
  * @param {object} opts
  */
+function compactHistoryReplay(history) {
+  const entries = Array.isArray(history?.entries) ? history.entries : null;
+  if (!entries) {
+    return { replayable: false, missing: ['entries'] };
+  }
+  return {
+    replayable: true,
+    entryCount: entries.length,
+    entries: entries.map((entry) => ({
+      id: entry?.id || null,
+      theme: entry?.theme || null,
+      seenAt: entry?.seenAt ?? null,
+      count: entry?.count || 0,
+      claim: entry?.claim
+        ? {
+            topic: entry.claim.topic || null,
+            sense: entry.claim.sense || null,
+            stateKey: entry.claim.stateKey || null
+          }
+        : null
+    }))
+  };
+}
+
+function compactWindowReplay(snapshot, window) {
+  const start = window?.start || null;
+  const end = window?.end || null;
+  const inWindow = (key) => {
+    const date = String(key).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    if (start && date < start) return false;
+    if (end && date > end) return false;
+    return true;
+  };
+  const reps = snapshot?.reps || {};
+  const checked = snapshot?.checkedExercises || {};
+  const weights = snapshot?.exerciseWeights || {};
+  const perArm = snapshot?.exerciseWeightPerArm || {};
+  const keys = new Set([
+    ...Object.keys(reps),
+    ...Object.keys(checked),
+    ...Object.keys(weights)
+  ]);
+  const events = [...keys]
+    .filter(inWindow)
+    .sort()
+    .map((key) => ({
+      key,
+      date: key.slice(0, 10),
+      exerciseId: key.slice(11) || null,
+      reps: reps[key] ?? null,
+      checked: checked[key] === true,
+      weight: weights[key] ?? null,
+      perArm: perArm[key] === true
+    }));
+  return {
+    deterministic: false,
+    missingForDeterministicReplay: ['garmin', 'program', 'exerciseNames', 'nutrition'],
+    note: 'Séries de la fenêtre seulement. Un total de répétitions ne reconstruit pas une séance.',
+    events
+  };
+}
+
 export function buildAnalysisEngineDiagnosticReport(opts = {}) {
   const {
     snapshot = {},
@@ -351,7 +424,7 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
 
   const rejections = [
     ...(pipelineStages.deduped || []).map((r) =>
-      annotateCandidate(r, 'rejected', 'dedup_kinship', 'dedup')
+      annotateCandidate(r, 'rejected', r.kinshipDrop?.reason || 'dedup_unexplained', 'dedup')
     ),
     ...(pipelineStages.insufficient || []).map((r) =>
       annotateCandidate(r, 'rejected', 'insufficient_or_invalid', 'validate')
@@ -456,6 +529,8 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       dataSignature: overview.signature || null,
       snapshotSignature: overview.signature || null,
       editorialHistorySignature,
+      editorialHistoryReplay: compactHistoryReplay(insightHistoryIn),
+      windowReplay: compactWindowReplay(snapshot, overview.window),
       cacheStatus: 'diagnostic_ephemeral',
       displayScopeNote:
         'Sélectionnée = pack final de CE run diagnostic (même pipeline qu’Analyse si insightHistory injecté). Ne signifie pas « carte rendue dans l’onglet Analyse ».'
@@ -502,6 +577,13 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     period,
     computedAt: generatedAt,
     cacheStatus: 'diagnostic_ephemeral',
+    producerVersions: {
+      engine: analysisEditionKey(),
+      workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+      selectionEngine: 'selectNarrativeColumns-min32',
+      editorialRules: 'novelty-floor-20',
+      producers: 'discoveries+essays+span'
+    },
     loadCompleteness: {
       status: 'diagnostic_snapshot',
       note: 'Le diagnostic utilise getCurrentData() au moment du clic — vérifier signatures si reps divergent entre runs.'

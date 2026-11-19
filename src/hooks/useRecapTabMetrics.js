@@ -19,6 +19,8 @@ import {
   makeWorkerRequestId
 } from '../utils/sport/recapAdaptiveWorkerContract';
 import { snapshotRevisionOf } from '../utils/sport/recapComputeScope';
+import { analysisEditionKey, mayPresentBundleAsCurrent } from '../utils/sport/analysisEdition';
+import { tracePublication } from '../utils/sport/publicationLifecycleTrace';
 import {
   loadInsightHistory,
   saveInsightHistory,
@@ -508,12 +510,86 @@ function buildRecapMetricsKey({
           nutritionPartial.programsOwnedCount ?? 0
         ].join(':')
       : nutritionPartial?.status || 'none';
-  const bundleBit = 'bundle';
+  const bundleBit = analysisEditionKey();
 
   return {
     workout: workoutKey,
     full: `${workoutKey}|${garminBit}|${nutritionBit}|${bundleBit}`,
     pending
+  };
+}
+
+const displayedPackByPeriod = new Map();
+
+function rememberDisplayedPack(period, bundle) {
+  if (!period || !bundle) return;
+  displayedPackByPeriod.set(String(period), bundle);
+}
+
+function describePublishedPack(bundle, presentation) {
+  const publication = bundle?.recapAssessment?.insightsPublication || null;
+  const insights = bundle?.recapAssessment?.insights || {};
+  const cards = ['shortTerm', 'mediumTerm', 'longTerm'].flatMap((column) =>
+    (insights[column] || []).map((card) => ({
+      column,
+      title: card?.title || '',
+      body: card?.body || card?.text || '',
+      kind: card?.kind || card?.id || null
+    }))
+  );
+  const reserve = (insights.accessibleReserve || []).filter(
+    (item) => item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority'
+  );
+  return {
+    source: 'published_cache',
+    recomputed: false,
+    exposureCounted: false,
+    period: bundle.analysisPeriod || publication?.period || null,
+    windowStart: publication?.windowStart || null,
+    windowEnd: publication?.windowEnd || null,
+    analysisStatus: bundle.analysisStatus || null,
+    presentation,
+    analysisEdition: bundle.analysisEdition || null,
+    workerContract: bundle.workerContract || null,
+    dataFingerprint: bundle.dataFingerprint || null,
+    cardCount: cards.length,
+    reserveCount: reserve.length,
+    cards
+  };
+}
+
+export function readPublishedInsightPacks({ period = null, windowStart = null, windowEnd = null } = {}) {
+  const edition = analysisEditionKey();
+  const remembered = period ? displayedPackByPeriod.get(String(period)) : null;
+  const candidates = [];
+  if (remembered) candidates.push(remembered);
+  for (const bundle of bundlesByFull.values()) {
+    if (!candidates.includes(bundle)) candidates.push(bundle);
+  }
+  const windowMatches = (described) =>
+    (!windowStart || !described.windowStart || described.windowStart === windowStart) &&
+    (!windowEnd || !described.windowEnd || described.windowEnd === windowEnd);
+  const current = candidates.find((bundle) => {
+    const described = describePublishedPack(bundle, 'current');
+    const decision = mayPresentBundleAsCurrent(bundle, edition);
+    if (!decision.present) return false;
+    if (period && String(described.period) !== String(period)) return false;
+    if (!windowMatches(described)) return false;
+    return decision.as === 'current' || decision.as === 'refreshing';
+  });
+  const previousCount = candidates.filter((bundle) => {
+    const described = describePublishedPack(bundle, 'previous');
+    if (period && String(described.period) !== String(period)) return false;
+    return bundle !== current;
+  }).length;
+  return {
+    current: current
+      ? describePublishedPack(current, mayPresentBundleAsCurrent(current, edition).as || 'current')
+      : null,
+    previousCount,
+    period: period || null,
+    windowStart: windowStart || null,
+    windowEnd: windowEnd || null
   };
 }
 
@@ -547,6 +623,36 @@ export function countInsightCards(insights) {
  * - ready seulement si fullKey identique et non pending
  * - sinon refresh (affichage soft possible + recalcul obligatoire)
  */
+/**
+ * Clé de relance du calcul. `endAt` en est exclu : une nouvelle horloge
+ * ne doit pas annuler un Worker déjà lancé pour la même journée.
+ */
+export function analysisRunKey({
+  cacheReady = false,
+  enabled = true,
+  period = '',
+  windowStart = '',
+  windowEnd = '',
+  windowMode = '',
+  workoutKey = '',
+  fullKey = '',
+  pending = false,
+  isGymMode = false
+} = {}) {
+  return [
+    cacheReady ? 1 : 0,
+    enabled ? 1 : 0,
+    period || '',
+    windowStart || '',
+    windowEnd || '',
+    windowMode || '',
+    workoutKey || '',
+    fullKey || '',
+    pending ? 1 : 0,
+    isGymMode ? 1 : 0
+  ].join('\n');
+}
+
 export function resolveWorkoutCachePolicy({
   stalePeriod = null,
   requestedPeriod = null,
@@ -783,7 +889,23 @@ export function useRecapTabMetrics({
     };
   }, []);
 
+  const periodWindowRef = useRef(periodWindow);
+  periodWindowRef.current = periodWindow;
+  const runKey = analysisRunKey({
+    cacheReady,
+    enabled,
+    period: deferredPeriod,
+    windowStart: periodWindow?.start || '',
+    windowEnd: periodWindow?.end || '',
+    windowMode: periodWindow?.mode || '',
+    workoutKey: inputKey.workout,
+    fullKey: inputKey.full,
+    pending: inputKey.pending,
+    isGymMode
+  });
+
   useEffect(() => {
+    const periodWindow = periodWindowRef.current;
     if (!enabled) {
       setComputing(false);
       return undefined;
@@ -813,7 +935,8 @@ export function useRecapTabMetrics({
     const gen = ++genRef.current;
 
     // F7.0f — cache prioritaire : publier immédiatement avant tout shell/Worker.
-    if (exact) {
+    const exactDecision = exact ? mayPresentBundleAsCurrent(exact) : null;
+    if (exact && exactDecision?.present) {
       const n = countInsightCards(exact?.recapAssessment?.insights);
       f70iTrace({
         event: 'publish_exact_cache',
@@ -830,12 +953,14 @@ export function useRecapTabMetrics({
             : 'exact_hit'
       });
       shownKeyRef.current = inputKey.full;
+      const shown = {
+        ...exact,
+        analysisStatus: 'ready',
+        analysisPeriod: deferredPeriod
+      };
+      rememberDisplayedPack(deferredPeriod, shown);
       startTransition(() => {
-        setBundle({
-          ...exact,
-          analysisStatus: 'ready',
-          analysisPeriod: deferredPeriod
-        });
+        setBundle(shown);
         setComputing(false);
       });
       hasPublishedPeriod = true;
@@ -857,7 +982,8 @@ export function useRecapTabMetrics({
       ready: isRecapInsightsReady(stale)
     });
 
-    if (workoutPolicy === 'ready') {
+    const staleDecision = stale ? mayPresentBundleAsCurrent(stale) : null;
+    if (workoutPolicy === 'ready' && staleDecision?.present) {
       const n = countInsightCards(stale?.recapAssessment?.insights);
       f70iTrace({
         event: 'publish_workout_ready',
@@ -868,12 +994,14 @@ export function useRecapTabMetrics({
         status: 'ready'
       });
       shownKeyRef.current = inputKey.workout;
+      const shown = {
+        ...stale,
+        analysisStatus: 'ready',
+        analysisPeriod: deferredPeriod
+      };
+      rememberDisplayedPack(deferredPeriod, shown);
       startTransition(() => {
-        setBundle({
-          ...stale,
-          analysisStatus: 'ready',
-          analysisPeriod: deferredPeriod
-        });
+        setBundle(shown);
         setComputing(false);
       });
       hasPublishedPeriod = true;
@@ -881,7 +1009,7 @@ export function useRecapTabMetrics({
       return undefined;
     }
 
-    if (workoutPolicy === 'refresh' && stale && isRecapInsightsReady(stale)) {
+    if (workoutPolicy === 'refresh' && stale && staleDecision?.present && isRecapInsightsReady(stale)) {
       // F7.0i — mêmes cartes période OK en soft, jamais « ready » si fullKey diverge.
       const n = countInsightCards(stale?.recapAssessment?.insights);
       f70iTrace({
@@ -894,16 +1022,18 @@ export function useRecapTabMetrics({
         note: 'soft-show puis recalcul obligatoire'
       });
       shownKeyRef.current = inputKey.workout;
-      setBundle({
+      const shown = {
         ...stale,
         analysisStatus: 'refreshing',
         analysisPeriod: deferredPeriod
-      });
+      };
+      rememberDisplayedPack(deferredPeriod, shown);
+      setBundle(shown);
       hasPublishedPeriod = true;
       markRecapViewPrepared();
       backgroundGarminRefresh = true;
       setComputing(true);
-    } else if (periodChanged || workoutChanged) {
+    } else if ((stale && !staleDecision?.present) || periodChanged || workoutChanged) {
       f70iTrace({
         event: 'cache_miss_recompute',
         generation: gen,
@@ -911,11 +1041,14 @@ export function useRecapTabMetrics({
         cacheSource: 'none',
         cards: 0,
         status: 'loading',
-        reason: periodChanged
-          ? 'period_changed_no_exact'
-          : workoutChanged
-            ? 'workout_fingerprint_changed'
-            : 'unknown',
+        reason:
+          stale && !staleDecision?.present
+            ? 'edition_mismatch'
+            : periodChanged
+              ? 'period_changed_no_exact'
+              : workoutChanged
+                ? 'workout_fingerprint_changed'
+                : 'unknown',
         garminOnlyUpgrade
       });
       f70iTrace({
@@ -951,6 +1084,7 @@ export function useRecapTabMetrics({
     }
 
     const runFor = async (periodId, windowForPeriod, keyFull, publish) => {
+      let postedRequestId = null;
       if (gen !== genRef.current) return;
       // F7.0g : laisser peindre la période sélectionnée avant tout sync shell.
       await yieldFrame();
@@ -976,6 +1110,7 @@ export function useRecapTabMetrics({
             const keepReady =
               (prev?.analysisStatus === 'ready' || prev?.analysisStatus === 'refreshing') &&
               prev?.analysisPeriod === periodId &&
+              mayPresentBundleAsCurrent(prev).present &&
               isRecapInsightsReady(prev);
             const keptInsights = keepReady ? prev.recapAssessment?.insights : null;
             const keptPub = keepReady ? prev.recapAssessment?.insightsPublication : null;
@@ -1031,6 +1166,7 @@ export function useRecapTabMetrics({
             throw Object.assign(new Error('worker_unavailable'), { code: 'unavailable' });
           }
           const workerRequestId = makeWorkerRequestId();
+          postedRequestId = workerRequestId;
           const windowStart = windowForPeriod?.start ?? null;
           const windowEnd = windowForPeriod?.end ?? null;
           const slimGarmin = slimWorkerGarmin(
@@ -1125,6 +1261,21 @@ export function useRecapTabMetrics({
             typeof performance !== 'undefined' && performance.now
               ? performance.now()
               : Date.now();
+          tracePublication('snapshot_built', {
+            generation: gen,
+            runId: `g${gen}`,
+            requestId: workerRequestId,
+            period: periodId,
+            windowStart,
+            windowEnd,
+            dataFingerprint: snapshotRevisionOf(snapshot),
+            analysisEdition: analysisEditionKey(),
+            workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+            ms: Math.round((tPrep1 - tPrep0) * 100) / 100,
+            before: 'raw',
+            after: 'serialized',
+            reason: `snapChars:${snapshotJson.length};sideChars:${sideJson.length}`
+          });
           f70iTrace({
             event: 'worker_payload_prep',
             generation: gen,
@@ -1138,7 +1289,26 @@ export function useRecapTabMetrics({
             nameMapCacheHit
           });
           await yieldFrame();
-          if (gen !== genRef.current) return;
+          if (gen !== genRef.current) {
+            tracePublication('generation_superseded', {
+              generation: gen,
+              runId: `g${gen}`,
+              requestId: workerRequestId,
+              period: periodId,
+              windowStart,
+              windowEnd,
+              reason: 'stale_before_post',
+              before: 'prepared',
+              after: 'dropped'
+            });
+            return;
+          }
+          f70iTrace({
+            event: 'worker_posted',
+            generation: gen,
+            period: periodId,
+            requestId: workerRequestId
+          });
           const workerResp = await requestAdaptiveInsightsViaWorker(
             {
               requestId: workerRequestId,
@@ -1156,7 +1326,20 @@ export function useRecapTabMetrics({
             },
             { forceTerminate }
           );
-          if (gen !== genRef.current) return;
+          if (gen !== genRef.current) {
+            tracePublication('generation_superseded', {
+              generation: gen,
+              runId: `g${gen}`,
+              requestId: workerRequestId,
+              period: periodId,
+              windowStart,
+              windowEnd,
+              reason: 'stale_after_worker',
+              before: 'response',
+              after: 'dropped'
+            });
+            return;
+          }
 
           const pack = workerResp?.result;
           const adaptive = pack?.adaptive;
@@ -1272,7 +1455,20 @@ export function useRecapTabMetrics({
           return;
         }
 
-        if (gen !== genRef.current) return;
+        if (gen !== genRef.current) {
+          tracePublication('generation_superseded', {
+            generation: gen,
+            runId: `g${gen}`,
+            requestId: postedRequestId,
+            period: periodId,
+            windowStart: windowForPeriod?.start || null,
+            windowEnd: windowForPeriod?.end || null,
+            reason: 'stale_before_commit',
+            before: 'merged',
+            after: 'dropped'
+          });
+          return;
+        }
         const finalAssessment = withInsightsPublication(recapAssessmentMerged, {
           status: 'ready',
           period: periodId,
@@ -1288,8 +1484,12 @@ export function useRecapTabMetrics({
           programCoachAnalysis,
           analysisStatus: 'ready',
           analysisPeriod: periodId,
+          analysisEdition: analysisEditionKey(),
+          workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+          dataFingerprint: checkedVolumeFingerprint(snapshot),
           insightsQuality: 'adaptive_worker'
         };
+        rememberDisplayedPack(periodId, nextBundle);
         const cardN = countInsightCards(finalAssessment?.insights);
         f70iTrace({
           event: 'publish_final',
@@ -1309,8 +1509,52 @@ export function useRecapTabMetrics({
             .filter(Boolean)
             .slice(0, 8)
         });
+        tracePublication('insights_applied', {
+          generation: gen,
+          runId: `g${gen}`,
+            requestId: postedRequestId,
+            period: periodId,
+            windowStart: finalAssessment?.insightsPublication?.windowStart,
+            windowEnd: finalAssessment?.insightsPublication?.windowEnd,
+            analysisEdition: analysisEditionKey(),
+            workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+            before: 'worker_result',
+            after: 'ready_publication',
+            reason: `cards:${cardN}`
+          });
         rememberBundle(keyFull, inputKey.workout, nextBundle);
-        if (!publish || gen !== genRef.current) return;
+        if (!publish || gen !== genRef.current) {
+          tracePublication('generation_superseded', {
+            generation: gen,
+            runId: `g${gen}`,
+            requestId: postedRequestId,
+            period: periodId,
+            reason: 'stale_before_set_state',
+            before: 'cached',
+            after: 'not_rendered'
+          });
+          return;
+        }
+        tracePublication('react_state_scheduled', {
+          generation: gen,
+          runId: `g${gen}`,
+          requestId: postedRequestId,
+          period: periodId,
+          before: 'publishing',
+          after: 'set_state'
+        });
+        tracePublication('status_ready', {
+          generation: gen,
+          runId: `g${gen}`,
+          requestId: postedRequestId,
+          period: periodId,
+          windowStart: finalAssessment?.insightsPublication?.windowStart,
+          windowEnd: finalAssessment?.insightsPublication?.windowEnd,
+          analysisEdition: analysisEditionKey(),
+          workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+          before: 'refreshing_or_loading',
+          after: 'ready'
+        });
         shownKeyRef.current = keyFull;
         startTransition(() => {
           setBundle(nextBundle);
@@ -1323,6 +1567,15 @@ export function useRecapTabMetrics({
         if (process.env.NODE_ENV === 'development') {
           console.error('[useRecapTabMetrics]', err);
         }
+        tracePublication('status_error', {
+          generation: gen,
+          runId: `g${gen}`,
+          requestId: postedRequestId,
+          period: periodId,
+          reason: String(err?.message || err),
+          before: 'in_flight',
+          after: 'error'
+        });
         setBundle((prev) => ({
           ...(prev || {}),
           analysisStatus: 'error',
@@ -1339,14 +1592,25 @@ export function useRecapTabMetrics({
       runFor(deferredPeriod, periodWindow, inputKey.full, true);
     });
     return () => {
+      tracePublication('generation_superseded', {
+        generation: gen,
+        runId: `g${gen}`,
+        period: deferredPeriod,
+        windowStart: periodWindow?.start || null,
+        windowEnd: periodWindow?.end || null,
+        analysisEdition: analysisEditionKey(),
+        workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
+        reason: 'effect_cleanup',
+        before: 'mounted',
+        after: 'cancelled'
+      });
       genRef.current += 1;
       cancelHeavyWork(cancel);
       // F7.0f : soft-cancel seulement — ne pas terminate à chaque flip Garmin (évite recalculs 7s).
       softCancelBusyAdaptiveRequest();
     };
-    // Déclencheurs stables : période + empreinte workout (+ cacheReady).
-    // inputKey.full (Garmin) géré via garminOnlyUpgrade sans tuer le Worker systématiquement.
-  }, [cacheReady, deferredPeriod, isGymMode, inputKey.workout, inputKey.full, inputKey.pending, enabled, periodWindow]);
+    // endAt est hors de la clé : il ne doit pas annuler le Worker.
+  }, [runKey]);
 
   const contentReady = !enabled || Boolean(bundle);
   return {

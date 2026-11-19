@@ -1,0 +1,287 @@
+{
+  "schema": "momentum.analysisEnvironmentDossier.v1",
+  "capturedAt": "2026-11-18T18:30:22.270Z",
+  "mode": "development",
+  "environment": {
+    "runtime": "browser",
+    "href": "http://localhost:3001/",
+    "origin": "http://localhost:3001",
+    "language": "fr-FR",
+    "languages": [
+      "fr-FR",
+      "fr",
+      "en-US",
+      "en"
+    ],
+    "timeZone": "Europe/Paris",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+    "serviceWorker": "http://localhost:3001/sw-garmin-sync.js"
+  },
+  "period": "7d",
+  "window": {
+    "start": "2026-11-12",
+    "end": "2026-11-18",
+    "endAt": "2026-11-18T18:29:44.802Z"
+  },
+  "analysisStatus": "refreshing",
+  "analysisPeriod": "7d",
+  "publication": {
+    "status": "ready",
+    "period": "7d",
+    "windowStart": "2026-11-12",
+    "windowEnd": "2026-11-18",
+    "complete": true
+  },
+  "snapshot": {
+    "repKeys": 775,
+    "checkedKeys": 781,
+    "totalReps": 33100
+  },
+  "banner": {
+    "totalReps": 1334,
+    "trainingDays": 4,
+    "totalMinutes": 266,
+    "otherExerciseMinutes": 266,
+    "runningMinutes": 0,
+    "totalKg": 4040,
+    "activeKcal": 3703,
+    "longestStreak": 2,
+    "streakRange": {
+      "length": 2,
+      "startDate": "2026-11-13",
+      "endDate": "2026-11-14"
+    }
+  },
+  "measure": {
+    "totalReps": 1334,
+    "trainingDays": 4,
+    "strengthDays": 4,
+    "minutes": 266,
+    "totalMinutes": 266,
+    "runningMinutes": 0,
+    "activeKcal": 3703
+  },
+  "durationAgreement": {
+    "bannerTotalMinutes": 266,
+    "measureTotalMinutes": 266,
+    "measureOtherMinutes": 266,
+    "sameTotal": true
+  },
+  "cardCount": 7,
+  "cards": [
+    {
+      "column": "shortTerm",
+      "kind": "disc_sleep_night",
+      "title": "Une nuit plus courte que ton niveau récent",
+      "family": "",
+      "evidence": "2026-11-13 · 8 h 23 vs 9 h 12 · 7 nuits"
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "disc_ms_pr_consolidated",
+      "title": "Ces 20 reps sont devenues ton niveau récemment reproductible",
+      "family": "",
+      "evidence": "20 reps · 5/5"
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "",
+      "title": "",
+      "family": "",
+      "evidence": ""
+    },
+    {
+      "column": "mediumTerm",
+      "kind": "disc_family_fade",
+      "title": "Dips sur barre parallèle s'efface de de ta poussée",
+      "family": "",
+      "evidence": "Dips sur barre parallèle 17,1 % → 6,4 % de ta poussée"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances",
+      "family": "",
+      "evidence": "arc 8 (fenêtre 1) · net decline · -28 % · 5×10→4×9"
+    },
+    {
+      "column": "longTerm",
+      "kind": "journey_pr_vs_level",
+      "title": "Ta meilleure série de 12 reps sur Curl Zottman reste éloignée de la série que tu reproduis",
+      "family": "",
+      "evidence": "19 séances observées"
+    },
+    {
+      "column": "longTerm",
+      "kind": "disc_structural_memory",
+      "title": "Relevés de genoux à la barre repasse dans la période",
+      "family": "",
+      "evidence": "4 séances · plateau · 0 % · 3×20→3×20"
+    }
+  ],
+  "editorialHistory": {
+    "version": 1,
+    "count": 180,
+    "signature": "7d|2026-11-12|2026-11-18|0|0|2|41.9|1334|16|4274603330",
+    "recent": [
+      {
+        "id": "relation.reading.medium.disc_emergence.emergence-1974855961",
+        "theme": "medium.disc_emergence.emergence-1974855961",
+        "seenAt": 1792273768792,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.long.disc_th_continuity_journey.share-ces-7-jours-les-30-jours",
+        "theme": "long.disc_th_continuity_journey.share-ces-7-jours-les-30-jours",
+        "seenAt": 1792273768792,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.long.disc_th_repertoire_journey.exit-pompes-d-clin-es-7d",
+        "theme": "long.disc_th_repertoire_journey.exit-pompes-d-clin-es-7d",
+        "seenAt": 1792273768792,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.medium.disc_th_rhythm_trajectory.rate-7d-Les-30-jours-d-avant",
+        "theme": "medium.disc_th_rhythm_trajectory.rate-7d-Les-30-jours-d-avant",
+        "seenAt": 1792093779638,
+        "count": 13
+      },
+      {
+        "id": "relation.reading.short.disc_ms_return.ms-disc_ms_return-106",
+        "theme": "short.disc_ms_return.ms-disc_ms_return-106",
+        "seenAt": 1792093779638,
+        "count": 6
+      },
+      {
+        "id": "relation.reading.long.disc_th_repertoire_journey.exit-relev-s-de-genoux-aux-parall-les-7d",
+        "theme": "long.disc_th_repertoire_journey.exit-relev-s-de-genoux-aux-parall-les-7d",
+        "seenAt": 1792093779638,
+        "count": 3
+      },
+      {
+        "id": "relation.reading.medium.disc_emergence.emergence-complementary_endurance_pushups",
+        "theme": "medium.disc_emergence.emergence-complementary_endurance_pushups",
+        "seenAt": 1792020845032,
+        "count": 3
+      },
+      {
+        "id": "relation.reading.long.disc_th_repertoire_journey.exit-pompes-lest-es-7d",
+        "theme": "long.disc_th_repertoire_journey.exit-pompes-lest-es-7d",
+        "seenAt": 1791932924865,
+        "count": 1
+      },
+      {
+        "id": "relation.reading.long.disc_th_repertoire_journey.exit-pompes-endurance-7d",
+        "theme": "long.disc_th_repertoire_journey.exit-pompes-endurance-7d",
+        "seenAt": 1791932519540,
+        "count": 9
+      },
+      {
+        "id": "relation.reading.medium.span_exercise_return",
+        "theme": "medium.span_exercise_return",
+        "seenAt": 1791928702066,
+        "count": 5
+      },
+      {
+        "id": "relation.reading.short.disc_ms_return.ms-disc_ms_return-207",
+        "theme": "short.disc_ms_return.ms-disc_ms_return-207",
+        "seenAt": 1791928687054,
+        "count": 5
+      },
+      {
+        "id": "relation.reading.long.disc_ms_hours",
+        "theme": "long.disc_ms_hours",
+        "seenAt": 1791821387427,
+        "count": 45
+      }
+    ]
+  },
+  "experiment": {
+    "addition": {
+      "date": "2026-11-17",
+      "reps": 332,
+      "exerciseId": "__mission1_isolated_reps__"
+    },
+    "note": "Deux passages du moteur actuel, sur une copie. Le snapshot réel et l’historique éditorial ne sont pas modifiés.",
+    "displayedCount": 7,
+    "beforeCount": 11,
+    "afterCount": 11,
+    "disappeared": [],
+    "appeared": [],
+    "baselineTitles": [
+      "Pompes inclinées : ces 7 jours sont au-dessus de ton niveau habituel",
+      "Ces 7 jours concentrent le travail sur moins de temps",
+      "Une nuit plus courte que ton niveau récent",
+      "Ces 20 reps sont devenues ton niveau récemment reproductible",
+      "",
+      "La reprise de relevés de genoux à la barre est devenue durable",
+      "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume",
+      "3 mouvements concentrent une part importante de ton travail récent",
+      "Pompes déclinées : recul confirmé sur plusieurs séances",
+      "Ta meilleure série de 12 reps sur Curl Zottman reste éloignée de la série que tu reproduis",
+      "Hyperextension repasse dans la période"
+    ],
+    "afterTitles": [
+      "Pompes inclinées : ces 7 jours sont au-dessus de ton niveau habituel",
+      "Ces 7 jours concentrent le travail sur moins de temps",
+      "Une nuit plus courte que ton niveau récent",
+      "Ces 20 reps sont devenues ton niveau récemment reproductible",
+      "",
+      "La reprise de relevés de genoux à la barre est devenue durable",
+      "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume",
+      "3 mouvements concentrent une part importante de ton travail récent",
+      "Pompes déclinées : recul confirmé sur plusieurs séances",
+      "Ta meilleure série de 12 reps sur Curl Zottman reste éloignée de la série que tu reproduis",
+      "Hyperextension repasse dans la période"
+    ],
+    "baselineKcal": null,
+    "afterKcal": null,
+    "duplicateBaseline": [],
+    "displayedMissingFromFresh": [
+      {
+        "kind": "disc_vs_habit",
+        "title": "Pompes inclinées : ces 7 jours sont au-dessus de ton niveau habituel"
+      },
+      {
+        "kind": "disc_density",
+        "title": "Ces 7 jours concentrent le travail sur moins de temps"
+      },
+      {
+        "kind": "disc_ms_return_durable",
+        "title": "La reprise de relevés de genoux à la barre est devenue durable"
+      },
+      {
+        "kind": "disc_sleep_intensity",
+        "title": "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume"
+      },
+      {
+        "kind": "disc_exercise_share",
+        "title": "3 mouvements concentrent une part importante de ton travail récent"
+      },
+      {
+        "kind": "disc_exercise_progress",
+        "title": "Pompes déclinées : recul confirmé sur plusieurs séances"
+      },
+      {
+        "kind": "disc_structural_memory",
+        "title": "Hyperextension repasse dans la période"
+      }
+    ],
+    "freshMissingFromDisplayed": [
+      {
+        "kind": "disc_family_fade",
+        "title": "Dips sur barre parallèle s'efface de de ta poussée"
+      },
+      {
+        "kind": "disc_exercise_progress",
+        "title": "Pompes déclinées (pieds sur banc) : recul confirmé sur plusieurs séances"
+      },
+      {
+        "kind": "disc_structural_memory",
+        "title": "Relevés de genoux à la barre repasse dans la période"
+      }
+    ]
+  }
+}

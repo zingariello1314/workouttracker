@@ -49,6 +49,9 @@ export function saveAnalyseDomCapture(payload) {
     dataSignature: payload?.dataSignature ?? null,
     editorialHistorySignature: payload?.editorialHistorySignature ?? null,
     source: payload?.source || 'manual',
+    runId: payload?.runId || null,
+    engineEdition: payload?.engineEdition || null,
+    workerStatus: payload?.workerStatus || null,
     captureQuality: payload?.captureQuality || (cards.some((c) => c.captureQuality === 'structured') ? 'mixed' : 'partial'),
     loadingState: payload?.loadingState || null,
     cards,
@@ -114,7 +117,10 @@ export function captureAnalyseCardsFromDom({
   root = null,
   dataSignature = null,
   editorialHistorySignature = null,
-  loadingState = null
+  loadingState = null,
+  runId = null,
+  engineEdition = null,
+  workerStatus = null
 } = {}) {
   const doc = root || (typeof document !== 'undefined' ? document : null);
   if (!doc) {
@@ -124,6 +130,9 @@ export function captureAnalyseCardsFromDom({
       source: 'no_document',
       dataSignature,
       editorialHistorySignature,
+      runId,
+      engineEdition,
+      workerStatus,
       loadingState: loadingState || 'no_document',
       captureQuality: 'none'
     });
@@ -136,6 +145,9 @@ export function captureAnalyseCardsFromDom({
       source: 'loading',
       dataSignature,
       editorialHistorySignature,
+      runId,
+      engineEdition,
+      workerStatus,
       loadingState: 'loading',
       captureQuality: 'none'
     });
@@ -192,6 +204,9 @@ export function captureAnalyseCardsFromDom({
     cards,
     dataSignature,
     editorialHistorySignature,
+    runId,
+    engineEdition,
+    workerStatus,
     loadingState: loadingState || 'ready',
     captureQuality: structured ? 'structured' : 'partial',
     source: nodes.length ? (structured ? 'dom_scrape' : 'dom_scrape_fallback') : 'dom_scrape_empty'

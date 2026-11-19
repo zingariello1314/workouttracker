@@ -111,9 +111,25 @@ const ENDURANCE_WEIGHTS = {
   default: { [MuscleGroups.FULL_BODY]: 1 }
 };
 
-function toYmd(d) {
-  const x = d instanceof Date ? d : new Date(d);
-  return x.toISOString().slice(0, 10);
+/** Jour civil des fenêtres Récap. Les dates déjà enregistrées ne sont pas réécrites. */
+export const RECAP_TIME_ZONE = 'Europe/Paris';
+
+export function ymdInTimeZone(date, timeZone = RECAP_TIME_ZONE) {
+  const x = date instanceof Date ? date : new Date(date);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(x);
+  const pick = (type) => parts.find((part) => part.type === type)?.value;
+  return `${pick('year')}-${pick('month')}-${pick('day')}`;
+}
+
+/** Ajoute des jours à une date YYYY-MM-DD, sans dépendre du fuseau de la machine. */
+export function addCalendarDaysYmd(ymd, delta) {
+  const [year, month, day] = String(ymd).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + delta)).toISOString().slice(0, 10);
 }
 
 function calendarDaysBetween(earlierYmd, laterYmd) {
@@ -131,34 +147,97 @@ function decayFactor(earlierYmd, refYmd) {
  * @param {'today'|'7d'|'30d'|'3m'|'6m'|'1y'|'2y'|'all'} period
  * @param {Date} ref
  */
+export const RECAP_PERIOD_SPANS = Object.freeze({
+  today: 1,
+  '7d': 7,
+  '30d': 30,
+  '3m': 92,
+  '6m': 183,
+  '1y': 365,
+  '2y': 730
+});
+
 export function getRecapDateWindow(period, ref = new Date()) {
   const endAt = ref instanceof Date ? new Date(ref.getTime()) : new Date(ref);
-  const end = toYmd(endAt);
-  if (period === 'all') return { start: null, end, endAt: endAt.toISOString() };
-  // « Aujourd’hui » = dernières 24 h glissantes (pas minuit → maintenant).
-  if (period === 'today') {
-    const startAt = new Date(endAt.getTime() - 24 * 60 * 60 * 1000);
+  const end = ymdInTimeZone(endAt);
+  const partialEnd = true;
+  if (period === 'all') {
     return {
-      start: toYmd(startAt),
+      start: null,
       end,
-      startAt: startAt.toISOString(),
       endAt: endAt.toISOString(),
-      mode: 'rolling-24h'
+      timeZone: RECAP_TIME_ZONE,
+      mode: 'coverage',
+      partialEnd
     };
   }
-  const spanById = {
-    '7d': 7,
-    '30d': 30,
-    '3m': 92,
-    '6m': 183,
-    '1y': 365,
-    '2y': 730
+  if (period === 'today') {
+    return {
+      start: end,
+      end,
+      endAt: endAt.toISOString(),
+      timeZone: RECAP_TIME_ZONE,
+      mode: 'calendar-day',
+      spanDays: 1,
+      partial: true,
+      partialEnd
+    };
+  }
+  const span = RECAP_PERIOD_SPANS[period] ?? RECAP_PERIOD_SPANS['7d'];
+  return {
+    start: addCalendarDaysYmd(end, -(span - 1)),
+    end,
+    endAt: endAt.toISOString(),
+    timeZone: RECAP_TIME_ZONE,
+    mode: 'inclusive-calendar',
+    spanDays: span,
+    partialEnd
   };
-  const span = spanById[period] ?? 7;
-  const d = new Date(endAt);
-  d.setHours(12, 0, 0, 0);
-  d.setDate(d.getDate() - (span - 1));
-  return { start: toYmd(d), end, endAt: endAt.toISOString() };
+}
+
+const EVIDENCE_YMD_RE = /^(\d{4}-\d{2}-\d{2})/;
+
+/**
+ * Première date réellement portée par les preuves (reps, cochages, endurance, Garmin).
+ * N’invente pas d’année avant la couverture.
+ * @param {object|null} snapshot
+ * @param {object|null} garminData
+ * @returns {string|null}
+ */
+export function earliestCoveredYmd(snapshot, garminData = null) {
+  let best = null;
+  const take = (raw) => {
+    const match = EVIDENCE_YMD_RE.exec(String(raw || ''));
+    if (!match) return;
+    const ymd = match[1];
+    if (!best || ymd < best) best = ymd;
+  };
+  const reps = snapshot?.reps;
+  if (reps && typeof reps === 'object') Object.keys(reps).forEach(take);
+  const checked = snapshot?.checkedExercises;
+  if (checked && typeof checked === 'object') Object.keys(checked).forEach(take);
+  const sessions = snapshot?.enduranceData?.sessions;
+  if (sessions && typeof sessions === 'object') {
+    Object.values(sessions).forEach((list) => {
+      if (!Array.isArray(list)) return;
+      list.forEach((session) => take(session?.date || session?.startDate));
+    });
+  }
+  const daily = garminData?.dailyMetrics;
+  if (daily && typeof daily === 'object') Object.keys(daily).forEach(take);
+  return best;
+}
+
+/**
+ * Même fenêtre pour le bandeau et les analyses.
+ * « Toujours » part de la première preuve, sans changer le sens de `getRecapDateWindow('all')`.
+ */
+export function resolveRecapPeriodWindow(period, snapshot, garminData = null, ref = new Date()) {
+  const raw = getRecapDateWindow(period, ref);
+  if (raw.start || period !== 'all') return raw;
+  const start = earliestCoveredYmd(snapshot, garminData);
+  if (!start) return raw;
+  return { ...raw, start, coverage: 'first-evidence' };
 }
 
 /** Fenêtre récap (inclusif). `start == null` ⇒ tout l’historique jusqu’à `end`. */

@@ -14,6 +14,7 @@ import {
   TEMPORAL_PLAN_KIND
 } from './recapTemporalStrategy';
 import { buildMetricFact, METRIC_GRANULARITY, METRIC_REFERENT, METRIC_UNIT } from './recapMetricContract';
+import { formatRepDelta, symmetricDecomposition } from './volumeChangeDecomposition';
 
 function ymOf(ymd) {
   return String(ymd || '').slice(0, 7);
@@ -289,12 +290,33 @@ function bodyForArc(shape) {
   const peakL = monthLabelFr(peak.ym);
   const troughL = monthLabelFr(trough.ym);
   const recentL = monthLabelFr(recent.ym);
-  const dropBits = `${peakL} : ${fmtInt(peak.reps)} reps en ${peak.days} jours entraînés (≈${fmtInt(peak.repsPerDay)} / jour actif) → ${troughL} : ${fmtInt(trough.reps)} reps en ${trough.days} jours (≈${fmtInt(trough.repsPerDay)} / jour actif), soit ${fmtSignedPct(mechanism.repsPct)} de volume, ${fmtSignedPct(mechanism.daysPct)} de jours, ${fmtSignedPct(mechanism.rpdPct)} de volume par jour actif.`;
+  const between = (shape.months || []).filter((month) => month.ym > peak.ym && month.ym < trough.ym);
+  const betweenBits = between.length
+    ? ` Entre les deux, ${between
+        .map((month) => `${monthLabelFr(month.ym)} compte ${fmtInt(month.reps)} répétitions en ${month.days} jours`)
+        .join(', ')}.`
+    : '';
+  const split = symmetricDecomposition(
+    { sessions: peak.days, reps: peak.reps },
+    { sessions: trough.days, reps: trough.reps }
+  );
+  const splitBits =
+    split.ok && peak.days > 0 && trough.days > 0
+      ? ` La baisse se décompose en ${formatRepDelta(split.frequency)} répétitions liées aux jours actifs et ${formatRepDelta(split.content)} liées au volume par jour actif.`
+      : '';
+  const dropBits = `${peakL} : ${fmtInt(peak.reps)} reps en ${peak.days} jours entraînés (≈${fmtInt(peak.repsPerDay)} / jour actif) → ${troughL} : ${fmtInt(trough.reps)} reps en ${trough.days} jours (≈${fmtInt(trough.repsPerDay)} / jour actif), soit ${fmtSignedPct(mechanism.repsPct)} de volume, ${fmtSignedPct(mechanism.daysPct)} de jours, ${fmtSignedPct(mechanism.rpdPct)} de volume par jour actif.${betweenBits}${splitBits}`;
   const mech = mechanismSentence(mechanism);
 
   if (arcKind === 'partial_recovery') {
     const rec = mechanism.recovery || {};
-    return `${dropBits}${mech} ${recentL} remonte à ${fmtInt(recent.reps)} reps en ${recent.days} jours (≈${fmtInt(recent.repsPerDay)} / jour actif, ${fmtSignedPct(rec.repsPct)} vs ${troughL}), sans retrouver le sommet de ${peakL} (${fmtInt(peak.reps)} reps).`;
+    const rebound = symmetricDecomposition(
+      { sessions: trough.days, reps: trough.reps },
+      { sessions: recent.days, reps: recent.reps }
+    );
+    const reboundBits = rebound.ok
+      ? ` La remontée se décompose en ${formatRepDelta(rebound.frequency)} répétitions liées aux jours actifs et ${formatRepDelta(rebound.content)} liées au contenu de chaque jour actif.`
+      : '';
+    return `${dropBits}${mech} ${recentL} remonte à ${fmtInt(recent.reps)} reps en ${recent.days} jours (≈${fmtInt(recent.repsPerDay)} / jour actif, ${fmtSignedPct(rec.repsPct)} vs ${troughL}), sans retrouver le sommet de ${peakL} (${fmtInt(peak.reps)} reps).${reboundBits}`;
   }
   if (arcKind === 'full_recovery') {
     return `${dropBits}${mech} ${recentL} revient à ${fmtInt(recent.reps)} reps (${recent.days} j.), proche du niveau de ${peakL}.`;

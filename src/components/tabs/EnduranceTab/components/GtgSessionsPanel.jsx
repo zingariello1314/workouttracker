@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Clock, Plus, Search, Trash2 } from 'lucide-react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
@@ -35,6 +35,7 @@ import {
   GTG_XP_PER_REP
 } from '../../../../services/xp/gtgXpService';
 import { invalidateSportXpCache } from '../../../../hooks/useSportXP';
+import { isConfirmedSave, saveOutcomeNotice } from '../../../../services/workout/saveOutcome';
 
 const BUILTIN_LABEL_KEYS = {
   pullups: 'endurance.gtg.exercise.pullups',
@@ -51,7 +52,9 @@ export default function GtgSessionsPanel() {
   const [showMethod, setShowMethod] = useState(true);
   const [bankSearch, setBankSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState(null);
   const [expandedExerciseId, setExpandedExerciseId] = useState(null);
+  const pendingPayloadRef = useRef(null);
 
   const gtgRaw = data?.enduranceData?.gtg;
   const gtgData = useMemo(() => normalizeGtgData(gtgRaw), [gtgRaw]);
@@ -90,35 +93,46 @@ export default function GtgSessionsPanel() {
     [gtgData.config, ctx, t]
   );
 
+  const persistPrepared = useCallback(async (merged) => {
+    pendingPayloadRef.current = merged;
+    setSaving(true);
+    try {
+      const outcome = await updateData(merged, { reportOutcome: true });
+      if (isConfirmedSave(outcome)) {
+        pendingPayloadRef.current = null;
+        setSaveNotice(null);
+        invalidateSportXpCache();
+      } else {
+        setSaveNotice(saveOutcomeNotice(outcome));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [updateData]);
+
   const persistGtg = useCallback(
     async (nextGtg, syncDate = today, declaredMax = null) => {
       if (typeof updateData !== 'function') return;
-      setSaving(true);
-      try {
-        const base = {
-          ...data,
-          enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg, lastUpdated: new Date().toISOString() }
-        };
-        let merged = applyWorkoutRepIntegrations(
-          syncGtgDayToWorkoutData(base, nextGtg, syncDate, ctx),
+      const base = {
+        ...data,
+        enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg, lastUpdated: new Date().toISOString() }
+      };
+      let merged = applyWorkoutRepIntegrations(
+        syncGtgDayToWorkoutData(base, nextGtg, syncDate, ctx),
+        ctx
+      );
+      if (declaredMax?.exerciseId && Number(declaredMax.reps) > 0) {
+        merged = applyGtgDeclaredMaxToData(merged, {
+          gtgExerciseId: declaredMax.exerciseId,
+          reps: declaredMax.reps,
+          config: nextGtg.config,
+          dateStr: todayYmd(),
           ctx
-        );
-        if (declaredMax?.exerciseId && Number(declaredMax.reps) > 0) {
-          merged = applyGtgDeclaredMaxToData(merged, {
-            gtgExerciseId: declaredMax.exerciseId,
-            reps: declaredMax.reps,
-            config: nextGtg.config,
-            dateStr: todayYmd(),
-            ctx
-          });
-        }
-        await updateData(merged);
-        invalidateSportXpCache();
-      } finally {
-        setSaving(false);
+        });
       }
+      await persistPrepared(merged);
     },
-    [data, updateData, today, ctx]
+    [data, updateData, today, ctx, persistPrepared]
   );
 
   const onExpandExercise = useCallback((exerciseId) => {
@@ -203,9 +217,13 @@ export default function GtgSessionsPanel() {
 
   const onAddPassage = useCallback(
     ({ time, items }) => {
+      if (pendingPayloadRef.current) {
+        persistPrepared(pendingPayloadRef.current);
+        return;
+      }
       persistGtg(addGtgAdHocPassage(gtgData, today, { time, items }), today);
     },
-    [gtgData, today, persistGtg]
+    [gtgData, today, persistGtg, persistPrepared]
   );
 
   const onRemovePassage = useCallback(
@@ -276,6 +294,18 @@ export default function GtgSessionsPanel() {
                 <h2>{t('endurance.gtg.scheduleTitle')}</h2>
                 <p>{t('endurance.gtg.scheduleHint')}</p>
                 <p style={{ color: 'var(--bone-3)', marginTop: 4 }}>{t('endurance.gtg.repsSyncHint')}</p>
+                {saveNotice ? (
+                  <p role="status" style={{ color: 'var(--t-fract)', marginTop: 8 }}>
+                    {saveNotice}{' '}
+                    <button
+                      type="button"
+                      disabled={saving || !pendingPayloadRef.current}
+                      onClick={() => persistPrepared(pendingPayloadRef.current)}
+                    >
+                      Réessayer la même sauvegarde
+                    </button>
+                  </p>
+                ) : null}
               </div>
             </div>
 

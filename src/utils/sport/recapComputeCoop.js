@@ -28,15 +28,21 @@ export async function coopGate(coop = {}) {
   }
 }
 
-/** Yield navigateur (rAF + macrotask) — libère le thread pour clics / React. */
+/** Yield navigateur (rAF + macrotask). Un onglet en arrière-plan ne bloque pas le calcul. */
 export function browserYieldFrame() {
   return new Promise((resolve) => {
-    if (typeof requestAnimationFrame === 'function') {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    const hidden = typeof document !== 'undefined' && document.hidden;
+    if (!hidden && typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
-        setTimeout(resolve, 0);
+        setTimeout(finish, 0);
       });
-    } else {
-      setTimeout(resolve, 0);
     }
+    setTimeout(finish, hidden ? 0 : 80);
   });
 }

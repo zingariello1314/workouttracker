@@ -379,7 +379,11 @@ function hasImplicitEvidence(r) {
   if (m.totalReps != null || m.sampleSize != null || m.sessionCount != null) return true;
   if (m.gapDays != null || m.lastDate != null || m.windowStart != null) return true;
   if (m.composedEvidence) return true;
+  if (Array.isArray(r?.evidenceList) && r.evidenceList.length) return true;
+  if (Array.isArray(r?.interpretation?.evidence) && r.interpretation.evidence.length) return true;
   if (m.nHigh != null || m.highN != null || m.days != null) return true;
+  const prose = `${r?.title || ''} ${r?.body || ''}`;
+  if (/\d/.test(prose) && /séance|répétition|%|avant|jours|reps/i.test(prose)) return true;
   // Affirmation chiffrée dans le titre/corps
   if (/\d/.test(`${r?.title || ''} ${r?.body || ''}`) && (m.name || m.exerciseId || m.family)) {
     return true;
@@ -660,8 +664,9 @@ export function compareDomToPack(report, domCapture) {
         .slice(0, 80)}`;
     })
   );
-  const inPackNotDom = packRows.filter((r) => !domKeys.has(byStable(r)));
-  const inDomNotPack = domCards.filter((c) => {
+  const comparable = comparability === DOM_COMPARABILITY.COMPARABLE;
+  const inPackNotDom = comparable ? packRows.filter((r) => !domKeys.has(byStable(r))) : [];
+  const inDomNotPack = comparable ? domCards.filter((c) => {
     const key =
       c.phenomenonId || c.cardId || c.id
         ? `id:${c.phenomenonId || ''}|${c.cardId || c.id || ''}`
@@ -670,7 +675,7 @@ export function compareDomToPack(report, domCapture) {
             .toLowerCase()
             .slice(0, 80)}`;
     return !packKeys.has(key);
-  });
+  }) : [];
 
   return {
     comparability,

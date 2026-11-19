@@ -43,6 +43,13 @@ self.onmessage = async (event) => {
 
   const requestId = String(data.requestId || '');
   activeRequestId = requestId;
+  self.postMessage({
+    type: WORKER_MSG.PROGRESS,
+    requestId,
+    period: data.period,
+    stage: 'received',
+    ms: 0
+  });
   const t0 =
     typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 
@@ -90,11 +97,27 @@ self.onmessage = async (event) => {
       };
       delete msg.snapshotJson;
       delete msg.sideJson;
+      self.postMessage({
+        type: WORKER_MSG.PROGRESS,
+        requestId,
+        period: data.period,
+        stage: 'parsed',
+        ms: 0
+      });
     }
 
     const bundle = await computeRecapPeriodWorkerBundle(msg, {
       shouldAbort,
-      yieldFn: workerYield
+      yieldFn: workerYield,
+      onStage: (stage, ms) => {
+        self.postMessage({
+          type: WORKER_MSG.PROGRESS,
+          requestId,
+          period: data.period,
+          stage,
+          ms
+        });
+      }
     });
 
     if (shouldAbort()) {
@@ -131,6 +154,14 @@ self.onmessage = async (event) => {
       programCoachAnalysis: jsonSafe(bundle.programCoachAnalysis, 'programCoach'),
       workerTimings: bundle.workerTimings || null
     };
+
+    self.postMessage({
+      type: WORKER_MSG.PROGRESS,
+      requestId,
+      period: data.period,
+      stage: 'response_ready',
+      ms
+    });
 
     self.postMessage({
       type: WORKER_MSG.RESULT,

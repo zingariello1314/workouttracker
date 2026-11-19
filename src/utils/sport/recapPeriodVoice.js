@@ -78,6 +78,11 @@ export function muscleLabel(group) {
   return MUSCLE_FR[group] || String(group || '');
 }
 
+/** « Dips s'efface de ta poussée » — le possessif contient déjà « de ». */
+export function familyFadeTitle(name, family) {
+  return `${name} s'efface ${possessiveMuscleShare(family)}`;
+}
+
 /** « de ton tronc » / « de ta poussée » — évite « de ta tronc ». */
 export function possessiveMuscleShare(familyOrLabel) {
   const label = String(familyOrLabel || '').trim();
@@ -312,6 +317,28 @@ export function formatDurationFr(minutes) {
   const r = m % 60;
   if (r === 0) return `${h} h`;
   return `${h} h ${String(r).padStart(2, '0')}`;
+}
+
+/**
+ * Nomme les deux durées déjà mesurées, sans les confondre.
+ * `minutes` = hors course. `totalMinutes` = course + hors course.
+ * @param {{ minutes?: number, totalMinutes?: number, runningMinutes?: number }} measure
+ */
+export function describeActivityDuration(measure) {
+  const other = Math.max(0, Math.round(Number(measure?.minutes) || 0));
+  const totalRaw = Number(measure?.totalMinutes);
+  const total = Math.max(0, Math.round(Number.isFinite(totalRaw) ? totalRaw : other));
+  const runningRaw = Number(measure?.runningMinutes);
+  const running = Math.max(
+    0,
+    Math.round(Number.isFinite(runningRaw) ? runningRaw : Math.max(0, total - other))
+  );
+  if (total <= 0 && other <= 0) return '0 min de temps d\'activité';
+  if (running > 0 && other > 0 && other !== total) {
+    return `${formatDurationFr(total)} de temps d'activité (dont ${formatDurationFr(other)} hors course)`;
+  }
+  if (running > 0 && other === 0) return `${formatDurationFr(total)} de temps d'activité`;
+  return `${formatDurationFr(other || total)} hors course`;
 }
 
 export function pctChange(now, then) {

@@ -242,3 +242,60 @@ export function computeProgramCompletionBonusXp(workoutData, ctx = {}) {
   }
   return bonus;
 }
+
+const COMPLETION_DATE_KEY = /^(\d{4}-\d{2}-\d{2})_/;
+
+function bucketCompletionKeys(map, target) {
+  for (const [key, value] of Object.entries(map || {})) {
+    const match = String(key).match(COMPLETION_DATE_KEY);
+    if (!match) continue;
+    const date = match[1];
+    let bag = target.get(date);
+    if (!bag) {
+      bag = {};
+      target.set(date, bag);
+    }
+    bag[key] = value;
+  }
+}
+
+function completionDates(workoutData) {
+  const dates = new Set();
+  for (const key of Object.keys(workoutData?.checkedExercises || {})) {
+    if (COMPLETION_DATE_KEY.test(key)) dates.add(key.slice(0, 10));
+  }
+  for (const key of Object.keys(workoutData?.checkedStretches || {})) {
+    const match = String(key).match(COMPLETION_DATE_KEY);
+    if (match) dates.add(match[1]);
+  }
+  return dates;
+}
+
+/**
+ * Même résultat que computeProgramCompletionBonusXp.
+ * L'index évite de reparcourir toutes les clés pour chaque journée.
+ */
+export function computeProgramCompletionBonusXpIndexed(workoutData, ctx = {}) {
+  if (!workoutData || typeof workoutData !== 'object') return 0;
+  const dates = completionDates(workoutData);
+  const checked = new Map();
+  const reps = new Map();
+  const stretches = new Map();
+  bucketCompletionKeys(workoutData.checkedExercises, checked);
+  bucketCompletionKeys(workoutData.reps, reps);
+  bucketCompletionKeys(workoutData.checkedStretches, stretches);
+  let bonus = 0;
+  for (const dateStr of dates) {
+    const slice = {
+      ...workoutData,
+      checkedExercises: checked.get(dateStr) || {},
+      reps: reps.get(dateStr) || {},
+      checkedStretches: stretches.get(dateStr) || {}
+    };
+    const { total, ratio } = computeProgramCompletionCheckedRatio(dateStr, slice, ctx);
+    if (total === 0) continue;
+    if (ratio >= 1) bonus += 300;
+    else if (ratio >= 0.8) bonus += 100;
+  }
+  return bonus;
+}

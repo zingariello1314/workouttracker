@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Award, ChevronDown, ChevronUp, RefreshCw, Save, Settings2, Zap } from 'lucide-react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useTranslation } from '../../../../utils/translations';
@@ -24,6 +24,7 @@ import { createDefaultFormState } from '../../../../services/endurance/endurance
 import EnduranceSessionForm from '../../EnduranceTab/components/EnduranceSessionForm.jsx';
 import { hasExerciseVariations } from '../../../../utils/exerciseVariationResolver';
 import { invalidateSportXpCache } from '../../../../hooks/useSportXP';
+import { isConfirmedSave, saveOutcomeNotice } from '../../../../services/workout/saveOutcome';
 
 function plannedHintForChallenge(challenge) {
   const sets = challenge.goalSetCount;
@@ -353,6 +354,8 @@ export default function PushupChallengeTodayPanel({ date }) {
   const dateStr = useMemo(() => getDateStr(date), [date]);
   const [saving, setSaving] = useState(false);
   const [forms, setForms] = useState({});
+  const [saveNotice, setSaveNotice] = useState(null);
+  const pendingPayloadRef = useRef({});
 
   const pushupChallenges = useMemo(() => {
     const ed = loadEnduranceData(data?.enduranceData || {});
@@ -393,7 +396,13 @@ export default function PushupChallengeTodayPanel({ date }) {
           const patched = patchEnduranceChallenges(data, id, (c) =>
             mergePushupChallengeRhythmUpdate(c, rhythmDraft, { realignFromYmd })
           );
-          await updateData(patched);
+          const outcome = await updateData(patched, { reportOutcome: true });
+          if (isConfirmedSave(outcome)) {
+            setSaveNotice(null);
+            invalidateSportXpCache();
+          } else {
+            setSaveNotice(saveOutcomeNotice(outcome));
+          }
         } finally {
           setSaving(false);
         }
@@ -404,26 +413,45 @@ export default function PushupChallengeTodayPanel({ date }) {
       if (!form) return;
       setSaving(true);
       try {
-        const { success, workoutPayload } = await buildWorkoutAfterEnduranceSession({
-          workoutData: data,
-          activityType: 'pushups',
-          sessionData: { ...form, date: dateStr, id: Date.now() },
-          mode: 'append'
-        });
-        if (success && workoutPayload) {
-          let payload = workoutPayload;
+        let payload = pendingPayloadRef.current[id];
+        if (payload === 'building') return;
+        if (!payload) {
+          pendingPayloadRef.current[id] = 'building';
+          const sessionId = form.pendingSessionId ?? Date.now();
+          const { success, workoutPayload } = await buildWorkoutAfterEnduranceSession({
+            workoutData: data,
+            activityType: 'pushups',
+            sessionData: { ...form, date: dateStr, id: sessionId },
+            mode: 'append'
+          });
+          if (!success || !workoutPayload) {
+            delete pendingPayloadRef.current[id];
+            return;
+          }
+          payload = workoutPayload;
           if (realignOnSave) {
             payload = patchEnduranceChallenges(payload, id, (c) =>
               realignPushupChallengeRhythmFromDate(c, dateStr)
             );
           }
-          await updateData(payload);
+          pendingPayloadRef.current[id] = payload;
+          setForms((prev) => ({
+            ...prev,
+            [id]: { ...(prev[id] || form), pendingSessionId: sessionId }
+          }));
+        }
+        const outcome = await updateData(payload, { reportOutcome: true });
+        if (isConfirmedSave(outcome)) {
+          delete pendingPayloadRef.current[id];
+          setSaveNotice(null);
           invalidateSportXpCache();
           setForms((prev) => {
             const copy = { ...prev };
             delete copy[id];
             return copy;
           });
+        } else {
+          setSaveNotice(saveOutcomeNotice(outcome));
         }
       } finally {
         setSaving(false);
@@ -441,6 +469,11 @@ export default function PushupChallengeTodayPanel({ date }) {
             {t('today.pushupChallenge.title', 'Défis pompes — aujourd’hui')}
           </h3>
         </div>
+        {saveNotice ? (
+          <p className="text-sm text-amber-200" role="status">
+            {saveNotice}
+          </p>
+        ) : null}
         <p className="text-sm text-slate-400 max-w-xl">
           {t(
             'today.pushupChallenge.empty',
@@ -479,6 +512,11 @@ export default function PushupChallengeTodayPanel({ date }) {
           'Enregistre ta séance (séries × reps modifiables). Tu peux aussi t’entraîner un jour « repos » et recaler le rythme.'
         )}
       </p>
+      {saveNotice ? (
+        <p className="text-sm text-amber-200" role="status">
+          {saveNotice}
+        </p>
+      ) : null}
 
       {due.map((challenge) => {
         const id = String(challenge.id);

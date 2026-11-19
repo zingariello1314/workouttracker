@@ -17,6 +17,17 @@ function clampYmd(ymd, minYmd) {
   return ymd < minYmd ? minYmd : ymd;
 }
 
+/** Jours dont le plan est figé dans calendarDayPlanSnapshots, avec au moins un exercice. */
+export function countFrozenPlanDays(snapshot, window) {
+  const snaps = snapshot?.calendarDayPlanSnapshots;
+  if (!snaps || !window?.start || !window?.end) return 0;
+  return Object.keys(snaps).filter((date) => {
+    if (date < window.start || date > window.end) return false;
+    const exercises = snaps[date]?.exercises;
+    return Array.isArray(exercises) && exercises.length > 0;
+  }).length;
+}
+
 /** Métriques complétion pour une fenêtre — même logique que Récap > Snapshot. */
 export function getCompletionForWindow(snapshot, window, ctx = {}) {
   if (!window?.end) return null;

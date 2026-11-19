@@ -42,20 +42,15 @@ import {
   boostUnderrepresentedFamilies,
   rescueStarvedFamilySlots
 } from './recapSelectionDiagnostics';
-import { filterValidInsights } from './recapInsightValidate';
+import { filterValidInsights, finalizePublishedInsight } from './recapInsightValidate';
 import { semanticGroupFromCandidateId } from './insightSemanticThemes';
-import {
-  applyNoveltyWeights,
-  themeFromCandidateId
-} from './insightNoveltyEngine';
+import { applyNoveltyWeights } from './insightNoveltyEngine';
 import {
   loadInsightHistory,
-  recordShownInsights,
-  saveInsightHistory,
   loadLastInsightSignature,
-  saveLastInsightSignature,
   localDayKey
 } from './insightNoveltyStore';
+import { buildAccessibleReserve, notePublication } from './analyticalMemory';
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
 import { claimFromCandidate, kindFromNarrativeCandidate } from './recapNarrativeClaims';
@@ -1271,7 +1266,9 @@ export function selectNarrativeColumns(candidates, limits, signature, now = Date
   const eligible = (horizon) => {
     const row = state[horizon];
     if (!row || row.picked.length >= row.limit) return [];
-    return row.pool.filter((c) => !usedIds.has(c.id) && !claimBlocks(c, shared));
+    return row.pool.filter(
+      (c) => !usedIds.has(c.id) && !claimBlocks(c, shared) && c.metrics?.editorialPriority !== false
+    );
   };
 
   while (horizons.some((horizon) => eligible(horizon).length > 0)) {
@@ -1306,10 +1303,33 @@ export function selectNarrativeColumns(candidates, limits, signature, now = Date
     const horizonState = state[choice.horizon];
     horizonState.picked.push(choice.c);
     usedIds.add(choice.c.id);
+    choice.c.selectionTrace = { admission: 'admissible', outcome: 'selected', reason: null };
     horizonState.usedPillars.add(choice.c.pillar);
     horizonState.usedGroups.add(semanticGroupFromCandidateId(choice.c.id));
     rememberClaim(choice.c, shared);
   }
+
+  (candidates || []).forEach((c) => {
+    if (usedIds.has(c.id) || c.selectionTrace) return;
+    const row = state[c.horizon];
+    let reason = 'score_fell_below_min_or_stopped';
+    if (!c.text) reason = 'missing_text';
+    else if (!row) reason = 'horizon_without_budget';
+    else if (row.picked.length >= row.limit) reason = 'column_cap';
+    else if (claimBlocks(c, shared)) reason = 'claim_rivalry';
+    else if ((c.weight || 0) < MIN_COLUMN_WEIGHT && !String(c.id || '').includes('.disc_')) {
+      reason = 'below_min_column_weight';
+    }
+    c.selectionTrace = {
+      admission: 'admissible',
+      outcome: 'not_prioritized',
+      reason,
+      weight: c.weight ?? null,
+      minColumnWeight: MIN_COLUMN_WEIGHT,
+      columnLimit: row?.limit ?? null,
+      columnPicked: row?.picked.length ?? null
+    };
+  });
 
   const out = {};
   horizons.forEach((horizon) => {
@@ -1350,6 +1370,13 @@ function humanizeKindTitle(kind, fallback = '') {
   if (INTERNAL_KIND_TITLE[k]) return INTERNAL_KIND_TITLE[k];
   if (/^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/i.test(k)) return fallback || '';
   return fallback || '';
+}
+
+function publishableCard(row) {
+  const card = toInsightCard(row);
+  if (!card?.body && !card?.title) return null;
+  const gated = finalizePublishedInsight(card);
+  return gated.ok ? gated.card : null;
 }
 
 function toInsightCard(p) {
@@ -1563,9 +1590,26 @@ export function buildAdaptiveRecapInsights(opts = {}) {
 
   const tWeight0 = diagNow();
   const weightedCandidates = boostUnderrepresentedFamilies(
-    applyNatureWeights(applyNoveltyWeights(candidates, insightHistory), composed.phenomena),
+    applyNatureWeights(
+      applyNoveltyWeights(
+        candidates.map((c) => ({ ...c, weightBeforeNovelty: c.weight || 0 })),
+        insightHistory
+      ),
+      composed.phenomena
+    ),
     { prefer: ['adherence', 'body', 'gtg', 'volume'] }
-  );
+  ).map((c) => ({
+    ...c,
+    weightTrace: {
+      beforeNovelty: c.weightBeforeNovelty ?? null,
+      noveltyPenalty: c.noveltyPenalty ?? 0,
+      noveltyParts: c.noveltyParts || null,
+      afterNovelty: c.weightAfterNovelty ?? null,
+      natureBoost: c.natureBoostApplied ?? 0,
+      familyBoost: c._familyBoost || 0,
+      final: c.weight ?? null
+    }
+  }));
   const msWeight = Math.round(diagNow() - tWeight0);
 
   let spanDays = 7;
@@ -1648,27 +1692,29 @@ export function buildAdaptiveRecapInsights(opts = {}) {
       : loadLastInsightSignature();
   let historyUpdate = null;
   if (!collectDiagnostic && prevSig !== signature && allPicked.length > 0) {
-    const nextHistory = recordShownInsights(
-      insightHistory,
-      allPicked.map((c) => ({
-        id: c.id,
-        theme: c.noveltyTheme || themeFromCandidateId(c.id),
-        claim: claimFromCandidate(c)
-      }))
-    );
-    if (persistHistory) {
-      saveInsightHistory(nextHistory);
-      saveLastInsightSignature(signature);
-    } else {
-      historyUpdate = { nextHistory, signature };
-    }
+    historyUpdate = {
+      ...notePublication({
+        signature,
+        ids: allPicked.map((c) => c.id),
+        period,
+        window
+      }),
+      persisted: false,
+      persistHistoryRequested: persistHistory === true
+    };
   }
 
   const result = {
     insights: {
-      shortTerm: pickedShort.map(toInsightCard),
-      mediumTerm: pickedMedium.map(toInsightCard),
-      longTerm: pickedLong.map(toInsightCard)
+      shortTerm: pickedShort.map(publishableCard).filter(Boolean),
+      mediumTerm: pickedMedium.map(publishableCard).filter(Boolean),
+      longTerm: pickedLong.map(publishableCard).filter(Boolean),
+      accessibleReserve: buildAccessibleReserve({
+        valid: validCandidates,
+        shownIds,
+        merged: dedupedRows,
+        period
+      })
     },
     kpis: {
       runningKm: vol.totalKm,

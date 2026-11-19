@@ -3,7 +3,7 @@
  * nature (now / trajectory / journey), pas la durée de la fenêtre Recap.
  */
 
-import { getCompletionForWindow } from './recapCompletionTruth';
+import { countFrozenPlanDays, getCompletionForWindow } from './recapCompletionTruth';
 import {
   deriveExposureWindows,
   summarizeExposure,
@@ -37,6 +37,7 @@ import {
   rewardToneForKind
 } from './recapInsightNature';
 import { buildPeriodDiscoveryBundle } from './recapPeriodDiscoveries';
+import { buildSessionWorkProfiles } from './sessionWorkProfile';
 import {
   buildVolumeDecompFinding,
   buildAdherenceDowFinding,
@@ -247,6 +248,18 @@ export function plausiblePct(n, maxAbs = 160) {
   return n;
 }
 
+export function frequencyContentClause({ emitPrev, emitRate, currentAvg, habitAvg } = {}) {
+  const rose = emitRate != null && emitPrev != null && Number(emitRate) > Number(emitPrev) + 0.05;
+  const fell = emitRate != null && emitPrev != null && Number(emitRate) + 0.05 < Number(emitPrev);
+  if (rose) {
+    return `Le rythme passe d'environ ${emitPrev} à ${emitRate} séances par semaine. Chaque séance est un peu moins chargée (${currentAvg} exercices contre ${habitAvg}) : la fréquence ne baisse pas.`;
+  }
+  if (fell) {
+    return `Tes séances sont aussi un peu moins chargées (${currentAvg} exercices contre ${habitAvg} auparavant). Fréquence et contenu baissent ensemble.`;
+  }
+  return `Tes séances comptent environ ${currentAvg} exercices contre ${habitAvg}. La fréquence ne montre pas de baisse claire.`;
+}
+
 function pctPhrase(n) {
   const v = plausiblePct(n);
   if (v == null) return null;
@@ -444,12 +457,15 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const finished = completion?.daysFullyComplete ?? null;
   const partial = completion?.daysPartial ?? null;
   const missed = planned != null && started != null ? Math.max(0, planned - started) : null;
+  const provenPlanDays = countFrozenPlanDays(snapshot, window);
   const programPct =
-    assessment?.programCompletion28?.ratio != null
-      ? Math.round(assessment.programCompletion28.ratio * 100)
-      : completion?.exoPct != null
-        ? Math.round(completion.exoPct)
-        : trainingState?.features?.programCompletionPct ?? null;
+    provenPlanDays < 1
+      ? null
+      : assessment?.programCompletion28?.ratio != null
+        ? Math.round(assessment.programCompletion28.ratio * 100)
+        : completion?.exoPct != null
+          ? Math.round(completion.exoPct)
+          : trainingState?.features?.programCompletionPct ?? null;
 
   const f = trainingState?.features || {};
   const d7 = plausiblePct(f.volumeDelta7Pct, 140);
@@ -564,10 +580,17 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const discCoversNow = selectedDisc.some((d) => d.nature === 'now');
   const discCoversTraj = selectedDisc.some((d) => d.nature === 'trajectory');
   const skipGenericNow = discCoversNow || preferPeriodNow || (period === 'today' && (current.sessions || 0) === 0);
+  const frequencyShiftCovered = selectedDisc.some((d) => {
+    if (d.nature && d.nature !== 'now') return false;
+    const kind = String(d.kind || '');
+    if (/disc_freq|disc_density|disc_vs_habit|disc_rhythm/.test(kind)) return true;
+    const text = `${d.title || ''} ${d.body || ''} ${d.evidence || ''}`;
+    return /séances par semaine/.test(text);
+  });
   const selectedKinds = selectedDiscKinds;
 
   // ——— COURT TERME : projection des phénomènes, pas une carte par métrique ———
-  if (!discCoversNow && !preferPeriodNow && period !== 'today' && current.sessions + habit.sessions >= 1) {
+  if (!frequencyShiftCovered && period !== 'today' && current.sessions + habit.sessions >= 1) {
     const denser =
       current.avgExercisesPerSession &&
       habit.avgExercisesPerSession &&
@@ -643,7 +666,12 @@ export function buildHorizonEssayCandidates(opts = {}) {
               ? `En revanche, quand une séance a lieu, elle reste proche de ton habitude : environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant. Tu n'as donc pas « allégé » tes entraînements : tu en as simplement fait moins.`
               : `Quand une séance a lieu, elle compte environ ${current.avgExercisesPerSession} exercices ; la densité antérieure n’est pas assez claire pour conclure à un allègement.`
           : current.avgExercisesPerSession && habit.avgExercisesPerSession
-            ? `Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant). Fréquence et contenu baissent ensemble.`
+            ? frequencyContentClause({
+                emitPrev,
+                emitRate,
+                currentAvg: current.avgExercisesPerSession,
+                habitAvg: habit.avgExercisesPerSession
+              })
             : current.avgExercisesPerSession
               ? `Tes séances comptent environ ${current.avgExercisesPerSession} exercices ; la densité antérieure n’est pas assez claire pour comparer. Le rythme des séances a changé.`
               : 'Le rythme des séances a changé ; la densité par séance n’est pas assez claire pour en dire plus.',
@@ -662,16 +690,24 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   if (!skipGenericNow && (d7 != null || d28 != null) && !skipKind('volume_traj')) {
+    const currentWork = buildSessionWorkProfiles(snapshot, wins.current, getExerciseNameById);
+    const habitWork = buildSessionWorkProfiles(snapshot, wins.habit, getExerciseNameById);
     const decomp = buildVolumeDecompFinding({
       window,
-      currentReps: current.totalReps,
-      previousReps: habit.totalReps,
-      currentSessions: current.sessions,
-      previousSessions: habit.sessions,
+      currentReps: currentWork.reps || current.totalReps,
+      previousReps: habitWork.reps || habit.totalReps,
+      currentSessions: currentWork.strengthDayCount || current.sessions,
+      previousSessions: habitWork.strengthDayCount || habit.sessions,
       currentLen: wins.currentLen,
       previousLen: wins.habitLen,
       goal,
-      perfMomentumPct: mom
+      perfMomentumPct: mom,
+      exerciseBefore: habitWork.repsByExercise,
+      exerciseAfter: currentWork.repsByExercise,
+      exerciseNames: { ...habitWork.names, ...currentWork.names },
+      calendarDays: current.sessions,
+      strengthDays: currentWork.strengthDayCount,
+      setCoverage: Math.min(currentWork.recordedSetCoverage, habitWork.recordedSetCoverage)
     });
     let title = 'Les répétitions du mois et celles de la semaine ne racontent pas la même chose';
     let body;
@@ -976,7 +1012,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     short(
       'push_share',
       persist ? 'La poussée reste dominante' : 'La poussée prend de plus en plus de place',
-      `Environ ${Math.round(pushPct || pushProfile.pushPct)} % de tes répétitions récentes vient de mouvements de poussée, contre ~${Math.round(pullPct || pushProfile.pullPct || 0)} % de tirage${ratioEnr != null ? ` (à peu près ${ratioEnr} pour 1)` : ''}.${rel}${sh}${legs} Ça vient surtout de ce que tu continues à faire — triceps et épaules. Le travail restant s'est recomposé : tu n'as pas tout baissé pareil. ${goalPushConsequence(goal)}${persist} À surveiller : si le tirage de référence et le bas du corps restent assez exposés pour ne pas sortir de la rotation.`,
+      `Environ ${Math.round(pushPct || pushProfile.pushPct)} % de tes répétitions récentes vient de mouvements de poussée, contre ~${Math.round(pullPct || pushProfile.pullPct || 0)} % de tirage${ratioEnr != null ? ` (à peu près ${ratioEnr} pour 1)` : ''}.${rel}${sh}${legs} Ça vient surtout de ce que tu continues à faire — triceps et épaules. Le travail restant s'est recomposé : tu n'as pas tout baissé pareil. ${goalPushConsequence(goal)}${persist} Cette part est conventionnelle : un mouvement de poussée n'est pas recompté comme une série de dos. Elle ne suffit pas à conclure à un déséquilibre musculaire. À surveiller : si le tirage de référence et le bas du corps restent assez exposés pour ne pas sortir de la rotation.`,
       ratioEnr != null ? `push/pull ~${ratioEnr} · ~${Math.round(pushPct)} % poussée` : `~${Math.round(pushPct)} % poussée`,
       persist ? 0.93 : 0.9
     );
@@ -1265,7 +1301,23 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   const gone = (journey?.narratives?.abandoned || []).find((e) => e.family && e.family !== 'other');
-  if (gone && !(cardioGone && /course|run/i.test(gone.name))) {
+  const goneLast = String(gone?.current?.date || '');
+  const goneLastInWindow = Boolean(
+    window?.start && goneLast && goneLast >= window.start && goneLast <= window.end
+  );
+  const replacementDate = String(gone?.replacement?.date || gone?.replacement?.lastDate || '');
+  const replacementInWindow = Boolean(
+    window?.start &&
+      replacementDate &&
+      replacementDate >= window.start &&
+      replacementDate <= window.end
+  );
+  const shortPeriod = period === 'today' || period === '7d';
+  if (
+    gone &&
+    !(cardioGone && /course|run/i.test(gone.name)) &&
+    !(shortPeriod && !goneLastInWindow && !replacementInWindow)
+  ) {
     const repl = gone.replacement
       ? ` Tu n'as pas arrêté la famille : ${gone.replacement.name} est encore là.`
       : '';

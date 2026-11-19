@@ -1,3 +1,11 @@
+import { volumeFrequencyContentPolicy } from './comparisonPolicy';
+import {
+  decomposeExerciseMix,
+  exerciseMixSentence,
+  formatRepDelta,
+  symmetricDecomposition
+} from './volumeChangeDecomposition';
+
 /**
  * Registre mince de constats analytiques partagés.
  * Un Finding n'est PAS une analyse complète : interpretation + consequence
@@ -94,7 +102,13 @@ export function buildVolumeDecompFinding({
   previousLen,
   goal = null,
   /** Momentum perf/série si dispo (C2) — null = silence */
-  perfMomentumPct = null
+  perfMomentumPct = null,
+  exerciseBefore = null,
+  exerciseAfter = null,
+  exerciseNames = null,
+  calendarDays = null,
+  strengthDays = null,
+  setCoverage = null
 } = {}) {
   const curR = Number(currentReps);
   const prevR = Number(previousReps);
@@ -125,6 +139,14 @@ export function buildVolumeDecompFinding({
   const volLabel = `${volPct >= 0 ? '+' : ''}${Math.round(volPct)} %`;
   const statement = `Le volume de répétitions est passé de ${Math.round(prevR)} à ${Math.round(curR)} (${volLabel}) entre deux fenêtres comparables.`;
 
+  const split = symmetricDecomposition(
+    { sessions: prevS, reps: prevR },
+    { sessions: curS, reps: curR }
+  );
+  const mix =
+    exerciseBefore && exerciseAfter
+      ? decomposeExerciseMix(exerciseBefore, exerciseAfter, exerciseNames || {})
+      : null;
   let interpretation = '';
   if (driver === 'frequency') {
     interpretation = `Cette variation vient surtout de la fréquence d'entraînement (${formatPct(freqPct)} séances/sem.), pas d'une dose moyenne par séance (${formatPct(dosePct)} reps/séance).`;
@@ -132,6 +154,23 @@ export function buildVolumeDecompFinding({
     interpretation = `Cette variation vient surtout de la dose par séance (${formatPct(dosePct)} reps/séance), alors que la fréquence bouge peu (${formatPct(freqPct)}).`;
   } else {
     interpretation = `Fréquence (${formatPct(freqPct)}) et dose par séance (${formatPct(dosePct)}) contribuent toutes les deux ; ce n'est pas un seul levier.`;
+  }
+  if (split.ok && Math.abs(split.residual) < 1) {
+    interpretation += ` En répétitions, la fréquence contribue ${formatRepDelta(split.frequency)} et le contenu des séances ${formatRepDelta(split.content)}.`;
+  }
+  if (mix) interpretation += exerciseMixSentence(mix);
+  if (
+    calendarDays != null &&
+    strengthDays != null &&
+    Number(calendarDays) !== Number(strengthDays)
+  ) {
+    interpretation += ` Le calendrier compte ${calendarDays} jours d'activité. Les répétitions de renforcement portent sur ${strengthDays} jours : endurance, circuit ou activité enregistrée peuvent expliquer l'écart.`;
+  }
+  if (setCoverage != null && setCoverage < 0.5) {
+    interpretation += ' Les séries réellement enregistrées ne couvrent pas assez de séances pour dire si le contenu vient de séries en plus ou de séries plus longues.';
+  }
+  if (curL >= 60) {
+    interpretation += ` Cette comparaison porte sur les deux fenêtres de ${curL} et ${prevL} jours, pas sur un pourcentage de 28 jours réutilisé comme s'il décrivait tout l'horizon.`;
   }
 
   if (mom != null && Math.abs(mom) <= 8 && volPct > 8) {
@@ -183,7 +222,12 @@ export function buildVolumeDecompFinding({
       previousFreq: round1(prevFreq),
       currentDose: round1(curDose),
       previousDose: round1(prevDose),
-      perfMomentumPct: mom != null ? round1(mom) : null
+      perfMomentumPct: mom != null ? round1(mom) : null,
+      frequencyContribution: split.ok ? Math.round(split.frequency) : null,
+      contentContribution: split.ok ? Math.round(split.content) : null,
+      decompositionResidual: split.ok ? round1(split.residual) : null,
+      comparisonPolicy: volumeFrequencyContentPolicy().id,
+      unexploredMethods: setCoverage != null && setCoverage < 0.5 ? 'recorded_set_format,documented_load' : 'documented_load'
     },
     relationIds,
     n: curS + prevS,

@@ -262,6 +262,70 @@ describe('parenté des cartes', () => {
   });
 });
 
+describe('parenté — objectif et efficacité ne sont pas des doublons', () => {
+  function relation(type, text) {
+    return {
+      id: `relation.${type}`,
+      horizon: 'medium',
+      weight: 90,
+      text,
+      interpretation: { type, context: { kind: type }, evidence: [`preuve ${type}`] }
+    };
+  }
+
+  const goal = ' (objectif hypertrophie / définition)';
+
+  it('garde programme et étirements malgré un titre vide et le suffixe d’objectif', () => {
+    const program = relation(
+      'program_gap_mixed',
+      `Le réalisé reste nettement sous le plan (~67 %). On ne tranche pas encore entre jours manqués et séances raccourcies.${goal}`
+    );
+    const stretch = relation(
+      'stretch_gap',
+      `Les séances d'exercices sont bien plus tenues (~100 %) que les étirements (~0 %).${goal}`
+    );
+    const kept = keepDistinctProofCards([program, stretch]);
+    expect(kept.map((c) => c.id).sort()).toEqual([
+      'relation.program_gap_mixed',
+      'relation.stretch_gap'
+    ]);
+    expect(program.kinshipDrop || null).toBeNull();
+    expect(stretch.kinshipDrop || null).toBeNull();
+  });
+
+  it('garde une progression coûteuse dont le nombre est écrit ~-2.64', () => {
+    const card = relation(
+      'costly_progression',
+      'Progression obtenue avec un volume +23 % — rendement modeste (efficacité ~-2.64) : le résultat est là, mais le coût d\'entraînement est élevé ; consolider avant d\'ajouter.'
+    );
+    const kept = keepDistinctProofCards([card]);
+    expect(kept).toHaveLength(1);
+    expect(card.kinshipDrop || null).toBeNull();
+  });
+
+  it('laisse passer parenthèses, objectif, décimales et nombres négatifs', () => {
+    const samples = [
+      'Le réalisé reste sous le plan (67 %).',
+      'Le réalisé reste sous le plan (objectif hypertrophie / définition).',
+      'Efficacité de progression -2,64, volume +23 %.',
+      'Efficacité de progression -2.64, volume +22,7 %.',
+      'Rendement (efficacité ~-2.64) avec un volume +23 %.',
+      'Prévision positive : volume +15 % et élan +8 %.'
+    ];
+    for (const text of samples) {
+      const card = relation('costly_progression', text);
+      expect(keepDistinctProofCards([card])).toHaveLength(1);
+    }
+  });
+
+  it('ne fusionne pas deux conclusions distinctes au seul motif d’un titre vide', () => {
+    const a = relation('program_gap_mixed', 'Écart d’exécution au plan, preuve A, suffisamment longue pour rester une conclusion.');
+    const b = relation('stretch_gap', 'Écart de pratique entre force et étirements, preuve B, conclusion différente.');
+    const kept = keepDistinctProofCards([a, b]);
+    expect(kept).toHaveLength(2);
+  });
+});
+
 describe('rédacteur après parenté', () => {
   it('un dérivé ne recommence pas par le total de la fenêtre', () => {
     const card = writeThreadCard({

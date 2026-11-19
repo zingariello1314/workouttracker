@@ -1,0 +1,28 @@
+{
+  "engine": "calculateSportXP",
+  "note": "Clés synthétiques date_index, pas un historique personnel. Le totalXP n’est pas une valeur utilisateur.",
+  "S": {
+    "runs": 5,
+    "medianMs": 10.85,
+    "minMs": 8.34,
+    "maxMs": 25.35,
+    "totalXP": 6192,
+    "checkedKeys": 240
+  },
+  "M": {
+    "runs": 3,
+    "medianMs": 781.61,
+    "minMs": 756.87,
+    "maxMs": 783.76,
+    "totalXP": 123840,
+    "checkedKeys": 4800
+  },
+  "L": {
+    "runs": 1,
+    "medianMs": 24636.03,
+    "minMs": 24636.03,
+    "maxMs": 24636.03,
+    "totalXP": 619200,
+    "checkedKeys": 24000
+  }
+}

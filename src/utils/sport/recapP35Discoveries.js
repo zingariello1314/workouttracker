@@ -99,12 +99,12 @@ export function buildP35Discoveries({
     if (typeof getExerciseNameById === 'function') {
       try {
         const n = getExerciseNameById(id);
-        if (n) return String(n);
+        if (n && !/^Exercice\s+\d+/i.test(String(n))) return String(n);
       } catch {
         /* ignore */
       }
     }
-    return `exercice ${id}`;
+    return null;
   };
 
   // ── A1 coexistence ───────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ export function buildP35Discoveries({
   if (metrics.movementShares.publishable && metrics.movementShares.topCombined) {
     const m = metrics.movementShares.topCombined;
     const label = nameOf(m.id);
-    discoveries.push(
+    if (label) discoveries.push(
       card({
         kind: P35_KINDS.GTG_MOVEMENT_SHARE,
         title: `${label} : classique et GTG`,

@@ -24,6 +24,7 @@ import {
   resolveExerciseNameForRecap,
   userFacingExerciseLabel
 } from './recapStrengthPeriodStats';
+import { classicExclusiveRepsForDay } from './recapP35DayModel';
 import {
   PUSH_GROUPS,
   PULL_GROUPS,
@@ -144,9 +145,15 @@ export function calendarLoad(
       ymd,
       date: ymd,
       intensity: {
-        reps:
-          dayCheckedReps(agg, ymd) +
-          Math.floor(Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0)
+        reps: (() => {
+          const checked = dayCheckedReps(agg, ymd);
+          const pack = classicExclusiveRepsForDay(snapshot, ymd);
+          const classic = pack?.classicTotalReps > 0 ? pack.classicExclusiveReps : checked;
+          return (
+            classic +
+            Math.floor(Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0)
+          );
+        })()
       }
     }))
   );
@@ -188,8 +195,23 @@ export function measureRecapWindow({
   const lastSeenBefore = new Map();
   let strengthReps = 0;
 
+  const exclusiveByDate = new Map();
+  const classicRepsAllowed = (dateStr, idStr, raw) => {
+    if (!exclusiveByDate.has(dateStr)) {
+      exclusiveByDate.set(dateStr, classicExclusiveRepsForDay(snapshot, dateStr));
+    }
+    const pack = exclusiveByDate.get(dateStr);
+    if (!pack || !(pack.classicTotalReps > 0)) return raw;
+    const row = (pack.syncDeduction?.perKey || []).find(
+      (entry) => String(entry.storageId) === String(idStr)
+    );
+    if (!row) return raw;
+    return Math.max(0, Math.floor(Number(row.exclusiveReps) || 0));
+  };
+
   const bump = (idStr, name, dateStr, reps) => {
-    const rInt = Math.max(0, Math.floor(Number(reps) || 0));
+    const rawInt = Math.max(0, Math.floor(Number(reps) || 0));
+    const rInt = classicRepsAllowed(dateStr, idStr, rawInt);
     if (rInt <= 0 || !dateStr) return;
     if (!firstSeen.has(idStr) || dateStr < firstSeen.get(idStr)) firstSeen.set(idStr, dateStr);
     if (dateStr < window.start && (!lastSeenBefore.has(idStr) || dateStr > lastSeenBefore.get(idStr))) {

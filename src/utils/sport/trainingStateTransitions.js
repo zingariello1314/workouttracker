@@ -48,8 +48,20 @@ function transitionNarrative(axis, from, to, fromTrend, toTrend) {
   if (from === 'sufficient' && to === 'insufficient') {
     return `${name} qui se dégrade`;
   }
-  if (from !== to && from !== 'unknown' && to !== 'unknown') {
-    return `${name} : ${from} → ${to}`;
+  const words = {
+    improving: 'une progression nette',
+    slightly_improving: 'une progression légère',
+    declining: 'un recul',
+    stable: 'un maintien',
+    rising: 'une hausse',
+    falling: 'une baisse',
+    adapting: 'une adaptation',
+    sufficient: 'un niveau suffisant',
+    insufficient: 'un niveau insuffisant',
+    uncertain: 'une lecture incertaine'
+  };
+  if (from !== to && words[from] && words[to]) {
+    return `La ${name} passe de ${words[from]} à ${words[to]}`;
   }
   return null;
 }

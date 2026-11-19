@@ -158,6 +158,36 @@ describe('analysisEngineComparison', () => {
     expect(mis.userImpact).toBe(false);
   });
 
+  it('n’émet pas d’écart de cartes quand le DOM est d’une autre période', () => {
+    const r = report('7d', [row({ kind: 'disc_density', title: 'Sept jours' })]);
+    r.meta.dataSignature = 'sig-7';
+    const diff = compareDomToPack(r, {
+      period: '30d',
+      cards: [{ kind: 'disc_density', title: 'Trente jours' }],
+      dataSignature: 'sig-30',
+      source: 'dom_scrape_fallback'
+    });
+    expect(diff.comparability).toBe('non_comparable');
+    expect(diff.reason).toBe('period_mismatch');
+    expect(diff.inPackNotDom).toEqual([]);
+    expect(diff.inDomNotPack).toEqual([]);
+  });
+
+  it('ne signale pas une carte chiffrée comme sans preuve', () => {
+    const r = report('7d', [
+      row({
+        kind: 'span_volume_vs_frequency',
+        title: 'Le volume bouge surtout parce que le nombre de séances bouge',
+        body: '4 séances et 1334 répétitions. La fenêtre d’avant en comptait 5 et 1845.',
+        diagStatus: DIAG_STATUS.SHOWN_NOW,
+        evidenceCount: 0,
+        evidence: ''
+      })
+    ]);
+    const issues = detectReportIssues(r, 'A');
+    expect(issues.some((i) => i.reason === 'selected_without_evidence')).toBe(false);
+  });
+
   it('handles missing B', () => {
     const a = report('30d', [row({})]);
     const cmp = buildDiagnosticComparison(a, null);

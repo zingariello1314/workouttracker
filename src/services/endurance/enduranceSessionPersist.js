@@ -51,7 +51,9 @@ export async function buildWorkoutAfterEnduranceSession({
 
   let nextList = list;
   if (mode === 'append') {
-    nextList = [...list, newSession];
+    nextList = activityType === 'pushups'
+      ? [...list.filter((session) => session?.id !== newSession.id), newSession]
+      : [...list, newSession];
   }
 
   const nextEndurance = {

@@ -30,9 +30,43 @@ export function isEnduranceEffectivelyEmpty(enduranceData) {
   return countEnduranceSessions(enduranceData) === 0 && challenges === 0 && gtgDays === 0;
 }
 
+function gtgDayKeys(gtg) {
+  const days = gtg?.days;
+  if (!days || typeof days !== 'object' || Array.isArray(days)) return [];
+  return Object.keys(days);
+}
+
+/** Objet sans aucun jour : `{}` ou `{ days: {} }`. Un héritage `{ foo: 1 }` n'est pas vide. */
+function gtgPayloadIsBlank(gtg) {
+  if (gtg == null || typeof gtg !== 'object' || Array.isArray(gtg)) return true;
+  const keys = Object.keys(gtg);
+  if (keys.length === 0) return true;
+  return keys.length === 1 && keys[0] === 'days' && gtgDayKeys(gtg).length === 0;
+}
+
+/**
+ * Effacement total du GTG. Volontaire uniquement.
+ * `sessionTypesTouched` n'est pas utilisé : EnduranceTab le remplit avec toutes
+ * les clés tableau de `sessions`, ce qui inclurait `gtg` sans geste de suppression.
+ */
+function gtgClearRequested(options) {
+  return options.allowWipe === true || options.explicitGtgClear === true;
+}
+
+function incomingGtgWouldErase(prevGtg, nextGtg) {
+  if (gtgDayKeys(prevGtg).length > 0 && gtgDayKeys(nextGtg).length === 0) return true;
+  if (gtgPayloadIsBlank(nextGtg) && prevGtg && typeof prevGtg === 'object' && Object.keys(prevGtg).length > 0) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Fusionne incoming sur previous en bloquant un wipe accidentel.
- * Un type peut devenir [] seulement s’il est dans `sessionTypesTouched` (delete explicite).
+ * Un type d'endurance peut devenir [] seulement s’il est dans `sessionTypesTouched`.
+ * Un GTG vide (`sessions.gtg` ou `gtg.days`) ne remplace un GTG existant que si
+ * `explicitGtgClear` ou `allowWipe` est vrai. Un objet GTG qui contient encore
+ * des jours reste un snapshot : il peut retirer un passage ou une journée.
  */
 export function mergeEnduranceWithoutSilentWipe(previous, incoming, options = {}) {
   const prev = previous && typeof previous === 'object' ? previous : {};
@@ -64,9 +98,24 @@ export function mergeEnduranceWithoutSilentWipe(previous, incoming, options = {}
   if (nextSessions) {
     Object.keys(nextSessions).forEach((type) => {
       if (ENDURANCE_ACTIVITY_TYPES.includes(type)) return;
-      if (Array.isArray(nextSessions[type])) mergedSessions[type] = nextSessions[type];
+      if (!Array.isArray(nextSessions[type])) return;
+      if (type === 'gtg') {
+        const prevList = Array.isArray(prevSessions.gtg) ? prevSessions.gtg : [];
+        const incomingList = nextSessions.gtg;
+        if (incomingList.length === 0 && prevList.length > 0 && !gtgClearRequested(options)) {
+          mergedSessions.gtg = prevList;
+          return;
+        }
+      }
+      mergedSessions[type] = nextSessions[type];
     });
   }
+
+  Object.keys(prevSessions).forEach((type) => {
+    if (ENDURANCE_ACTIVITY_TYPES.includes(type)) return;
+    if (Object.prototype.hasOwnProperty.call(mergedSessions, type)) return;
+    if (Array.isArray(prevSessions[type])) mergedSessions[type] = prevSessions[type];
+  });
 
   let challenges = Array.isArray(next.challenges) ? next.challenges : prev.challenges;
   if (
@@ -80,12 +129,21 @@ export function mergeEnduranceWithoutSilentWipe(previous, incoming, options = {}
     challenges = prev.challenges;
   }
 
+  let gtg = next.gtg !== undefined ? next.gtg : prev.gtg;
+  if (
+    next.gtg !== undefined &&
+    !gtgClearRequested(options) &&
+    incomingGtgWouldErase(prev.gtg, next.gtg)
+  ) {
+    gtg = prev.gtg;
+  }
+
   return {
     ...prev,
     ...next,
     sessions: mergedSessions,
     challenges: Array.isArray(challenges) ? challenges : [],
-    gtg: next.gtg !== undefined ? next.gtg : prev.gtg,
+    gtg,
     manualDailyWalkByDate:
       next.manualDailyWalkByDate !== undefined ? next.manualDailyWalkByDate : prev.manualDailyWalkByDate,
     repWorkoutSync: next.repWorkoutSync !== undefined ? next.repWorkoutSync : prev.repWorkoutSync

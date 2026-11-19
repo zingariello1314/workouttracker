@@ -1,6 +1,6 @@
 # Audit réactivité — onglet Aujourd’hui
 
-18 novembre 2026. Diagnostic seulement : aucun changement du pipeline de sauvegarde en production.
+18 novembre 2026. E2.1 est dans le source : le garde-fou d’endurance refuse un GTG vide non explicite. E2.2 est dans le source : `calculateSportXP` appelle le bonus de complétion indexé. E3 ajoute un contrat opt-in SUCCESS / FAILURE / UNKNOWN sur les seuls parcours GTG et pompes. Sans l’option, `saveToDB` et `updateData` gardent leur comportement précédent.
 
 Point de départ : `docs/analyses-documentation/LATENCE-COCHE-ENREGISTREMENT-XP-2026-11-18.md`.
 Les hypothèses de ce premier relevé ne sont pas reprises ici comme des causes mesurées.
@@ -18,6 +18,21 @@ Les hypothèses de ce premier relevé ne sont pas reprises ici comme des causes 
 | [DPLUS-04-architecture-D-plus.md](DPLUS-04-architecture-D-plus.md) | Cible D+ |
 | [DPLUS-05-benchmarks-restauration.md](DPLUS-05-benchmarks-restauration.md) | Mesures, pannes, restauration |
 | [DPLUS-06-decision-et-plan.md](DPLUS-06-decision-et-plan.md) | D contre D+, décision, phases |
+| [DPLUS-HARDENING.md](DPLUS-HARDENING.md) | Risques A–F, corrections minimales |
+| [DPLUS-IMPLEMENTATION-READY.md](DPLUS-IMPLEMENTATION-READY.md) | D+ corrigée, gates, catégories |
+| [DPLUS-PHASE0-RESULTS.md](DPLUS-PHASE0-RESULTS.md) | Mesures isolées du 18 novembre 2026 |
+| [DPLUS-XP-PROFILING.md](DPLUS-XP-PROFILING.md) | Où part le temps de `calculateSportXP` |
+| [DPLUS-FINAL-CONTRACTS.md](DPLUS-FINAL-CONTRACTS.md) | Brouillons, effets, identifiants |
+| [DPLUS-INTEGRATION-RESULTS.md](DPLUS-INTEGRATION-RESULTS.md) | Tests exécutés et tests non lancés |
+| [DPLUS-EXECUTION-PLAN.md](DPLUS-EXECUTION-PLAN.md) | Ordre C2.1 à C2.6 et jalons B |
+| [E1-C21-VALIDATION.md](E1-C21-VALIDATION.md) | Vrai `saveToDB`, contrat d’erreur, NO-GO |
+| [E1-XP-EXACT-OPTIMIZATION.md](E1-XP-EXACT-OPTIMIZATION.md) | Bonus indexé, égalité et mesures |
+| [E1-GTG-DATA-SAFETY.md](E1-GTG-DATA-SAFETY.md) | Effacement GTG et politique explicite |
+| [E2-INTEGRATION-RESULTS.md](E2-INTEGRATION-RESULTS.md) | E2.1 intégré, E2.2 et E2.3 préparés |
+| [E2.2-ACTIVATION.md](E2.2-ACTIVATION.md) | Bonus indexé activé, mesures et rollback |
+| [E3-PERSISTENCE-INTEGRATION.md](E3-PERSISTENCE-INTEGRATION.md) | Contrat opt-in GTG et pompes, preuves et limites |
+
+La légende « Non mesuré » vaut encore pour le clic jusqu’à la peinture et pour IndexedDB. Les durées de `DPLUS-PHASE0-RESULTS.md` sont des exécutions Node et vitest sur jeux synthétiques.
 
 Statuts utilisés partout :
 

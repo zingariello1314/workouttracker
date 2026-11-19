@@ -152,12 +152,38 @@ export function assessWindowComparability(a, b, { coveredA = null, coveredB = nu
   };
 }
 
-/** Aujourd’hui = rolling 24h (convention produit existante). */
+export function parisTodayYmd(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date);
+}
+
+/** Aujourd’hui = jour calendaire Europe/Paris. La journée en cours reste partielle. */
 export function todayWindowMode() {
   return {
-    mode: 'rolling-24h',
+    mode: 'calendar-day',
+    timeZone: 'Europe/Paris',
+    partial: true,
+    evolvesDuringDay: true,
     note:
-      'getRecapDateWindow(today) utilise les dernières 24 h glissantes, pas minuit→maintenant. ' +
-      'La nuit rattachée au jour civil (wake morning) est un contrat distinct.'
+      'getRecapDateWindow(today) est le jour civil Europe/Paris, pas les 24 h glissantes. ' +
+      'Une séance déjà datée n’est pas réattribuée. Une journée sans enregistrement n’est pas une absence de couverture.'
   };
+}
+
+/**
+ * recorded = au moins une répétition ou un cochage ce jour-là.
+ * no-recording = snapshot chargé, rien saisi ce jour.
+ * coverage-unknown = snapshot absent.
+ */
+export function calendarDayEvidence(snapshot, ymd) {
+  if (!snapshot || (!snapshot.reps && !snapshot.checkedExercises)) return 'coverage-unknown';
+  const reps = snapshot.reps || {};
+  const checked = snapshot.checkedExercises || {};
+  const hit = (key) => String(key).startsWith(`${ymd}_`) || String(key).startsWith(`${ymd}::`);
+  if (Object.keys(reps).some(hit) || Object.keys(checked).some(hit)) return 'recorded';
+  return 'no-recording';
 }

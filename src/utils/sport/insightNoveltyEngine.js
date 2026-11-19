@@ -43,6 +43,14 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
   const theme = themeFromCandidateId(candidate?.id);
   let novelty = 0.82;
   let penalty = 0;
+  const parts = {
+    recent: 0,
+    count: 0,
+    theme: 0,
+    semantic: 0,
+    claim: 0,
+    lifecycle: 0
+  };
   const dayStart = startOfLocalDayMs(now);
 
   const rawEntry = findHistoryEntry(history, candidate?.id);
@@ -51,13 +59,16 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
   if (entry) {
     const age = now - entry.seenAt;
     if (age <= RECENT_MS) {
+      parts.recent = 28;
       penalty += 28;
       novelty -= 0.28;
     }
     if (entry.count >= 5) {
+      parts.count = 22;
       penalty += 22;
       novelty -= 0.22;
     } else if (entry.count >= 3) {
+      parts.count = 12;
       penalty += 12;
       novelty -= 0.12;
     }
@@ -65,12 +76,14 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
 
   const themeRecent = themeCountBeforeLocalDay(history, theme, now, 7 * 86400000);
   if (themeRecent >= 1) {
+    parts.theme = 14;
     penalty += 14;
     novelty -= 0.14;
   }
 
   const semanticPenalty = semanticGroupRecentPenalty(history, candidate?.id, now);
   if (semanticPenalty > 0) {
+    parts.semantic = semanticPenalty;
     penalty += semanticPenalty;
     novelty -= semanticPenalty / 100;
   }
@@ -81,6 +94,7 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
     return sameClaimState(entry.claim, claim);
   });
   if (claimRepeated) {
+    parts.claim = CLAIM_REPEAT_PENALTY;
     penalty += CLAIM_REPEAT_PENALTY;
     novelty -= 0.4;
   }
@@ -108,6 +122,7 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
     });
     const lifePen = lifecycleSelectionPenalty(freshness);
     if (lifePen > 0) {
+      parts.lifecycle = lifePen;
       penalty += lifePen;
       novelty -= lifePen / 100;
     }
@@ -124,6 +139,7 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
   return {
     novelty: Math.max(0.15, Math.min(1, novelty)),
     penalty,
+    parts,
     theme,
     semanticGroup: semanticGroupFromCandidateId(candidate?.id)
   };
@@ -136,10 +152,15 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
 export function applyNoveltyWeights(candidates, history, now = Date.now()) {
   if (!Array.isArray(candidates)) return [];
   return candidates.map((c) => {
-    const { novelty, penalty, theme } = computeCandidateNovelty(c, history, now);
+    const { novelty, penalty, parts, theme } = computeCandidateNovelty(c, history, now);
+    const before = c.weight || 0;
     return {
       ...c,
-      weight: Math.max(20, (c.weight || 0) - penalty),
+      weightBeforeNovelty: c.weightBeforeNovelty ?? before,
+      weightAfterNovelty: Math.max(20, before - penalty),
+      weight: Math.max(20, before - penalty),
+      noveltyPenalty: penalty,
+      noveltyParts: parts,
       novelty,
       noveltyTheme: theme
     };

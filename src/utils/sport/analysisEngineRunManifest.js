@@ -100,7 +100,7 @@ export function buildRunManifest({
       workerContract: producerVersions.workerContract || meta.workerContractVersion || null,
       selectionEngine: producerVersions.selectionEngine || meta.selectionEngineVersion || null,
       editorialRules: producerVersions.editorialRules || meta.editorialRulesVersion || null,
-      engine: meta.engineVersion || meta.version || null
+      engine: producerVersions.engine || meta.engineVersion || meta.version || null
     },
     insightHistory: {
       injected: Boolean(meta.insightHistoryInjected),

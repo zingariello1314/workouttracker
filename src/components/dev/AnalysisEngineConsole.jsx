@@ -38,6 +38,8 @@ import {
   clearAnalyseDomCapture,
   DOM_CAPTURE_EVENT
 } from '../../utils/sport/analysisEngineDomCapture';
+import { buildConsolidationShadowDiagnostic } from '../../utils/sport/exerciseFormatConsolidation';
+import { readPublishedInsightPacks } from '../../hooks/useRecapTabMetrics';
 import { analysisFamilyLabel } from '../../utils/sport/recapSelectionDiagnostics';
 import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
 import { useGarminData } from '../../hooks/useGarminData';
@@ -1167,6 +1169,8 @@ export default function AnalysisEngineConsole() {
   const [registryLayout, setRegistryLayout] = useState('cards');
   const [collapsedFamilies, setCollapsedFamilies] = useState(() => new Set());
   const [domCapture, setDomCapture] = useState(() => loadAnalyseDomCapture());
+  const [shadowReplay, setShadowReplay] = useState(null);
+  const [publishedPacks, setPublishedPacks] = useState(null);
 
   const periodWindow = useMemo(() => getRecapDateWindow(period, new Date()), [period]);
   const garminRange = useMemo(() => {
@@ -1292,6 +1296,21 @@ export default function AnalysisEngineConsole() {
     isAdmin,
     isAuthenticated
   ]);
+
+  const runConsolidationShadow = useCallback(() => {
+    if (!canAccess) return;
+    const snapshot = getCurrentData() || {};
+    const window = getRecapDateWindow(period, new Date());
+    const t0 = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    const result = buildConsolidationShadowDiagnostic({
+      snapshot,
+      window,
+      period,
+      getExerciseNameById
+    });
+    const t1 = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    setShadowReplay({ ...result, clickMs: Math.round(t1 - t0) });
+  }, [canAccess, getCurrentData, period, getExerciseNameById]);
 
   useEffect(() => () => cancelDiagnosticWorker(), []);
 
@@ -1506,6 +1525,19 @@ export default function AnalysisEngineConsole() {
   const exportJson = () => {
     if (!report) return;
     const mode = compareReport ? 'comparison' : 'single';
+    const requestedPeriod = report?.meta?.period || period;
+    const staleDom =
+      domCapture?.period && requestedPeriod && domCapture.period !== requestedPeriod;
+    const domForExport = staleDom
+      ? {
+          discarded: true,
+          reason: 'stale_period',
+          capturedPeriod: domCapture.period,
+          requestedPeriod,
+          capturedAt: domCapture.capturedAt || null,
+          comparability: 'non_comparable'
+        }
+      : domCapture || null;
     const payload = buildDiagnosticExportPayload({
       mode,
       reportA: report,
@@ -1517,8 +1549,18 @@ export default function AnalysisEngineConsole() {
         periodB: comparePeriod || null,
         viewMode,
         issues: issuesBundle,
-        domCapture: domCapture || null,
-        domPackDiff: domPackDiff || null
+        domCapture: domForExport,
+        consolidationShadow: shadowReplay
+          ? { ...shadowReplay, experimental: true, notPublished: true }
+          : null,
+        domPackDiff: staleDom
+          ? {
+              comparability: 'non_comparable',
+              comparable: false,
+              reason: 'stale_period',
+              cardDiffsEmitted: false
+            }
+          : domPackDiff || null
       }
     });
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1688,6 +1730,30 @@ export default function AnalysisEngineConsole() {
                 ))}
               </div>
             ) : null}
+            <button
+              type="button"
+              className="aec-btn aec-btn-ghost"
+              onClick={() =>
+                setPublishedPacks(
+                  readPublishedInsightPacks({
+                    period,
+                    windowStart: periodWindow?.start || null,
+                    windowEnd: periodWindow?.end || null
+                  })
+                )
+              }
+              title="Lit le cache déjà publié. Ne relance aucun calcul."
+            >
+              Pack publié
+            </button>
+            <button
+              type="button"
+              className="aec-btn aec-btn-ghost"
+              onClick={runConsolidationShadow}
+              title="Rejeu expérimental. N’écrit ni carte, ni historique, ni donnée."
+            >
+              Consolidation expérimentale
+            </button>
             <button type="button" className="aec-btn aec-btn-primary" onClick={run} disabled={busy}>
               {busy
                 ? `Analyse ${busyPhase || ''}…`
@@ -1710,6 +1776,18 @@ export default function AnalysisEngineConsole() {
             <button
               type="button"
               className="aec-btn aec-btn-ghost"
+              title="Export du dossier analytique affiché. N’écrit ni l’historique, ni le cache, ni les données."
+              onClick={() => {
+                const fn = window.momentumExportAnalysisDossier;
+                if (typeof fn !== 'function') return;
+                fn({ download: true });
+              }}
+            >
+              Exporter le dossier analytique
+            </button>
+            <button
+              type="button"
+              className="aec-btn aec-btn-ghost"
               onClick={exportMarkdown}
               disabled={!report}
             >
@@ -1719,7 +1797,16 @@ export default function AnalysisEngineConsole() {
               type="button"
               className="aec-btn aec-btn-ghost"
               onClick={() => {
-                const cap = captureAnalyseCardsFromDom({ period: viewMode === 'B' ? comparePeriod : period });
+                const cap = captureAnalyseCardsFromDom({
+                  period: viewMode === 'B' ? comparePeriod : period,
+                  dataSignature: report?.meta?.dataSignature || null,
+                  editorialHistorySignature: report?.meta?.editorialHistorySignature || null,
+                  runId: report?.meta?.runId || null,
+                  engineEdition: report?.meta?.runManifest?.versions?.engine || null,
+                  workerStatus: report?.meta?.runManifest?.timestamps?.publishedAt
+                    ? 'published'
+                    : 'diagnostic'
+                });
                 setDomCapture(cap);
               }}
               title="Capturer les cartes rendues dans Analyse"
@@ -1755,6 +1842,65 @@ export default function AnalysisEngineConsole() {
 
           <div className="aec-main">
             <div className="aec-main-scroll">
+              {publishedPacks ? (
+                <div className="aec-banner aec-banner-empty">
+                  {publishedPacks.current ? (
+                    <>
+                      <div>
+                        Pack de la période sélectionnée, sans nouveau calcul et sans exposition.{' '}
+                        {publishedPacks.current.presentation === 'refreshing'
+                          ? 'Rafraîchissement'
+                          : 'Édition courante'}
+                        {' · '}
+                        {publishedPacks.current.period} · {publishedPacks.current.windowStart} →{' '}
+                        {publishedPacks.current.windowEnd}
+                      </div>
+                      <div>Édition : {publishedPacks.current.analysisEdition}</div>
+                      <div>Contrat : {publishedPacks.current.workerContract || '—'}</div>
+                      <div>Empreinte : {publishedPacks.current.dataFingerprint || '—'}</div>
+                      <div>
+                        {publishedPacks.current.cardCount} cartes publiées ·{' '}
+                        {publishedPacks.current.reserveCount} conclusions accessibles
+                      </div>
+                      {publishedPacks.current.cards.map((card) => (
+                        <div key={`${card.column}-${card.title}`}>
+                          <strong>{card.title || '(sans titre)'}</strong>
+                          <div>{card.body}</div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div>
+                      Aucune édition courante pour {publishedPacks.period || 'cette période'} (
+                      {publishedPacks.windowStart || '—'} → {publishedPacks.windowEnd || '—'}).
+                    </div>
+                  )}
+                  <div>
+                    {publishedPacks.previousCount} ancienne{publishedPacks.previousCount > 1 ? 's' : ''}{' '}
+                    édition{publishedPacks.previousCount > 1 ? 's' : ''} conservée
+                    {publishedPacks.previousCount > 1 ? 's' : ''}, hors de cette lecture.
+                  </div>
+                </div>
+              ) : null}
+              <div className="aec-banner aec-banner-empty">
+                Le diagnostic lancé ici est un calcul indépendant. Il n’est pas le pack affiché dans Analyse.
+                Les lignes non sélectionnées restent admissibles, fusionnées ou écartées selon leur statut.
+              </div>
+              {shadowReplay ? (
+                <div className="aec-banner aec-banner-empty">
+                  Expérimental — non publié. {shadowReplay.phenomena.length} lectures,{' '}
+                  {shadowReplay.abstentions.length} abstentions, trajectoires{' '}
+                  {shadowReplay.timing?.trajectoryMs ?? '—'} ms, détecteur{' '}
+                  {shadowReplay.timing?.qualifyMs ?? '—'} ms.
+                  {shadowReplay.phenomena.slice(0, 3).map((row) => (
+                    <div key={row.exerciseId}>
+                      {row.exerciseName || row.exerciseId} · {row.state}
+                      {row.priorShape ? ` · ancienne forme ${row.priorShape}` : ''} ·{' '}
+                      {row.comparator?.question}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {error ? <div className="aec-banner aec-banner-error">{error}</div> : null}
               {!report && !busy ? (
                 <div className="aec-banner aec-banner-empty">
@@ -2747,7 +2893,14 @@ export default function AnalysisEngineConsole() {
                             className="aec-btn aec-btn-ghost"
                             onClick={() => {
                               const cap = captureAnalyseCardsFromDom({
-                                period: viewMode === 'B' ? comparePeriod : period
+                                period: viewMode === 'B' ? comparePeriod : period,
+                                dataSignature: report?.meta?.dataSignature || null,
+                                editorialHistorySignature: report?.meta?.editorialHistorySignature || null,
+                                runId: report?.meta?.runId || null,
+                                engineEdition: report?.meta?.runManifest?.versions?.engine || null,
+                                workerStatus: report?.meta?.runManifest?.timestamps?.publishedAt
+                                  ? 'published'
+                                  : 'diagnostic'
                               });
                               setDomCapture(cap);
                             }}

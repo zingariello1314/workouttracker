@@ -159,9 +159,17 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
 
   const sla = features.sessionAlignment;
   const programPct = features.programCompletionPct;
+  const frozenPlanDays = Number(features.frozenPlanDays);
+  const windowSpanDays = Number(features.windowSpanDays);
+  const frozenCoverageOk =
+    Number.isFinite(frozenPlanDays) &&
+    Number.isFinite(windowSpanDays) &&
+    windowSpanDays > 0 &&
+    frozenPlanDays >= 2 &&
+    frozenPlanDays / windowSpanDays >= 0.5;
   // 0 % et alignement nul : rien n'a été coché. Ce n'est pas une séance raccourcie.
   const nothingChecked = programPct <= 0 && (sla == null || sla <= 0);
-  if (programPct != null && programPct < 72 && !nothingChecked) {
+  if (programPct != null && programPct < 72 && !nothingChecked && frozenCoverageOk) {
     const missedDays =
       sla != null && sla >= 68 && (freqDown || (features.sessions28d ?? 99) <= (features.prevSessions28d ?? 0) * 0.75);
     const incompleteSessions =
@@ -186,7 +194,10 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
           programCompletionPct: programPct,
           sessionAlignment: sla,
           frequencyDeltaPct: features.frequencyDeltaPct,
-          justifiedDays: features.justifiedDays
+          justifiedDays: features.justifiedDays,
+          frozenPlanDays,
+          windowSpanDays,
+          planCoverage: 'frozen_representative'
         },
         confidence: relationConfidenceMean(adherence, load),
         relevance: gapType === 'program_gap_mixed' ? 0.82 : 0.9,
@@ -380,7 +391,14 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
     );
   }
 
-  if (volUp && perfHolding && !recoveryDown && programResponse.value === 'adapting') {
+  const adaptationSuccessEmitted = out.some((row) => row.type === 'adaptation_success');
+  if (
+    volUp &&
+    perfHolding &&
+    !recoveryDown &&
+    programResponse.value === 'adapting' &&
+    !adaptationSuccessEmitted
+  ) {
     out.push(
       candidate({
         id: 'relation.adaptation_under_load',
@@ -569,8 +587,10 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
   if (
     state.adaptationCost === 'high' &&
     volUp &&
-    perfHolding &&
-    features.progressionEfficiency != null
+    (features.volumeDeltaPct ?? 0) > 0 &&
+    (features.performanceMomentumPct ?? 0) < 0 &&
+    features.progressionEfficiency != null &&
+    features.progressionEfficiency < 0
   ) {
     out.push(
       candidate({

@@ -1,0 +1,49 @@
+{
+  "node": "v24.11.1",
+  "environment": "vitest jsdom",
+  "engine": "production-indexed",
+  "sizes": {
+    "S": {
+      "days": 30,
+      "keys": 360,
+      "samplesMs": [
+        16.48,
+        16.16
+      ],
+      "totalXP": 9288,
+      "bonusXp": 0,
+      "officialSamplesMs": [
+        37.73,
+        38.66
+      ]
+    },
+    "M": {
+      "days": 400,
+      "keys": 4800,
+      "samplesMs": [
+        124.58,
+        96.29
+      ],
+      "totalXP": 123840,
+      "bonusXp": 0,
+      "officialSamplesMs": [
+        1418.45,
+        1430.19
+      ]
+    },
+    "L": {
+      "days": 2000,
+      "keys": 24000,
+      "samplesMs": [
+        498.23,
+        472.52
+      ],
+      "totalXP": 619200,
+      "bonusXp": 0,
+      "officialSamplesMs": [
+        25496.51,
+        26122.03
+      ]
+    }
+  }
+}

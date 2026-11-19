@@ -115,11 +115,17 @@ function buildContext(opts) {
   });
   const nameOf = (id) => {
     const n = opts.getExerciseNameById?.(Number(id)) || opts.getExerciseNameById?.(id);
-    return n && !/^Exercice\s+/i.test(String(n)) ? String(n) : `exercice ${id}`;
+    if (!n || /^Exercice\s+\d+/i.test(String(n))) return null;
+    return String(n);
   };
-  exercises.forEach((ex) => {
+  const unresolvedExerciseIds = [];
+  exercises.forEach((ex, id) => {
     ex.name = nameOf(ex.id);
     ex.dates.sort();
+    if (!ex.name) {
+      unresolvedExerciseIds.push({ id: String(id), reason: 'unresolved_exercise_identity' });
+      exercises.delete(id);
+    }
   });
   const allExerciseDates = new Map();
   allDates.forEach((d) => {
@@ -143,6 +149,7 @@ function buildContext(opts) {
     spanDays,
     rate: Math.round((dates.length / Math.max(1, spanDays / 7)) * 10) / 10,
     exercises,
+    unresolvedExerciseIds,
     allExerciseDates,
     feedback: opts.snapshot?.sessionFeedbacks || {},
     garminData: opts.garminData || null
@@ -604,7 +611,16 @@ const ANALYSES = [
         const later = ctx.allDates.some((d) => d > DateHelper.addDays(last, 21));
         if (!later) return;
         if (!best || idle > best.idle) {
-          const name = ctx.exercises.get(id)?.name || `exercice ${id}`;
+          const name = ctx.exercises.get(id)?.name;
+          if (!name || /^exercice\s+\d+$/i.test(name)) {
+            ctx.unresolvedExerciseIds = ctx.unresolvedExerciseIds || [];
+            ctx.unresolvedExerciseIds.push({
+              id: String(id),
+              reason: 'unresolved_exercise_identity',
+              last
+            });
+            return;
+          }
           best = { name, idle, sessions: dates.length, last };
         }
       });

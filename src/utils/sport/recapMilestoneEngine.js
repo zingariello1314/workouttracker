@@ -801,7 +801,7 @@ export function detectRecapMilestones({
           date: s.date,
           threshold: th,
           title: `${fmtInt(th)}e séance enregistrée`,
-          body: `${fmtInt(th)}e séance enregistrée dans Momentum. Le jalon n'est pas un compteur isolé : tu as accumulé ${fmtInt(cumul)} répétitions pour y parvenir, soit environ ${fmtInt(cumul / th)} reps par séance.`,
+          body: `Le ${formatDayFr(s.date, true)}, la ${fmtInt(th)}e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé : ${fmtInt(cumul)} répétitions ont été accumulées pour y parvenir, soit environ ${fmtInt(cumul / th)} répétitions par séance. La date est celle du franchissement, dans la fenêtre affichée.`,
           evidence: `${fmtInt(th)} séances · ${fmtInt(cumul)} reps`,
           importance: th >= 50 ? 0.94 : 0.86
         })

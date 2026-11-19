@@ -40,6 +40,7 @@ import {
 import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 import { yieldToNextPaint, scheduleTodayCheckIdle } from '../utils/todayCheckMeasure';
 import { withIdbOperationTimeout } from '../utils/sessionSaveTimeout.js';
+import { classifySaveOutcome, createSaveOperationId } from '../services/workout/saveOutcome.js';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -748,6 +749,7 @@ export const useWorkoutData = (options = {}) => {
       skipCloud = false,
       failOnTimeout = false,
       importFast = false,
+      reportOutcome = false,
     } = saveOptions;
     const effectiveKey = storageKeyOverride || storageKey;
 
@@ -939,7 +941,7 @@ export const useWorkoutData = (options = {}) => {
       }
       
       if (ephemeral && !forcePersist) {
-        return;
+        return reportOutcome ? { acked: false, skipped: 'ephemeral' } : undefined;
       }
 
       // Créer un objet avec la nouvelle structure et validation finale
@@ -1102,6 +1104,9 @@ export const useWorkoutData = (options = {}) => {
         lastSaved: new Date().toISOString(),
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
       };
+      if (typeof newData.saveOperationId === 'string' && newData.saveOperationId) {
+        dataToSave.saveOperationId = newData.saveOperationId;
+      }
 
       const repo = getWorkoutRepo();
       if (repo?.saveRawWorkoutRow) {
@@ -1116,7 +1121,7 @@ export const useWorkoutData = (options = {}) => {
             void flushWorkoutAggregateCloudPushNow(pushArgs);
           }
         }
-        return;
+        return reportOutcome ? { acked: true } : undefined;
       }
 
       throw new Error('WORKOUT_DB_UNAVAILABLE');
@@ -1125,6 +1130,7 @@ export const useWorkoutData = (options = {}) => {
       // de WorkoutTrackerDB : les données restent en mémoire + backups ; le prochain
       // cycle autosave réessaiera. Ne pas remonter comme erreur fatale non catchée.
       if (error?.message === 'IDB_OPERATION_TIMEOUT' && !failOnTimeout) {
+        if (reportOutcome) return { acked: false, timedOut: true };
         console.warn(
           '⏱️ saveToDB: timeout IndexedDB — réessai au prochain cycle (données en mémoire)'
         );
@@ -1340,7 +1346,8 @@ export const useWorkoutData = (options = {}) => {
       skipCloud = false,
       applyReactAfterPaint = false,
       importFast = false,
-      reactOnly = false
+      reactOnly = false,
+      reportOutcome = false
     } = options;
     const resolved = typeof newData === 'function' ? newData(dataRef.current) : newData;
     workoutDataLog.debug('🔄 updateData appelé avec:', resolved);
@@ -1362,6 +1369,14 @@ export const useWorkoutData = (options = {}) => {
       startTransition(() => {
         setData(toStore);
       });
+      if (reportOutcome) {
+        return {
+          status: 'UNKNOWN',
+          reason: 'react-only-no-write',
+          operationId: null,
+          evidence: { acked: false, timedOut: false, readFailed: false, storedOperationId: null }
+        };
+      }
       return;
     }
     if (strict) {
@@ -1376,19 +1391,12 @@ export const useWorkoutData = (options = {}) => {
     }
     dataRef.current = toStore;
 
-    try {
-      const saveOpts = {
-        incrementalSession: Boolean(strict && sessionDay),
-        sessionDay: sessionDay || null,
-        skipCloud,
-        failOnTimeout: Boolean(strict),
-        importFast: Boolean(importFast),
-      };
-      if (strict && sessionDay) {
-        await saveToDB(toStore, saveOpts);
-      } else {
-        await runSerializedSave(() => saveToDB(toStore, saveOpts), { priority: Boolean(strict) });
-      }
+    const operationId = reportOutcome && toStore && typeof toStore === 'object'
+      ? createSaveOperationId()
+      : null;
+    const payloadForSave = operationId ? { ...toStore, saveOperationId: operationId } : toStore;
+
+    const publishConfirmedSave = async () => {
       lastAutoSaveFingerprintRef.current = workoutDataFingerprint(toStore);
       workoutDataLog.debug('✅ Données sauvegardées avec succès');
 
@@ -1403,7 +1411,58 @@ export const useWorkoutData = (options = {}) => {
       } else if (window.workoutContextCallback && !skipReact) {
         window.workoutContextCallback();
       }
+    };
+
+    const resolveReportedOutcome = async ({ acked = false, timedOut = false, error = null }) => {
+      let row = null;
+      let readFailed = false;
+      try {
+        const repo = getWorkoutRepo();
+        if (!repo?.loadRawWorkoutRow) readFailed = true;
+        else row = await repo.loadRawWorkoutRow(storageKey);
+      } catch {
+        readFailed = true;
+      }
+      const outcome = classifySaveOutcome({
+        operationId,
+        acked,
+        timedOut,
+        error,
+        row,
+        readFailed
+      });
+      if (outcome.status === 'SUCCESS') await publishConfirmedSave();
+      return outcome;
+    };
+
+    try {
+      const saveOpts = {
+        incrementalSession: Boolean(strict && sessionDay),
+        sessionDay: sessionDay || null,
+        skipCloud,
+        failOnTimeout: reportOutcome ? false : Boolean(strict),
+        importFast: Boolean(importFast),
+        reportOutcome
+      };
+      const saveResult = strict && sessionDay && !reportOutcome
+        ? await saveToDB(toStore, saveOpts)
+        : await runSerializedSave(() => saveToDB(payloadForSave, saveOpts), { priority: Boolean(strict) });
+      if (!reportOutcome) {
+        await publishConfirmedSave();
+        return;
+      }
+      return resolveReportedOutcome({
+        acked: saveResult?.acked === true,
+        timedOut: saveResult?.timedOut === true
+      });
     } catch (error) {
+      if (reportOutcome) {
+        return resolveReportedOutcome({
+          acked: false,
+          timedOut: error?.message === 'IDB_OPERATION_TIMEOUT',
+          error
+        });
+      }
       console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
       if (strict) throw error;
     }

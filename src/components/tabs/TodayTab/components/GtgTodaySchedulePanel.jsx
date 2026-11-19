@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Check, Clock, Info, Trash2 } from 'lucide-react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
@@ -19,6 +19,7 @@ import { syncGtgDayToWorkoutData } from '../../../../services/endurance/gtgWorko
 import { applyWorkoutRepIntegrations } from '../../../../services/endurance/workoutRepIntegrations';
 import { computeGtgXpForDayPlan } from '../../../../services/xp/gtgXpService';
 import { invalidateSportXpCache } from '../../../../hooks/useSportXP';
+import { isConfirmedSave, saveOutcomeNotice } from '../../../../services/workout/saveOutcome';
 
 const BUILTIN_LABEL_KEYS = {
   pullups: 'endurance.gtg.exercise.pullups',
@@ -34,6 +35,8 @@ export default function GtgTodaySchedulePanel({ date }) {
   const { questionnaire: profileQuestionnaire } = useProfileQuestionnaire();
   const t = useTranslation();
   const [saving, setSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState(null);
+  const pendingPayloadRef = useRef(null);
 
   const dateStr = useMemo(() => getDateStr(date), [date]);
   const gtgRaw = data?.enduranceData?.gtg;
@@ -59,26 +62,41 @@ export default function GtgTodaySchedulePanel({ date }) {
     [gtgData.config, ctx, t]
   );
 
-  const persistGtg = useCallback(
-    async (nextGtg) => {
+  const persistPrepared = useCallback(
+    async (merged) => {
       if (typeof updateData !== 'function') return;
+      pendingPayloadRef.current = merged;
       setSaving(true);
       try {
-        const base = {
-          ...data,
-          enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg }
-        };
-        const merged = applyWorkoutRepIntegrations(
-          syncGtgDayToWorkoutData(base, nextGtg, dateStr, ctx),
-          ctx
-        );
-        await updateData(merged);
-        invalidateSportXpCache();
+        const outcome = await updateData(merged, { reportOutcome: true });
+        if (isConfirmedSave(outcome)) {
+          pendingPayloadRef.current = null;
+          setSaveNotice(null);
+          invalidateSportXpCache();
+        } else {
+          setSaveNotice(saveOutcomeNotice(outcome));
+        }
       } finally {
         setSaving(false);
       }
     },
-    [data, updateData, dateStr, ctx]
+    [updateData]
+  );
+
+  const persistGtg = useCallback(
+    async (nextGtg) => {
+      if (typeof updateData !== 'function') return;
+      const base = {
+        ...data,
+        enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg }
+      };
+      const merged = applyWorkoutRepIntegrations(
+        syncGtgDayToWorkoutData(base, nextGtg, dateStr, ctx),
+        ctx
+      );
+      await persistPrepared(merged);
+    },
+    [data, updateData, dateStr, ctx, persistPrepared]
   );
 
   const onToggleMiniSet = useCallback(
@@ -93,9 +111,13 @@ export default function GtgTodaySchedulePanel({ date }) {
 
   const onAddPassage = useCallback(
     ({ time, items }) => {
+      if (pendingPayloadRef.current) {
+        persistPrepared(pendingPayloadRef.current);
+        return;
+      }
       persistGtg(addGtgAdHocPassage(gtgData, dateStr, { time, items }));
     },
-    [gtgData, dateStr, persistGtg]
+    [gtgData, dateStr, persistGtg, persistPrepared]
   );
 
   const onRemovePassage = useCallback(
@@ -255,6 +277,19 @@ export default function GtgTodaySchedulePanel({ date }) {
         disabled={saving}
         onSubmit={onAddPassage}
       />
+      {saveNotice ? (
+        <p className="mt-3 text-sm text-amber-200" role="status">
+          {saveNotice}{' '}
+          <button
+            type="button"
+            className="underline"
+            disabled={saving || !pendingPayloadRef.current}
+            onClick={() => persistPrepared(pendingPayloadRef.current)}
+          >
+            Réessayer la même sauvegarde
+          </button>
+        </p>
+      ) : null}
     </div>
   );
 }

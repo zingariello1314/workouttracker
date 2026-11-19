@@ -16,6 +16,7 @@ import {
   formatCalendarSportDuration
 } from '../calendarSportStatsFormat';
 import { calculateLongestTrainingStreakInRange } from '../trainingStreakUtils';
+import { classicExclusiveRepsForDay } from './recapP35DayModel';
 import { enumerateDatesInclusive } from './dailyDenseTimeSeries';
 import { buildRecapStrengthCompareModel } from './recapStrengthPeriodStats';
 import {
@@ -56,6 +57,7 @@ function createDayRepsLookup(workoutData) {
     else partsByDate.set(ymd, [part]);
   });
   const enduranceByDate = new Map();
+  const exclusiveByDate = new Map();
   const repsFor = (ymd) => {
     let endurance = enduranceByDate.get(ymd);
     if (endurance == null) {
@@ -64,7 +66,13 @@ function createDayRepsLookup(workoutData) {
       );
       enduranceByDate.set(ymd, endurance);
     }
-    return (checkedByDate.get(ymd) || 0) + endurance;
+    const checked = checkedByDate.get(ymd) || 0;
+    if (!exclusiveByDate.has(ymd)) {
+      exclusiveByDate.set(ymd, classicExclusiveRepsForDay(workoutData, ymd));
+    }
+    const pack = exclusiveByDate.get(ymd);
+    const classic = pack?.classicTotalReps > 0 ? pack.classicExclusiveReps : checked;
+    return classic + endurance;
   };
   return { partsByDate, repsFor };
 }
@@ -233,13 +241,19 @@ export function buildRecapPeriodCalendarAnalytics({
   const sportCache = getCalendarSportStatsCache(workoutData, garminData);
   const lookup = createDayRepsLookup(workoutData);
   const periodDays = buildSportDaysForRange(startYmd, endYmd, lookup.repsFor);
-  const periodStats = computeCalendarMonthSportStats(
+  const rawPeriodStats = computeCalendarMonthSportStats(
     periodDays,
     workoutData,
     garminData,
     getDateStr,
     sportCache
   );
+  // La série du premier mois calendaire (ou 0 si skipStreak) ne décrit pas la fenêtre.
+  const streakRange = calculateLongestTrainingStreakInRange(workoutData, startYmd, endYmd);
+  const periodStats = {
+    ...rawPeriodStats,
+    longestStreak: streakRange.length
+  };
   const weekStrip = buildRecapWeekStrip(startYmd, endYmd, getExerciseNameById, lookup);
 
   if (phase === 'header') {
@@ -248,7 +262,7 @@ export function buildRecapPeriodCalendarAnalytics({
       months: [],
       bestMonthsByMetric: {},
       topExercises: [],
-      streakRange: null,
+      streakRange,
       topMuscleGroups: [],
       running: { hasData: false, highlights: null, kindDistribution: null, bestSessions: [] },
       window: { start: startYmd, end: endYmd },
@@ -279,7 +293,25 @@ export function buildRecapPeriodCalendarAnalytics({
       getDateStr,
       sportCache
     );
-    return { ym, label, sportStats };
+    const ymds = monthDays
+      .map((day) => getDateStr(day.date))
+      .filter(Boolean)
+      .sort();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const partial = ymds.length > 0 && ymds.length < daysInMonth;
+    if (ymds.length) {
+      sportStats.longestStreak = calculateLongestTrainingStreakInRange(
+        workoutData,
+        ymds[0],
+        ymds[ymds.length - 1]
+      ).length;
+    }
+    return {
+      ym,
+      label: partial ? `${label} (portion)` : label,
+      partial,
+      sportStats
+    };
   });
 
   const recordHolders = computeYearSportRecordHolders(months);
@@ -308,7 +340,6 @@ export function buildRecapPeriodCalendarAnalytics({
     periodWindow
   );
   const topExercises = (strength?.top3Exercises || []).slice(0, 5);
-  const streakRange = calculateLongestTrainingStreakInRange(workoutData, startYmd, endYmd);
 
   const musclesFromRecap = topMusclesFromRecapState(recapState, 5);
   const topMuscleGroups =

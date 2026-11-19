@@ -70,6 +70,16 @@ describe('sélection — caps d’épisodes adaptatifs', () => {
       })
     ).toBe('anonymous_exercise_label');
   });
+
+  it('rejette « exercice 301 » tant que l’identité n’est pas résolue', () => {
+    expect(
+      insightRejectReason({
+        kind: 'journey_rotation',
+        title: 'exercice 301 a quitté la rotation',
+        body: 'exercice 301 n’apparaît plus dans les séances récentes.'
+      })
+    ).toBe('anonymous_exercise_label');
+  });
 });
 
 describe('prose incomplète — tous chemins de publication', () => {

@@ -34,7 +34,7 @@ import {
   resolveExerciseIntensityCoeff,
   resolveExerciseWeightMultiplier
 } from '../../utils/trainingLoadUtils';
-import { computeProgramCompletionBonusXp } from '../../utils/programCompletionBonus';
+import { computeProgramCompletionBonusXpIndexed } from '../../utils/programCompletionBonus';
 import { computeCircuitsXp } from './circuitsXpService';
 import { computeGtgXp } from './gtgXpService';
 import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
@@ -721,7 +721,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     programs: programsList,
     getExerciseNameById: sportOptions.getExerciseNameById
   };
-  breakdown.programCompletionBonusXp = computeProgramCompletionBonusXp(workoutData, completionCtx);
+  breakdown.programCompletionBonusXp = computeProgramCompletionBonusXpIndexed(workoutData, completionCtx);
   totalXP += breakdown.programCompletionBonusXp;
 
   // Nutrition — XP pour chaque aliment enregistré dans les repas (journal)

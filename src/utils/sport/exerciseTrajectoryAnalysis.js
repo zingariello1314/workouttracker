@@ -11,6 +11,7 @@
 import { collectLifetimeRepHistory } from './athleteJourney';
 import { collectEnrichedExerciseHistory } from './recapExerciseProgressionAnalysis';
 import { resolveExerciseSetsForAnalysis } from './exerciseSessionSetsResolver';
+import { SET_INFERENCE_METHOD } from './exerciseSetInference';
 import { movementFamily } from './recapExposureNarratives';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { composeAnalyticalReading } from './recapAnalyticalReading';
@@ -111,15 +112,20 @@ export function readTrustedSessionSets(snapshot, date, exerciseId, expectedTotal
         source: 'structured_mismatch'
       };
     }
+    const method = resolved.inference?.method || null;
+    const reconstructed = method && method !== SET_INFERENCE_METHOD.MANUAL;
     return {
-      trusted: true,
+      trusted: !reconstructed,
       contradiction: false,
       setReps: reps,
       setCount: reps.length,
       total,
       perSet: total / reps.length,
-      source: 'structured',
-      schemeLabel: resolved.schemeLabel || `${reps.length}×${Math.round(total / reps.length)}`
+      source: reconstructed ? `reconstructed_${method}` : 'recorded',
+      inferenceMethod: method,
+      schemeLabel: reconstructed
+        ? null
+        : resolved.schemeLabel || `${reps.length}×${Math.round(total / reps.length)}`
     };
   }
   return { trusted: false, contradiction: false, setReps: null, setCount: null, total: expectedTotal ?? null, source: 'absent' };
@@ -711,7 +717,21 @@ function analyzePeers(
   };
 }
 
-function buildFindings({ identity, volume, setMechanism, shape, peers, installation, mode, temporalScope = null }) {
+function horizonPhrase(window) {
+  const start = window?.start;
+  const end = window?.end;
+  if (!start || !end) return 'la période affichée';
+  const span = Math.round((new Date(`${end}T12:00:00Z`) - new Date(`${start}T12:00:00Z`)) / 86400000) + 1;
+  if (span <= 1) return "aujourd'hui";
+  if (span <= 8) return 'ces 7 jours';
+  if (span <= 35) return 'ces 30 jours';
+  if (span <= 100) return 'ces 3 mois';
+  if (span <= 200) return 'ces 6 mois';
+  if (span <= 400) return 'cette année';
+  return 'la période affichée';
+}
+
+function buildFindings({ identity, volume, setMechanism, shape, peers, installation, mode, temporalScope = null, window = null }) {
   const limits = [];
   const positions = [];
 
@@ -910,10 +930,17 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         }
       }
     } else if (installation.kind === 'already_known') {
-      titleHint = `${identity.name} repasse dans la période`;
+      const sessionsInWindow = volume.windowSessionCount || installation.sessionsInWindow || 0;
+      const windowReps = volume.windowTotal;
+      titleHint =
+        sessionsInWindow > 1
+          ? `${identity.name} : ${sessionsInWindow} séances sur ${horizonPhrase(window)}`
+          : `${identity.name} : une séance sur ${horizonPhrase(window)}, exercice déjà pratiqué`;
       main = {
         stance: 'established',
-        text: `${identity.name} était déjà pratiqué avant cette fenêtre : ce n’est pas une introduction nouvelle, c’est une présence dans la période sélectionnée.`
+        text: `${identity.name} était déjà pratiqué avant cette fenêtre. Sur ${horizonPhrase(window)} : ${sessionsInWindow} séance${sessionsInWindow > 1 ? 's' : ''}${
+          windowReps ? `, ${windowReps} répétitions` : ''
+        }. Ce compte est celui de la fenêtre affichée, pas celui d'une fenêtre plus longue. Ce n’est pas un retour après une longue absence.`
       };
     } else {
       titleHint = `${identity.name} dans la période`;
@@ -1316,7 +1343,8 @@ function buildExerciseTrajectoryUncached({
     peers,
     installation,
     mode,
-    temporalScope
+    temporalScope,
+    window
   });
 
   const trajectory = {

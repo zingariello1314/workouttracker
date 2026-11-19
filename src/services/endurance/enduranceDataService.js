@@ -73,7 +73,13 @@ import {
   writeEnduranceLocalBackup
 } from './enduranceWipeGuard';
 
-export async function persistEnduranceData({ currentData = {}, patch = {}, updateData, logger = DEFAULT_LOGGER }) {
+export async function persistEnduranceData({
+  currentData = {},
+  patch = {},
+  updateData,
+  logger = DEFAULT_LOGGER,
+  reportOutcome = false
+}) {
   if (typeof updateData !== 'function') {
     throw new Error('[enduranceDataService] persistEnduranceData requiert updateData');
   }
@@ -90,11 +96,13 @@ export async function persistEnduranceData({ currentData = {}, patch = {}, updat
   const nextEndurance = mergeEnduranceWithoutSilentWipe(currentEndurance, patched, {
     sessionTypesTouched: patch.sessionTypesTouched,
     allowEmptyChallenges: patch.allowEmptyChallenges === true,
-    allowWipe: patch.allowWipe === true
+    allowWipe: patch.allowWipe === true,
+    explicitGtgClear: patch.explicitGtgClear === true
   });
   delete nextEndurance.sessionTypesTouched;
   delete nextEndurance.allowEmptyChallenges;
   delete nextEndurance.allowWipe;
+  delete nextEndurance.explicitGtgClear;
 
   let nextData = {
     ...currentData,
@@ -105,8 +113,9 @@ export async function persistEnduranceData({ currentData = {}, patch = {}, updat
 
   logger.debug?.('[enduranceDataService] persistEnduranceData', { patch, nextEndurance });
 
-  await updateData(nextData);
+  const saveOutcome = await updateData(nextData, reportOutcome ? { reportOutcome: true } : undefined);
   writeEnduranceLocalBackup(currentData.storageKey || currentData._storageKey, nextEndurance);
+  if (reportOutcome) return { data: nextData, saveOutcome };
   return nextData;
 }
 

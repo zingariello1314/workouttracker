@@ -46,7 +46,15 @@ export function fixKnownGrammarInProse(text) {
   s = s.replace(/\b(Cette|cette)\s+(période|séance|semaine|année)\s+mêlent\b/g, '$1 $2 mêle');
   s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+mêle\b/g, '$1 $2 jours mêlent');
   // Genre : tronc / gainage
+  s = s.replace(/\bde la tronc\b/gi, 'du tronc');
+  s = s.replace(/\b% de la tronc\b/gi, '% du tronc');
   s = s.replace(/\bde ta tronc\b/gi, 'de ton tronc');
+  s = s.replace(/\bNET RISE\b/g, '');
+  s = s.replace(/\bOUTLIER DRIVEN\b/gi, '');
+  s = s.replace(/\bARC\s+\d+\b/g, '');
+  s = s.replace(/\b(LOW|MIXED|STREAK)\b/g, '');
+  s = s.replace(/\bCONTRAT\s+POSITIVE_REPS\b/gi, '');
+  s = s.replace(/\bcontrat positive_reps\b/gi, 'jours avec répétitions');
   s = s.replace(/\bde ta gainage\b/gi, 'de ton gainage');
   s = s.replace(/\bde ta gainage\/tronc\b/gi, 'de ton gainage/tronc');
   s = s.replace(/\b% de ta (tronc|gainage)\b/gi, '% de ton $1');

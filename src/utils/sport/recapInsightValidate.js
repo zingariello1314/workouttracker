@@ -4,6 +4,7 @@
  */
 
 import { logRecapReject } from './recapRejectLog';
+import { fixKnownGrammarInProse } from './recapEditorialPolish';
 
 const RAW_ID_RE = /\bExercice\s+\d{2,}\b|\b#\d{6,}\b|\b\d{9,}\b/;
 const OBJECT_OBJECT_RE = /\[object\s+Object\]/i;
@@ -82,6 +83,9 @@ export function insightRejectReason(card, ctx = {}) {
   }
   // Prose générique « cet exercice » dans le corps publié (identité non résolue / placeholder).
   if (/\bcet exercice\b/i.test(text) && !/\b(pompes|dips|tractions|relevés|développé|élévations)\b/i.test(text)) {
+    return 'anonymous_exercise_label';
+  }
+  if (/\bexercice\s+\d+\b/i.test(text) || /\bexercice\s+\d+\b/i.test(title)) {
     return 'anonymous_exercise_label';
   }
   if (/\bUNCLEAR\b/.test(evidence) || /\bUNCLEAR\b/.test(text)) {
@@ -210,6 +214,33 @@ export function insightRejectReason(card, ctx = {}) {
     return 'iso_date_in_user_prose';
   }
 
+  const relationType = String(card.type || card.interpretation?.type || kind || '');
+  if (relationType.startsWith('program_gap_')) {
+    const frozen = num(metrics.frozenPlanDays);
+    const span = num(metrics.windowSpanDays);
+    if (
+      metrics.planCoverage !== 'frozen_representative' ||
+      frozen == null ||
+      span == null ||
+      frozen < 2 ||
+      frozen / span < 0.5
+    ) {
+      return 'program_rate_without_frozen_coverage';
+    }
+  }
+  if (relationType === 'costly_progression') {
+    const eff = num(metrics.progressionEfficiency);
+    const volDelta = num(metrics.volumeDeltaPct);
+    const mom = num(metrics.performanceMomentumPct);
+    if (eff == null || volDelta == null || mom == null) return 'efficiency_without_components';
+    if (!(eff < 0 && volDelta > 0 && mom < 0)) return 'efficiency_sign_unexplained';
+  }
+  if (relationType === 'adherence_gap' || relationType === 'stretch_gap') {
+    const prescribed = num(metrics.stretchTotal);
+    if (prescribed == null || prescribed < 1) return 'stretch_gap_without_prescription';
+    if (metrics.stretchReading !== 'prescribed_slots_checked') return 'stretch_gap_without_prescription';
+  }
+
   return '';
 }
 
@@ -220,6 +251,50 @@ export function insightRejectReason(card, ctx = {}) {
  * @param {{ voiceKey?: string, period?: string, windowSpanDays?: number }} [ctx]
  * @returns {T[]}
  */
+const RAW_STATE_ARROW = /[a-z][a-z0-9_]{2,}\s*(?:→|->)\s*[a-z][a-z0-9_]{2,}/;
+const TECHNICAL_FRAGMENT =
+  /\b(NET RISE|ARC\s+\d+|CONTRAT\s+POSITIVE_REPS|contrat positive_reps|OUTLIER DRIVEN|LOW|MIXED|STREAK)\b/;
+
+function cleanProse(value) {
+  return fixKnownGrammarInProse(String(value || ''))
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;])/g, '$1')
+    .trim();
+}
+
+/**
+ * Dernier contrôle avant publication.
+ * Un titre manquant n'est pas fabriqué à partir du début du corps.
+ * Un état interne ou un sujet anonyme n'est pas publié.
+ */
+export function finalizePublishedInsight(card) {
+  if (!card) return { ok: false, reason: 'empty' };
+  const title = cleanProse(card.title);
+  const body = cleanProse(card.body || card.text);
+  const evidence = cleanProse(card.evidence);
+  const blobText = `${title}\n${body}\n${evidence}`;
+  if (RAW_STATE_ARROW.test(blobText) || TECHNICAL_FRAGMENT.test(`${title}\n${body}`)) {
+    return { ok: false, reason: 'internal_fragment', title, body };
+  }
+  if (/exercice clé|^un exercice\b/i.test(title) || /exercice clé/i.test(body)) {
+    return { ok: false, reason: 'anonymous_subject', title, body };
+  }
+  if (/relation\.reading\./i.test(title)) {
+    return { ok: false, reason: 'technical_title', title, body };
+  }
+  if (!title || !body) return { ok: false, reason: 'missing_title', title, body };
+  return {
+    ok: true,
+    card: {
+      ...card,
+      title,
+      body,
+      evidence,
+      text: body
+    }
+  };
+}
+
 export function filterValidInsights(cards, ctx = {}) {
   const kept = [];
   (cards || []).forEach((card) => {

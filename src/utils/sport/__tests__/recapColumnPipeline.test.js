@@ -8,6 +8,10 @@ import {
 import { buildUserTrainingState } from '../userTrainingState';
 import { detectTrainingRelations } from '../trainingRelationEngine';
 import { renderInterpretationText } from '../interpretationRenderer';
+import { evaluateRelationGraph, buildRelationContext } from '../trainingRelationGraph';
+import { filterValidInsights } from '../recapInsightValidate';
+import { keepDistinctProofCards } from '../recapCardKinship';
+import { exposureEffect } from '../editorialLedgerContract';
 import { buildAdaptiveRecapInsights } from '../recapAdaptiveInsights';
 import { isColumnInterpretation } from '../recapInterpretationPipeline';
 
@@ -124,7 +128,9 @@ describe('relations screenshot', () => {
         frequencyDeltaPct: -30,
         sessions28d: 4,
         prevSessions28d: 8,
-        justifiedDays: 2
+        justifiedDays: 2,
+        frozenPlanDays: 4,
+        windowSpanDays: 7
       }
     });
     expect(missed.some((r) => r.type === 'program_gap_adherence')).toBe(true);
@@ -144,7 +150,9 @@ describe('relations screenshot', () => {
         sessionAlignment: 42,
         sessions28d: 8,
         prevSessions28d: 8,
-        frequencyDeltaPct: 0
+        frequencyDeltaPct: 0,
+        frozenPlanDays: 4,
+        windowSpanDays: 7
       }
     });
     expect(incomplete.some((r) => r.type === 'program_gap_completion')).toBe(true);
@@ -180,9 +188,34 @@ describe('relations screenshot', () => {
       programResponse: axis('unknown', 'unknown', 0.5, []),
       lifePhase: null,
       context: {},
-      features: { volumeDeltaPct: -20, programCompletionPct: 40 }
+      features: {
+        volumeDeltaPct: -20,
+        programCompletionPct: 40,
+        frozenPlanDays: 4,
+        windowSpanDays: 7
+      }
     });
     expect(rows.some((r) => r.type === 'program_gap_mixed')).toBe(true);
+  });
+
+  it('refuse un taux de programme quand un seul jour de la fenêtre a un plan figé', () => {
+    const rows = detectTrainingRelations({
+      load: axis('falling', 'falling', 0.7, []),
+      performance: axis('stable', 'stable', 0.6, []),
+      recovery: axis('sufficient', 'stable', 0.5, []),
+      fatigue: axis('low', 'stable', 0.5, []),
+      adherence: axis('low', 'unknown', 0.7, []),
+      programResponse: axis('unknown', 'unknown', 0.5, []),
+      lifePhase: null,
+      context: {},
+      features: {
+        volumeDeltaPct: -20,
+        programCompletionPct: 67,
+        frozenPlanDays: 1,
+        windowSpanDays: 7
+      }
+    });
+    expect(rows.some((r) => String(r.type).startsWith('program_gap_'))).toBe(false);
   });
 });
 
@@ -221,5 +254,75 @@ describe('colonnes Analyse', () => {
     const flat = all.map((t) => (typeof t === 'string' ? t : `${t.title || ''} ${t.body || ''} ${t.text || ''}`)).join('\n');
     expect(/NEAT|9648 pas|kcal actives|à croiser avec/i.test(flat)).toBe(false);
     expect(/référence personnelle directe/i.test(flat)).toBe(false);
+  });
+});
+
+describe('trois conclusions restaurées — filtre puis preuve', () => {
+  const baseState = {
+    load: axis('rising', 'rising', 0.8, ['reps suivies +23 % vs 28 j. précédents']),
+    performance: axis('stable', 'stable', 0.7, []),
+    recovery: axis('sufficient', 'stable', 0.6, []),
+    fatigue: axis('low', 'stable', 0.5, []),
+    adherence: axis('medium', 'unknown', 0.7, []),
+    programResponse: axis('unknown', 'unknown', 0.5, []),
+    lifePhase: null,
+    context: { goal: 'muscular_defined' },
+    adaptationCost: 'high',
+    features: {
+      volumeDeltaPct: 22.7,
+      performanceMomentumPct: -60,
+      progressionEfficiency: -2.64
+    }
+  };
+
+  it('place la progression coûteuse comme candidate admissible, avec le rapport nommé', () => {
+    const rows = detectTrainingRelations(baseState);
+    const hit = rows.find((r) => r.type === 'costly_progression');
+    expect(hit).toBeTruthy();
+    const text = renderInterpretationText(hit, baseState);
+    expect(text).toMatch(/élan de répétitions est à -60/);
+    expect(text).toMatch(/vaut -2\.64/);
+    expect(text).toMatch(/pas une charge/);
+    const card = {
+      ...hit,
+      text,
+      title: 'Coût',
+      body: text,
+      evidence: hit.evidence.join(' · ')
+    };
+    expect(keepDistinctProofCards([card])).toHaveLength(1);
+    expect(filterValidInsights([card])).toHaveLength(1);
+    expect(detectTrainingRelations({
+      ...baseState,
+      features: { volumeDeltaPct: 22.7, progressionEfficiency: -2.64 }
+    }).some((r) => r.type === 'costly_progression')).toBe(false);
+  });
+
+  it('n’émet pas d’écart d’étirements sans prescription, et le garde quand les cases existent', () => {
+    const ctx = (completion) =>
+      buildRelationContext({
+        state: baseState,
+        enrichment: { completion }
+      });
+    expect(
+      evaluateRelationGraph(ctx({ exoPct: 100, stretchPct: null, stretchTotal: 0 })).some(
+        (r) => r.id === 'relation.stretch_gap'
+      )
+    ).toBe(false);
+    const kept = evaluateRelationGraph(
+      ctx({ exoPct: 100, stretchPct: 0, stretchTotal: 8 })
+    ).find((r) => r.id === 'relation.stretch_gap');
+    expect(kept).toBeTruthy();
+    expect(kept.metrics.stretchReading).toBe('prescribed_slots_checked');
+    const text = renderInterpretationText(kept, baseState);
+    expect(text).toMatch(/prescrits/);
+    expect(text).toMatch(/pas le non-respect d’un objectif séparé/);
+    expect(text).not.toMatch(/hypertrophie/);
+    const card = { ...kept, text, title: 'Étirements', body: text, evidence: 'exos 100 vs étirements 0' };
+    expect(filterValidInsights([card])).toHaveLength(1);
+  });
+
+  it('prépare le contrat de mémoire : une exposition baisse la priorité, elle ne retire pas l’accessible', () => {
+    expect(exposureEffect()).toEqual({ mayLowerPriority: true, mayRemoveFromAccessible: false });
   });
 });
