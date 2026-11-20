@@ -52,7 +52,7 @@ export function fixKnownGrammarInProse(text) {
   s = s.replace(/\bNET RISE\b/g, '');
   s = s.replace(/\bOUTLIER DRIVEN\b/gi, '');
   s = s.replace(/\bARC\s+\d+\b/g, '');
-  s = s.replace(/\b(LOW|MIXED|STREAK)\b/g, '');
+  s = s.replace(/\b(LOW|MIXED|STREAK|LOCALIZED_RISE|OUTLIER_DRIVEN)\b/g, '');
   s = s.replace(/\bCONTRAT\s+POSITIVE_REPS\b/gi, '');
   s = s.replace(/\bcontrat positive_reps\b/gi, 'jours avec répétitions');
   s = s.replace(/\bde ta gainage\b/gi, 'de ton gainage');

@@ -819,12 +819,17 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
         }. C’est une répétition du format, pas encore une installation durable dans le programme.`
       };
     } else if (installation.kind === 'first_session') {
-      titleHint = `${identity.name} entre dans ton historique`;
+      const homonym = (peers.skippedSameLabel || []).length > 0;
+      titleHint = homonym
+        ? `${identity.name} : une ligne, une séance`
+        : `${identity.name} entre dans ton historique`;
       main = {
         stance: 'established',
-        text: installation.firstEver
-          ? `Tu enregistres ${identity.name} pour la première fois dans l’historique disponible : ${volume.windowTotal} répétitions sur cette séance.`
-          : `Une seule séance de ${identity.name} dans la période (${volume.windowTotal} répétitions).`
+        text: homonym
+          ? `Cette ligne de ${identity.name} n’a qu’une séance dans la période (${volume.windowTotal} répétitions). Une autre ligne porte le même nom sans équivalence démontrée : elles restent séparées.`
+          : installation.firstEver
+            ? `Tu enregistres ${identity.name} pour la première fois dans l’historique disponible : ${volume.windowTotal} répétitions sur cette séance.`
+            : `Une seule séance de ${identity.name} dans la période (${volume.windowTotal} répétitions).`
       };
       implication = {
         stance: 'probable',

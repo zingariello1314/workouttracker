@@ -8,8 +8,11 @@ import { detectStateTransitions } from '../trainingStateTransitions';
 describe('édition courante et contrôle éditorial', () => {
   it('refuse de présenter un pack d’une autre édition comme le résultat actuel', () => {
     const current = analysisEditionKey();
-    expect(current).toMatch(/editorial=p3-explanatory-v1/);
-    expect(current).toMatch(/consolidation=mechanism-window-v1/);
+    expect(current).toMatch(/editorial=p6-sovereign-v4/);
+    expect(current).toMatch(/consolidation=narrative-coherence-v2/);
+    expect(current).toMatch(/stimulus=challenge-unknown-v1/);
+    expect(current).toMatch(/duration=paired-density-v3/);
+    expect(current).toMatch(/review=collective-pass4-v1/);
     expect(
       mayPresentBundleAsCurrent(
         { analysisEdition: 'editorial=old', analysisStatus: 'ready' },

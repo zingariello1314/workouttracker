@@ -68,6 +68,10 @@ snapshot / window / period
 `classifyVolumeAttribution` annote désormais `metrics.metricFacts`.  
 `buildAdaptiveInsights` expose `temporalPlans` (sélection scorée) — **rédaction long horizon pas encore pilotée par ces plans**.
 
+## P6 branché
+
+`buildPeriodDiscoveryBundle` appelle `applyP6`. Le paquet porte `p6.counters`, les vues À retenir / Toutes / Autres angles, et `inspection` sur chaque conclusion retenue. Une conclusion n'hérite la priorité que si la carte déjà retenue a le même kind, le même exercice, le même mécanisme, le même titre et la même preuve. Le corps peut être réécrit sans créer une autre conclusion. Une conclusion consolidée remplace ses sources lorsqu'au moins l'une d'elles était prioritaire. Le budget 11 est un budget de colonne. Le diagnostic recalculé lit `raw.p6` et reste distinct du paquet `pipeline` puis du paquet `published`.
+
 ## Architecture projetée (reste)
 
 - Propagation metric facts à tous les producteurs

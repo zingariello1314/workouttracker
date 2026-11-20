@@ -10,6 +10,13 @@ import {
   renderReasoning
 } from './recapReasoning';
 import { resolveEvidence } from './recapQuestionEngine';
+import { summarizeRepCoverage } from './historicalOrphanExercises';
+import {
+  decomposeExerciseMix,
+  exerciseMixSentence,
+  formatRepDelta,
+  symmetricDecomposition
+} from './volumeChangeDecomposition';
 
 function idsBetween(ctx, start, end) {
   const ids = new Set();
@@ -101,9 +108,43 @@ export function evaluateVolumeChange(ctx) {
   if (!evidence.route || evidence.confidence < 0.4) return null;
 
   const sign = (n) => `${n >= 0 ? '+' : ''}${Math.round(n)} %`;
-  const driver = fromFrequency
+  const contribution = symmetricDecomposition(
+    { sessions: before.days, reps: before.reps },
+    { sessions: now.days, reps: now.reps }
+  );
+  const repsById = (start, end) => {
+    const bag = {};
+    ctx.byDate.forEach((row, date) => {
+      if (date < start || date > end) return;
+      row.exercises?.forEach((reps, id) => {
+        bag[id] = (bag[id] || 0) + (Number(reps) || 0);
+      });
+    });
+    return bag;
+  };
+  const names = {};
+  ctx.exercises?.forEach((exercise, id) => {
+    if (exercise?.name) names[id] = exercise.name;
+  });
+  const mix = decomposeExerciseMix(repsById(prevStart, prevEnd), repsById(ctx.win.start, ctx.win.end), names);
+  const coverage = summarizeRepCoverage(
+    repsById(ctx.win.start, ctx.win.end),
+    ctx.snapshot,
+    ctx.getExerciseNameById || ((id) => names[id] || null)
+  );
+  const driverCore = fromFrequency
     ? `La variation vient surtout du nombre de séances (${sign(freqRel)}), pas des répétitions par séance (${sign(perRel)}).`
     : `La variation vient surtout du contenu des séances (${sign(perRel)} par séance), la fréquence bouge de ${sign(freqRel)}.`;
+  const driver = [
+    driverCore,
+    contribution.ok ? `En répétitions, la fréquence contribue ${formatRepDelta(contribution.frequency)} et le contenu ${formatRepDelta(contribution.content)}.` : '',
+    exerciseMixSentence(mix),
+    coverage.orphanReps > 0
+      ? `${Math.round(coverage.identifiedReps)} répétitions viennent d’exercices identifiés et ${Math.round(coverage.orphanReps)} d’exercices historiques sans identité. Ces dernières restent dans le total et ne décrivent pas un mouvement.`
+      : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
   const finding = fromFrequency ? 'volume_change:from_frequency' : 'volume_change:from_density';
 
   return {
@@ -114,6 +155,9 @@ export function evaluateVolumeChange(ctx) {
     findings: [finding],
     subsumes: ['volume_up', 'reps_up'],
     theme: 'volume',
+    evidence: contribution.ok
+      ? `${Math.round(before.reps)} → ${Math.round(now.reps)} répétitions · fréquence ${formatRepDelta(contribution.frequency)} · contenu ${formatRepDelta(contribution.content)} · ${before.days} → ${now.days} séances`
+      : '',
     title: fromFrequency
       ? 'Le volume bouge surtout parce que le nombre de séances bouge'
       : 'Le volume bouge surtout à l’intérieur des séances',

@@ -22,6 +22,13 @@ import {
 import { runExerciseFormatConsolidationShadow } from './exerciseFormatConsolidation';
 import { decideInformativePriority } from './analyticalMemory';
 import { muscleWindowRelation } from './muscleExposureLedger';
+import { buildSessionWorkProfiles } from './sessionWorkProfile';
+import {
+  chooseSessionComparison,
+  collectResistanceProgressions,
+  decomposeUnusualSession,
+  sessionComparisonProse
+} from './sessionDemandComparison';
 import {
   composeAnalyticalReading,
   densityImplication,
@@ -31,6 +38,14 @@ import {
 } from './recapAnalyticalReading';
 import { baselineTraceMetrics } from './recapPersonalBaselines';
 import { familyFadeTitle, possessiveMuscleShare } from './recapPeriodVoice';
+import { sameNameActiveDuringGap } from './movementIdentity';
+import { assessHistoricalPlans, programPracticeCard } from './plannedVsPerformedAssessment';
+import { exploreSameFormatTimeChange } from './challengeFormatTimeAnalysis';
+import {
+  COVERAGE as EXPLORE_COVERAGE,
+  exploreCollectiveReturn,
+  exploreNearEqualSessions
+} from './analyticalExploration';
 import {
   detectFamilyFades,
   detectStructuralShifts,
@@ -72,6 +87,23 @@ import {
   share,
   discovery
 } from './recapPeriodVoice';
+
+function complementaryReps(day) {
+  return (day?.exercises || [])
+    .filter(
+      (row) =>
+        row.id === 'complementary_endurance_pushups' ||
+        row.provenance === 'complementary_endurance' ||
+        /compl[ée]mentaire/i.test(row.name || '')
+    )
+    .reduce((sum, row) => sum + (Number(row.reps) || 0), 0);
+}
+
+function complementaryClause(day, label) {
+  const count = complementaryReps(day);
+  if (count <= 0) return '';
+  return `${label} inclut ${count} répétitions de pompes complémentaires.`;
+}
 
 export function detectDiscoveries(cmp, extras = {}) {
   const out = [];
@@ -239,7 +271,14 @@ export function detectDiscoveries(cmp, extras = {}) {
     );
   });
 
-  if ((isToday || isWeek) && !emptyPeriod && p.repsPerHour != null && p.minutes >= 20) {
+  // Densité globale uniquement si le dénominateur apparie le volume (pas les seules minutes défi).
+  if (
+    (isToday || isWeek) &&
+    !emptyPeriod &&
+    p.repsPerHour != null &&
+    p.durationContract?.densityPaired === true &&
+    p.minutes >= 20
+  ) {
     const densityRef = isToday || isWeek ? d30 : isMonth ? prev30 : first30;
     const vs30 =
       densityRef?.repsPerHour != null ? pctChange(p.repsPerHour, densityRef.repsPerHour) : null;
@@ -260,7 +299,7 @@ export function detectDiscoveries(cmp, extras = {}) {
           : lighter
             ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'concentre', 'concentrent')} le travail sur moins de temps`
             : `La densité ${v.ofPeriod} reste proche de ton rythme habituel`;
-      const hourBit = `${fmtInt(p.totalReps)} répétitions en ${formatDurationFr(p.minutes)}, soit environ ${fmtInt(p.repsPerHour)} reps par heure`;
+      const hourBit = `${fmtInt(p.totalReps)} répétitions, ${describeActivityDuration(p)}, soit environ ${fmtInt(p.repsPerHour)} répétitions par heure d'activité enregistrée`;
       const monthBit =
         vs30 != null
           ? isMonth
@@ -591,13 +630,52 @@ export function detectDiscoveries(cmp, extras = {}) {
     }
   }
 
+  {
+    const dayRows = Object.entries(p.repsByDate || {}).map(([date, reps]) => {
+      const exercises = p.exercisesByDate?.[date] || [];
+      const challengeReps = exercises
+        .filter((ex) => String(ex?.id || '').startsWith('complementary_') || /pompes \(endurance\)|défi|defi/i.test(ex?.name || ''))
+        .reduce((sum, ex) => sum + (Number(ex.reps) || 0), 0);
+      return {
+        date,
+        reps: Number(reps) || 0,
+        challengeReps,
+        programReps: Math.max(0, (Number(reps) || 0) - challengeReps),
+        exerciseCount: exercises.length,
+        exercises
+      };
+    });
+    const nearEqual = exploreNearEqualSessions(dayRows);
+    if (nearEqual.coverage === EXPLORE_COVERAGE.CONCLUDED && nearEqual.conclusion) {
+      out.push(
+        discovery({
+          kind: 'disc_near_equal_sessions',
+          nature: 'now',
+          family: 'session_compare',
+          title: 'Des journées à volume proche racontent des séances différentes',
+          body: nearEqual.conclusion,
+          evidence: nearEqual.retained.map((row) => row.detail).join(' · '),
+          weights: { importance: 0.91, reliability: 0.9, novelty: 0.93, fit: isWeek || isToday ? 1 : 0.86 },
+          metrics: {
+            days: dayRows,
+            exploration: nearEqual,
+            producer: 'exploreNearEqualSessions'
+          }
+        })
+      );
+    }
+  }
+
   if (p.peakDay && p.trainingDays >= 2 && (p.peakDay.sharePct || 0) >= 28) {
-    const peakEx = (p.peakDay.exercises || p.exercisesByDate?.[p.peakDay.date] || []).slice(0, 3);
-    const otherReps = Math.max(0, (p.totalReps || 0) - p.peakDay.reps);
     const sessionValues = Object.values(p.repsByDate || {})
       .map(Number)
       .filter((n) => n > 0)
       .sort((a, b) => a - b);
+    const nearPeakCount = sessionValues.filter((n) => p.peakDay.reps - n <= Math.max(20, p.peakDay.reps * 0.08)).length;
+    // Plusieurs journées quasi égales : la « concentration exceptionnelle » n'est pas soutenue.
+    if (nearPeakCount < 2) {
+    const peakEx = (p.peakDay.exercises || p.exercisesByDate?.[p.peakDay.date] || []).slice(0, 3);
+    const otherReps = Math.max(0, (p.totalReps || 0) - p.peakDay.reps);
     const mid = Math.floor(sessionValues.length / 2);
     const sessionMedian = sessionValues.length
       ? sessionValues.length % 2
@@ -654,6 +732,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         })
       })
     );
+    }
   }
 
   if (p.runningKm <= 0.2 && p.runningMinutes <= 0 && p.totalReps >= 80) {
@@ -740,14 +819,22 @@ export function detectDiscoveries(cmp, extras = {}) {
           contentClass: CONTENT_CLASS.DESCRIPTIVE,
           title: reorientReading.title,
           body: reorientReading.body,
-          evidence: contrasts
-            .slice(0, 4)
-            .map((m) => `${m.label} ${fmtPct(m.ofMonthPct)} du mois`)
-            .join(' · '),
+          evidence: (() => {
+            const shown = contrasts.slice(0, 4);
+            const shares = shown.map((m) => m.ofMonthPct).filter((n) => n != null);
+            const spread = shares.length ? Math.max(...shares) - Math.min(...shares) : 0;
+            if (lead.relation === 'recent_month_inside_period' && spread < 4) {
+              return `Mois récent : ${fmtPct(lead.ofMonthPct)} du volume attribué de la période, part semblable pour ${shown.map((m) => m.label).join(', ')}`;
+            }
+            return shown
+              .map((m) => `${m.label} ${fmtInt(m.reps)} sur la période, ${fmtInt(m.monthReps)} sur 30 jours, ${fmtPct(m.ofMonthPct)}`)
+              .join(' · ');
+          })(),
           weights: { importance: 0.72, reliability: 0.7, novelty: 0.7, fit: 0.88 },
           metrics: {
             leadGroup: lead.group,
             ofMonthPct: lead.ofMonthPct,
+            relation: lead.relation,
             readingBeats: reorientReading.beats,
             attributionMode: 'conventional_rep_share'
           }
@@ -758,7 +845,25 @@ export function detectDiscoveries(cmp, extras = {}) {
 
   const pullNow = p.byMuscle[MuscleGroups.BACK]?.reps || 0;
   const pushNow = p.pushReps;
-  if (pushNow >= 80 && (pushNow > pullNow * 1.6 || share(pullNow, p.totalReps) < 18)) {
+  const namedPullReps = (p.exercises || [])
+    .filter((exercise) => /traction|face pull|oiseau|australien|rowing|tirage/i.test(exercise.name || ''))
+    .reduce((sum, exercise) => sum + (Number(exercise.reps) || 0), 0);
+  const pullLedgerIncomplete = namedPullReps >= 80 && namedPullReps > Math.max(pullNow, 1) * 2;
+  if (pullLedgerIncomplete) {
+    out.push(
+      discovery({
+        kind: 'disc_pull_coverage',
+        nature: 'trajectory',
+        family: 'push_pull',
+        contentClass: CONTENT_CLASS.DESCRIPTIVE,
+        title: 'Le volume de tirage identifié dépasse le total attribué au dos',
+        body: `Les exercices identifiés de tirage comptent ${fmtInt(namedPullReps)} répétitions sur cette fenêtre, alors que l’attribution au dos n’en retient que ${fmtInt(pullNow)}. Cet écart décrit une couverture incomplète du ledger, pas un déséquilibre musculaire.`,
+        evidence: `tirage identifié ${fmtInt(namedPullReps)} · dos attribué ${fmtInt(pullNow)}`,
+        weights: { importance: 0.66, reliability: 0.8, novelty: 0.55, fit: 0.84 },
+        metrics: { namedPullReps, pullNow, attributionMode: 'coverage_gap' }
+      })
+    );
+  } else if (pushNow >= 80 && (pushNow > pullNow * 1.6 || share(pullNow, p.totalReps) < 18)) {
     const monthPull = d30.byMuscle[MuscleGroups.BACK]?.reps || 0;
     const ofMonth = share(pullNow, monthPull);
     const monthShareOfWindow = share(monthPull, pullNow);
@@ -914,6 +1019,12 @@ export function detectDiscoveries(cmp, extras = {}) {
           : !neu && gapDate
             ? Math.max(0, inclusiveCalendarSpanDays(gapDate, p.window.start) - 1)
             : null;
+      if (
+        !neu &&
+        sameNameActiveDuringGap(e, p.exercisesByDate, gapDate, firstInWindow)
+      ) {
+        return;
+      }
       const companions = sameDayCompanions(e, p.exercisesByDate);
       const groupId = primaryGroup(e.name);
       const group = groupId ? p.muscles?.find((muscle) => muscle.group === groupId) : null;
@@ -1058,7 +1169,9 @@ export function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  const tracked = ofMonthEx.length ? ofMonthEx : p.exercises.filter((e) => (d30.byExercise[e.id]?.reps || 0) >= 80).slice(0, 3);
+  const tracked = (ofMonthEx.length ? ofMonthEx : p.exercises.filter((e) => (d30.byExercise[e.id]?.reps || 0) >= 80))
+    .filter((e) => e?.name && !/^un mouvement$/i.test(String(e.name)) && !/^Exercice\s*#?\s*\d+$/i.test(String(e.name)))
+    .slice(0, 3);
   if (tracked.length && d30.totalReps >= 400) {
     out.push(
       discovery({
@@ -1110,12 +1223,8 @@ export function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_kcal_profile',
         nature: 'journey',
         family: 'kcal_profile',
-        title: 'La dépense de la période distingue densité et fréquence',
-        body: `Les ${fmtInt(p.activeKcal)} kcal actives enregistrées ${v.now} donnent une mesure de la charge globale indépendante des seules répétitions. Croisée avec ${describeActivityDuration(p)}, cette donnée permet de distinguer une période où l'activité est élevée parce que les séances sont nombreuses d'une période où elle est élevée parce que les séances sont particulièrement denses. ${
-          p.trainingDays <= 4
-            ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} correspond au second profil : peu de journées d'entraînement, mais une dépense et un volume concentrés sur ces journées.`
-            : `Ici la dépense se répartit sur ${p.trainingDays} journées.`
-        }`,
+        title: 'Les kcal actives journalières ne mesurent pas la séance',
+        body: `Les ${fmtInt(p.activeKcal)} kcal actives journalières cumulées ${v.now} additionnent le suivi de la journée. Ce ne sont pas des kcal dépensées uniquement pendant les séances, et elles ne disent pas si les séances étaient denses. ${describeActivityDuration(p)} est une autre population. Les deux chiffres restent séparés.`,
         evidence: `${fmtInt(p.activeKcal)} kcal · ${describeActivityDuration(p)}`,
         weights: { importance: 0.72, reliability: 0.85, novelty: 0.78, fit: 0.86 }
       })
@@ -1414,7 +1523,11 @@ export function detectDiscoveries(cmp, extras = {}) {
       (night.sleepHr != null && recentHabit.sleepHr != null) || night.bodyBatteryCharged != null
         ? ' La nuit se lit donc aussi sur des indicateurs de récupération indépendants de la seule durée.'
         : '';
-    out.push(
+    const durationNotable = !smallGap;
+    const architectureNotable = archBits.length > 0 || Boolean(hrBit) || Boolean(bbBit);
+    if (!durationNotable && !architectureNotable) {
+      /* Dernière nuit valide, sans écart ni architecture à raconter. */
+    } else out.push(
       discovery({
         kind: 'disc_sleep_night',
         nature: 'now',
@@ -1445,7 +1558,7 @@ export function detectDiscoveries(cmp, extras = {}) {
           deltaMin,
           nightYmd: night.ymd || null,
           sleepAttachment: night.attachment || null,
-          sleepWindowRole: 'primary_observation'
+          sleepWindowRole: 'latest_valid_night'
         }
       })
     );
@@ -1944,7 +2057,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         nature: 'trajectory',
         family: 'sleep_assoc',
         title: `Tes données montrent une association entre sommeil et ${assoc.name.toLowerCase()}`,
-        body: `Tes séances réalisées après plus de 7 h 30 de sommeil produisent en moyenne ${fmtPct(Math.abs(assoc.deltaPct))} ${assoc.deltaPct >= 0 ? 'plus' : 'moins'} de répétitions sur ${assoc.name.toLowerCase()} que celles réalisées après moins de 6 h 30 (${fmt1(assoc.longAvg)} vs ${fmt1(assoc.shortAvg)}, ${assoc.longN} et ${assoc.shortN} séances). Ce n'est pas une preuve que le sommeil provoque ce résultat : c'est une association visible dans tes propres données.`,
+        body: `Tes séances réalisées après plus de 7 h 30 de sommeil produisent en moyenne ${fmtPct(Math.abs(assoc.deltaPct))} ${assoc.deltaPct >= 0 ? 'plus' : 'moins'} de répétitions sur ${assoc.name.toLowerCase()} que celles réalisées après moins de 6 h 30 (${fmt1(assoc.longAvg)} vs ${fmt1(assoc.shortAvg)}, ${assoc.longN} et ${assoc.shortN} séances). L'horizon est l'historique des séances appariées à une nuit, pas la seule fenêtre affichée. Ce n'est pas une preuve que le sommeil provoque ce résultat.`,
         evidence: `${assoc.name} ${fmtSignedPct(assoc.deltaPct)} · ${assoc.longN}/${assoc.shortN}`,
         weights: { importance: 0.88, reliability: Math.min(0.92, 0.7 + assoc.longN * 0.04), novelty: 0.93, fit: 0.9 },
         metrics: { ...assoc }
@@ -1991,11 +2104,11 @@ export function detectDiscoveries(cmp, extras = {}) {
           family: 'muscle_shift',
           contentClass: CONTENT_CLASS.DESCRIPTIVE,
           title: `La part attribuée aux ${lead.label} a ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} plus vite que le volume global`,
-          body: `Les ${lead.label} représentent actuellement ${fmtPct(lead.nowShare)} du volume musculaire attribué (indicatif), contre ${fmtPct(lead.thenShare)} sur les 30 jours précédents. Sa part a donc ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} de ${fmtPct(Math.abs(lead.relPct))} relativement, alors que le volume global ${
-            prev30.totalReps > 0
-              ? `est ${fmtSignedPct(pctChange(p.totalReps, prev30.totalReps) || 0)}`
-              : 'n’a pas le même ordre de grandeur'
-          }.${(() => {
+          body: `Les ${lead.label} représentent actuellement ${fmtPct(lead.nowShare)} du volume musculaire attribué (indicatif), contre ${fmtPct(lead.thenShare)} sur les 30 jours précédents. Sa part a donc ${lead.relPct >= 0 ? 'augmenté' : 'diminué'} de ${fmtPct(Math.abs(lead.relPct))} relativement. ${
+            p.spanDays && prev30.spanDays && Math.abs(p.spanDays - prev30.spanDays) <= 1 && prev30.totalReps > 0
+              ? `Sur une fenêtre de même durée, le volume global est ${fmtSignedPct(pctChange(p.totalReps, prev30.totalReps) || 0)}.`
+              : `Le volume brut de ${v.thisPeriod} n'est pas comparé à celui des 30 jours : les durées diffèrent.`
+          }${(() => {
             const gone = (prev30.exercises || [])
               .filter((exercise) => (exercise.reps || 0) >= 48 && !(p.byExercise?.[exercise.id]?.reps > 0))
               .sort((a, b) => b.reps - a.reps)[0];
@@ -2202,12 +2315,22 @@ export function detectDiscoveries(cmp, extras = {}) {
   const mix = stimulusContrast(nowMix.buckets, refMix.buckets);
   if (mix && nowMix.buckets.total >= 120) {
     const bits = [
-      `${fmtPct(mix.compound)} de mouvements polyarticulaires contre ${fmtPct(mix.isolation)} d'isolation`,
-      `${fmtPct(mix.strength)} de travail de force contre ${fmtPct(mix.endurance)} d'endurance musculaire`,
+      `${fmtPct(mix.compound)} de mouvements polyarticulaires contre ${fmtPct(mix.isolation)} d'isolation`
+    ];
+    if (mix.forceEnduranceComparable && mix.strength != null && mix.endurance != null) {
+      bits.push(
+        `${fmtPct(mix.strength)} de travail classé force contre ${fmtPct(mix.endurance)} d'endurance musculaire (sur le volume classifiable)`
+      );
+    } else if ((mix.unknown || 0) >= 8) {
+      bits.push(
+        `${fmtPct(mix.unknown)} du volume vient d'activités dont la nature physiologique n'est pas établie (défi ou format non classé)`
+      );
+    }
+    bits.push(
       mix.weighted >= 4
         ? `${fmtPct(mix.weighted)} de volume lesté, le reste au poids du corps`
         : `la quasi-totalité du volume reste au poids du corps`
-    ];
+    );
     if ((mix.vertical || 0) >= 8 || (mix.horizontal || 0) >= 8) {
       bits.push(
         `${fmtPct(mix.vertical || 0)} de tirage/poussée vertical contre ${fmtPct(mix.horizontal || 0)} d'horizontal`
@@ -2222,9 +2345,14 @@ export function detectDiscoveries(cmp, extras = {}) {
         `la part d'isolation est ${mix.isolation > mix.thenIsolation ? 'plus élevée' : 'plus basse'} que sur la référence récente (${fmtPct(mix.thenIsolation)} → ${fmtPct(mix.isolation)})`
       );
     }
-    if (mix.thenEndurance != null && Math.abs(mix.endurance - mix.thenEndurance) >= 8) {
+    if (
+      mix.forceEnduranceComparable &&
+      mix.thenEndurance != null &&
+      mix.endurance != null &&
+      Math.abs(mix.endurance - mix.thenEndurance) >= 8
+    ) {
       shiftBits.push(
-        `l'endurance musculaire passe de ${fmtPct(mix.thenEndurance)} à ${fmtPct(mix.endurance)}`
+        `l'endurance musculaire classée passe de ${fmtPct(mix.thenEndurance)} à ${fmtPct(mix.endurance)}`
       );
     }
     out.push(
@@ -2232,13 +2360,13 @@ export function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_stimulus_mix',
         nature: 'trajectory',
         family: 'stimulus_mix',
-        title: `Le mix force / endurance / poly ${v.ofPeriod} se lit dans les parts, pas dans le total`,
+        title: `La structure du travail ${v.ofPeriod} se lit dans les parts classifiables`,
         body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${agreeVerb(v, 'répartit', 'répartissent')} ${fmtInt(nowMix.buckets.total)} reps identifiées ainsi : ${bits.join(', ')}.${
           shiftBits.length
             ? ` Par rapport à ta référence récente, ${shiftBits.join(' et ')}.`
-            : ' Ces parts décrivent le type de stimulus reçu, pas seulement la quantité de travail.'
+            : ' Ces parts décrivent le type de stimulus classifiable, pas une nature inventée pour les défis.'
         }`,
-        evidence: `poly ${fmtPct(mix.compound)} · force ${fmtPct(mix.strength)} · lesté ${fmtPct(mix.weighted)}`,
+        evidence: `poly ${fmtPct(mix.compound)} · classé ${fmtInt(mix.classifiedReps || 0)} · indéterminé ${fmtInt(mix.unknownReps || 0)}`,
         weights: { importance: 0.84, reliability: 0.9, novelty: 0.86, fit: 0.9 },
         metrics: mix
       })
@@ -2482,7 +2610,11 @@ export function detectDiscoveries(cmp, extras = {}) {
           kind: 'disc_format_consolidation',
           nature: 'trajectory',
           family: 'format_consolidation',
-          title: `${(nameCount.get(row.exerciseName || '') || 0) > 1 ? `${row.exerciseName} (${row.exerciseId})` : row.exerciseName} : ${
+          title: `${row.exerciseName}${
+            (nameCount.get(row.exerciseName || '') || 0) > 1
+              ? ' (homonyme non fusionné)'
+              : ''
+          } : ${
             {
               higher_level_consolidation: 'un niveau plus haut se répète',
               stabilized_after_drop: 'un niveau plus bas se stabilise',
@@ -2494,7 +2626,11 @@ export function detectDiscoveries(cmp, extras = {}) {
               format_change: 'le format de séries change'
             }[row.mechanism] || (volumeOnly ? 'un volume de séance se répète' : 'un format de séance se répète')
           }`,
-          body: row.prose,
+          body: `${
+            (nameCount.get(row.exerciseName || '') || 0) > 1
+              ? 'Une date ajoutée au titre ne prouve pas qu’il s’agit d’un autre mouvement. Cette ligne de stockage reste séparée. '
+              : ''
+          }${row.prose}`,
           evidence: (row.claimEvidenceDates || []).join(' · '),
           weights: {
             importance: priority.newPriorityCard ? 0.86 : 0.4,
@@ -2531,7 +2667,200 @@ export function detectDiscoveries(cmp, extras = {}) {
     }
   }
 
+  if (extras?.snapshot && p.window?.start && p.window?.end) {
+    const work = buildSessionWorkProfiles(extras.snapshot, p.window, extras.getExerciseNameById);
+    const ranked = [...work.days].sort((a, b) => b.reps - a.reps);
+    const peak = ranked[0];
+    const choice = chooseSessionComparison(work.days, { goal: extras.documentedGoal || null });
+    if (choice.chosen) {
+      const comparison = choice.chosen.comparison;
+      const left = choice.chosen.a;
+      const right = choice.chosen.b;
+      const comparisonTitle = {
+        different_nature: 'Deux séances de la fenêtre n’ont pas la même nature de travail',
+        dimension_superiority: 'Une séance est devant sur une dimension observée',
+        goal_conditioned: 'Une séance se distingue pour l’objectif documenté',
+        inconclusive: 'La comparaison de ces deux séances reste non concluante'
+      }[comparison.outcome];
+      if (comparisonTitle) {
+        out.push(
+          discovery({
+            kind: 'session_work_comparison',
+            nature: isLongVoice(v) ? 'journey' : 'now',
+            family: 'session_demand',
+            title: comparisonTitle,
+            body: `${sessionComparisonProse(comparison, `La séance du ${formatDayFr(left.date)}`, `celle du ${formatDayFr(right.date)}`)} ${complementaryClause(left, `La séance du ${formatDayFr(left.date)}`)} ${complementaryClause(right, `Celle du ${formatDayFr(right.date)}`)} Ce n’est pas un classement de fatigue, d’hypertrophie ou d’effort.`,
+            evidence: `${formatDayFr(left.date)} ${left.reps} reps · ${formatDayFr(right.date)} ${right.reps} reps`,
+            weights: { importance: 0.74, reliability: 0.7, novelty: 0.68, fit: 0.86 },
+            metrics: {
+              outcome: comparison.outcome,
+              comparisonClass: 'descriptive_comparison',
+              dates: [left.date, right.date].sort(),
+              limits: comparison.limits,
+              consideredCount: choice.consideredCount,
+              skippedNearTies: choice.skippedNearTies
+            }
+          })
+        );
+      }
+    }
+    if (peak && peak.reps >= 40) {
+      const unusual = decomposeUnusualSession(peak, {
+        exerciseCount: Math.round(work.days.reduce((sum, day) => sum + day.exercises.length, 0) / Math.max(1, work.days.length)),
+        recordedSetCount: work.meanRecordedSets
+      });
+      const mechanismLabel = {
+        single_exercise: 'un exercice concentre le volume',
+        more_movements: 'davantage de mouvements',
+        more_sets: 'davantage de séries enregistrées',
+        more_reps_per_set: 'davantage de répétitions par série',
+        documented_load: 'une charge documentée que le profil habituel n’a pas',
+        complementary_work: 'un travail complémentaire identifié'
+      };
+      const sporting = unusual.mechanisms.filter((item) => item !== 'orphan_residual');
+      if (peak && sporting.length) {
+        const phrases = sporting.map((item) => mechanismLabel[item] || item);
+        const lead =
+          unusual.topExercise && unusual.mechanisms.includes('single_exercise')
+            ? `${unusual.topExercise} porte une grande part de la séance du ${formatDayFr(peak.date)}`
+            : `La séance du ${formatDayFr(peak.date)} s’écarte du profil habituel de la fenêtre`;
+        out.push(
+          discovery({
+            kind: 'unusual_session_decomposition',
+            nature: 'now',
+            family: 'session_demand',
+            title: lead,
+            body: `Cette séance compte ${peak.reps} répétitions. Elle s’écarte par ${phrases.join(', ')}. ${
+              unusual.topExercise
+                ? `${unusual.topExercise} en représente environ ${Math.round((unusual.topShare || 0) * 100)} %. `
+                : ''
+            }Un volume élevé ne qualifie pas la séance.`,
+            evidence: `${formatDayFr(peak.date)} · ${phrases.join(' · ')}`,
+            weights: { importance: 0.7, reliability: 0.72, novelty: 0.6, fit: 0.8 },
+            metrics: { mechanisms: unusual.mechanisms.join(','), date: peak.date }
+          })
+        );
+      }
+    }
+    collectResistanceProgressions(work.days).forEach((rise) => {
+      const modeLabel = rise.mode === 'per_arm' ? 'par bras' : 'en charge totale';
+      out.push(
+        discovery({
+          kind: 'resistance_progression',
+          nature: 'trajectory',
+          family: 'exercise_progress',
+          title: `${rise.name} : la charge monte sans changer le format`,
+          body: `${rise.name} passe de ${rise.fromValue} à ${rise.toValue} ${rise.unit} ${modeLabel}, sur ${rise.setCount} séries et ${rise.reps} répétitions. Le volume de répétitions reste le même. Cette comparaison ne dit rien de l’effort relatif.`,
+          evidence: `${formatDayFr(rise.fromDate)} ${rise.fromValue} ${rise.unit} · ${formatDayFr(rise.toDate)} ${rise.toValue} ${rise.unit}`,
+          weights: { importance: 0.78, reliability: 0.8, novelty: 0.66, fit: 0.88 },
+          metrics: {
+            exerciseId: rise.exerciseId,
+            deltaKg: rise.delta,
+            mode: rise.mode,
+            setCount: rise.setCount,
+            reps: rise.reps,
+            phenomenon: 'resistance_progression'
+          }
+        })
+      );
+    });
+  }
+
+  {
+    const returnEvents = out
+      .filter((row) => /return|reprise|gap|resume/i.test(String(row.kind || '')) || row.metrics?.gapDays >= 14)
+      .map((row) => ({
+        exerciseId: row.metrics?.exerciseId || row.metrics?.storageId || null,
+        name: row.metrics?.exerciseName || row.title,
+        date: row.metrics?.date || row.metrics?.returnDate || (Array.isArray(row.metrics?.dates) ? row.metrics.dates[0] : null),
+        family: row.family || row.metrics?.family || null
+      }))
+      .filter((row) => row.date);
+    const collective = exploreCollectiveReturn(returnEvents);
+    if (collective.coverage === EXPLORE_COVERAGE.CONCLUDED && collective.conclusion) {
+      out.push(
+        discovery({
+          kind: 'disc_collective_return',
+          nature: 'trajectory',
+          family: 'repertoire',
+          title: 'Plusieurs mouvements reviennent ensemble',
+          body: collective.conclusion,
+          evidence: collective.retained.map((row) => row.detail).join(' · '),
+          weights: { importance: 0.93, reliability: 0.86, novelty: 0.94, fit: isMonth || isWeek ? 1 : 0.8 },
+          metrics: {
+            events: returnEvents,
+            exploration: collective,
+            producer: 'exploreCollectiveReturn'
+          }
+        })
+      );
+    }
+  }
+
+  if (extras?.snapshot && p.window?.start && p.window?.end) {
+    exploreSameFormatTimeChange({
+      snapshot: extras.snapshot,
+      window: p.window,
+      minSessions: isWeek || isToday ? 3 : 4
+    }).forEach((item) => {
+      if (item.coverage !== 'concluded' || !item.title) return;
+      out.push(
+        discovery({
+          kind: item.kind,
+          nature: item.nature,
+          family: item.family,
+          title: item.title,
+          body: item.body,
+          evidence: item.evidence,
+          weights: { importance: 0.9, reliability: 0.88, novelty: 0.92, fit: 0.94 },
+          metrics: {
+            producer: 'challengeFormatTimeAnalysis',
+            activity: item.activity,
+            provenance: item.provenance,
+            physiologicalNature: item.physiologicalNature,
+            formatKey: item.formatKey,
+            reps: item.reps,
+            sessions: item.sessions,
+            earlyAvg: item.earlyAvg,
+            lateAvg: item.lateAvg,
+            deltaMinutes: item.deltaMinutes,
+            earlyDates: item.earlyDates,
+            lateDates: item.lateDates,
+            limits: item.limits
+          }
+        })
+      );
+    });
+  }
+
   appendMilestoneDiscoveries(out, extras, v);
+  if (extras?.snapshot && p.window?.start && p.window?.end) {
+    const practice = programPracticeCard(
+      assessHistoricalPlans(extras.snapshot, p.window, extras.today || parisTodayYmd())
+    );
+    if (practice.card) {
+      out.push(
+        discovery({
+          kind: practice.card.kind,
+          nature: 'now',
+          family: 'program_practice',
+          title: practice.card.title,
+          body: practice.card.body,
+          evidence: practice.card.evidence,
+          weights: { importance: 0.84, reliability: 0.86, novelty: 0.7, fit: 0.9 },
+          metrics: practice.card.metrics
+        })
+      );
+    }
+  }
+  out.forEach((row) => {
+    row.lineage = {
+      producer: row.metrics?.producer || 'recapPeriodDetectDiscoveries',
+      evidence: row.evidence || '',
+      sourceExerciseId: row.metrics?.exerciseId || null,
+      sourceDates: row.metrics?.dates || row.metrics?.date || null
+    };
+  });
   return out;
 }
 
@@ -2692,8 +3021,7 @@ export function bestCalendarMonths(repsByDate, window = null) {
       const monthStart = `${row.ym}-01`;
       const lastDay = new Date(y, m, 0).getDate();
       const monthEnd = `${row.ym}-${String(lastDay).padStart(2, '0')}`;
-      const partial =
-        (winStart && winStart > monthStart) || (winEnd && winEnd < monthEnd) || row.days < lastDay;
+      const partial = (winStart && winStart > monthStart) || (winEnd && winEnd < monthEnd);
       return { ...row, partial: Boolean(partial), monthDayCount: lastDay };
     })
     .sort((a, b) => b.reps - a.reps);

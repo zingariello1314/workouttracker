@@ -133,6 +133,8 @@ function softenTitle(title, body) {
   const weak = /associ|observ|\d+\s*\/\s*\d+/i;
   if (!strong.test(title) || !weak.test(body)) return title;
   return title
+    .replace(/se sépare encore/gi, 'reste associé à')
+    .replace(/se sépare/gi, 'est associé à')
     .replace(/sépare encore/gi, 'reste associée à')
     .replace(/\bsépare\b/gi, 'est associé à')
     .replace(/la plus sensible/gi, 'observée')

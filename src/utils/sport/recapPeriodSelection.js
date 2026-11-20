@@ -411,10 +411,6 @@ export function discoveryInformativeValue(d, voiceKey = 'week', opts = {}) {
   // Arcs historiques multi-mois / course : forte valeur informative
   if (d?.kind === 'disc_monthly_volume_arc') v += 16;
   if (d?.kind === 'disc_running_gap') v += 12;
-  // Portraits volume descriptifs sans mécanisme → cèdent face à l’attribution
-  if (d?.kind === 'disc_volume_shape' && !m.trajectoryOk) {
-    v -= /pas seulement un total/i.test(String(d?.title || '')) ? 22 : 16;
-  }
   if (d?.kind === 'span_volume_vs_frequency' || /volume_change:from_/.test(String(m.finding || ''))) {
     v += 18;
   }
@@ -824,10 +820,19 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       (d.informativeValue || 0) >= minPublish + 12
   );
   if (hasStrong) {
+    const natureLeaders = new Map();
+    current.forEach((d) => {
+      const key = d.nature || 'trajectory';
+      const score = Number(d.rawScore ?? d.score) || 0;
+      const prev = natureLeaders.get(key);
+      if (!prev || score > prev.score) natureLeaders.set(key, { id: discoveryIdentity(d), score });
+    });
     current.forEach((d) => {
       if (!isWeakDescriptiveCard(d)) return;
       if ((d.informativeValue || 0) >= minPublish) return;
       if (d.metrics?.trajectoryOk || d.metrics?.composedOk) return;
+      const leader = natureLeaders.get(d.nature || 'trajectory');
+      if (leader?.id === discoveryIdentity(d) && leader.score >= HARD_FLOOR) return;
       removeFromSelection(d);
       d._dropHint = 'abstain_low_value';
       editorialDecisions.push({
@@ -842,8 +847,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     // Pack uniquement faible : garder au plus 2 cartes au-dessus du plancher.
     const keepIds = new Set(
       [...current]
-        .filter((d) => (d.informativeValue || 0) >= HARD_FLOOR)
-        .sort((a, b) => (b.informativeValue || 0) - (a.informativeValue || 0))
+        .filter((d) => (Number(d.rawScore ?? d.score) || 0) >= HARD_FLOOR)
+        .sort((a, b) => (b.informativeValue || 0) - (a.informativeValue || 0) || (b.rawScore || 0) - (a.rawScore || 0))
         .slice(0, 2)
         .map((d) => discoveryIdentity(d))
     );
@@ -921,6 +926,34 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     editorialDecisions,
     voiceKey
   };
+}
+
+const PRESENTATION_LIMITS = new Set([
+  'cap',
+  'family',
+  'sleep_budget',
+  'score',
+  'abstain_low_value',
+  'abstain_empty_pack',
+  'episode_cap'
+]);
+
+/**
+ * Le plafond choisit la priorité. Il ne retire pas une conclusion distincte du catalogue.
+ * Une fusion de phénomène ou un rejet d'identité n'est pas une seconde conclusion.
+ */
+export function accessibleDiscoveryCatalog(trace) {
+  const priority = trace?.selected || [];
+  const seen = new Set(priority.map((d) => d._phenomenonId || discoveryIdentity(d)));
+  const deferred = [];
+  (trace?.dropped || []).forEach((d) => {
+    if (!PRESENTATION_LIMITS.has(d.reason)) return;
+    const id = d._phenomenonId || discoveryIdentity(d);
+    if (seen.has(id)) return;
+    seen.add(id);
+    deferred.push(d);
+  });
+  return { priority, deferred, accessible: [...priority, ...deferred] };
 }
 
 export function selectPeriodDiscoveries(discoveries, insightHistory = null, voiceKey = 'week') {

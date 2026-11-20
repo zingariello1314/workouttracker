@@ -8,8 +8,15 @@ import {
 } from '../recapStimulusCatalog';
 
 describe('recapStimulusCatalog', () => {
-  it('sépare force, endurance, isolation et lesté', () => {
-    expect(classifyStimulus('Pompes endurance').endurance).toBe(true);
+  it('sépare force, endurance, isolation et lesté sans confondre un défi pompes', () => {
+    expect(classifyStimulus('Pompes endurance').physiologicalUnknown).toBe(true);
+    expect(classifyStimulus('Pompes endurance').endurance).toBe(false);
+    expect(
+      classifyStimulus('Pompes endurance (complémentaire)', {
+        id: 'complementary_endurance_pushups'
+      }).physiologicalUnknown
+    ).toBe(true);
+    expect(classifyStimulus('AMRAP max-reps').endurance).toBe(true);
     expect(classifyStimulus('Dips parallèles').compound).toBe(true);
     expect(classifyStimulus('Dips parallèles').bodyweight).toBe(true);
     expect(classifyStimulus('Extensions triceps').isolation).toBe(true);
@@ -47,13 +54,14 @@ describe('recapStimulusCatalog', () => {
   it('agrège le mix de stimulus d’une fenêtre', () => {
     const t = tallyStimulus({
       exercises: [
-        { id: '1', name: 'Pompes endurance', reps: 200 },
+        { id: 'complementary_endurance_pushups', name: 'Pompes endurance', reps: 200 },
         { id: '2', name: 'Dips parallèles', reps: 100 },
         { id: '3', name: 'Extensions triceps', reps: 60 },
         { id: '4', name: 'Développé militaire', reps: 40 }
       ]
     });
-    expect(t.buckets.endurance).toBe(200);
+    expect(t.buckets.unknown).toBe(200);
+    expect(t.buckets.endurance).toBe(0);
     expect(t.buckets.isolation).toBe(60);
     expect(t.buckets.weighted).toBe(40);
     expect(t.buckets.total).toBe(400);

@@ -90,7 +90,10 @@ export function possessiveMuscleShare(familyOrLabel) {
   if (/^(gainage|tronc|gainage\/tronc|dos|biceps|triceps|core)\b/i.test(label)) {
     return `de ton ${label}`;
   }
-  if (/^(poussée|tirage|jambe|épaule|pectoraux)/i.test(label)) {
+  if (/^jambes$/i.test(label)) return 'de tes jambes';
+  if (/^pectoraux$/i.test(label)) return 'de tes pectoraux';
+  if (/^épaules$/i.test(label)) return 'de tes épaules';
+  if (/^(poussée|tirage|jambe|épaule)$/i.test(label)) {
     return `de ta ${label}`;
   }
   // Labels composés / neutres
@@ -333,12 +336,13 @@ export function describeActivityDuration(measure) {
     0,
     Math.round(Number.isFinite(runningRaw) ? runningRaw : Math.max(0, total - other))
   );
-  if (total <= 0 && other <= 0) return '0 min de temps d\'activité';
-  if (running > 0 && other > 0 && other !== total) {
-    return `${formatDurationFr(total)} de temps d'activité (dont ${formatDurationFr(other)} hors course)`;
+  if (total <= 0 && other <= 0) return 'aucune durée de séance enregistrée';
+  if (total > other + 1) {
+    const run = running > 0 ? running : total - other;
+    return `${formatDurationFr(total)} d'activité enregistrée, dont ${formatDurationFr(other)} de séances hors course et ${formatDurationFr(run)} de course`;
   }
-  if (running > 0 && other === 0) return `${formatDurationFr(total)} de temps d'activité`;
-  return `${formatDurationFr(other || total)} hors course`;
+  if (other > 0) return `${formatDurationFr(other)} de séances hors course enregistrées`;
+  return `${formatDurationFr(total)} d'activité enregistrée`;
 }
 
 export function pctChange(now, then) {

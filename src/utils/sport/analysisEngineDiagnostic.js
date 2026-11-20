@@ -20,6 +20,7 @@ import { buildAnalysisEngineDataCatalog } from './analysisEngineDataCatalog';
 import { buildRunManifest } from './analysisEngineRunManifest';
 import { buildCoherenceReport } from './analysisEngineCoherence';
 import { analysisEditionKey } from './analysisEdition';
+import { coverageForSnapshot } from './historicalOrphanExercises';
 import { RECAP_ADAPTIVE_WORKER_CONTRACT } from './recapAdaptiveWorkerContract';
 
 const PERIODS = ['today', '7d', '30d', '3m', '6m', '1y', '2y', 'all'];
@@ -408,18 +409,23 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
   });
 
   const pipelineStages = diag.candidateStages || {};
-  // Préférer les candidats complets (metrics / interpretation) — toInsightCard les strippe.
-  const shownSource =
-    Array.isArray(pipelineStages.shown) && pipelineStages.shown.length
-      ? pipelineStages.shown
-      : [
-          ...(adaptive?.insights?.shortTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'short' })),
-          ...(adaptive?.insights?.mediumTerm || []).map((c) => ({
-            ...c,
-            horizon: c.horizon || 'medium'
-          })),
-          ...(adaptive?.insights?.longTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'long' }))
-        ];
+  const publishedColumns = [
+    ...(adaptive?.insights?.shortTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'short' })),
+    ...(adaptive?.insights?.mediumTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'medium' })),
+    ...(adaptive?.insights?.longTerm || []).map((c) => ({ ...c, horizon: c.horizon || 'long' }))
+  ];
+  const pickedBeforePublication = Array.isArray(pipelineStages.shown) ? pipelineStages.shown : [];
+  const publishedTitles = new Set(
+    publishedColumns.map((card) => String(card.title || '').trim()).filter(Boolean)
+  );
+  const publishedKinds = new Set(publishedColumns.map((card) => card.kind).filter(Boolean));
+  const publicationDrops = pickedBeforePublication.filter((card) => {
+    const title = String(card.title || card.interpretation?.context?.title || '').trim();
+    if (title && publishedTitles.has(title)) return false;
+    if (!title && card.kind && publishedKinds.has(card.kind)) return false;
+    return !title;
+  });
+  const shownSource = publishedColumns.length ? publishedColumns : pickedBeforePublication;
   const shownCards = shownSource.map((c) => annotateCandidate(c, 'shown', null, 'final'));
 
   const rejections = [
@@ -434,6 +440,16 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     ),
     ...(discoveries.dropped || []).map((r) =>
       annotateCandidate(r, 'rejected', r.reason || 'discovery_drop', 'periodDiscoveries')
+    ),
+    ...publicationDrops.map((r) =>
+      annotateCandidate(
+        r,
+        'rejected',
+        String(r.title || r.interpretation?.context?.title || '').trim()
+          ? 'not_in_published_columns'
+          : 'publication_title_missing',
+        'publish'
+      )
     )
   ];
 
@@ -517,6 +533,7 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
   const baseReport = {
     meta: {
       generatedAt,
+      engineVersion: analysisEditionKey(),
       period,
       supportedPeriods: PERIODS,
       mode: 'diagnostic',
@@ -532,8 +549,14 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       editorialHistoryReplay: compactHistoryReplay(insightHistoryIn),
       windowReplay: compactWindowReplay(snapshot, overview.window),
       cacheStatus: 'diagnostic_ephemeral',
+      packRole: 'diagnostic_recompute',
       displayScopeNote:
-        'Sélectionnée = pack final de CE run diagnostic (même pipeline qu’Analyse si insightHistory injecté). Ne signifie pas « carte rendue dans l’onglet Analyse ».'
+        'Sélectionnée = carte présente dans une colonne publiée de ce run. Un candidat retenu par la sélection puis absent des colonnes est un échec de publication, pas une conclusion affichée.',
+      selectionSets: {
+        pickedBeforePublication: pickedBeforePublication.length,
+        publishedColumns: publishedColumns.length,
+        publicationDrops: publicationDrops.length
+      }
     },
     overview,
     stages: [...stages, ...(diag.pipelineSteps || [])],
@@ -559,8 +582,11 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
       )
     },
     insights: adaptive?.insights || null,
+    exerciseCoverage: coverageForSnapshot(snapshot, overview.window || window, getExerciseNameById),
     raw: {
       periodDiscoveriesDebug: discoveries.debug || null,
+      p6: discoveries.p6 || null,
+      packRole: 'diagnostic_recompute',
       caps: diag.caps || null,
       candidateStages: {
         produced: pipelineStages.produced?.length ?? null,
@@ -580,7 +606,7 @@ export function buildAnalysisEngineDiagnosticReport(opts = {}) {
     producerVersions: {
       engine: analysisEditionKey(),
       workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
-      selectionEngine: 'selectNarrativeColumns-min32',
+      selectionEngine: 'priority-floor-accessible-catalog-v1',
       editorialRules: 'novelty-floor-20',
       producers: 'discoveries+essays+span'
     },

@@ -4,7 +4,7 @@
  */
 
 import { convertToStableNumericId } from '../workoutExerciseIdResolve';
-import { buildReverseStableIdIndex } from './resolveStorageExerciseIdentity';
+import { buildReverseStableIdIndex, literalProgramName } from './resolveStorageExerciseIdentity';
 
 /** F7.0j — shell (assessment/enrichment/coach) + adaptive dans le même Worker. */
 export const RECAP_ADAPTIVE_WORKER_CONTRACT = 'f70l2-shell-adaptive-v1';
@@ -118,11 +118,15 @@ export function buildExerciseNameMap(snapshot, getExerciseNameById, opts = {}) {
         name = '';
       }
     }
-    if (!name || /^Exercice\s+\d+$/i.test(String(name).trim())) {
+    if (!name || isFallbackLabel(name)) {
       const snap = persisted[String(id)] || persisted[id] || extra[String(id)] || extra[id];
-      if (snap && !/^Exercice\s+\d+$/i.test(String(snap).trim())) name = snap;
+      if (snap && !isFallbackLabel(snap)) name = snap;
     }
-    return name && !/^Exercice\s+\d+$/i.test(String(name).trim()) ? String(name).trim() : '';
+    if (!name || isFallbackLabel(name)) {
+      const scheduled = literalProgramName(snapshot, id);
+      if (scheduled && !isFallbackLabel(scheduled)) name = scheduled;
+    }
+    return name && !isFallbackLabel(name) ? String(name).trim() : '';
   };
 
   for (const id of ids) {
@@ -162,32 +166,44 @@ export function buildExerciseNameMap(snapshot, getExerciseNameById, opts = {}) {
 
 function isFallbackLabel(name) {
   const s = String(name || '').trim();
-  return !s || /^Exercice\s+\d+$/i.test(s) || /^un mouvement$/i.test(s);
+  return !s || /^Exercice\s*#?\s*\d+$/i.test(s) || /^un mouvement$/i.test(s);
 }
 
 function collectExerciseIdsForNameMap(snapshot) {
   const ids = new Set();
   const ingestKey = (k) => {
     if (!k || typeof k !== 'string') return;
-    const sep = k.lastIndexOf('_');
-    if (/^\d{4}-\d{2}-\d{2}/.test(k) && sep > 10) ids.add(k.slice(sep + 1));
-    else ids.add(k);
+    const dated = k.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
+    if (dated) {
+      ids.add(dated[2].replace(/_(semaineA|semaineB)$/, ''));
+      return;
+    }
+    ids.add(k);
   };
   Object.keys(snapshot?.reps || {}).forEach(ingestKey);
   Object.keys(snapshot?.checkedExercises || {}).forEach(ingestKey);
   Object.keys(snapshot?.exerciseWeights || {}).forEach(ingestKey);
-  const programs = snapshot?.programs;
-  if (Array.isArray(programs)) {
-    for (const p of programs) {
-      const days = p?.days || p?.weekDays || [];
-      for (const day of days) {
-        for (const ex of day?.exercises || []) {
-          if (ex?.id != null) ids.add(String(ex.id));
-          if (ex?.exerciseId != null) ids.add(String(ex.exerciseId));
+  const visitProgram = (program) => {
+    const days = [];
+    if (program?.schedule && typeof program.schedule === 'object') {
+      days.push(...Object.values(program.schedule));
+    }
+    days.push(...(program?.days || []), ...(program?.weekDays || []));
+    for (const day of days) {
+      const lists = [day?.exercises];
+      if (day?.salleVariants && typeof day.salleVariants === 'object') {
+        for (const variant of Object.values(day.salleVariants)) lists.push(variant?.exercises);
+      }
+      for (const list of lists) {
+        for (const exercise of list || []) {
+          if (exercise?.id != null) ids.add(String(exercise.id));
+          if (exercise?.exerciseId != null) ids.add(String(exercise.exerciseId));
         }
       }
     }
-  }
+  };
+  if (snapshot?.activeProgram) visitProgram(snapshot.activeProgram);
+  if (Array.isArray(snapshot?.programs)) snapshot.programs.forEach(visitProgram);
   return ids;
 }
 
@@ -210,9 +226,13 @@ export async function buildExerciseNameMapAsync(snapshot, getExerciseNameById, o
     const id = ids[i];
     try {
       const name = getExerciseNameById(id);
-      if (name) map[String(id)] = String(name);
+      if (name && !isFallbackLabel(name)) map[String(id)] = String(name);
     } catch {
       /* ignore */
+    }
+    if (!map[String(id)]) {
+      const scheduled = literalProgramName(snapshot, id);
+      if (scheduled && !isFallbackLabel(scheduled)) map[String(id)] = scheduled;
     }
     if (i > 0 && i % chunkSize === 0) {
       await yieldFn();

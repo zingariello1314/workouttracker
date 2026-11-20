@@ -35,6 +35,7 @@ import {
   withRepairedDisplayName
 } from './recapEditorialSelection';
 import { buildExerciseNameMap } from './recapAdaptiveWorkerContract';
+import { applyP6 } from './p6Pipeline';
 import {
   buildExerciseBaselines,
   buildSessionCatalog,
@@ -63,6 +64,7 @@ import {
 } from './recapPeriodComparisons';
 import { detectDiscoveries } from './recapPeriodDetectDiscoveries';
 import {
+  accessibleDiscoveryCatalog,
   selectPeriodDiscoveriesWithTrace,
   refillAfterGate,
   discoveryInformativeValue,
@@ -132,10 +134,11 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   const journeyNights = journeyStart
     ? extractSleepNightsInWindow(opts.garminData, journeyStart, end)
     : allNights;
-  const focusDate =
-    comparisons.voice?.key === 'today'
-      ? end
-      : comparisons.period?.peakDay?.date || end;
+  const lastValidNight = [...(allNights || [])]
+    .reverse()
+    .find((night) => night?.hours != null && night?.ymd);
+  const recentStateDate = lastValidNight?.ymd || end;
+  const focusDate = comparisons.voice?.key === 'today' ? end : recentStateDate;
   // Point 22 : runDays limités à la fenêtre pour les natures « période »
   // (ex. sleep_cardio) — pas tout l’historique Garmin.
   const allRunDays = collectRunDays(opts.garminData);
@@ -156,7 +159,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       baselines,
       comparable: findComparableSessions(catalog, focusDate),
       sleepAssoc: computeSleepPerformanceAssociation(catalog),
-      sleepContext: sleepContextForDate(opts.garminData, focusDate, catalog),
+      sleepContext: sleepContextForDate(opts.garminData, recentStateDate, catalog),
       restAssoc: computeRestPerformanceAssociation(catalog),
       features: opts.features || null,
       sleepCandidates: publishSleepCandidates(catalog, {
@@ -456,6 +459,25 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     ...traced.dropped,
     ...removedAfterSelect
   ];
+  const accessibleCatalog = accessibleDiscoveryCatalog({ selected, dropped });
+  const stampLineage = (row, selection) => {
+    row.lineage = {
+      ...(row.lineage || {}),
+      producer: row.lineage?.producer || row.metrics?.producer || 'recapPeriodDetectDiscoveries',
+      selection,
+      evidence: row.lineage?.evidence || row.evidence || '',
+      sourceExerciseId: row.lineage?.sourceExerciseId || row.metrics?.exerciseId || null,
+      sourceDates: row.lineage?.sourceDates || row.metrics?.dates || row.metrics?.date || null
+    };
+  };
+  accessibleCatalog.priority.forEach((row) => stampLineage(row, 'priority'));
+  accessibleCatalog.deferred.forEach((row) => stampLineage(row, 'accessible'));
+  const p6 = applyP6({
+    all,
+    selected,
+    window: comparisons.period?.window || opts.window,
+    voiceKey
+  });
   const preferPeriodNow = selected.some((d) => d.nature === 'now');
   const sleepDetected = all.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);
   const sleepSelected = selected.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);
@@ -464,8 +486,17 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
   return {
     comparisons,
     all,
-    selected,
+    selected: p6.counters.reconciled ? p6.priority : selected,
     dropped,
+    accessibleCatalog: p6.counters.reconciled
+      ? {
+          priority: p6.priority,
+          deferred: [...p6.reserve, ...p6.sources],
+          accessible: [...p6.priority, ...p6.reserve, ...p6.sources]
+        }
+      : accessibleCatalog,
+    p6,
+    packRole: 'pipeline',
     /** E0 : limites méthodologiques (ex. plan sans snapshot) — contexte, pas cartes principales. */
     reliabilityNotes: traced.reliabilityNotes || [],
     /** P3.2b — pack isolé (métriques + candidats + rejetés), même si non injecté dans le pool. */
@@ -607,10 +638,11 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
   const journeyNights = journeyStart
     ? extractSleepNightsInWindow(opts.garminData, journeyStart, end)
     : allNights;
-  const focusDate =
-    comparisons.voice?.key === 'today'
-      ? end
-      : comparisons.period?.peakDay?.date || end;
+  const lastValidNight = [...(allNights || [])]
+    .reverse()
+    .find((night) => night?.hours != null && night?.ymd);
+  const recentStateDate = lastValidNight?.ymd || end;
+  const focusDate = comparisons.voice?.key === 'today' ? end : recentStateDate;
   const allRunDays = collectRunDays(opts.garminData);
   const windowRunDays = filterRunDaysToWindow(allRunDays, opts.window);
 
@@ -627,7 +659,7 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
     baselines,
     comparable: findComparableSessions(catalog, focusDate),
     sleepAssoc: computeSleepPerformanceAssociation(catalog),
-    sleepContext: sleepContextForDate(opts.garminData, focusDate, catalog),
+    sleepContext: sleepContextForDate(opts.garminData, recentStateDate, catalog),
     restAssoc: computeRestPerformanceAssociation(catalog),
     features: opts.features || null,
     sleepCandidates: publishSleepCandidates(catalog, {

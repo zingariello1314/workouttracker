@@ -9,7 +9,8 @@ export const RESERVE_DISPOSITION = Object.freeze({
   DEMOTED_PRIORITY: 'demoted_priority',
   MERGED: 'merged',
   REJECTED_FACTUAL: 'rejected_factual',
-  HISTORICAL: 'historical'
+  HISTORICAL: 'historical',
+  PRESENTATION_GAP: 'presentation_gap'
 });
 
 const MEMORY_KEY = 'momentum.analyticalMemory.v1';
@@ -186,6 +187,26 @@ function consultableTitle(title) {
   return text;
 }
 
+export function proseTitleFromBody(body) {
+  const raw = String(body || '').trim();
+  const sentence = raw.split(/(?<=[.!?])\s+/)[0].replace(/^#+\s*/, '').trim();
+  if (sentence.length < 24 || sentence.length > 160) return '';
+  if (/relation\.reading\.|^[a-z0-9_.]+$/i.test(sentence)) return '';
+  if (!/\s/.test(sentence)) return '';
+  return sentence;
+}
+
+function readableTitle(row) {
+  const direct = consultableTitle(row?.title);
+  if (direct) return direct;
+  const nested = consultableTitle(row?.context?.title || row?.interpretation?.context?.title);
+  if (nested) return nested;
+  const blob = [row?.body, row?.text, row?.context?.body, row?.interpretation?.context?.body]
+    .filter((part) => typeof part === 'string' && part.trim())
+    .join('\n\n');
+  return proseTitleFromBody(blob);
+}
+
 export function buildAccessibleReserve({ valid = [], shownIds = [], merged = [], period = null } = {}) {
   const shown = new Set(shownIds || []);
   const items = [];
@@ -204,28 +225,34 @@ export function buildAccessibleReserve({ valid = [], shownIds = [], merged = [],
     if (!row?.id || shown.has(row.id)) continue;
     const factual = row.admission?.admissible === false || row.validation?.ok === false;
     const reason = row.selectionTrace?.reason || 'not_prioritized';
-    const title = consultableTitle(row.title);
-    const rawTitle = `${row.title || ''}\n${row.body || row.text || ''}`;
-    const internal =
-      !title ||
+    const title = readableTitle(row);
+    const rawTitle = `${title || row.title || ''}\n${row.body || row.text || ''}`;
+    const proofGap =
       /[a-z][a-z0-9_]{2,}\s*(?:→|->)\s*[a-z][a-z0-9_]{2,}/.test(rawTitle) ||
       /exercice clé/i.test(rawTitle) ||
       /\b(NET RISE|ARC\s+\d+|POSITIVE_REPS|OUTLIER DRIVEN)\b/i.test(rawTitle);
     let disposition = RESERVE_DISPOSITION.VALID_RESERVED;
-    if (factual || internal) disposition = RESERVE_DISPOSITION.REJECTED_FACTUAL;
-    else if (row.metrics?.superseded) disposition = RESERVE_DISPOSITION.HISTORICAL;
+    let itemReason = reason;
+    if (factual || proofGap) {
+      disposition = RESERVE_DISPOSITION.REJECTED_FACTUAL;
+    } else if (!title) {
+      disposition = RESERVE_DISPOSITION.PRESENTATION_GAP;
+      itemReason = 'missing_consultable_title';
+    } else if (row.metrics?.superseded) disposition = RESERVE_DISPOSITION.HISTORICAL;
     else if (DEMOTION.has(reason) || row.metrics?.editorialPriority === false) {
       disposition = RESERVE_DISPOSITION.DEMOTED_PRIORITY;
     }
     items.push({
       id: row.id,
       title,
-      body: row.body || row.text || '',
-      evidence: typeof row.evidence === 'string' ? row.evidence : '',
+      body: row.body || row.text || row.context?.body || '',
+      evidence: typeof row.evidence === 'string' ? row.evidence : row.context?.evidenceLine || '',
       period: row.period || period,
       disposition,
-      reason: internal && !title ? 'missing_consultable_title' : reason,
-      exerciseId: row.metrics?.exerciseId || null
+      reason: itemReason,
+      kind: row.kind || row.context?.kind || '',
+      family: row.family || '',
+      exerciseId: row.metrics?.exerciseId || row.exerciseId || null
     });
   }
   return items;

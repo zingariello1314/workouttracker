@@ -34,7 +34,12 @@ Un seul épisode de retour par mouvement normalisé, même si gaps 42 j et 77 j 
 ## Quotas
 
 Refus des plafonds éditoriaux arbitraires comme critère de qualité.  
-Les caps de colonnes / perf restent des garde-fous techniques documentés — pas un jugement de valeur.
+Le budget de 11 cartes est le plafond de priorité d'une colonne narrative (sport 10 + sommeil 1). Le compteur « prioritaires » du pack additionne maintenant, trajectoire et parcours : un total supérieur à 11 ne contredit pas ce budget.  
+Les caps de colonnes restent des garde-fous de mise en avant. Ils ne retirent pas une conclusion admissible du catalogue.
+
+## P6
+
+`applyP6` attache le claim, l'exploration, les liens, la valeur marginale et les vues À retenir / Toutes / Autres angles. `produced = admissible + rejected` et `admissible = priority + reserve + fused + blocked`.
 
 ## Réserve
 

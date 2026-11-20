@@ -596,7 +596,12 @@ export function buildFindingForensics(row, report = null) {
           richness: metrics.trajectoryRichness ?? null,
           temporalScope: metrics.temporalScope || null,
           positions: metrics.trajectoryPositions || [],
-          sessions: (metrics.sessions || []).slice(0, 24)
+          sessions: (Array.isArray(metrics.sessions)
+            ? metrics.sessions
+            : Array.isArray(metrics.sessions?.trace)
+              ? metrics.sessions.trace
+              : []
+          ).slice(0, 24)
         }
       : metrics.trajectoryOk === false
         ? { ok: false, reason: metrics.trajectoryReason || null }

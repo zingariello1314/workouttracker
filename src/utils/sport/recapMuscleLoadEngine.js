@@ -12,6 +12,7 @@ import {
   exerciseNameLooksIsometricForCalendar
 } from '../trainingLoadUtils';
 import { inferMuscleGroupsForExercise, inferMuscleLoadRolesForExercise } from './recapMuscleInference';
+import { classifyExerciseStanding } from './historicalOrphanExercises';
 import { recapScoreToHexRelative, recapZoneBlendHueScore } from './recapIntensityColors';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { getMeshesForMuscleGroup } from './recapMeshBinding';
@@ -442,6 +443,11 @@ export function computeRecapMuscleState(
     const coeff = resolveExerciseIntensityCoeff(exLike, userCoeffs);
     const contrib = computeStrengthCalendarContribution(exLike, r, coeff);
     const rInt = Math.max(0, Math.floor(Number(r) || 0));
+    const standing = classifyExerciseStanding(allData, idStr, getExerciseNameById);
+    if (standing.standing === 'historical_orphan') {
+      volumeTotals.orphanReps = (volumeTotals.orphanReps || 0) + rInt;
+      return;
+    }
     const isIso = exerciseNameLooksIsometricForCalendar(name);
 
     if (rInt > 0) {

@@ -4,6 +4,7 @@
  */
 import { collectLifetimeRepHistory } from './athleteJourney';
 import { formatDayFr } from './recapTrainingTimeline';
+import { isRecordedSetFormat } from './exerciseSetInference';
 
 function fmtNum(n) {
   if (!Number.isFinite(n)) return '';
@@ -36,14 +37,15 @@ function readShape(snapshot, date, exerciseId, expectedReps) {
   const keys = [`${date}_${exerciseId}`, `${date}_${String(exerciseId)}`];
   const n = parseInt(String(exerciseId), 10);
   if (Number.isFinite(n)) keys.push(`${date}_${n}`);
-  let sets = null;
+  let log = null;
   for (const key of keys) {
     if (Array.isArray(logs[key]?.sets) && logs[key].sets.length) {
-      sets = logs[key].sets;
+      log = logs[key];
       break;
     }
   }
-  if (!sets) return null;
+  if (!isRecordedSetFormat(log)) return null;
+  const sets = log.sets;
   const reps = sets.map((s) => Math.floor(Number(s?.reps) || 0)).filter((v) => v > 0);
   if (!reps.length) return null;
   const total = reps.reduce((sum, v) => sum + v, 0);

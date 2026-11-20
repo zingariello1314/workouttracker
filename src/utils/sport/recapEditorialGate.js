@@ -186,11 +186,16 @@ function rewrite(card, voiceKey) {
   const kind = card.kind || '';
 
   if (kind === 'disc_muscle_reorient') {
-    title = 'Ce groupe égale son volume du mois, sans devenir le stimulus de la fenêtre';
-    if (!/stimulus de la fenêtre/i.test(body)) {
-      body = `${body} Cela décrit ce groupe sur le mois, pas le stimulus de toute la fenêtre.`;
+    const share = Number(card.metrics?.ofMonthPct);
+    const role = card.metrics?.relation;
+    if (role === 'period_inside_recent_month' && Number.isFinite(share) && share >= 90) {
+      title = 'Ce groupe représente presque tout son volume attribué du mois';
     }
-    body = body.replace(/cette asymétrie n'est pas seulement descriptive[\s\S]*$/i, '').replace(/\s+/g, ' ').trim();
+    body = body
+      .replace(/stimulus de la fenêtre/gi, 'volume attribué de la fenêtre')
+      .replace(/cette asymétrie n'est pas seulement descriptive[\s\S]*$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     nature = 'journey';
   }
 

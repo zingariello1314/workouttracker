@@ -12,6 +12,8 @@ import { explainVolumeRivalry } from './recapVolumeRivalryExplain';
  * Ordre = priorité (premier match gagne).
  */
 const FAMILY_FROM_KIND = [
+  [/resistance_progression/, 'exercise'],
+  [/session_work|unusual_session/, 'volume'],
   [/sleep|sommeil/, 'sleep'],
   [/gtg/, 'gtg'],
   [/stretch|mobility|souplesse/, 'mobility'],
@@ -53,6 +55,7 @@ export const DISCOVERY_FAMILY_TO_COARSE = {
   vs_habit: 'volume',
   comparable: 'exercise',
   exercise_progress: 'exercise',
+  session_demand: 'volume',
   sleep_night: 'sleep',
   sleep_volume: 'sleep',
   sleep_month: 'sleep',

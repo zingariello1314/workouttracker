@@ -15,9 +15,14 @@ function snapshot(rows, extra = {}) {
     reps[key] = String(total);
     checkedExercises[key] = true;
   }
+  const exerciseDisplayNames = { ...(extra.names || {}) };
+  for (const [, id] of rows) {
+    if (!exerciseDisplayNames[id]) exerciseDisplayNames[id] = `Mouvement ${id}`;
+  }
   return {
     reps,
     checkedExercises,
+    exerciseDisplayNames,
     exerciseSetLogs: extra.logs || {},
     exerciseWeights: extra.weights || {}
   };

@@ -28,14 +28,13 @@ export const NATURE_TO_HORIZON = {
  * Sommeil volontairement bas : 2/angle saturait le pack (rythme + assoc + RPE).
  */
 /**
- * Plafonds = garde-fous, pas moteur de sélection.
- * Soft overflow (IV élevée + phénomène distinct) dans selectPeriodDiscoveriesWithTrace.
- * Avant : sport:10/angle saturait les longues périodes (décennies de drops « cap »).
+ * Plafond de priorité. Le catalogue accessible conserve ce que ce plafond n'affiche pas.
+ * sport 10 + sommeil 1 = 11 sur la trajectoire longue. Ce n'est pas un quota à remplir.
  */
-const SPORT_TODAY = { sport: 8, sleep: 1, milestone: 2 };
-const SPORT_WEEK = { sport: 14, sleep: 1, milestone: 2 };
-const SPORT_MONTH = { sport: 18, sleep: 1, milestone: 3 };
-const SPORT_LONG = { sport: 22, sleep: 1, milestone: 3 };
+const SPORT_TODAY = { sport: 6, sleep: 1, milestone: 2 };
+const SPORT_WEEK = { sport: 10, sleep: 1, milestone: 2 };
+const SPORT_MONTH = { sport: 10, sleep: 1, milestone: 2 };
+const SPORT_LONG = { sport: 10, sleep: 1, milestone: 2 };
 
 export const SIGNAL_FAMILY_CAPS = {
   today: {

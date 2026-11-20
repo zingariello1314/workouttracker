@@ -7,6 +7,7 @@ import { buildExerciseTrajectory } from './exerciseTrajectoryAnalysis';
 import { buildMetricFact, METRIC_REFERENT, METRIC_UNIT, METRIC_GRANULARITY } from './recapMetricContract';
 import { MEMORY_TRANSITION } from './editorialLedgerContract';
 import { proposeTemporalPlans } from './recapTemporalStrategy';
+import { isHistoricalOrphan } from './historicalOrphanExercises';
 
 export const CONSOLIDATION_STATE = Object.freeze({
   INSUFFICIENT: 'insufficient',
@@ -557,7 +558,13 @@ export function runExerciseFormatConsolidationShadow({
     sessionDates: keys.dates
   });
 
+  const orphanExcluded = [];
   for (const exerciseId of keys.ids) {
+    if (isHistoricalOrphan(snapshot, exerciseId, getExerciseNameById)) {
+      orphanExcluded.push(String(exerciseId));
+      abstentions.push({ exerciseId, reason: 'historical_orphan_excluded' });
+      continue;
+    }
     const tTraj = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     const trajectory = buildExerciseTrajectory({
       snapshot,
@@ -644,6 +651,7 @@ export function runExerciseFormatConsolidationShadow({
     window,
     phenomena,
     abstentions,
+    orphanExcluded,
     ledger,
     persisted: false,
     ms: Math.round(t1 - t0),

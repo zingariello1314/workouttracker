@@ -1,0 +1,58 @@
+{
+  "schema": "momentum.evalGameReport.v1",
+  "game": "C",
+  "executedAt": "2026-11-20T05:31:27.602Z",
+  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": false,
+  "counters": {
+    "exactDuplicatesAccessible": 0,
+    "fusedSourcesAccessible": 0,
+    "admissiblePreserved": false,
+    "horizonConfusion": 0
+  },
+  "cases": [
+    {
+      "id": "C-1",
+      "game": "C",
+      "referenceData": {
+        "period": "live",
+        "expectedAccessible": 0,
+        "publishedAccessible": 1,
+        "lostSilent": [],
+        "explainedGap": 0,
+        "publicationAuthority": null,
+        "idReconciled": false,
+        "admissiblePreserved": false
+      },
+      "expected": {
+        "admissiblePreserved": true,
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0
+      },
+      "obtained": {
+        "period": "live",
+        "expectedAccessible": 0,
+        "publishedAccessible": 1,
+        "lostSilent": [],
+        "explainedGap": 0,
+        "publicationAuthority": null,
+        "idReconciled": false,
+        "admissiblePreserved": false
+      },
+      "status": "fail",
+      "justification": "qualité collective du paquet accessible",
+      "delta": {
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": false
+      },
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    }
+  ],
+  "humanBlindComparison": {
+    "performed": false,
+    "reason": "not_applicable"
+  }
+}

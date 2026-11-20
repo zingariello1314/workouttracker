@@ -1,6 +1,8 @@
 # Progression d’implémentation — v2
 
-**Dernière session :** 2026-11-19, nuit — publication réelle tenue pour démontrée (Worker ~2,9 s, `ready`, 8 cartes). Corrections visibles : fréquence qui monte n’est plus dite en baisse, « repasse » retiré pour une simple présence, « de la tronc » et codes internes retirés, série reconstruite non tenue pour un format enregistré, journée en cours non close. Consolidation branchée sur les trajectoires déjà calculées, une carte au plus, réversible. Le bouton « Pack publié » lit le cache sans recalcul.
+**Dernière session :** 2026-11-20 — Mission 5 P6 (`editorial=p6-sovereign-v4`, `review=collective-pass4-v1`). Souveraineté jusqu’à la publication (`publicationDispositions`, réconciliation par ids), passe 4 collective, claims enrichis, jeux A/B/C resserrés, archive d’évaluation privée sous `artifacts/analysis-eval/`, dossier d’audit ZIP. Verdict : P6 partiellement démontrée — NO-GO P7. Voir `MISSION5_BILAN_P6.md`.
+
+**Session précédente :** 2026-11-19, nuit — publication réelle tenue pour démontrée (Worker ~2,9 s, `ready`, 8 cartes). Corrections visibles : fréquence qui monte n’est plus dite en baisse, « repasse » retiré pour une simple présence, « de la tronc » et codes internes retirés, série reconstruite non tenue pour un format enregistré, journée en cours non close. Consolidation branchée sur les trajectoires déjà calculées, une carte au plus, réversible. Le bouton « Pack publié » lit le cache sans recalcul.
 
 **Session précédente :** 2026-11-04 (soir) — P0 sécurisé + Étapes B/C/D amorcées
 
@@ -62,6 +64,22 @@ La sauvegarde du 18 novembre et le dossier du 19 novembre ne sont pas le même i
 ## Session du 19 novembre — édition et contrôle final
 
 Les 7 jours restaient sur l’ancien cache parce que l’édition n’avait pas changé. La nouvelle édition se recalcule toute seule. Les anciens paquets restent en mémoire. Le bouton « Pack publié » ne mélange plus les périodes. Le contrôle final retire les états internes, les fragments techniques et les sujets anonymes. La consolidation distingue un niveau plus haut, un recul stabilisé, un maintien, une reprise et une reprise incomplète.
+
+## Session du 19 novembre — P4, séances et orphelins
+
+L'édition courante est `editorial=p4-session-demand-v1`. La carte de volume déjà publiée reçoit la décomposition symétrique et le résidu orphelin. Les exercices sans identité canonique sont exclus des trajectoires de consolidation et restent dans le total. La comparaison de séances a quatre issues et n'invente pas de fatigue. Les hausses de charge à format constant sont produites par le détecteur de période, à partir des poids saisis (chaînes numériques) et du drapeau par bras. Une charge répliquée n'est pas une progression. Une capture DOM sans période rendue, ou d'une autre période que le diagnostic, n'est plus déclarée comparable. Le pack publié de la console est replié par défaut. Quand la fenêtre ne contient que des observations simples, leur score brut reste le plancher de conservation.
+
+## Session du 19 novembre — clôture P4, identité et catalogue
+
+L'orphelin est une identité non résolue, quel que soit le format de l'identifiant. `Exercice #123` n'est pas un nom. Les pompes d'endurance complémentaires restent identifiées. Le catalogue accessible conserve les conclusions écartées seulement par un plafond, un score de priorité ou un budget. La durée du pipeline n'additionne plus une étape et ses enfants. Juin entier dans la fenêtre n'est plus une portion.
+
+## P6 — livré dans le paquet
+
+Édition `editorial=p6-sovereign-v3`, consolidation `narrative-coherence-v2`, stimulus `challenge-unknown-v1`, duration `paired-density-v3`.
+
+Correctif exports (intermédiaire) : téléchargement JSON+Markdown en ZIP, timeout/période, progression, erreurs visibles, boutons Récap→Analyse, inspecteur modal portal, comparaisons 7d/30d·6m/1y·1y/2y·2y/all dans l’export 8 périodes. Port Vite réel : `vite --port 5173` (ou `npm run dev` si 3001 n’est pas déjà pris par l’API).
+
+Le contrat `AnalyticalClaim` est posé sur chaque découverte du paquet produit. Une observation sans thèse ne devient pas une découverte. La publication visible (`insights` colonnes + réserve) est issue de `insightsFromP6` lorsque les compteurs P6 se réconcilient : sources fusionnées et doublons exacts restent hors catalogue utilisateur. `draftFromClaim` rédige depuis la thèse. La sélection collective peut promouvoir une fusion ou une réserve au-dessus d’un gagnant legacy. Exploration étendue : décomposition de volume (hausse/baisse), journées à volume proche, retours collectifs, défi pompes chronométré. Densités globales verrouillées par `densityPaired`. Classification défi → `physiologicalUnknown`. Jeux A/B/C reconstitués (harness P1 historique non retrouvé ; B sans comparaison à l’aveugle externe). Inspecteur DEV/admin depuis une carte. Rejeu 8 périodes sur sauvegarde 19 nov. (`P4_REPLAY=1` → `%TEMP%/p6-replay.json`). DOM live non vérifié (localhost 404).
 
 ## Bloqué
 

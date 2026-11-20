@@ -11,6 +11,14 @@ import {
 import { normalizeExerciseSetLog } from '../exerciseSetLogUtils';
 import { extractExerciseIdFromWorkoutKey, findLatestExerciseWeightValue } from '../exerciseKeyGenerator';
 
+/** Une reconstruction n'est pas le format effectué. Seuls un relevé manuel, un héritage ou un journal sans inférence le sont. */
+export function isRecordedSetFormat(log) {
+  if (!log || !Array.isArray(log.sets) || log.sets.length === 0) return false;
+  const method = log.inference?.method;
+  if (!method) return true;
+  return method === SET_INFERENCE_METHOD.MANUAL || method === SET_INFERENCE_METHOD.LEGACY;
+}
+
 export const SET_INFERENCE_METHOD = {
   PRESCRIPTION: 'prescription',
   HABIT: 'habit',

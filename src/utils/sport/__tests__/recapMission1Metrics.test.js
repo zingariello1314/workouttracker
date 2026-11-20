@@ -84,12 +84,14 @@ describe('durées — deux populations, deux noms', () => {
   it('nomme le temps total et la part hors course quand ils divergent', () => {
     expect(
       describeActivityDuration({ minutes: 9, totalMinutes: 195, runningMinutes: 186 })
-    ).toBe("3 h 15 de temps d'activité (dont 9 min hors course)");
+    ).toBe(
+      "3 h 15 d'activité enregistrée, dont 9 min de séances hors course et 3 h 06 de course"
+    );
   });
 
   it('nomme hors course quand la durée mesurée ne contient pas la course', () => {
     expect(describeActivityDuration({ minutes: 195, totalMinutes: 195, runningMinutes: 0 })).toBe(
-      '3 h 15 hors course'
+      '3 h 15 de séances hors course enregistrées'
     );
   });
 });

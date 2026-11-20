@@ -161,6 +161,16 @@ export function sameExerciseIdentity(a, b) {
 /**
  * Épisode historique commun : même identité + continuité / fenêtre compatible.
  */
+/** Normalise metrics.sessions : tableau, ou objet trajectoire { trace, lifetime }. */
+export function sessionsListOf(metrics) {
+  const sessions = metrics?.sessions;
+  if (Array.isArray(sessions)) return sessions;
+  if (Array.isArray(sessions?.trace)) return sessions.trace;
+  if (Array.isArray(sessions?.lifetime)) return sessions.lifetime;
+  if (Array.isArray(sessions?.window)) return sessions.window;
+  return [];
+}
+
 /** Date d’événement de reprise (séance de retour), pas le gap. */
 export function returnEventYmd(d) {
   const m = d?.metrics || d || {};
@@ -175,7 +185,7 @@ export function returnEventYmd(d) {
     null;
   if (raw) return String(raw).slice(0, 10);
   if (Array.isArray(m.dates) && m.dates.length) return String(m.dates[0]).slice(0, 10);
-  const retSession = (m.sessions || []).find(
+  const retSession = sessionsListOf(m).find(
     (s) => s?.role === 'return_session' || s?.role === 'first_in_window'
   );
   if (retSession?.date) return String(retSession.date).slice(0, 10);

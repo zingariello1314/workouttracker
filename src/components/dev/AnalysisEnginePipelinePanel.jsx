@@ -157,11 +157,11 @@ export default function AnalysisEnginePipelinePanel({
             <span className="aec-faint">exécutées</span>
           </div>
           <div className="aec-pipe-kpi">
-            <span className="aec-pipe-kpi-label">Durée chronométrée</span>
+            <span className="aec-pipe-kpi-label">Durée hors double compte</span>
             <strong>{fmtMs(summary.totalMs)}</strong>
             <span className="aec-faint">
-              {summary.untimedCount
-                ? `${summary.untimedCount} sans ms`
+              {summary.inclusiveMs > summary.totalMs
+                ? `somme imbriquée ${fmtMs(summary.inclusiveMs)}`
                 : `${summary.timedCount} étapes`}
             </span>
           </div>

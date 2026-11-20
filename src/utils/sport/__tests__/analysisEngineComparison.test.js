@@ -115,6 +115,7 @@ describe('analysisEngineComparison', () => {
     r.meta.dataSignature = 'sig-a';
     const diff = compareDomToPack(r, {
       period: '30d',
+      renderedPeriod: '30d',
       cards: [{ kind: 'disc_emergence', title: 'Beta' }],
       dataSignature: 'sig-a',
       source: 'dom_scrape'
@@ -163,6 +164,7 @@ describe('analysisEngineComparison', () => {
     r.meta.dataSignature = 'sig-7';
     const diff = compareDomToPack(r, {
       period: '30d',
+      renderedPeriod: '30d',
       cards: [{ kind: 'disc_density', title: 'Trente jours' }],
       dataSignature: 'sig-30',
       source: 'dom_scrape_fallback'

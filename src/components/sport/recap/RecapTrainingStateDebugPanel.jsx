@@ -185,6 +185,25 @@ export default function RecapTrainingStateDebugPanel({
             </div>
           ) : null}
 
+          {periodDiscoveries?.p6?.counters ? (
+            <div className="rounded-lg border border-slate-700/50 bg-slate-950/40 px-2.5 py-2 text-[10px] text-slate-300">
+              <p className="mb-1 font-semibold uppercase tracking-wide text-slate-400">
+                Registre P6 · {periodDiscoveries.packRole || 'pipeline'}
+              </p>
+              <p>
+                produites {periodDiscoveries.p6.counters.produced} · admissibles{' '}
+                {periodDiscoveries.p6.counters.admissible} · fusionnées{' '}
+                {periodDiscoveries.p6.counters.fused} · prioritaires{' '}
+                {periodDiscoveries.p6.counters.priority} · réserve{' '}
+                {periodDiscoveries.p6.counters.reserve} · écartées{' '}
+                {periodDiscoveries.p6.counters.rejected} · bloquées{' '}
+                {periodDiscoveries.p6.counters.blocked}
+                {periodDiscoveries.p6.counters.reconciled ? ' · compteurs réconciliés' : ' · compteurs ouverts'}
+              </p>
+              <p className="mt-1">{periodDiscoveries.p6.priorityReading?.reading}</p>
+            </div>
+          ) : null}
+
           {periodDiscoveries?.debug ? (
             <div className="rounded-lg border border-amber-700/40 bg-amber-950/20 px-2.5 py-2 text-[10px] text-amber-100/90">
               <p className="mb-1 font-semibold uppercase tracking-wide text-amber-200/80">Tuyau sommeil / jalons</p>

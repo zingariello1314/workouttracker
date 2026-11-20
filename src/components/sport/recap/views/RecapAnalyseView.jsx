@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import RecapPeriodHighlightsPanel from '../RecapPeriodHighlightsPanel';
 import RecapAnalyseDetails from './RecapAnalyseDetails';
+import RecapAnalyseExportBar from '../RecapAnalyseExportBar';
+import RecapCardInspectorModal from '../RecapCardInspectorModal';
 import { useTranslation } from '../../../../utils/translations';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { buildRecapPeriodCalendarAnalytics } from '../../../../utils/sport/recapCalendarPeriodAnalytics';
 import { segmentRecapProseValues } from '../../../../utils/sport/recapProseMarks';
+import { analysisEditionKey } from '../../../../utils/sport/analysisEdition';
+import { captureAnalyseCardsFromDom } from '../../../../utils/sport/analysisEngineDomCapture';
+import { snapshotFingerprint } from '../../../../utils/sport/analysisEnvironmentDossier';
 
 const FAMILIES = {
   short: { id: 'a', cls: 'a' },
@@ -121,7 +126,9 @@ export default function RecapAnalyseView({
   const { getCurrentData, data, getExerciseNameById } = useWorkout();
   const [family, setFamily] = useState('all');
   const [detailsOn, setDetailsOn] = useState(false);
+  const [inspectCard, setInspectCard] = useState(null);
   const [periodAnalytics, setPeriodAnalytics] = useState(null);
+  const canInspect = import.meta.env.DEV || isAdmin;
   // F7.0e : dates = fenêtre demandée (periodWindow), jamais enrichment d’une autre période.
   const resolvedWindow = periodWindow || null;
   const pub = assessment?.insightsPublication || null;
@@ -235,15 +242,52 @@ export default function RecapAnalyseView({
         })
       )
     : [];
-  const familyCounts = cards.reduce((acc, card) => {
+  const phenomenonKey = (item) => {
+    const kind = String(item?.kind || '');
+    const exerciseId = String(item?.exerciseId || item?.metrics?.exerciseId || '');
+    const factId = String(item?.factId || item?.metrics?.factId || '');
+    if (kind && (exerciseId || factId)) return `${kind}|${exerciseId}|${factId}`;
+    const id = String(item?.id || '');
+    if (id && !id.startsWith('relation.reading')) return id;
+    return '';
+  };
+  const shownTitles = new Set(cards.map((card) => String(card.title || '').trim().toLowerCase()));
+  const shownPhenomena = new Set(cards.map(phenomenonKey).filter(Boolean));
+  const reserveSeen = new Set();
+  const reserveCards = (assessment?.insights?.accessibleReserve || []).flatMap((item) => {
+    if (item.disposition !== 'valid_reserved' && item.disposition !== 'demoted_priority') return [];
+    const title = String(item.title || '').trim();
+    if (!title || shownTitles.has(title.toLowerCase())) return [];
+    const key = phenomenonKey(item);
+    if (key && (shownPhenomena.has(key) || reserveSeen.has(key))) return [];
+    if (key) reserveSeen.add(key);
+    const cls = motifClass(item, 'k');
+    return [
+      {
+        ...item,
+        family: FAMILY_META[cls] ? cls : item.family || 'k',
+        cls,
+        badge: FAMILY_META[cls]?.label || 'Autre découverte'
+      }
+    ];
+  });
+  const familyCounts = [...cards, ...reserveCards].reduce((acc, card) => {
+    if (!card.family || !FAMILY_META[card.family]) return acc;
     acc[card.family] = (acc[card.family] || 0) + 1;
     return acc;
   }, {});
   const visible = family === 'all' ? cards : cards.filter((card) => card.family === family);
+  const visibleReserve = family === 'all' ? [] : reserveCards.filter((card) => card.family === family);
   const waitingInsights = analysisLoading || analysisStatus === 'loading' || !showInsightCards;
 
   return (
-    <div className="rb-analyse">
+    <div
+      className="rb-analyse"
+      data-analyse-period={period}
+      data-analyse-window-start={resolvedWindow?.start || ''}
+      data-analyse-window-end={resolvedWindow?.end || ''}
+      data-analysis-edition={assessment?.analysisEdition || assessment?.insightsPublication?.analysisEdition || ''}
+    >
       <RecapPeriodHighlightsPanel
         part="head"
         period={period}
@@ -253,9 +297,22 @@ export default function RecapAnalyseView({
         analytics={coherentAnalytics}
       />
 
+      <RecapAnalyseExportBar
+        period={period}
+        periodWindow={resolvedWindow}
+        isAdmin={isAdmin}
+        captureDom={() =>
+          captureAnalyseCardsFromDom({
+            period,
+            dataSignature: snapshotFingerprint(getCurrentData?.() || data),
+            engineEdition: analysisEditionKey()
+          })
+        }
+      />
+
       <div className="dist" role="tablist">
         <button type="button" className={family === 'all' ? 'on all' : 'all'} onClick={() => setFamily('all')}>
-          {t('recap.analyse.filterAll', 'Toutes')} <b>{waitingInsights ? '…' : cards.length}</b>
+          {t('recap.analyse.filterAll', 'Toutes')} <b>{waitingInsights ? '…' : cards.length + reserveCards.length}</b>
         </button>
         {Object.entries(FAMILY_META).map(([id, meta]) =>
           familyCounts[id] ? (
@@ -281,9 +338,32 @@ export default function RecapAnalyseView({
       ) : (
         <div className="igrid">
           {visible.map((card) => (
-            <article key={card.key} className={`k ${motifClass(card, card.cls)}`}>
+            <article
+              key={card.key}
+              className={`k ${motifClass(card, card.cls)}`}
+              data-analyse-card="true"
+              data-card-id={card.id || card.key}
+              data-kind={card.kind || ''}
+              data-phenomenon-id={card.phenomenonId || ''}
+              data-publication-id={card.publicationId || ''}
+              data-has-claim={card.claim ? 'true' : 'false'}
+            >
               <header>
                 <b>{card.badge}</b>
+                {canInspect ? (
+                  <button
+                    type="button"
+                    className="meta"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setInspectCard(card);
+                    }}
+                    data-analyse-inspect="true"
+                  >
+                    Inspecter
+                  </button>
+                ) : null}
               </header>
               {leadFigure(card) ? <div className="n">{leadFigure(card)}</div> : null}
               {card.title ? <h4>{markValues(card.title)}</h4> : null}
@@ -292,43 +372,96 @@ export default function RecapAnalyseView({
               {card.confidence ? <div className="meta">{card.confidence}</div> : null}
             </article>
           ))}
+          {visibleReserve.map((item) => (
+            <article
+              key={item.id || item.title}
+              className={`k ${item.cls || ''}`}
+              data-analyse-card="accessible"
+              data-card-id={item.id || ''}
+              data-kind={item.kind || ''}
+              data-phenomenon-id={item.phenomenonId || ''}
+              data-publication-id={item.publicationId || ''}
+              data-has-claim={item.claim ? 'true' : 'false'}
+            >
+              <header>
+                <b>{item.badge}</b>
+                {canInspect ? (
+                  <button
+                    type="button"
+                    className="meta"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setInspectCard(item);
+                    }}
+                    data-analyse-inspect="true"
+                  >
+                    Inspecter
+                  </button>
+                ) : null}
+              </header>
+              <h4>{item.title}</h4>
+              {item.body ? <p className="whitespace-pre-line">{item.body}</p> : null}
+              {item.evidence ? <div className="meta">{item.evidence}</div> : null}
+            </article>
+          ))}
         </div>
       )}
 
-      {!waitingInsights &&
-      (assessment?.insights?.accessibleReserve || []).some(
-        (item) => item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority'
-      ) ? (
-        <details className="emp">
-          <summary>
-            Conclusions conservées (
-            {
-              (assessment.insights.accessibleReserve || []).filter(
-                (item) => item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority'
-              ).length
-            }
-            )
-          </summary>
-          <div>
-            {(assessment.insights.accessibleReserve || [])
-              .filter(
-                (item) =>
-                  (item.disposition === 'valid_reserved' || item.disposition === 'demoted_priority') &&
-                  item.title
-              )
-              .map((item) => (
-                <article key={item.id || item.title}>
-                  <h3>{item.title}</h3>
-                  {item.period ? <div className="meta">{item.period}</div> : null}
-                  {item.body ? <p className="whitespace-pre-line">{item.body}</p> : null}
-                  {item.evidence ? <div className="meta">{item.evidence}</div> : null}
-                  {item.disposition === 'demoted_priority' ? (
-                    <div className="meta">Conclusion admissible, non mise en avant</div>
+      {!waitingInsights && family === 'all' && reserveCards.length ? (
+        <section>
+          <p className="emp">
+            {visible.length + reserveCards.length} conclusions admissibles, dont {visible.length} mises en avant.
+          </p>
+          <div className="igrid">
+            {reserveCards.map((item) => (
+              <article
+                key={item.id || item.title}
+                className={`k ${item.cls || ''}`}
+                data-analyse-card="accessible"
+                data-card-id={item.id || ''}
+                data-kind={item.kind || ''}
+                data-phenomenon-id={item.phenomenonId || ''}
+                data-publication-id={item.publicationId || ''}
+                data-has-claim={item.claim ? 'true' : 'false'}
+              >
+                <header>
+                  <b>{item.badge}</b>
+                  {canInspect ? (
+                    <button
+                      type="button"
+                      className="meta"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setInspectCard(item);
+                      }}
+                      data-analyse-inspect="true"
+                    >
+                      Inspecter
+                    </button>
                   ) : null}
-                </article>
-              ))}
+                </header>
+                <h4>{item.title}</h4>
+                {item.body ? <p className="whitespace-pre-line">{item.body}</p> : null}
+                {item.evidence ? <div className="meta">{item.evidence}</div> : null}
+              </article>
+            ))}
           </div>
-        </details>
+        </section>
+      ) : null}
+
+      {canInspect && inspectCard ? (
+        <RecapCardInspectorModal
+          card={inspectCard}
+          onClose={() => setInspectCard(null)}
+          edition={analysisEditionKey()}
+          fingerprint={snapshotFingerprint(getCurrentData?.() || data)}
+          packId={
+            assessment?.insightsPublication?.packId ||
+            `${period}:${resolvedWindow?.start || ''}:${resolvedWindow?.end || ''}`
+          }
+        />
       ) : null}
 
       {detailsOn && !waitingInsights ? (

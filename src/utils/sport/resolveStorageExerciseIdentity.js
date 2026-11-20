@@ -19,6 +19,7 @@ export const IDENTITY_RESOLUTION_SOURCE = Object.freeze({
   DB_KEY_PREFIX: 'db_key_prefix',
   DB_LOOKUP_BY_ID: 'db_lookup_by_id',
   COMPLEMENTARY_ENDURANCE_PUSHUPS: 'complementary_endurance_pushups',
+  PROGRAM_SCHEDULE: 'program_schedule',
   NONE: 'none'
 });
 
@@ -28,7 +29,7 @@ export const IDENTITY_CONFIDENCE = Object.freeze({
   UNRESOLVED: 'unresolved'
 });
 
-const FALLBACK_RE = /^Exercice(\s|#)\d+$/i;
+const FALLBACK_RE = /^Exercice\s*#?\s*\d+$/i;
 
 export function isFallbackExerciseLabel(name) {
   return FALLBACK_RE.test(String(name || '').trim());
@@ -82,6 +83,91 @@ export function buildReverseStableIdIndex(knownIdsOrNameMap) {
     }
   }
   return index;
+}
+
+const programLiteralCache = new WeakMap();
+
+function rememberLiteralName(id, name, into, conflicts) {
+  const key = String(id ?? '');
+  if (!key || !name) return;
+  const prev = into.get(key);
+  if (prev && prev !== name) {
+    conflicts.add(key);
+    into.delete(key);
+    return;
+  }
+  if (!conflicts.has(key)) into.set(key, name);
+}
+
+function visitNamedExercise(exercise, into, conflicts) {
+  if (!exercise || typeof exercise !== 'object') return;
+  const name = String(exercise.name || exercise.exerciseName || '').trim();
+  if (!name || isFallbackExerciseLabel(name) || /^un mouvement$/i.test(name)) return;
+  rememberLiteralName(exercise.id, name, into, conflicts);
+  rememberLiteralName(exercise.storageId, name, into, conflicts);
+  for (const raw of [exercise.id, exercise.originalId, exercise.exerciseId]) {
+    if (raw == null || /^\d+$/.test(String(raw))) continue;
+    rememberLiteralName(convertToStableNumericId(raw), name, into, conflicts);
+  }
+}
+
+function visitProgramDay(day, into, conflicts) {
+  if (!day || typeof day !== 'object') return;
+  for (const exercise of day.exercises || []) visitNamedExercise(exercise, into, conflicts);
+  const variants = day.salleVariants;
+  if (variants && typeof variants === 'object') {
+    for (const variant of Object.values(variants)) {
+      for (const exercise of variant?.exercises || []) visitNamedExercise(exercise, into, conflicts);
+    }
+  }
+}
+
+function visitProgramRecord(program, into, conflicts) {
+  if (!program || typeof program !== 'object') return;
+  if (program.schedule && typeof program.schedule === 'object') {
+    for (const day of Object.values(program.schedule)) visitProgramDay(day, into, conflicts);
+  }
+  for (const day of [...(program.days || []), ...(program.weekDays || [])]) {
+    visitProgramDay(day, into, conflicts);
+  }
+  if (program.program) visitProgramRecord(program.program, into, conflicts);
+}
+
+function indexProgramList(list) {
+  const into = new Map();
+  const conflicts = new Set();
+  for (const program of list || []) visitProgramRecord(program, into, conflicts);
+  return into;
+}
+
+/**
+ * Nom littéral porté par l'objet exercice du programme (id de stockage → nom).
+ * Le programme actif prime. L'historique ne comble qu'un id absent.
+ * Deux noms différents pour le même id ne produisent aucun nom.
+ * Deux ids distincts qui partagent un nom restent deux identités.
+ */
+export function literalProgramName(snapshot, storageId) {
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  let pack = programLiteralCache.get(snapshot);
+  if (!pack) {
+    const active = indexProgramList(snapshot.activeProgram ? [snapshot.activeProgram] : []);
+    const rest = [];
+    if (Array.isArray(snapshot.programs)) rest.push(...snapshot.programs);
+    if (Array.isArray(snapshot.programHistory)) rest.push(...snapshot.programHistory);
+    const plans = snapshot.calendarDayPlanSnapshots;
+    if (plans && typeof plans === 'object') {
+      for (const day of Object.values(plans)) {
+        if (Array.isArray(day?.exercises)) rest.push({ days: [{ exercises: day.exercises }] });
+      }
+    }
+    pack = { active, historical: indexProgramList(rest) };
+    programLiteralCache.set(snapshot, pack);
+  }
+  const key = String(storageId ?? '');
+  if (!key) return null;
+  if (pack.active.has(key)) return pack.active.get(key);
+  if (pack.historical.has(key)) return pack.historical.get(key);
+  return null;
 }
 
 function stripDbPrefix(storageId) {
@@ -140,6 +226,15 @@ export function resolveStorageExerciseIdentity({
   if (nameById && nameById[id] && tryName(nameById[id], IDENTITY_RESOLUTION_SOURCE.NAME_MAP_DIRECT, {
     originalId: id
   })) {
+    return finalizeBank(result);
+  }
+
+  // 3) Nom écrit sur l'exercice du programme, à cet id de stockage.
+  const scheduled = literalProgramName(snapshot, id);
+  if (
+    scheduled &&
+    tryName(scheduled, IDENTITY_RESOLUTION_SOURCE.PROGRAM_SCHEDULE, { originalId: id })
+  ) {
     return finalizeBank(result);
   }
 

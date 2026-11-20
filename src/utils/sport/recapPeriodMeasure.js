@@ -20,11 +20,9 @@ import {
   isDateInRecapWindow
 } from './recapMuscleLoadEngine';
 import { endurancePushupsAlreadyInWorkoutTotals } from '../../services/endurance/pushupEnduranceWorkoutKeys';
-import {
-  resolveExerciseNameForRecap,
-  userFacingExerciseLabel
-} from './recapStrengthPeriodStats';
+import { userFacingExerciseLabel } from './recapStrengthPeriodStats';
 import { classicExclusiveRepsForDay } from './recapP35DayModel';
+import { classifyExerciseStanding } from './historicalOrphanExercises';
 import {
   PUSH_GROUPS,
   PULL_GROUPS,
@@ -232,12 +230,17 @@ export function measureRecapWindow({
     byExercise.set(idStr, cur);
   };
 
+  const nameForSpecificAnalysis = (idStr, proposed) => {
+    if (idStr === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) return proposed || 'Pompes (endurance)';
+    const standing = classifyExerciseStanding(snapshot, idStr, getExerciseNameById);
+    return standing.standing === 'identified' && standing.name ? standing.name : '';
+  };
+
   grouped.forEach(({ reps: r }, gkey) => {
     const sep = gkey.lastIndexOf('::');
     const dateStr = gkey.slice(0, sep);
     const idStr = gkey.slice(sep + 2);
-    const name = resolveExerciseNameForRecap(idStr, getExerciseNameById);
-    bump(idStr, name, dateStr, r);
+    bump(idStr, nameForSpecificAnalysis(idStr), dateStr, r);
   });
 
   collectPushupEnduranceSessions(snapshot).forEach((session) => {
@@ -246,16 +249,23 @@ export function measureRecapWindow({
     if (!ds) return;
     if (endurancePushupsAlreadyInWorkoutTotals(snapshot, ds)) return;
     const n = enduranceRepsForSession('pushups', session);
-    bump(RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID, 'Pompes (endurance)', ds, n);
+    bump(
+      RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID,
+      nameForSpecificAnalysis(RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID, 'Pompes (endurance)'),
+      ds,
+      n
+    );
   });
 
   const exercises = [...byExercise.values()]
+    .filter((e) => e.name && !/^un mouvement$/i.test(e.name))
     .map((e) => ({
       id: e.id,
-      name: userFacingExerciseLabel(e.name || resolveExerciseNameForRecap(e.id, getExerciseNameById), e.id),
+      name: userFacingExerciseLabel(e.name, e.id),
       reps: e.reps,
       days: e.dates.size
     }))
+    .filter((e) => e.name && !/^un mouvement$/i.test(e.name))
     .sort((a, b) => b.reps - a.reps);
 
   const cal = measure('calendarLoad', () =>
@@ -274,9 +284,43 @@ export function measureRecapWindow({
   const bannerReps = Number(cal?.totalReps) || 0;
   const totalReps = bannerReps > 0 ? bannerReps : strengthReps;
   const sessionDays = strengthDays > 0 ? strengthDays : trainingDays;
-  const repsPerHour = minutes > 0 && totalReps > 0 ? (totalReps / minutes) * 60 : null;
+  let challengeSessionMinutes = 0;
+  let challengeSessionReps = 0;
+  collectPushupEnduranceSessions(snapshot).forEach((session) => {
+    if (isMockEnduranceSession(session)) return;
+    const ds = normalizeDateString(session?.date);
+    if (!ds || !isDateInRecapWindow(ds, window)) return;
+    const n = enduranceRepsForSession('pushups', session);
+    if (n <= 0) return;
+    challengeSessionReps += n;
+    const durationMin =
+      Number(session?.durationMinutes) ||
+      Number(session?.duration) ||
+      (Number(session?.durationSeconds) > 0 ? Number(session.durationSeconds) / 60 : 0);
+    if (durationMin > 0) challengeSessionMinutes += durationMin;
+  });
+  // Les minutes « hors course » ne couvrent parfois que les défis chronométrés.
+  // Le total Garmin inclut souvent la course. Ni l'un ni l'autre n'apparie
+  // automatiquement le volume global de répétitions.
+  const minutesMostlyChallenge =
+    minutes > 0 &&
+    challengeSessionMinutes > 0 &&
+    minutes <= challengeSessionMinutes * 1.25 + 2;
+  const runningMinutes = Number(cal?.runningMinutes) || 0;
+  const strengthDurationKnown =
+    minutes > 0 && !minutesMostlyChallenge && minutes >= Math.max(1, strengthDays) * 8;
+  const densityPaired = strengthDurationKnown;
+  const densityMinutes = densityPaired ? minutes : null;
+  const repsPerHour =
+    densityPaired && densityMinutes > 0 && totalReps > 0
+      ? (totalReps / densityMinutes) * 60
+      : null;
+  const challengeRepsPerHour =
+    challengeSessionMinutes > 0 && challengeSessionReps > 0
+      ? (challengeSessionReps / challengeSessionMinutes) * 60
+      : null;
   const repsPerSession = sessionDays > 0 ? totalReps / sessionDays : null;
-  const minutesPerSession = sessionDays > 0 && minutes > 0 ? minutes / sessionDays : null;
+  const minutesPerSession = densityPaired && sessionDays > 0 ? minutes / sessionDays : null;
 
   let peakDay = null;
   repsByDate.forEach((reps, date) => {
@@ -285,13 +329,12 @@ export function measureRecapWindow({
   if (peakDay) {
     peakDay.sharePct = share(peakDay.reps, totalReps);
     peakDay.exercises = (exercisesByDate.get(peakDay.date) || [])
+      .filter((e) => e.name)
       .map((e) => ({
         ...e,
-        name: userFacingExerciseLabel(
-          e.name || resolveExerciseNameForRecap(e.id, getExerciseNameById),
-          e.id
-        )
+        name: userFacingExerciseLabel(e.name, e.id)
       }))
+      .filter((e) => e.name && !/^un mouvement$/i.test(e.name))
       .slice()
       .sort((a, b) => b.reps - a.reps);
   }
@@ -326,6 +369,23 @@ export function measureRecapWindow({
     },
     minutes,
     totalMinutes,
+    durationContract: {
+      nonRunningSessionMinutes: minutes,
+      runningMinutes,
+      recordedActivityMinutes: totalMinutes,
+      challengeSessionMinutes,
+      challengeSessionReps,
+      challengeRepsPerHour,
+      minutesMostlyChallenge,
+      densityPaired,
+      densityDenominator: densityPaired
+        ? 'non_running_session_minutes_covering_strength'
+        : minutesMostlyChallenge
+          ? 'abstain_challenge_minutes_unpaired_with_global_reps'
+          : 'abstain_unpaired',
+      bannerDuration: 'recorded_activity_minutes',
+      activeKcal: 'garmin_daily_active_kcal'
+    },
     activeKcal: Number(cal?.activeKcal) || 0,
     runningKm: Number(cal?.runningKm) || 0,
     runningMinutes: Number(cal?.runningMinutes) || 0,

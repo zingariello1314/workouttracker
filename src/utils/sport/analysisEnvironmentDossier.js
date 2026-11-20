@@ -6,6 +6,11 @@
 import { analysisEditionKey } from './analysisEdition';
 import { RECAP_ADAPTIVE_WORKER_CONTRACT } from './recapAdaptiveWorkerContract';
 import { summarizePublicationLifecycle } from './publicationLifecycleTrace';
+import {
+  downloadAnalysisBundle,
+  downloadAnalysisJson,
+  renderAuditMarkdown
+} from './analysisExportDownload';
 
 const COLUMNS = ['shortTerm', 'mediumTerm', 'longTerm'];
 
@@ -95,21 +100,60 @@ export function windowEvidence(snapshot, periodWindow) {
   };
 }
 
+function fnv1a(text) {
+  let hash = 0x811c9dc5;
+  const str = String(text || '');
+  for (let i = 0; i < str.length; i += 1) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+/**
+ * Empreinte analytique : détecte aussi les changements de charge, durée, date.
+ * Ne se limite plus au nombre de clés et au total de répétitions.
+ */
 export function snapshotFingerprint(snapshot) {
   const reps = snapshot?.reps && typeof snapshot.reps === 'object' ? snapshot.reps : {};
   const checked =
     snapshot?.checkedExercises && typeof snapshot.checkedExercises === 'object'
       ? snapshot.checkedExercises
       : {};
+  const weights = snapshot?.weights && typeof snapshot.weights === 'object' ? snapshot.weights : {};
+  const durations =
+    snapshot?.sessionDurations && typeof snapshot.sessionDurations === 'object'
+      ? snapshot.sessionDurations
+      : snapshot?.durations && typeof snapshot.durations === 'object'
+        ? snapshot.durations
+        : {};
   let totalReps = 0;
   Object.values(reps).forEach((value) => {
     const n = Number(value);
     if (Number.isFinite(n)) totalReps += n;
   });
+  const repKeys = Object.keys(reps).sort();
+  const weightKeys = Object.keys(weights).sort();
+  const durationKeys = Object.keys(durations).sort();
+  const payload = [
+    repKeys.map((k) => `${k}=${reps[k]}`).join('|'),
+    Object.keys(checked)
+      .sort()
+      .map((k) => `${k}=${checked[k] === true ? 1 : 0}`)
+      .join('|'),
+    weightKeys.map((k) => `${k}=${weights[k]}`).join('|'),
+    durationKeys.map((k) => `${k}=${durations[k]}`).join('|')
+  ].join('||');
   return {
-    repKeys: Object.keys(reps).length,
+    version: 2,
+    repKeys: repKeys.length,
     checkedKeys: Object.keys(checked).length,
-    totalReps
+    weightKeys: weightKeys.length,
+    durationKeys: durationKeys.length,
+    totalReps,
+    digest: fnv1a(payload),
+    firstRepKey: repKeys[0] || null,
+    lastRepKey: repKeys[repKeys.length - 1] || null
   };
 }
 
@@ -348,19 +392,26 @@ export function buildAnalysisEnvironmentDossier({
   };
 }
 
-export function downloadAnalysisDossier(dossier) {
-  if (typeof document === 'undefined') return;
-  const period = dossier?.period || 'period';
-  const stamp = String(dossier?.capturedAt || '').replace(/[:.]/g, '-');
-  const blob = new Blob([JSON.stringify(dossier, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `momentum-analysis-dossier-${period}-${stamp}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+export function downloadAnalysisDossier(dossier, { filename = null, markdown = null, bundleZip = true } = {}) {
+  if (!dossier || dossier.refused) {
+    return { ok: false, reason: dossier?.reason || 'refused' };
+  }
+  const period = dossier?.period || dossier?.requestedPeriod || dossier?.schema || 'period';
+  const stamp = String(dossier?.capturedAt || new Date().toISOString()).replace(/[:.]/g, '-');
+  const md =
+    markdown === false ? null : typeof markdown === 'string' ? markdown : renderAuditMarkdown(dossier);
+  if (bundleZip !== false && md) {
+    return downloadAnalysisBundle({
+      json: dossier,
+      markdown: md,
+      basename: filename
+        ? String(filename).replace(/\.json$/i, '').replace(/\.zip$/i, '')
+        : `momentum-analysis-${period}`
+    });
+  }
+  return downloadAnalysisJson(dossier, {
+    filename: filename || `momentum-analysis-dossier-${period}-${stamp}.json`
+  });
 }
 
 /**

@@ -81,7 +81,7 @@ export function userFacingExerciseLabel(name, _exerciseId = null) {
   const cleaned = sanitizeAnalysisExerciseDisplayName(name);
   if (
     !cleaned ||
-    /^Exercice\s+\d+$/i.test(cleaned) ||
+    /^Exercice\s*#?\s*\d+$/i.test(cleaned) ||
     /^#\d+$/.test(cleaned) ||
     /^\d{6,}$/.test(cleaned)
   ) {

@@ -12,5 +12,9 @@
 | Sommeil assoc | sleep producers | n / delta | prudent | template | pénalités petit n | possible |
 | GTG | gtg producers | jours GTG | — | template | priorités période | oui |
 | Densité / rythme | detectDiscoveries | agrégats | descriptif | template | weak_descriptive | souvent perdu |
+| Comparaison de séances | `chooseSessionComparison` dans `detectDiscoveries` | profils de jours identifiés | quatre issues, écart matériel | `sessionComparisonProse` | priorité si la paire distingue ; un écart de quelques répétitions n’est pas retenu | carte si une paire matérielle existe |
+| Hausse de charge | `collectResistanceProgressions` | poids saisi, même mode, séries enregistrées | format constant | phrase de charge | famille exercice | carte par exercice identifié |
+| Orphelins | `classifyExerciseStanding` | résolution canonique | exclus des muscles et des trajectoires, gardés dans le total | phrase de résidu | pas de carte nominative | section console |
+| P6 registre | `applyP6` sur le paquet | claim, exploration, liens | cohérence puis valeur marginale | thèse déjà rédigée, références conservées | budget de colonne, catalogue intact | panneau de débogage et diagnostic |
 
 Légende : « composé » = preuve + F4 ; « classique » = détecteur → texte.

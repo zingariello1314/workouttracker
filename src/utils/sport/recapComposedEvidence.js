@@ -408,7 +408,12 @@ export function enrichDiscoveryWithComposedEvidence(discovery, trajectory = null
           windows: { selected: discovery.metrics.window || null, previousComparable: null },
           temporalScope: discovery.metrics.temporalScope,
           sessions: {
-            trace: (discovery.metrics.sessions || []).map((s) => ({
+            trace: (Array.isArray(discovery.metrics.sessions)
+              ? discovery.metrics.sessions
+              : Array.isArray(discovery.metrics.sessions?.trace)
+                ? discovery.metrics.sessions.trace
+                : []
+            ).map((s) => ({
               ...s,
               totalReps: s.totalReps != null ? s.totalReps : s.reps
             }))
@@ -466,7 +471,12 @@ export function enrichDiscoveryWithComposedEvidence(discovery, trajectory = null
           },
           temporalScope: discovery.metrics.temporalScope,
           sessions: {
-            trace: (discovery.metrics.sessions || []).map((s) => ({
+            trace: (Array.isArray(discovery.metrics.sessions)
+              ? discovery.metrics.sessions
+              : Array.isArray(discovery.metrics.sessions?.trace)
+                ? discovery.metrics.sessions.trace
+                : []
+            ).map((s) => ({
               ...s,
               totalReps: s.totalReps != null ? s.totalReps : s.reps
             }))

@@ -268,13 +268,15 @@ export function buildDiagnosticComparison(reportA, reportB, context = {}) {
       });
     }
     if (r.diagStatus === DIAG_STATUS.DEMOTED && r.decisionReason === 'cap') {
+      const accessible = accessibleAfterCap(r._periodKey === 'A' ? reportA : reportB, r);
       issues.push({
-        severity: 'medium',
+        severity: accessible ? 'low' : 'medium',
         category: 'selection',
         period: r._periodKey,
+        sourcePeriod: r._periodKey === 'A' ? reportA.meta?.period : reportB.meta?.period,
         kind: r.kind,
         title: r.title,
-        reason: 'lost_to_cap',
+        reason: accessible ? 'accessible_after_presentation_limit' : 'lost_to_cap',
         informativeValue: r.informativeValue,
         confirmed: true
       });
@@ -391,6 +393,17 @@ function hasImplicitEvidence(r) {
   return false;
 }
 
+function accessibleAfterCap(report, row) {
+  const reserve = report?.insights?.accessibleReserve || [];
+  const id = String(row?.id || '');
+  const title = String(row?.title || '').trim().toLowerCase();
+  return reserve.some((item) => {
+    if (item?.disposition !== 'valid_reserved' && item?.disposition !== 'demoted_priority') return false;
+    if (id && item.id === id) return true;
+    return title && String(item.title || '').trim().toLowerCase() === title;
+  });
+}
+
 /**
  * Anomalies instrumentées sur un seul rapport (ou fusion A+B).
  */
@@ -461,12 +474,14 @@ export function detectReportIssues(report, periodKey = 'A') {
       }
     }
     if (r.decisionReason === 'cap' && (r.informativeValue || 0) >= 70) {
+      const accessible = accessibleAfterCap(report, r);
       issues.push({
         id: `selection.cap:${periodKey}:${r.kind}:${r.id || ''}`,
-        severity: 'medium',
+        severity: accessible ? 'low' : 'medium',
         category: 'selection',
         period: periodKey,
-        reason: 'high_value_lost_to_cap',
+        sourcePeriod: report?.meta?.period || null,
+        reason: accessible ? 'accessible_after_presentation_limit' : 'high_value_lost_to_cap',
         kind: r.kind,
         title: r.title,
         informativeValue: r.informativeValue,
@@ -621,7 +636,8 @@ export function compareDomToPack(report, domCapture) {
           ? 'match'
           : 'mismatch';
 
-  const samePeriod = !domCapture.period || domCapture.period === report.meta?.period;
+  const renderedPeriod = domCapture.renderedPeriod || null;
+  const samePeriod = Boolean(renderedPeriod) && renderedPeriod === report.meta?.period;
   const packRows = registryRows(report).filter((r) => r.diagStatus === DIAG_STATUS.SHOWN_NOW);
 
   let comparability = DOM_COMPARABILITY.INDETERMINATE;
@@ -629,6 +645,9 @@ export function compareDomToPack(report, domCapture) {
   if (emptyReason) {
     comparability = DOM_COMPARABILITY.INDETERMINATE;
     reason = emptyReason;
+  } else if (!renderedPeriod) {
+    comparability = DOM_COMPARABILITY.INDETERMINATE;
+    reason = 'rendered_period_missing';
   } else if (!samePeriod) {
     comparability = DOM_COMPARABILITY.NON_COMPARABLE;
     reason = 'period_mismatch';

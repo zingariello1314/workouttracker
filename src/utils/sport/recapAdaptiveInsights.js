@@ -43,6 +43,7 @@ import {
   rescueStarvedFamilySlots
 } from './recapSelectionDiagnostics';
 import { filterValidInsights, finalizePublishedInsight } from './recapInsightValidate';
+import { insightsFromP6 } from './p6Publication';
 import { semanticGroupFromCandidateId } from './insightSemanticThemes';
 import { applyNoveltyWeights } from './insightNoveltyEngine';
 import {
@@ -50,7 +51,7 @@ import {
   loadLastInsightSignature,
   localDayKey
 } from './insightNoveltyStore';
-import { buildAccessibleReserve, notePublication } from './analyticalMemory';
+import { buildAccessibleReserve, notePublication, proseTitleFromBody } from './analyticalMemory';
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
 import { claimFromCandidate, kindFromNarrativeCandidate } from './recapNarrativeClaims';
@@ -1374,6 +1375,11 @@ function humanizeKindTitle(kind, fallback = '') {
 
 function publishableCard(row) {
   const card = toInsightCard(row);
+  if (!String(card?.title || '').trim() && card?.body) {
+    const recovered = proseTitleFromBody(card.body);
+    if (recovered) card.title = recovered;
+  }
+  if (!String(card?.title || '').trim()) return null;
   if (!card?.body && !card?.title) return null;
   const gated = finalizePublishedInsight(card);
   return gated.ok ? gated.card : null;
@@ -1704,18 +1710,33 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     };
   }
 
-  const result = {
-    insights: {
-      shortTerm: pickedShort.map(publishableCard).filter(Boolean),
-      mediumTerm: pickedMedium.map(publishableCard).filter(Boolean),
-      longTerm: pickedLong.map(publishableCard).filter(Boolean),
-      accessibleReserve: buildAccessibleReserve({
+  // Publication souveraine : colonnes et réserve issues de P6 uniquement.
+  // Les sources fusionnées restent dans periodDiscoveries.p6.sources, hors catalogue utilisateur.
+  // Si P6 n'est pas réconcilié, le secours legacy est explicite — jamais présenté comme P6.
+  const p6Insights = insightsFromP6(composed.periodDiscoveries?.p6 || null, { period });
+  const legacyInsights = {
+    shortTerm: pickedShort.map(publishableCard).filter(Boolean),
+    mediumTerm: pickedMedium.map(publishableCard).filter(Boolean),
+    longTerm: pickedLong.map(publishableCard).filter(Boolean),
+    accessibleReserve: [
+      ...buildAccessibleReserve({
         valid: validCandidates,
         shownIds,
         merged: dedupedRows,
         period
       })
-    },
+    ],
+    publicationAuthority: 'legacy_fallback',
+    publicationFallback: true,
+    reason: p6Insights?.reason || 'p6_unavailable'
+  };
+  const publishedInsights =
+    p6Insights &&
+    (p6Insights.publicationAuthority === 'p6' || p6Insights.publicationAuthority === 'p6_partial')
+      ? p6Insights
+      : legacyInsights;
+  const result = {
+    insights: publishedInsights,
     kpis: {
       runningKm: vol.totalKm,
       runningSessions: vol.sessionCount,

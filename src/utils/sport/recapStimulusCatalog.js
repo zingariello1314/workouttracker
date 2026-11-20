@@ -14,11 +14,24 @@ function norm(name) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-export function classifyStimulus(name) {
+/**
+ * Classification biomécanique / de format. La provenance « défis » ou
+ * le libellé historique « pompes endurance » ne prouvent pas une
+ * nature physiologique d'endurance musculaire.
+ */
+export function classifyStimulus(name, { id = null, provenance = null } = {}) {
   const n = norm(name);
-  const endurance =
-    /endurance|amrap|max[\s-]?reps|pompes \(endurance\)|pompes endurance/.test(n) ||
-    (/pompe/.test(n) && /endurance|longue|capillary/.test(n));
+  const sid = String(id || '');
+  const fromChallenge =
+    sid === 'complementary_endurance_pushups' ||
+    sid.startsWith('complementary_') ||
+    provenance === 'complementary_endurance' ||
+    /complementaire|defi|défi/.test(n);
+  const formatEndurance = /amrap|max[\s-]?reps|capillary/.test(n);
+  const namedEnduranceSpace = /pompes \(endurance\)|pompes endurance/.test(n) || (/pompe/.test(n) && /endurance/.test(n));
+  // Indéterminé : provenance défi ou appellation d'espace, sans preuve de format.
+  const physiologicalUnknown = fromChallenge || (namedEnduranceSpace && !formatEndurance);
+  const endurance = !physiologicalUnknown && (formatEndurance || (/endurance/.test(n) && !/pompe/.test(n)));
   const isolation =
     /extension|curl|elevation|oiseau|fly|ecarte|kickback|face pull|shrug|isolation|mollet isole/.test(
       n
@@ -35,6 +48,8 @@ export function classifyStimulus(name) {
     );
   return {
     endurance,
+    strength: !endurance && !physiologicalUnknown,
+    physiologicalUnknown,
     isolation,
     compound: !isolation,
     weighted,
@@ -42,7 +57,8 @@ export function classifyStimulus(name) {
     vertical,
     horizontal,
     unilateral,
-    bilateral: !unilateral
+    bilateral: !unilateral,
+    provenance: fromChallenge ? 'challenge' : null
   };
 }
 
@@ -70,6 +86,7 @@ export function tallyStimulus(measure) {
   const buckets = {
     endurance: 0,
     strength: 0,
+    unknown: 0,
     isolation: 0,
     compound: 0,
     weighted: 0,
@@ -78,17 +95,24 @@ export function tallyStimulus(measure) {
     horizontal: 0,
     unilateral: 0,
     bilateral: 0,
-    total: 0
+    total: 0,
+    classified: 0
   };
   const byFamily = {};
   (measure?.exercises || []).forEach((e) => {
     const reps = Math.max(0, Math.floor(Number(e.reps) || 0));
     if (reps <= 0) return;
-    const s = classifyStimulus(e.name);
+    const s = classifyStimulus(e.name, { id: e.id, provenance: e.provenance });
     const fam = familyOfExercise(e.id, e.name);
     buckets.total += reps;
-    if (s.endurance) buckets.endurance += reps;
-    else buckets.strength += reps;
+    if (s.physiologicalUnknown) buckets.unknown += reps;
+    else if (s.endurance) {
+      buckets.endurance += reps;
+      buckets.classified += reps;
+    } else {
+      buckets.strength += reps;
+      buckets.classified += reps;
+    }
     if (s.isolation) buckets.isolation += reps;
     else buckets.compound += reps;
     if (s.weighted) buckets.weighted += reps;
@@ -152,24 +176,37 @@ export function detectStructuralShifts(nowMeasure, thenMeasure, { minNowReps = 4
 
 export function stimulusContrast(nowBuckets, thenBuckets) {
   if (!nowBuckets || nowBuckets.total < 80) return null;
-  const pct = (key) => share(nowBuckets[key], nowBuckets.total);
-  const thenPct = (key) =>
-    thenBuckets?.total >= 80 ? share(thenBuckets[key], thenBuckets.total) : null;
+  const classified = nowBuckets.classified > 0 ? nowBuckets.classified : nowBuckets.total - (nowBuckets.unknown || 0);
+  const thenClassified =
+    thenBuckets?.classified > 0
+      ? thenBuckets.classified
+      : thenBuckets
+        ? thenBuckets.total - (thenBuckets.unknown || 0)
+        : 0;
+  const pct = (key, whole = nowBuckets.total) => share(nowBuckets[key], whole);
+  const thenPct = (key, whole = thenBuckets?.total) =>
+    thenBuckets?.total >= 80 ? share(thenBuckets[key], whole) : null;
+  const forceEnduranceComparable = classified >= 80;
   return {
-    endurance: pct('endurance'),
-    strength: pct('strength'),
+    endurance: forceEnduranceComparable ? pct('endurance', classified) : null,
+    strength: forceEnduranceComparable ? pct('strength', classified) : null,
+    unknown: pct('unknown'),
     isolation: pct('isolation'),
     compound: pct('compound'),
     weighted: pct('weighted'),
     bodyweight: pct('bodyweight'),
-    thenEndurance: thenPct('endurance'),
+    thenEndurance:
+      thenClassified >= 80 ? thenPct('endurance', thenClassified) : null,
     thenIsolation: thenPct('isolation'),
     thenWeighted: thenPct('weighted'),
     vertical: pct('vertical'),
     horizontal: pct('horizontal'),
     unilateral: pct('unilateral'),
     thenVertical: thenPct('vertical'),
-    thenHorizontal: thenPct('horizontal')
+    thenHorizontal: thenPct('horizontal'),
+    forceEnduranceComparable,
+    classifiedReps: classified,
+    unknownReps: nowBuckets.unknown || 0
   };
 }
 

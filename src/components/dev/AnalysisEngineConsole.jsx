@@ -39,9 +39,9 @@ import {
   DOM_CAPTURE_EVENT
 } from '../../utils/sport/analysisEngineDomCapture';
 import { buildConsolidationShadowDiagnostic } from '../../utils/sport/exerciseFormatConsolidation';
-import { readPublishedInsightPacks } from '../../hooks/useRecapTabMetrics';
+import { readPublishedBundle, readPublishedInsightPacks } from '../../hooks/useRecapTabMetrics';
 import { analysisFamilyLabel } from '../../utils/sport/recapSelectionDiagnostics';
-import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
+import { getRecapDateWindow, resolveRecapPeriodWindow } from '../../utils/sport/recapMuscleLoadEngine';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useRecapCrossCoachGarmin } from '../../hooks/useRecapCrossCoachGarmin';
 import { browserYieldFrame } from '../../utils/sport/recapComputeCoop';
@@ -1171,6 +1171,10 @@ export default function AnalysisEngineConsole() {
   const [domCapture, setDomCapture] = useState(() => loadAnalyseDomCapture());
   const [shadowReplay, setShadowReplay] = useState(null);
   const [publishedPacks, setPublishedPacks] = useState(null);
+  const [exportLive, setExportLive] = useState(null);
+  const [exportNotice, setExportNotice] = useState('');
+  const [exportProgress, setExportProgress] = useState(null);
+  const [exportBusy, setExportBusy] = useState(false);
 
   const periodWindow = useMemo(() => getRecapDateWindow(period, new Date()), [period]);
   const garminRange = useMemo(() => {
@@ -1313,6 +1317,18 @@ export default function AnalysisEngineConsole() {
   }, [canAccess, getCurrentData, period, getExerciseNameById]);
 
   useEffect(() => () => cancelDiagnosticWorker(), []);
+
+  useEffect(() => {
+    const onState = (event) => setExportLive(event?.detail || null);
+    const onProgress = (event) => setExportProgress(event?.detail || null);
+    window.addEventListener('momentum:analysis-export-state', onState);
+    window.addEventListener('momentum:analysis-export-progress', onProgress);
+    if (window.momentumAnalysisExportState) setExportLive(window.momentumAnalysisExportState);
+    return () => {
+      window.removeEventListener('momentum:analysis-export-state', onState);
+      window.removeEventListener('momentum:analysis-export-progress', onProgress);
+    };
+  }, []);
 
   useEffect(() => {
     const onCap = (ev) => setDomCapture(ev?.detail || loadAnalyseDomCapture());
@@ -1639,6 +1655,137 @@ export default function AnalysisEngineConsole() {
     }
   };
 
+  const exportWindow = resolveRecapPeriodWindow(period, snapshotPreview, garminBundle);
+  const compareWindow = comparePeriod
+    ? resolveRecapPeriodWindow(comparePeriod, snapshotPreview, garminBundle)
+    : null;
+  const cachedForPeriod = readPublishedBundle({
+    period,
+    windowStart: exportWindow?.start || null,
+    windowEnd: exportWindow?.end || null
+  });
+  const cachedCompare = comparePeriod
+    ? readPublishedBundle({
+        period: comparePeriod,
+        windowStart: compareWindow?.start || null,
+        windowEnd: compareWindow?.end || null
+      })
+    : null;
+  const liveMatches = (target, targetWindow) =>
+    exportLive?.analysisStatus === 'ready' &&
+    exportLive?.publicationStatus === 'ready' &&
+    exportLive?.selectedPeriod === target &&
+    exportLive?.publicationPeriod === target &&
+    (!targetWindow?.start || exportLive?.windowStart === targetWindow.start) &&
+    (!targetWindow?.end || exportLive?.windowEnd === targetWindow.end);
+  const comparisonActive = viewMode === 'compare' && Boolean(comparePeriod);
+  const canExportPeriod = Boolean(liveMatches(period, exportWindow) || cachedForPeriod);
+  const canExportCompare = Boolean(liveMatches(comparePeriod, compareWindow) || cachedCompare);
+  const canExport = comparisonActive ? canExportPeriod && canExportCompare : canExportPeriod;
+
+  const exportSelectedPeriod = async () => {
+    const fn = window.momentumExportAnalysisDossier;
+    if (exportBusy) return;
+    if (typeof fn !== 'function') {
+      setExportNotice(
+        'Export indisponible : ouvrir Récap → Analyse pour enregistrer le service d’export, puis réessayer.'
+      );
+      return;
+    }
+    if (!canExport) {
+      setExportNotice(
+        'Export désactivé : le paquet publié de la période demandée n’est pas prêt (édition / fenêtre / calcul).'
+      );
+      return;
+    }
+    setExportBusy(true);
+    setExportNotice('Préparation de l’export…');
+    setExportProgress({ period, phase: 'lookup', index: 1, total: 1 });
+    try {
+      const domCapture = captureAnalyseCardsFromDom({ period });
+      const result = await fn({
+        period,
+        window: exportWindow,
+        download: true,
+        domCapture,
+        comparePeriod: comparisonActive ? comparePeriod : null,
+        compareWindow: comparisonActive ? compareWindow : null
+      });
+      const refused = result?.refused
+        ? result
+        : result?.periodA?.refused
+          ? result.periodA
+          : result?.periodB?.refused
+            ? result.periodB
+            : null;
+      if (result?.download && result.download.ok === false) {
+        setExportNotice(`Téléchargement échoué : ${result.download.reason || 'inconnu'}. Réessayez.`);
+        return;
+      }
+      if (result?.schema === 'momentum.analysisComparisonExport.v1') {
+        setExportNotice(
+          refused
+            ? `Comparaison écrite. ${refused.requestedPeriod || 'une période'} est indisponible (${refused.reason}).`
+            : `Comparaison ${period} / ${comparePeriod} exportée${result?.download?.filename ? ` (${result.download.filename})` : ''}.`
+        );
+        return;
+      }
+      if (refused) {
+        setExportNotice(
+          `Export interrompu : ${refused.reason || 'paquet indisponible'}. Période demandée ${refused.requestedPeriod || period}.`
+        );
+        return;
+      }
+      setExportNotice(
+        comparisonActive
+          ? `Comparaison ${period} / ${comparePeriod} exportée.`
+          : `Période ${period} exportée (${result?.provenance || 'publié'})${result?.download?.filename ? ` · ${result.download.filename}` : ''}.`
+      );
+    } catch (error) {
+      setExportNotice(`Erreur d’export : ${String(error?.message || error)}. Vous pouvez réessayer.`);
+    } finally {
+      setExportBusy(false);
+      setExportProgress(null);
+    }
+  };
+
+  const exportEightPeriods = async () => {
+    const fn = window.momentumExportEightPeriods;
+    if (exportBusy) return;
+    if (typeof fn !== 'function') {
+      setExportNotice(
+        'Export des 8 périodes indisponible : ouvrir Récap → Analyse d’abord, puis réessayer.'
+      );
+      return;
+    }
+    setExportBusy(true);
+    setExportNotice('Préparation de l’export des huit périodes…');
+    setExportProgress({ period: 'today', phase: 'lookup', index: 1, total: 8 });
+    try {
+      const domCapture = captureAnalyseCardsFromDom({ period });
+      const result = await fn({ domCapture, download: true });
+      const missing = result?.unavailable || [];
+      if (result?.download && result.download.ok === false) {
+        setExportNotice(`Téléchargement échoué : ${result.download.reason || 'inconnu'}. Réessayez.`);
+        return;
+      }
+      if (!result?.complete || missing.length) {
+        setExportNotice(
+          `Export incomplet. ${missing.map((row) => `${row.period}: ${row.reason}`).join(' · ') || 'période manquante'}. Fichier partiel téléchargé si disponible — réessayez les périodes en échec.`
+        );
+        return;
+      }
+      setExportNotice(
+        `Export des huit périodes réussi${result?.download?.filename ? ` (${result.download.filename})` : ''}.`
+      );
+    } catch (error) {
+      setExportNotice(`Erreur d’export 8 périodes : ${String(error?.message || error)}. Réessayez.`);
+    } finally {
+      setExportBusy(false);
+      setExportProgress(null);
+    }
+  };
+
   if (!canAccess) {
     return (
       <div className="aec">
@@ -1776,14 +1923,24 @@ export default function AnalysisEngineConsole() {
             <button
               type="button"
               className="aec-btn aec-btn-ghost"
-              title="Export du dossier analytique affiché. N’écrit ni l’historique, ni le cache, ni les données."
-              onClick={() => {
-                const fn = window.momentumExportAnalysisDossier;
-                if (typeof fn !== 'function') return;
-                fn({ download: true });
-              }}
+              title={
+                canExport
+                  ? 'Exporte la période sélectionnée et son paquet publié. N’écrit ni l’historique, ni le cache, ni les données.'
+                  : 'Export désactivé tant que le paquet publié de cette période n’est pas prêt.'
+              }
+              onClick={exportSelectedPeriod}
+              disabled={!canExport || exportBusy}
             >
-              Exporter le dossier analytique
+              {comparisonActive ? 'Exporter la comparaison' : 'Exporter le dossier analytique'}
+            </button>
+            <button
+              type="button"
+              className="aec-btn aec-btn-ghost"
+              title="Réutilise les paquets déjà publiés, puis calcule les périodes manquantes une par une."
+              onClick={exportEightPeriods}
+              disabled={exportBusy}
+            >
+              Exporter les 8 périodes
             </button>
             <button
               type="button"
@@ -1799,8 +1956,8 @@ export default function AnalysisEngineConsole() {
               onClick={() => {
                 const cap = captureAnalyseCardsFromDom({
                   period: viewMode === 'B' ? comparePeriod : period,
-                  dataSignature: report?.meta?.dataSignature || null,
-                  editorialHistorySignature: report?.meta?.editorialHistorySignature || null,
+                  dataSignature: null,
+                  editorialHistorySignature: null,
                   runId: report?.meta?.runId || null,
                   engineEdition: report?.meta?.runManifest?.versions?.engine || null,
                   workerStatus: report?.meta?.runManifest?.timestamps?.publishedAt
@@ -1823,6 +1980,28 @@ export default function AnalysisEngineConsole() {
             </button>
           </div>
         </header>
+        {exportNotice || exportProgress || exportBusy ? (
+          <div className="aec-banner aec-banner-empty" role="status" aria-live="polite">
+            {exportBusy ? (
+              <span>
+                {exportProgress
+                  ? `Export en cours · ${exportProgress.index || '?'}/${exportProgress.total || 8} · ${exportProgress.period} (${exportProgress.phase === 'compute' ? 'calcul' : 'paquet publié'})…`
+                  : 'Export en cours…'}
+              </span>
+            ) : null}
+            {exportNotice ? <span>{exportBusy ? ' — ' : ''}{exportNotice}</span> : null}
+            {!exportBusy && exportNotice ? (
+              <button
+                type="button"
+                className="aec-btn aec-btn-ghost"
+                style={{ marginLeft: 8 }}
+                onClick={() => setExportNotice('')}
+              >
+                OK
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="aec-body">
           <nav className="aec-nav" aria-label="Modules">
@@ -1843,36 +2022,29 @@ export default function AnalysisEngineConsole() {
           <div className="aec-main">
             <div className="aec-main-scroll">
               {publishedPacks ? (
-                <div className="aec-banner aec-banner-empty">
+                <details className="aec-banner aec-banner-empty">
+                  <summary>
+                    {publishedPacks.current
+                      ? `${publishedPacks.current.period} · ${publishedPacks.current.windowStart} → ${publishedPacks.current.windowEnd} · ${publishedPacks.current.presentation === 'refreshing' ? 'rafraîchissement' : 'édition courante'} · ${publishedPacks.current.cardCount} publiées · ${publishedPacks.current.reserveCount} accessibles`
+                      : `Aucun pack courant pour ${publishedPacks.period || 'cette période'}`}
+                    {' · '}
+                    {publishedPacks.current?.analysisEdition || 'édition inconnue'}
+                  </summary>
                   {publishedPacks.current ? (
                     <>
-                      <div>
-                        Pack de la période sélectionnée, sans nouveau calcul et sans exposition.{' '}
-                        {publishedPacks.current.presentation === 'refreshing'
-                          ? 'Rafraîchissement'
-                          : 'Édition courante'}
-                        {' · '}
-                        {publishedPacks.current.period} · {publishedPacks.current.windowStart} →{' '}
-                        {publishedPacks.current.windowEnd}
-                      </div>
-                      <div>Édition : {publishedPacks.current.analysisEdition}</div>
                       <div>Contrat : {publishedPacks.current.workerContract || '—'}</div>
                       <div>Empreinte : {publishedPacks.current.dataFingerprint || '—'}</div>
-                      <div>
-                        {publishedPacks.current.cardCount} cartes publiées ·{' '}
-                        {publishedPacks.current.reserveCount} conclusions accessibles
-                      </div>
                       {publishedPacks.current.cards.map((card) => (
                         <div key={`${card.column}-${card.title}`}>
                           <strong>{card.title || '(sans titre)'}</strong>
                           <div>{card.body}</div>
+                          {card.evidence ? <div>{card.evidence}</div> : null}
                         </div>
                       ))}
                     </>
                   ) : (
                     <div>
-                      Aucune édition courante pour {publishedPacks.period || 'cette période'} (
-                      {publishedPacks.windowStart || '—'} → {publishedPacks.windowEnd || '—'}).
+                      Fenêtre demandée : {publishedPacks.windowStart || '—'} → {publishedPacks.windowEnd || '—'}.
                     </div>
                   )}
                   <div>
@@ -1880,7 +2052,7 @@ export default function AnalysisEngineConsole() {
                     édition{publishedPacks.previousCount > 1 ? 's' : ''} conservée
                     {publishedPacks.previousCount > 1 ? 's' : ''}, hors de cette lecture.
                   </div>
-                </div>
+                </details>
               ) : null}
               <div className="aec-banner aec-banner-empty">
                 Le diagnostic lancé ici est un calcul indépendant. Il n’est pas le pack affiché dans Analyse.
@@ -2539,6 +2711,31 @@ export default function AnalysisEngineConsole() {
                       setPipelineStep={setPipelineStep}
                       StagePill={StagePill}
                     />
+                  ) : null}
+
+                  {section === 'data' && activeReport.exerciseCoverage ? (
+                    <details className="aec-panel">
+                      <summary className="aec-panel-head">
+                        Exercices historiques orphelins — exclusion volontaire ·{' '}
+                        {activeReport.exerciseCoverage.orphanExercises || 0} identifiants ·{' '}
+                        {activeReport.exerciseCoverage.orphanReps || 0} répétitions
+                      </summary>
+                      <div className="aec-panel-body">
+                        <p>
+                          Total enregistré {activeReport.exerciseCoverage.totalReps || 0}. Identifiées{' '}
+                          {activeReport.exerciseCoverage.identifiedReps || 0}. Sans identité canonique{' '}
+                          {activeReport.exerciseCoverage.orphanReps || 0}. Autres statuts{' '}
+                          {activeReport.exerciseCoverage.ambiguousReps || 0}.
+                        </p>
+                        <ul>
+                          {(activeReport.exerciseCoverage.orphanRows || []).slice(0, 40).map((row) => (
+                            <li key={row.id}>
+                              {row.id} · {row.reps} répétitions · {row.reason}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
                   ) : null}
 
                   {section === 'data' ? (

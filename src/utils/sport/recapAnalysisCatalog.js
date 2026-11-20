@@ -15,6 +15,7 @@ import { evaluateRegularity } from './recapRegularityQuestion';
 import { evaluateHistoryBaselines, evaluateRhythmRegime } from './recapHistoryQuestion';
 import { informationGain, markTold } from './recapReasoning';
 import { isPluralExerciseLabel } from './recapComposedNarration';
+import { classifyExerciseStanding } from './historicalOrphanExercises';
 
 const MONTHS = [
   'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
@@ -113,19 +114,20 @@ function buildContext(opts) {
       exercises.set(id, ex);
     });
   });
-  const nameOf = (id) => {
-    const n = opts.getExerciseNameById?.(Number(id)) || opts.getExerciseNameById?.(id);
-    if (!n || /^Exercice\s+\d+/i.test(String(n))) return null;
-    return String(n);
-  };
   const unresolvedExerciseIds = [];
+  const orphanExerciseIds = [];
   exercises.forEach((ex, id) => {
-    ex.name = nameOf(ex.id);
+    const standing = classifyExerciseStanding(opts.snapshot, id, opts.getExerciseNameById);
+    ex.standing = standing.standing;
+    ex.name = standing.name;
     ex.dates.sort();
-    if (!ex.name) {
-      unresolvedExerciseIds.push({ id: String(id), reason: 'unresolved_exercise_identity' });
-      exercises.delete(id);
+    if (standing.standing === 'identified' || standing.standing === 'identified_without_label') return;
+    if (standing.standing === 'historical_orphan') {
+      orphanExerciseIds.push({ id: String(id), reps: ex.reps, reason: standing.reason });
+    } else {
+      unresolvedExerciseIds.push({ id: String(id), reps: ex.reps, reason: standing.reason });
     }
+    exercises.delete(id);
   });
   const allExerciseDates = new Map();
   allDates.forEach((d) => {
@@ -149,7 +151,9 @@ function buildContext(opts) {
     spanDays,
     rate: Math.round((dates.length / Math.max(1, spanDays / 7)) * 10) / 10,
     exercises,
+    getExerciseNameById: opts.getExerciseNameById || null,
     unresolvedExerciseIds,
+    orphanExerciseIds,
     allExerciseDates,
     feedback: opts.snapshot?.sessionFeedbacks || {},
     garminData: opts.garminData || null
@@ -178,7 +182,7 @@ function card(def, hit) {
       body: hit.body,
       kind: `span_${def.id}`,
       nature: horizon === 'short' ? 'now' : horizon === 'medium' ? 'trajectory' : 'journey',
-      evidenceLine: ''
+      evidenceLine: hit.evidence || ''
     }
   };
 }

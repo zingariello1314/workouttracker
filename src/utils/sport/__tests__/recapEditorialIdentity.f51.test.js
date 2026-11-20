@@ -8,7 +8,9 @@ import {
   sameExerciseIdentity,
   measuresComparableForContradiction,
   repairDisplayNameFromIdentity,
-  exerciseIdentityKey
+  exerciseIdentityKey,
+  returnEventYmd,
+  sessionsListOf
 } from '../recapEditorialIdentity';
 import {
   findPhenomenonRival,
@@ -30,6 +32,26 @@ function card(partial) {
     metrics: { ...(partial.metrics || {}) }
   };
 }
+
+describe('returnEventYmd — sessions non tableau', () => {
+  it('ne plante pas quand metrics.sessions est un objet trajectoire', () => {
+    const discovery = {
+      metrics: {
+        sessions: {
+          lifetime: [{ date: '2026-08-01', reps: 20 }],
+          trace: [
+            { date: '2026-11-10', role: 'return_session', reps: 36 },
+            { date: '2026-11-16', reps: 36 }
+          ]
+        }
+      }
+    };
+    expect(sessionsListOf(discovery.metrics)).toHaveLength(2);
+    expect(returnEventYmd(discovery)).toBe('2026-11-10');
+    expect(() => returnEventYmd({ metrics: { sessions: { lifetime: 4 } } })).not.toThrow();
+    expect(returnEventYmd({ metrics: { sessions: { lifetime: 4 } } })).toBe('');
+  });
+});
 
 describe('F5.1 — relations d’identité', () => {
   it('1. même nom, ids distincts, sans alias → SAME_DISPLAY_NAME (pas fusion)', () => {

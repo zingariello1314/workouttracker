@@ -45,7 +45,12 @@ export function saveAnalyseDomCapture(payload) {
   const record = {
     schemaVersion: 'analyse-dom-capture-v2',
     capturedAt: new Date().toISOString(),
-    period: payload?.period || null,
+    period: payload?.renderedPeriod || null,
+    selectorPeriod: payload?.selectorPeriod || null,
+    renderedPeriod: payload?.renderedPeriod || null,
+    renderedWindowStart: payload?.renderedWindowStart || null,
+    renderedWindowEnd: payload?.renderedWindowEnd || null,
+    renderedEdition: payload?.renderedEdition || null,
     dataSignature: payload?.dataSignature ?? null,
     editorialHistorySignature: payload?.editorialHistorySignature ?? null,
     source: payload?.source || 'manual',
@@ -153,6 +158,11 @@ export function captureAnalyseCardsFromDom({
     });
   }
 
+  const renderedRoot = doc.querySelector('[data-analyse-period]');
+  const renderedPeriod = renderedRoot?.getAttribute('data-analyse-period') || null;
+  const renderedWindowStart = renderedRoot?.getAttribute('data-analyse-window-start') || null;
+  const renderedWindowEnd = renderedRoot?.getAttribute('data-analyse-window-end') || null;
+  const renderedEdition = renderedRoot?.getAttribute('data-analysis-edition') || null;
   let structured = true;
   let nodes = [
     ...doc.querySelectorAll(
@@ -200,7 +210,12 @@ export function captureAnalyseCardsFromDom({
   });
 
   return saveAnalyseDomCapture({
-    period,
+    period: renderedPeriod,
+    selectorPeriod: period,
+    renderedPeriod,
+    renderedWindowStart,
+    renderedWindowEnd,
+    renderedEdition,
     cards,
     dataSignature,
     editorialHistorySignature,

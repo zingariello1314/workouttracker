@@ -6,7 +6,7 @@ import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
 import { useRecapSynthesisCoach } from '../../hooks/useRecapSynthesisCoach';
 import { useRecapCrossCoachNutrition } from '../../hooks/useRecapCrossCoachNutrition';
 import { useRecapCrossCoachGarmin } from '../../hooks/useRecapCrossCoachGarmin';
-import { useRecapTabMetrics } from '../../hooks/useRecapTabMetrics';
+import { readPublishedBundle, useRecapTabMetrics } from '../../hooks/useRecapTabMetrics';
 import DateHelper from '../../utils/dateHelper';
 import RecapShellLayout from '../sport/recap/shell/RecapShellLayout';
 const RecapSnapshotView = lazy(() => import('../sport/recap/views/RecapSnapshotView'));
@@ -18,6 +18,18 @@ const RecapGradesView = lazy(() => import('../sport/recap/views/RecapGradesView'
 import { isAdminUser } from '../../utils/accessControl';
 import { useGarminData } from '../../hooks/useGarminData';
 import { analysisEditionKey } from '../../utils/sport/analysisEdition';
+import {
+  buildComparisonExport,
+  buildEightPeriodAudit,
+  buildPeriodAuditDossier,
+  EIGHT_PERIODS,
+  resolveAuditSource
+} from '../../utils/sport/analysisPeriodExport';
+import {
+  PERIOD_EXPORT_TIMEOUT_MS,
+  withTimeout
+} from '../../utils/sport/analysisExportDownload';
+import { computeRecapPeriodWorkerBundle } from '../../utils/sport/recapPeriodWorkerCompute';
 import { RECAP_ADAPTIVE_WORKER_CONTRACT } from '../../utils/sport/recapAdaptiveWorkerContract';
 import { tracePublication } from '../../utils/sport/publicationLifecycleTrace';
 import { loadAnalyticalMemory, noteExposure, saveAnalyticalMemory } from '../../utils/sport/analyticalMemory';
@@ -337,71 +349,284 @@ const RecapTab = ({ isActive = true }) => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    window.momentumExportAnalysisDossier = async (opts = {}) => {
-      const dossierMod = await import('../../utils/sport/analysisEnvironmentDossier');
-      const historyMod = await import('../../utils/sport/insightNoveltyStore');
+    const publication = recapAssessment?.insightsPublication || null;
+    const exportState = {
+      selectedPeriod: deferredPeriod,
+      analysisStatus,
+      analysisPeriod,
+      publicationPeriod: publication?.period || null,
+      publicationStatus: publication?.status || null,
+      windowStart: publication?.windowStart || periodWindow?.start || null,
+      windowEnd: publication?.windowEnd || periodWindow?.end || null,
+      edition: analysisEditionKey()
+    };
+    window.momentumAnalysisExportState = exportState;
+    window.dispatchEvent(new CustomEvent('momentum:analysis-export-state', { detail: exportState }));
+
+    const metricsFor = async (periodId, windowForPeriod) => {
       const calendarMod = await import('../../utils/sport/recapCalendarPeriodAnalytics');
       const measureMod = await import('../../utils/sport/recapPeriodMeasure');
-      const calendar = periodWindow?.start
+      const calendar = windowForPeriod?.end
         ? calendarMod.buildRecapPeriodCalendarAnalytics({
             workoutData: snapshotForRecap,
             garminData: garminBundle,
-            period: deferredPeriod,
-            periodWindow,
+            period: periodId,
+            periodWindow: windowForPeriod,
             getExerciseNameById,
             recapState,
             phase: 'full'
           })
         : null;
-      const measure = periodWindow?.start
+      const measure = windowForPeriod?.end
         ? measureMod.measureRecapWindow({
             snapshot: snapshotForRecap,
-            window: periodWindow,
+            window: windowForPeriod,
             getExerciseNameById,
             garminData: garminBundle,
             recapState,
-            periodId: deferredPeriod
+            periodId
           })
         : null;
-      let experiment = null;
-      if (opts.experiment) {
-        experiment = await dossierMod.runIsolatedRepExperiment({
-          snapshot: snapshotForRecap,
-          addition: opts.experiment,
-          window: periodWindow,
-          period: deferredPeriod,
-          garminData: garminBundle,
-          garminDailyMetrics: garminPartialForRecap?.dailyMetrics || null,
-          getExerciseNameById,
-          profileQuestionnaireRaw: currentUser?.profileQuestionnaire || null,
-          activeProgram: activeProgram || null,
-          programs: programs || null,
-          assessment: recapAssessment,
-          recapState,
-          enrichment,
-          publishedInsights: recapAssessment?.insights
-        });
-      }
-      const dossier = dossierMod.buildAnalysisEnvironmentDossier({
-        period: deferredPeriod,
-        periodWindow,
-        assessment: recapAssessment,
-        calendar,
-        measure,
+      const banner = calendar?.periodStats
+        ? {
+            totalReps: calendar.periodStats.totalReps,
+            trainingDays: calendar.periodStats.trainingDays,
+            totalMinutes: calendar.periodStats.totalMinutes,
+            otherExerciseMinutes: calendar.periodStats.otherExerciseMinutes,
+            runningMinutes: calendar.periodStats.runningMinutes,
+            totalKg: calendar.periodStats.totalKg,
+            activeKcal: calendar.periodStats.activeKcal,
+            longestStreak: calendar.periodStats.longestStreak
+          }
+        : null;
+      const measured = measure
+        ? {
+            totalReps: measure.totalReps,
+            trainingDays: measure.trainingDays,
+            strengthDays: measure.strengthDays,
+            minutes: measure.minutes,
+            totalMinutes: measure.totalMinutes,
+            runningMinutes: measure.runningMinutes,
+            activeKcal: measure.activeKcal
+          }
+        : null;
+      return { banner, measured };
+    };
+
+    const liveBundle = {
+      analysisStatus,
+      analysisPeriod,
+      analysisEdition: analysisEditionKey(),
+      packRole: 'published',
+      recapAssessment
+    };
+
+    const dossierFor = async (periodId, windowForPeriod, domCapture) => {
+      const cached = readPublishedBundle({
+        period: periodId,
+        windowStart: windowForPeriod?.start || null,
+        windowEnd: windowForPeriod?.end || null
+      });
+      const source = resolveAuditSource({
+        requestedPeriod: periodId,
+        requestedWindow: windowForPeriod,
+        live: liveBundle,
+        cached
+      });
+      if (source.refused) return source;
+      const metrics = await metricsFor(periodId, source.bundle?.recapAssessment?.insightsPublication || windowForPeriod);
+      const historyMod = await import('../../utils/sport/insightNoveltyStore');
+      return buildPeriodAuditDossier({
+        requestedPeriod: periodId,
+        requestedWindow: windowForPeriod,
+        bundle: source.bundle,
+        provenance: source.provenance,
+        banner: metrics.banner,
+        measure: metrics.measured,
+        snapshot: snapshotForRecap,
         history: historyMod.loadInsightHistory(),
         signature: historyMod.loadLastInsightSignature(),
-        snapshot: snapshotForRecap,
-        analysisStatus,
-        analysisPeriod,
-        experiment,
-        mode: import.meta.env.MODE,
-        publicationTrace: Array.isArray(window.__f70iPub) ? window.__f70iPub.slice(-40) : null
+        publicationTrace: Array.isArray(window.__f70iPub) ? window.__f70iPub.slice(-40) : null,
+        domCapture
       });
-      if (opts.download !== false) dossierMod.downloadAnalysisDossier(dossier);
+    };
+
+    window.momentumExportAnalysisDossier = async (opts = {}) => {
+      const dossierMod = await import('../../utils/sport/analysisEnvironmentDossier');
+      const requestedPeriod = opts.period || deferredPeriod;
+      const requestedWindow =
+        opts.window || (requestedPeriod === deferredPeriod ? periodWindow : resolveRecapPeriodWindow(requestedPeriod, snapshotForRecap, garminBundle));
+      if (opts.comparePeriod) {
+        const windowB =
+          opts.compareWindow || resolveRecapPeriodWindow(opts.comparePeriod, snapshotForRecap, garminBundle);
+        const dossierA = await dossierFor(requestedPeriod, requestedWindow, opts.domCapture || null);
+        const dossierB = await dossierFor(opts.comparePeriod, windowB, opts.domCapture || null);
+        const comparison = buildComparisonExport(dossierA, dossierB);
+        if (opts.download !== false) {
+          comparison.download = dossierMod.downloadAnalysisDossier(comparison, {
+            filename: `momentum-analysis-comparison-${requestedPeriod}-vs-${opts.comparePeriod}-${comparison.capturedAt.replace(/[:.]/g, '-')}`
+          });
+        }
+        return comparison;
+      }
+      const dossier = await dossierFor(requestedPeriod, requestedWindow, opts.domCapture || null);
+      if (opts.download !== false && !dossier.refused) {
+        dossier.download = dossierMod.downloadAnalysisDossier(dossier);
+      }
       return dossier;
     };
+
+    window.momentumExportEightPeriods = async (opts = {}) => {
+      const dossierMod = await import('../../utils/sport/analysisEnvironmentDossier');
+      const exportFile = await buildEightPeriodAudit({
+        periods: EIGHT_PERIODS,
+        domCapture: opts.domCapture || null,
+        onProgress: (detail) => {
+          window.dispatchEvent(new CustomEvent('momentum:analysis-export-progress', { detail }));
+        },
+        loadPublished: async (periodId) => {
+          const windowForPeriod = resolveRecapPeriodWindow(periodId, snapshotForRecap, garminBundle);
+          const cached = readPublishedBundle({
+            period: periodId,
+            windowStart: windowForPeriod?.start || null,
+            windowEnd: windowForPeriod?.end || null
+          });
+          const source = resolveAuditSource({
+            requestedPeriod: periodId,
+            requestedWindow: windowForPeriod,
+            live: liveBundle,
+            cached
+          });
+          if (source.refused) return null;
+          const metrics = await metricsFor(periodId, source.bundle?.recapAssessment?.insightsPublication || windowForPeriod);
+          return {
+            bundle: source.bundle,
+            provenance: source.provenance,
+            window: windowForPeriod,
+            banner: metrics.banner,
+            measure: metrics.measured,
+            snapshot: snapshotForRecap
+          };
+        },
+        computeMissing: async (periodId) => {
+          const windowForPeriod = resolveRecapPeriodWindow(periodId, snapshotForRecap, garminBundle);
+          const nameMap = {};
+          Object.keys(snapshotForRecap?.reps || {}).forEach((key) => {
+            const id = key.slice(11);
+            if (!id || nameMap[id]) return;
+            nameMap[id] = getExerciseNameById?.(id) || '';
+          });
+          const result = await withTimeout(
+            computeRecapPeriodWorkerBundle(
+              {
+                period: periodId,
+                windowStart: windowForPeriod?.start || null,
+                windowEnd: windowForPeriod?.end || null,
+                snapshot: snapshotForRecap,
+                nameMap,
+                garminData: garminBundle,
+                garminPartial: garminPartialForRecap,
+                activeProgram: activeProgram || null,
+                programs: programs || [],
+                profileQuestionnaireRaw: currentUser?.profileQuestionnaire || null,
+                isAuthenticated: Boolean(currentUser),
+                isAdmin: isAdminUser(currentUser)
+              },
+              {
+                yieldFn: () => new Promise((resolve) => setTimeout(resolve, 0))
+              }
+            ),
+            PERIOD_EXPORT_TIMEOUT_MS,
+            `period_${periodId}`
+          );
+          const publicationWindow = result.recapState?.window || windowForPeriod;
+          const bundle = {
+            analysisStatus: 'ready',
+            analysisPeriod: periodId,
+            analysisEdition: analysisEditionKey(),
+            packRole: 'computed_not_rendered',
+            workerTimings: result.workerTimings || null,
+            recapAssessment: {
+              ...result.assessment,
+              insights: result.adaptive?.insights || null,
+              periodDiscoveries: result.adaptive?.periodDiscoveries || null,
+              insightsPublication: {
+                status: 'ready',
+                period: periodId,
+                windowStart: publicationWindow?.start || null,
+                windowEnd: publicationWindow?.end || null
+              }
+            }
+          };
+          const metrics = await metricsFor(periodId, publicationWindow);
+          return {
+            bundle,
+            window: publicationWindow,
+            banner: metrics.banner,
+            measure: metrics.measured,
+            snapshot: snapshotForRecap,
+            timings: result.workerTimings || null
+          };
+        }
+      });
+      if (opts.download !== false) {
+        const downloaded = dossierMod.downloadAnalysisDossier(exportFile, {
+          filename: `momentum-analysis-eight-periods-${exportFile.capturedAt.replace(/[:.]/g, '-')}`
+        });
+        exportFile.download = downloaded;
+      }
+      return exportFile;
+    };
+
+    window.momentumExportPeriodComparison = async (opts = {}) => {
+      const periodA = opts.periodA || opts.period || deferredPeriod;
+      const periodB = opts.periodB || opts.comparePeriod;
+      if (!periodB) {
+        return { refused: true, reason: 'compare_period_missing' };
+      }
+      return window.momentumExportAnalysisDossier({
+        ...opts,
+        period: periodA,
+        comparePeriod: periodB,
+        compareWindow: opts.compareWindow || resolveRecapPeriodWindow(periodB, snapshotForRecap, garminBundle)
+      });
+    };
+
+    window.momentumExportCompleteAudit = async (opts = {}) => {
+      const { assembleCompleteAuditDossier } = await import('../../utils/sport/evaluation/completeAuditDossier');
+      window.dispatchEvent(
+        new CustomEvent('momentum:analysis-export-progress', {
+          detail: { period: 'audit', phase: 'eight_periods', index: 1, total: 2 }
+        })
+      );
+      const eightPeriodExport = await window.momentumExportEightPeriods({
+        ...opts,
+        download: false
+      });
+      window.dispatchEvent(
+        new CustomEvent('momentum:analysis-export-progress', {
+          detail: { period: 'audit', phase: 'assemble_zip', index: 2, total: 2 }
+        })
+      );
+      const insights = liveBundle?.recapAssessment?.insights || recapAssessment?.insights || null;
+      const p6 = liveBundle?.recapAssessment?.periodDiscoveries?.p6 || null;
+      return assembleCompleteAuditDossier({
+        eightPeriodExport,
+        insights,
+        measure: null,
+        p6,
+        snapshot: snapshotForRecap,
+        download: opts.download !== false,
+        includeLiveGames: opts.includeLiveGames !== false
+      });
+    };
+
     return () => {
       delete window.momentumExportAnalysisDossier;
+      delete window.momentumExportEightPeriods;
+      delete window.momentumExportPeriodComparison;
+      delete window.momentumExportCompleteAudit;
+      delete window.momentumAnalysisExportState;
     };
   }, [
     periodWindow,

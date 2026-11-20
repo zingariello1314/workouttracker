@@ -11,28 +11,48 @@ import {
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { readTrustedSessionSets } from './exerciseTrajectoryAnalysis';
+import { classifyExerciseStanding } from './historicalOrphanExercises';
+
+function movementNatureFromName(name) {
+  const label = String(name || '').toLowerCase();
+  if (/traction|pomp|dip|squat|soulev|develop|développ|rowing|tirage|fente|hip thrust/.test(label)) return 'polyarticular';
+  if (/curl|extension|oiseau|élévation|elevation|kickback|écarté|ecarte/.test(label)) return 'localized';
+  return 'other';
+}
 
 function readRecordedLoad(snapshot, date, exerciseId) {
+  const absent = { recorded: false, value: null, unit: null, mode: null, provenance: 'absent' };
   const bag = snapshot?.exerciseWeights || null;
-  if (!bag) return { recorded: false, value: null, unit: null, provenance: 'absent' };
-  const raw = bag[`${date}_${exerciseId}`] ?? bag[`${date}_${String(exerciseId)}`];
-  if (raw == null || raw === '') return { recorded: false, value: null, unit: null, provenance: 'absent' };
-  if (typeof raw === 'number') {
-    return raw > 0
-      ? { recorded: true, value: raw, unit: 'kg', provenance: 'numeric' }
-      : { recorded: false, value: null, unit: null, provenance: 'absent' };
-  }
+  const key = `${date}_${exerciseId}`;
+  if (!bag) return absent;
+  const raw = bag[key] ?? bag[`${date}_${String(exerciseId)}`];
+  if (raw == null || raw === '') return absent;
+  const perArm = snapshot?.exerciseWeightPerArm?.[key] === true;
+  const inference = snapshot?.exerciseSetLogs?.[key]?.weightInference?.mode || null;
+  const replicated = inference === 'replicated' || inference === 'habit';
+  const mode = perArm ? 'per_arm' : 'total';
   if (typeof raw === 'object') {
     const value = Number(raw.kg ?? raw.value ?? raw.weight);
     const known = Number.isFinite(value) && value > 0;
     return {
-      recorded: true,
+      recorded: known,
       value: known ? value : null,
-      unit: known ? raw.unit || 'kg' : raw.unit || null,
-      provenance: raw.mode || raw.source || 'object'
+      unit: known ? raw.unit || 'kg' : null,
+      mode: known ? raw.mode || mode : null,
+      provenance: replicated ? 'replicated' : raw.source || 'object',
+      assistance: raw.assistance === true
     };
   }
-  return { recorded: true, value: null, unit: null, provenance: 'unparsed' };
+  const parsed = typeof raw === 'number' ? raw : parseFloat(String(raw).trim().replace(',', '.'));
+  if (!Number.isFinite(parsed) || parsed <= 0) return absent;
+  return {
+    recorded: true,
+    value: parsed,
+    unit: 'kg',
+    mode,
+    provenance: replicated ? 'replicated' : 'entered',
+    assistance: false
+  };
 }
 
 function emptyDay(date) {
@@ -82,12 +102,20 @@ export function buildSessionWorkProfiles(snapshot, window, getExerciseNameById =
       (typeof getExerciseNameById === 'function' ? getExerciseNameById(id) : null) || null;
     const sets = readTrustedSessionSets(snapshot, date, id, count);
     const load = readRecordedLoad(snapshot, date, id);
-    const groups = inferMuscleGroupsForExercise({ name, id }).filter(Boolean);
+    const standing = classifyExerciseStanding(snapshot, id, getExerciseNameById);
+    const resolvedName = standing.name || name;
+    const groups =
+      standing.standing === 'identified'
+        ? inferMuscleGroupsForExercise({ name: resolvedName, id }).filter(Boolean)
+        : [];
     const day = days.get(date) || emptyDay(date);
     day.reps += count;
     day.exercises.push({
       id,
-      name,
+      name: resolvedName,
+      standing: standing.standing,
+      orphan: standing.standing === 'historical_orphan',
+      movementNature: standing.standing === 'identified' ? movementNatureFromName(resolvedName) : null,
       reps: count,
       setsRecorded: sets.trusted === true,
       setCount: sets.trusted ? sets.setCount : null,
@@ -107,8 +135,48 @@ export function buildSessionWorkProfiles(snapshot, window, getExerciseNameById =
     if (load.recorded) day.loadRecordedCount += 1;
     days.set(date, day);
     repsByExercise[id] = (repsByExercise[id] || 0) + count;
-    if (name) names[id] = name;
+    if (resolvedName && standing.standing === 'identified') names[id] = resolvedName;
     recordedExercises += 1;
+  });
+
+  const pushupRows = snapshot?.enduranceData?.sessions?.pushups;
+  const pushups = Array.isArray(pushupRows) ? pushupRows : Object.values(pushupRows || {});
+  const pushupsByDate = new Map();
+  pushups.forEach((row) => {
+    const date = row?.date;
+    if (!date || !isDateInRecapWindow(date, window)) return;
+    const count = Number(row.reps ?? row.count) || 0;
+    if (count <= 0) return;
+    pushupsByDate.set(date, (pushupsByDate.get(date) || 0) + count);
+  });
+  pushupsByDate.forEach((count, date) => {
+    const day = days.get(date) || emptyDay(date);
+    if (
+      day.exercises.some(
+        (item) =>
+          item.id === 'complementary_endurance_pushups' ||
+          item.provenance === 'complementary_endurance'
+      )
+    ) {
+      return;
+    }
+    day.reps += count;
+    day.exercises.push({
+      id: 'complementary_endurance_pushups',
+      name: 'Pompes endurance (complémentaire)',
+      standing: 'identified',
+      orphan: false,
+      movementNature: 'localized',
+      reps: count,
+      setsRecorded: false,
+      setCount: null,
+      repsPerSet: null,
+      setSource: 'endurance_session',
+      load: { recorded: false },
+      muscleGroups: [],
+      provenance: 'complementary_endurance'
+    });
+    days.set(date, day);
   });
 
   const list = [...days.values()].sort((a, b) => a.date.localeCompare(b.date));

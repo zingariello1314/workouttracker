@@ -124,9 +124,40 @@
 - **30 jours, 20 octobre–18 novembre :** les deux compteurs donnent 16. L’écart 16 contre 15 cité pour le 21 octobre–19 novembre n’est pas dans cette sauvegarde, qui s’arrête le 18.
 - **Correction visible :** quand les deux comptes diffèrent, la carte de volume les nomme. Les deux populations sont conservées.
 
+## ISS-2026-11-19-MUSCLE-TITLE
+
+- **Symptôme :** le titre « Ce groupe égale son volume du mois » remplaçait toute carte de réorientation, y compris quand la part réelle était 26,1 %. Le pied répétait ce pourcentage pour plusieurs groupes.
+- **Correction :** le titre d’égalité n’est gardé que si la fenêtre est intérieure au mois et que la part atteint 90 %. Sinon le titre du calcul reste. Les groupes de part semblable ne répètent plus le même pourcentage comme s’il était propre à chacun.
+
+## ISS-2026-11-19-DOM-PERIOD
+
+- **Symptôme :** une capture de 7 jours pouvait être déclarée comparable à un diagnostic de 30 jours, parce que le sélecteur et la signature du diagnostic étaient recopiés sur la capture.
+- **Correction :** la période comparable est celle portée par le DOM rendu. Une période absente laisse la comparaison indéterminée.
+
+## ISS-2026-11-19-ORPHAN-EXERCISES
+
+- **Décision :** un exercice sans identité canonique contribue au total de répétitions et sort des détecteurs nominatifs. Un homonyme ambigu ou un exercice connu hors programme actif n’est pas un orphelin.
+- **Correction :** exclusion avant la trajectoire de consolidation. La carte de volume conserve le résidu non attribué.
+
+## ISS-2026-11-19-THIN-PACK
+
+- **Symptôme :** une observation de volume au score 60 disparaissait d’un pack uniquement descriptif, parce que les pénalités de faiblesse faisaient passer sa valeur informative sous le plancher.
+- **Correction :** dans un pack sans carte forte, le plancher s’applique au score brut. Les pénalités continuent d’écarter ces cartes lorsqu’une analyse plus solide est déjà retenue.
+
+## ISS-2026-11-19-ENDURANCE-MIRROR
+
+- **Constat :** les 300 répétitions d'écart entre la sauvegarde (5 055) et le bandeau (5 355) sur 30 jours sont trois séances de pompes d'endurance de 100 répétitions, les 7, 10 et 17 novembre, présentes dans `enduranceData.sessions` et absentes des clés `reps` de la sauvegarde. Le dossier live les porte sous `complementary_endurance_pushups`. Ce n'est pas un orphelin.
+
 ## Ouverts
 
+- Rejeu publié des huit périodes sur la sauvegarde du 19 novembre non exécuté
+- Les dix onglets de la console ne sont pas refondus ; la section orphelins et le temps de pipeline le sont
+- Preuve navigateur de P4 : non observée
+- Rejeu des huit périodes sur la sauvegarde du 19 novembre non exécuté dans cette session
+- Preuve navigateur de P4 : non observée dans une session authentifiée
 - Preuve navigateur de P3 : non observée dans une session authentifiée
 - Les identifiants absents du journal de la sauvegarde restent sans nom. La carte ne leur invente pas un libellé
-- Le planificateur d’hypothèses et le moteur de cohérence P6 ne sont pas construits
+- Le rejeu P6 des huit périodes sur la sauvegarde du 19 novembre est écrit. Le DOM de l’édition `p6-collective-v1` n’a pas été observé
+- L’inspecteur part encore des compteurs du paquet, pas d’une carte rendue dans le DOM
+- La rotation inter-horizons et les registres d’exposition ne sont pas branchés
 - Console « pourquoi perdu »

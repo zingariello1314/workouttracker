@@ -593,6 +593,34 @@ export function readPublishedInsightPacks({ period = null, windowStart = null, w
   };
 }
 
+/**
+ * Paquet prêt de la période demandée. Un paquet d'une autre période,
+ * d'une autre édition, ou encore en calcul n'est pas renvoyé.
+ */
+export function readPublishedBundle({ period = null, windowStart = null, windowEnd = null } = {}) {
+  if (!period) return null;
+  const edition = analysisEditionKey();
+  const remembered = displayedPackByPeriod.get(String(period)) || null;
+  const candidates = [];
+  if (remembered) candidates.push(remembered);
+  for (const bundle of bundlesByFull.values()) {
+    if (!candidates.includes(bundle)) candidates.push(bundle);
+  }
+  return (
+    candidates.find((bundle) => {
+      if (bundle?.analysisStatus !== 'ready') return false;
+      if (bundle.analysisEdition !== edition) return false;
+      const publication = bundle.recapAssessment?.insightsPublication || null;
+      if (!publication || publication.status !== 'ready') return false;
+      if (String(publication.period || '') !== String(period)) return false;
+      if (bundle.analysisPeriod && String(bundle.analysisPeriod) !== String(period)) return false;
+      if (windowStart && publication.windowStart !== windowStart) return false;
+      if (windowEnd && publication.windowEnd !== windowEnd) return false;
+      return true;
+    }) || null
+  );
+}
+
 function readExactHit(key) {
   if (!key?.full || key.pending) return null;
   return bundlesByFull.get(key.full) || null;
@@ -1199,7 +1227,7 @@ export function useRecapTabMetrics({
           let nameMap = null;
           let nameMapCacheHit = false;
           if (
-            cachedExerciseNameMap.fp === workoutFp &&
+            cachedExerciseNameMap.fp === `${workoutFp}|${analysisEditionKey()}` &&
             cachedExerciseNameMap.map &&
             typeof cachedExerciseNameMap.map === 'object'
           ) {
@@ -1210,7 +1238,7 @@ export function useRecapTabMetrics({
               yieldFn: yieldFrame,
               chunkSize: 12
             });
-            cachedExerciseNameMap = { fp: workoutFp, map: nameMap };
+            cachedExerciseNameMap = { fp: `${workoutFp}|${analysisEditionKey()}`, map: nameMap };
           }
           const tMap =
             typeof performance !== 'undefined' && performance.now
@@ -1485,6 +1513,7 @@ export function useRecapTabMetrics({
           analysisStatus: 'ready',
           analysisPeriod: periodId,
           analysisEdition: analysisEditionKey(),
+          packRole: 'published',
           workerContract: RECAP_ADAPTIVE_WORKER_CONTRACT,
           dataFingerprint: checkedVolumeFingerprint(snapshot),
           insightsQuality: 'adaptive_worker'

@@ -139,6 +139,25 @@ describe('mémoire analytique et réserve', () => {
     expect(accessibleConclusions(reserve).map((item) => item.id)).toEqual(['kept']);
   });
 
+  it('ne classe pas un titre non transporté comme un rejet factuel', () => {
+    const reserve = buildAccessibleReserve({
+      valid: [
+        {
+          id: 'relation.reading.short.span_volume_vs_frequency',
+          title: 'relation.reading.short.span_volume_vs_frequency',
+          text: 'Le volume bouge surtout parce que le nombre de séances bouge.\n\n1845 répétitions deviennent 1334.',
+          context: { kind: 'span_volume_vs_frequency' }
+        }
+      ]
+    });
+    const item = reserve[0];
+    expect(item.disposition).not.toBe(RESERVE_DISPOSITION.REJECTED_FACTUAL);
+    expect(item.title).toMatch(/volume bouge/);
+    expect(accessibleConclusions(reserve).map((row) => row.id)).toEqual([
+      'relation.reading.short.span_volume_vs_frequency'
+    ]);
+  });
+
   it('compare un pack publié et un diagnostic sans les confondre', () => {
     const diff = compareConclusionTitles(
       ['Carte A', 'Carte B'],

@@ -777,16 +777,47 @@ export function sleepPerceivedEffort(pairs, difficulties, { longCut = 7.5, short
 /**
  * @returns {object[]} candidats publiables uniquement
  */
+/**
+ * Consolide plusieurs seuils / échantillons qui racontent la même association
+ * volume×durée de sommeil en une conclusion plus riche (preuves multiples).
+ */
+export function consolidateSleepCandidates(candidates = []) {
+  const rows = (candidates || []).filter(Boolean);
+  const volumeLike = rows.filter((row) =>
+    /sleep_volume|volume.*sommeil|sommeil.*volume|threshold|seuil/i.test(
+      `${row?.kind || ''} ${row?.id || ''} ${row?.title || ''}`
+    )
+  );
+  if (volumeLike.length <= 1) return rows;
+  const primary = { ...volumeLike[0] };
+  const extras = volumeLike.slice(1);
+  primary.body = [
+    primary.body || primary.text || '',
+    `Plusieurs seuils convergent (${extras.length + 1} lectures) : association descriptive, pas une causalité.`
+  ]
+    .filter(Boolean)
+    .join(' ');
+  primary.metrics = {
+    ...(primary.metrics || {}),
+    associationOnly: true,
+    consolidatedSleepThresholds: extras.map((row) => row.kind || row.id || row.title).filter(Boolean),
+    limits: [...(primary.metrics?.limits || []), 'association_not_causation', 'multi_threshold_consolidated']
+  };
+  primary.limitations = [...(primary.limitations || []), 'association_not_causation'];
+  const drop = new Set(extras);
+  return [primary, ...rows.filter((row) => !drop.has(row) && row !== volumeLike[0])];
+}
+
 export function publishSleepCandidates(catalog, opts = {}) {
   const pairs = pairSessionsWithNights(catalog);
   if (pairs.length < 8) return [];
   const recent14 = pairs.length > 14 ? pairs.slice(-14) : null;
-  return [
+  // Un seul seuil volume principal (7.5h) + recent14 si distinct ; éviter 7.5 + 8 quasi-doublons.
+  const raw = [
     sleepVolumeByThreshold(pairs, 7.5, { ...opts, sample: 'all', minEach: opts.minEach ?? 4 }),
     recent14
       ? sleepVolumeByThreshold(recent14, 7.5, { ...opts, minEach: Math.max(4, opts.minEach ?? 4), sample: 'recent14' })
       : null,
-    sleepVolumeByThreshold(pairs, 8, { ...opts, minEach: Math.max(4, opts.minEach ?? 4), sample: 'all' }),
     sleepDurationZones(pairs, opts),
     sleepHighLowSeparation(pairs),
     sleepArchitectureByVolume(pairs),
@@ -801,6 +832,7 @@ export function publishSleepCandidates(catalog, opts = {}) {
     sleepPerceivedEffort(pairs, meanDifficultyByDate(opts.snapshot)),
     sleepCardioByThreshold(opts.runDays || [])
   ].filter(Boolean);
+  return consolidateSleepCandidates(raw);
 }
 
 export function summarizeRecentNights(nights) {

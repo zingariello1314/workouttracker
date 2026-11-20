@@ -7,13 +7,15 @@
 export const ANALYSIS_EDITION_PARTS = Object.freeze({
   temporal: 'calendar-paris-v1',
   streak: 'window-range-v1',
-  duration: 'named-populations-v1',
+  duration: 'paired-density-v3',
   gtg: 'classic-exclusive-v1',
-  program: 'frozen-plan-only-v1',
-  identity: 'no-numeric-label-v1',
+  program: 'planned-vs-performed-v1',
+  identity: 'program-schedule-v1',
   scope: 'short-window-anchor-v1',
-  editorial: 'p3-explanatory-v1',
-  consolidation: 'mechanism-window-v1'
+  editorial: 'p6-sovereign-v4',
+  consolidation: 'narrative-coherence-v2',
+  stimulus: 'challenge-unknown-v1',
+  review: 'collective-pass4-v1'
 });
 
 export function analysisEditionKey(parts = ANALYSIS_EDITION_PARTS) {

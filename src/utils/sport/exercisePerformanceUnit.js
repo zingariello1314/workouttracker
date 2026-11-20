@@ -5,6 +5,7 @@
  */
 
 import { lookupProgramExerciseStub, parseSeriesSetCount } from '../exerciseLoadVolume';
+import { isRecordedSetFormat } from './exerciseSetInference';
 
 const stubCache = new Map();
 
@@ -111,7 +112,8 @@ export function resolveExercisePerformance(snapshot, storageKey) {
   const sessionTotal = Math.max(0, parseInt(String(snapshot?.reps?.[storageKey] ?? ''), 10) || 0);
   const official = officialRecord(snapshot, exerciseId);
   const program = programPrescription(exerciseId);
-  const rawSets = snapshot?.exerciseSetLogs?.[storageKey]?.sets;
+  const rawLog = snapshot?.exerciseSetLogs?.[storageKey];
+  const rawSets = isRecordedSetFormat(rawLog) ? rawLog.sets : [];
   const sets = (Array.isArray(rawSets) ? rawSets : []).map(parseSet).filter(
     (s) => s.reps > 0 || s.weightKg > 0 || s.durationSec > 0
   );

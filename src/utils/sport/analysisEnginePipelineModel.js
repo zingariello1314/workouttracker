@@ -100,8 +100,21 @@ function computeFlow(st) {
 /**
  * Normalise une liste d’étapes brutes (diagnostic + adaptive.pipelineSteps).
  */
+const ADAPTIVE_CHILDREN = new Set([
+  'composed',
+  'span_stories',
+  'weight_novelty',
+  'dedup',
+  'validate',
+  'select'
+]);
+
 export function normalizePipelineStages(stages = []) {
-  const timedTotal = stages.reduce((s, st) => s + (Number(st.ms) > 0 ? Number(st.ms) : 0), 0);
+  const hasAdaptive = stages.some((st) => st.id === 'adaptive');
+  const timedRoots = stages.reduce((s, st) => {
+    if (hasAdaptive && ADAPTIVE_CHILDREN.has(st.id)) return s;
+    return s + (Number(st.ms) > 0 ? Number(st.ms) : 0);
+  }, 0);
 
   return stages.map((st, index) => {
     const stageStatus = resolveStatus(st);
@@ -109,8 +122,9 @@ export function normalizePipelineStages(stages = []) {
     const defaults = STAGE_DEFAULTS[st.id] || {};
     const flow = computeFlow(st);
     const ms = st.ms != null ? Number(st.ms) : null;
+    const parentId = hasAdaptive && ADAPTIVE_CHILDREN.has(st.id) ? 'adaptive' : st.parentId || null;
     const msShare =
-      ms != null && timedTotal > 0 ? Math.round((ms / timedTotal) * 1000) / 10 : null;
+      ms != null && timedRoots > 0 && !parentId ? Math.round((ms / timedRoots) * 1000) / 10 : null;
 
     const countsComparable =
       st.inCount != null &&
@@ -135,6 +149,8 @@ export function normalizePipelineStages(stages = []) {
       dropped: flow.dropped,
       droppedApprox: countsComparable ? flow.dropped : null,
       countsComparable,
+      parentId,
+      inclusiveMs: ms,
       ms,
       msShare,
       startedAt: st.startedAt || null,
@@ -153,11 +169,31 @@ export function normalizePipelineStages(stages = []) {
 
 export function buildPipelineSummary(stages = []) {
   const list = normalizePipelineStages(stages);
+  const roots = list.filter((s) => !s.parentId);
   const withMs = list.filter((s) => s.ms != null);
-  const totalMs = withMs.reduce((s, st) => s + st.ms, 0);
-  const slowest = [...withMs].sort((a, b) => b.ms - a.ms)[0] || null;
-  const losses = list.filter((s) => s.droppedApprox != null && s.droppedApprox > 0);
-  const totalDropped = losses.reduce((s, st) => s + st.droppedApprox, 0);
+  const inclusiveMs = withMs.reduce((s, st) => s + st.ms, 0);
+  const totalMs = roots.reduce((s, st) => s + (st.ms || 0), 0);
+  roots.forEach((root) => {
+    const children = list.filter((s) => s.parentId === root.id && s.ms != null);
+    const childSum = children.reduce((s, st) => s + st.ms, 0);
+    root.exclusiveMs = children.length ? Math.max(0, (root.ms || 0) - childSum) : root.ms;
+    root.childMs = childSum;
+  });
+  const slowest = [...roots].filter((s) => s.ms != null).sort((a, b) => b.ms - a.ms)[0] || null;
+  const childLosses = list.filter((s) => s.parentId && s.droppedApprox != null && s.droppedApprox > 0);
+  const explainedDropped = childLosses.reduce((s, st) => s + st.droppedApprox, 0);
+  let totalDropped = 0;
+  const losses = [];
+  roots.forEach((root) => {
+    const kids = list.filter((s) => s.parentId === root.id && s.droppedApprox > 0);
+    if (root.droppedApprox > 0) {
+      totalDropped += root.droppedApprox;
+      losses.push(root);
+    } else if (kids.length) {
+      totalDropped += kids.reduce((s, st) => s + st.droppedApprox, 0);
+      losses.push(...kids);
+    }
+  });
   const byStatus = list.reduce((acc, st) => {
     acc[st.stageStatus] = (acc[st.stageStatus] || 0) + 1;
     return acc;
@@ -169,9 +205,16 @@ export function buildPipelineSummary(stages = []) {
     timedCount: withMs.length,
     untimedCount: list.length - withMs.length,
     totalMs,
+    inclusiveMs,
+    exclusiveMs: totalMs,
     slowest,
     lossSteps: losses.length,
     totalDropped,
+    explainedDropped,
+    nestedNote:
+      inclusiveMs > totalMs
+        ? 'Les sous-étapes sont incluses dans leur parent. La durée affichée n’additionne pas les deux.'
+        : null,
     byStatus,
     stages: list
   };
