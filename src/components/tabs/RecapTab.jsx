@@ -617,8 +617,44 @@ const RecapTab = ({ isActive = true }) => {
         p6,
         snapshot: snapshotForRecap,
         download: opts.download !== false,
-        includeLiveGames: opts.includeLiveGames !== false
+        includeLiveGames: opts.includeLiveGames !== false,
+        domVerify: opts.domVerify || window.__momentumLastDomVerify || null
       });
+    };
+
+    window.momentumVerifyEightPeriodsDom = async (opts = {}) => {
+      const { verifyEightPeriodsAgainstDom } = await import(
+        '../../utils/sport/evaluation/domEightPeriodVerify'
+      );
+      const initial = deferredPeriod;
+      const report = await verifyEightPeriodsAgainstDom({
+        initialPeriod: initial,
+        setPeriod: (next) => setPeriod(next),
+        getState: () => ({
+          analysisStatus,
+          analysisPeriod: analysisPeriod || deferredPeriod,
+          selectedPeriod: deferredPeriod,
+          insights: recapAssessment?.insights || null,
+          edition: analysisEditionKey()
+        }),
+        onProgress: (detail) => {
+          window.dispatchEvent(new CustomEvent('momentum:analysis-export-progress', { detail }));
+        },
+        ...opts
+      });
+      window.__momentumLastDomVerify = report;
+      return report;
+    };
+
+    window.momentumInjectEvalArchive = async (payload) => {
+      const mod = await import('../../utils/sport/evaluation/evalArchive');
+      const next = {
+        ...mod.emptyEvalArchive(),
+        ...payload,
+        updatedAt: new Date().toISOString()
+      };
+      mod.saveEvalArchiveToStorage(next);
+      return { ok: true, edition: next.edition, hasReplay: Boolean(next.replay) };
     };
 
     return () => {
@@ -626,6 +662,8 @@ const RecapTab = ({ isActive = true }) => {
       delete window.momentumExportEightPeriods;
       delete window.momentumExportPeriodComparison;
       delete window.momentumExportCompleteAudit;
+      delete window.momentumVerifyEightPeriodsDom;
+      delete window.momentumInjectEvalArchive;
       delete window.momentumAnalysisExportState;
     };
   }, [

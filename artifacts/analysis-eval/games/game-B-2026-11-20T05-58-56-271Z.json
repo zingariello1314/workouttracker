@@ -1,0 +1,248 @@
+{
+  "schema": "momentum.evalGameReport.v1",
+  "game": "B",
+  "executedAt": "2026-11-20T05:58:56.271Z",
+  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": true,
+  "counters": {
+    "referenceHits": 6,
+    "superficialOnly": 0,
+    "incorrectAttractive": 0
+  },
+  "cases": [
+    {
+      "id": "volume_decline_frequency",
+      "game": "B",
+      "referenceData": {
+        "repsNow": 3704,
+        "repsThen": 6947,
+        "sessionsNow": 12,
+        "sessionsThen": 22,
+        "repsPerSessionNow": 309,
+        "repsPerSessionThen": 316,
+        "repertoireChanged": false,
+        "formatChanged": false
+      },
+      "expected": {
+        "prefer": "fewer_sessions",
+        "rejectAttractive": "hypertrophy",
+        "mode": "volume"
+      },
+      "obtained": {
+        "id": "volume_decline_frequency",
+        "result": "hit",
+        "retained": [
+          "fewer_sessions",
+          "fewer_reps_per_session"
+        ],
+        "referenceKind": "synthetic",
+        "humanBlindPerformed": false
+      },
+      "status": "pass",
+      "justification": "référence synthétique satisfaite",
+      "delta": null,
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "volume_rise_frequency",
+      "game": "B",
+      "referenceData": {
+        "repsNow": 5000,
+        "repsThen": 3000,
+        "sessionsNow": 20,
+        "sessionsThen": 12,
+        "repsPerSessionNow": 250,
+        "repsPerSessionThen": 250,
+        "repertoireChanged": false,
+        "formatChanged": false
+      },
+      "expected": {
+        "prefer": "more_sessions",
+        "rejectAttractive": "force_maximale",
+        "mode": "volume"
+      },
+      "obtained": {
+        "id": "volume_rise_frequency",
+        "result": "hit",
+        "retained": [
+          "more_sessions"
+        ],
+        "referenceKind": "synthetic",
+        "humanBlindPerformed": false
+      },
+      "status": "pass",
+      "justification": "référence synthétique satisfaite",
+      "delta": null,
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "volume_content_explains",
+      "game": "B",
+      "referenceData": {
+        "repsNow": 4800,
+        "repsThen": 3600,
+        "sessionsNow": 12,
+        "sessionsThen": 12,
+        "repsPerSessionNow": 400,
+        "repsPerSessionThen": 300,
+        "repertoireChanged": false,
+        "formatChanged": false
+      },
+      "expected": {
+        "prefer": "more_reps_per_session",
+        "rejectAttractive": "more_sessions",
+        "mode": "volume"
+      },
+      "obtained": {
+        "id": "volume_content_explains",
+        "result": "hit",
+        "retained": [
+          "more_reps_per_session"
+        ],
+        "referenceKind": "synthetic",
+        "humanBlindPerformed": false
+      },
+      "status": "pass",
+      "justification": "référence synthétique satisfaite",
+      "delta": null,
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "same_format_no_volume_change",
+      "game": "B",
+      "referenceData": {
+        "repsNow": 600,
+        "repsThen": 600,
+        "sessionsNow": 6,
+        "sessionsThen": 6,
+        "repsPerSessionNow": 100,
+        "repsPerSessionThen": 100,
+        "repertoireChanged": false,
+        "formatChanged": false
+      },
+      "expected": {
+        "prefer": "no_volume_change",
+        "rejectAttractive": "force_maximale",
+        "mode": "volume"
+      },
+      "obtained": {
+        "id": "same_format_no_volume_change",
+        "result": "hit",
+        "coverage": "no_phenomenon",
+        "referenceKind": "synthetic",
+        "humanBlindPerformed": false
+      },
+      "status": "pass",
+      "justification": "référence synthétique satisfaite",
+      "delta": null,
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "near_equal_sessions_composition",
+      "game": "B",
+      "referenceData": [
+        {
+          "date": "2026-11-14",
+          "reps": 332,
+          "challengeReps": 100,
+          "exerciseCount": 8,
+          "pushReps": 180,
+          "pullReps": 100
+        },
+        {
+          "date": "2026-11-16",
+          "reps": 319,
+          "challengeReps": 0,
+          "exerciseCount": 12,
+          "pushReps": 120,
+          "pullReps": 160
+        },
+        {
+          "date": "2026-11-17",
+          "reps": 332,
+          "challengeReps": 0,
+          "exerciseCount": 9,
+          "pushReps": 200,
+          "pullReps": 90
+        }
+      ],
+      "expected": {
+        "prefer": null,
+        "rejectAttractive": null,
+        "mode": "near_equal"
+      },
+      "obtained": {
+        "id": "near_equal_sessions_composition",
+        "result": "hit",
+        "referenceKind": "synthetic",
+        "humanBlindPerformed": false
+      },
+      "status": "pass",
+      "justification": "référence synthétique satisfaite",
+      "delta": null,
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "collective_returns_same_episode",
+      "game": "B",
+      "referenceData": [
+        {
+          "name": "Face pull",
+          "date": "2026-11-10",
+          "family": "shoulders"
+        },
+        {
+          "name": "Élévations latérales",
+          "date": "2026-11-11",
+          "family": "shoulders"
+        },
+        {
+          "name": "Arnold press",
+          "date": "2026-11-12",
+          "family": "shoulders"
+        },
+        {
+          "name": "Kickbacks",
+          "date": "2026-11-12",
+          "family": "triceps"
+        }
+      ],
+      "expected": {
+        "prefer": null,
+        "rejectAttractive": null,
+        "mode": "collective_return"
+      },
+      "obtained": {
+        "id": "collective_returns_same_episode",
+        "result": "hit",
+        "referenceKind": "synthetic",
+        "humanBlindPerformed": false
+      },
+      "status": "pass",
+      "justification": "référence synthétique satisfaite",
+      "delta": null,
+      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    }
+  ],
+  "referenceKindsPresent": {
+    "synthetic": true,
+    "external": false,
+    "humanBlind": false
+  },
+  "humanBlindComparison": {
+    "performed": false,
+    "reason": "aucune comparaison humaine à l’aveugle n’a été effectuée"
+  }
+}

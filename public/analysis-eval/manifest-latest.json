@@ -1,24 +1,33 @@
 {
   "schema": "momentum.analysisEvalManifest.v1",
-  "executedAt": "2026-11-20T05:39:15.180Z",
+  "executedAt": "2026-11-20T06:06:09.314Z",
   "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-  "fingerprint": null,
-  "snapshotRef": null,
-  "hasReplay": false,
-  "hasGames": true,
+  "fingerprint": {
+    "version": 2,
+    "repKeys": 770,
+    "checkedKeys": 776,
+    "weightKeys": 0,
+    "durationKeys": 0,
+    "totalReps": 32599,
+    "digest": "630d09e1",
+    "firstRepKey": "2026-01-05_101",
+    "lastRepKey": "2026-11-17_466084426"
+  },
+  "snapshotRef": {
+    "label": "momentum-sport-backup-2026-11-19",
+    "endDate": "2026-11-19"
+  },
+  "hasReplay": true,
+  "hasGames": false,
   "privateArtifactsRoot": "artifacts/analysis-eval",
   "publicMirrorNote": "Le miroir public n’expose ni rejeu ni jeux bruts (données personnelles).",
   "files": [
-    "artifacts/analysis-eval/games/games-bundle-2026-11-20T05-39-15-180Z.json",
-    "artifacts/analysis-eval/games/games-bundle-latest.json",
-    "artifacts/analysis-eval/games/game-A-2026-11-20T05-39-15-180Z.json",
-    "artifacts/analysis-eval/games/game-B-2026-11-20T05-39-15-180Z.json",
-    "artifacts/analysis-eval/games/game-C-2026-11-20T05-39-15-180Z.json",
-    "artifacts/analysis-eval/summaries/evaluation-summary-2026-11-20T05-39-15-180Z.md",
-    "artifacts/analysis-eval/summaries/evaluation-summary-latest.md",
-    "public/analysis-eval/evaluation-summary-latest.md"
+    "artifacts/analysis-eval/replays/p6-replay-2026-11-20T06-06-09-314Z.json",
+    "artifacts/analysis-eval/replays/p6-replay-latest.json"
   ],
   "notes": [
-    "export structuré après exécution vitest des jeux A/B/C"
+    "Mission 5 bis — rejeu incrémental v4",
+    "Complet: true",
+    "Baseline v3: artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v3-before-mission5.json"
   ]
 }

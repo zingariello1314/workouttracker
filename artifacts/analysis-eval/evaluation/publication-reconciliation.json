@@ -1,0 +1,139 @@
+{
+  "periods": [
+    {
+      "period": "today",
+      "produced": 6,
+      "priority": 6,
+      "reserve": 0,
+      "fused": 0,
+      "registryRows": 6,
+      "publishedAccessible": 6,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 6
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "7d",
+      "produced": 51,
+      "priority": 11,
+      "reserve": 28,
+      "fused": 12,
+      "registryRows": 39,
+      "publishedAccessible": 26,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 26,
+        "exact_duplicate_suppressed": 13
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "30d",
+      "produced": 72,
+      "priority": 11,
+      "reserve": 49,
+      "fused": 12,
+      "registryRows": 60,
+      "publishedAccessible": 39,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 39,
+        "exact_duplicate_suppressed": 21
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "3m",
+      "produced": 93,
+      "priority": 11,
+      "reserve": 70,
+      "fused": 12,
+      "registryRows": 81,
+      "publishedAccessible": 53,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 53,
+        "exact_duplicate_suppressed": 28
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "6m",
+      "produced": 99,
+      "priority": 11,
+      "reserve": 76,
+      "fused": 12,
+      "registryRows": 87,
+      "publishedAccessible": 58,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 58,
+        "exact_duplicate_suppressed": 29
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "1y",
+      "produced": 91,
+      "priority": 11,
+      "reserve": 77,
+      "fused": 3,
+      "registryRows": 88,
+      "publishedAccessible": 60,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 60,
+        "exact_duplicate_suppressed": 28
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "2y",
+      "produced": 89,
+      "priority": 11,
+      "reserve": 75,
+      "fused": 3,
+      "registryRows": 86,
+      "publishedAccessible": 58,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 58,
+        "exact_duplicate_suppressed": 28
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    },
+    {
+      "period": "all",
+      "produced": 87,
+      "priority": 11,
+      "reserve": 73,
+      "fused": 3,
+      "registryRows": 84,
+      "publishedAccessible": 56,
+      "authority": "p6",
+      "lostSilent": [],
+      "dispositionsByType": {
+        "published": 56,
+        "exact_duplicate_suppressed": 28
+      },
+      "catalogueInterne": "priority ∪ reserve du registre P6 (peut contenir plusieurs lignes au même id)",
+      "catalogueAccessible": "shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve après publication (ids uniques)"
+    }
+  ]
+}

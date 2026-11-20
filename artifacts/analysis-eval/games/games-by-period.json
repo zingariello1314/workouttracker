@@ -1,0 +1,788 @@
+{
+  "today": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 6,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": true,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 0
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": true,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 6,
+            "publishedAccessible": 6,
+            "registryRows": 6,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 6,
+            "publishedAccessible": 6,
+            "registryRows": 6,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "pass",
+          "justification": "qualité collective du paquet accessible",
+          "delta": null,
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 0
+      }
+    }
+  },
+  "7d": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 5,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": true,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 0
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": true,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 26,
+            "publishedAccessible": 26,
+            "registryRows": 39,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 26,
+            "publishedAccessible": 26,
+            "registryRows": 39,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "pass",
+          "justification": "qualité collective du paquet accessible",
+          "delta": null,
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 0
+      }
+    }
+  },
+  "30d": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 1,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": true,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 0
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": false,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 39,
+            "publishedAccessible": 39,
+            "registryRows": 60,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 39,
+            "publishedAccessible": 39,
+            "registryRows": 60,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        },
+        {
+          "id": "C-2",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.7777777777777778
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.7777777777777778
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 1
+      }
+    }
+  },
+  "3m": {
+    "A": {
+      "pass": true,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 0,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": false,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 1
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": false,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 53,
+            "publishedAccessible": 53,
+            "registryRows": 81,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 53,
+            "publishedAccessible": 53,
+            "registryRows": 81,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 2,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        },
+        {
+          "id": "C-2",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 1
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 1
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 2,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 2,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 1
+      }
+    }
+  },
+  "6m": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 2,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": false,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 1
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": false,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 58,
+            "publishedAccessible": 58,
+            "registryRows": 87,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 58,
+            "publishedAccessible": 58,
+            "registryRows": 87,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 2,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        },
+        {
+          "id": "C-2",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.8181818181818182
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.8181818181818182
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 2,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 2,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 1
+      }
+    }
+  },
+  "1y": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 1,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": false,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 1
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": false,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 60,
+            "publishedAccessible": 60,
+            "registryRows": 88,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 60,
+            "publishedAccessible": 60,
+            "registryRows": 88,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 2,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        },
+        {
+          "id": "C-2",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.9090909090909091
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.9090909090909091
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 2,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 2,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 1
+      }
+    }
+  },
+  "2y": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 1,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": false,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 1
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": false,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 58,
+            "publishedAccessible": 58,
+            "registryRows": 86,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 58,
+            "publishedAccessible": 58,
+            "registryRows": 86,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        },
+        {
+          "id": "C-2",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.9090909090909091
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.9090909090909091
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 1
+      }
+    }
+  },
+  "all": {
+    "A": {
+      "pass": false,
+      "counters": {
+        "missingClaims": 0,
+        "fusedSourcesRepublished": 0,
+        "unpairedDensities": 0,
+        "inventedCauses": 0,
+        "factualConflicts": 1,
+        "identityMerges": 0
+      }
+    },
+    "B": {
+      "pass": false,
+      "counters": {
+        "referenceHits": 6,
+        "superficialOnly": 0,
+        "incorrectAttractive": 1
+      },
+      "humanBlind": false
+    },
+    "C": {
+      "pass": false,
+      "cases": [
+        {
+          "id": "C-1",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "expectedAccessible": 56,
+            "publishedAccessible": 56,
+            "registryRows": 84,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "expectedAccessible": 56,
+            "publishedAccessible": 56,
+            "registryRows": 84,
+            "lostSilent": [],
+            "explainedGap": 0,
+            "unexplainedIds": [],
+            "publicationAuthority": "p6",
+            "idReconciled": true,
+            "admissiblePreserved": true
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        },
+        {
+          "id": "C-2",
+          "game": "C",
+          "referenceData": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.9090909090909091
+          },
+          "expected": {
+            "admissiblePreserved": true,
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0
+          },
+          "obtained": {
+            "period": "live",
+            "issue": "family_monopoly",
+            "family": "emergence",
+            "share": 0.9090909090909091
+          },
+          "status": "fail",
+          "justification": "qualité collective du paquet accessible",
+          "delta": {
+            "exactDuplicatesAccessible": 0,
+            "fusedSourcesAccessible": 0,
+            "admissiblePreserved": true
+          },
+          "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "humanBlindPerformed": false,
+          "referenceKind": "synthetic"
+        }
+      ],
+      "counters": {
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0,
+        "admissiblePreserved": true,
+        "horizonConfusion": 1
+      }
+    }
+  }
+}

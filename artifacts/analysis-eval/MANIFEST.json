@@ -1,0 +1,89 @@
+{
+  "schema": "momentum.mission5BisComplete.v1",
+  "executedAt": "2026-11-20T06:06:09.314Z",
+  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "completeReplay": true,
+  "humanBlindPerformed": false,
+  "domVerified": false,
+  "liveEightPeriodsIncluded": false,
+  "files": [
+    {
+      "name": "comparisons/v3-vs-v4.json",
+      "status": "included"
+    },
+    {
+      "name": "qualitative/blind-pack.json",
+      "status": "included"
+    },
+    {
+      "name": "qualitative/blind-key.json",
+      "status": "included"
+    },
+    {
+      "name": "replays/p6-replay-v4-latest.json",
+      "status": "included"
+    },
+    {
+      "name": "replays/p6-replay-v3-baseline.json",
+      "status": "included"
+    },
+    {
+      "name": "summaries/MISSION5_BILAN_P6.md",
+      "status": "included"
+    },
+    {
+      "name": "games/games-by-period.json",
+      "status": "included"
+    },
+    {
+      "name": "games/game-C-across-eight.json",
+      "status": "included"
+    },
+    {
+      "name": "games/game-A-sample.json",
+      "status": "included"
+    },
+    {
+      "name": "games/game-B-sample.json",
+      "status": "included"
+    },
+    {
+      "name": "evaluation/publication-reconciliation.json",
+      "status": "included"
+    },
+    {
+      "name": "ARTIFACT_STATUS.json",
+      "status": "included"
+    },
+    {
+      "name": "summaries/mission5-bis-summary.md",
+      "status": "included"
+    }
+  ],
+  "missing": [
+    {
+      "name": "eight-periods/eight-periods.json",
+      "status": "missing",
+      "cause": "export live UI non exécuté dans cet ZIP hors-navigateur — lancer Récap→Analyse→Exporter le dossier d’audit complet après chargement du bridge"
+    },
+    {
+      "name": "evaluation/dom-eight-periods.json",
+      "status": "missing",
+      "cause": "navigateur authentifié non exercé ici — bouton « Vérifier les 8 périodes (DOM) » puis ré-export"
+    },
+    {
+      "name": "evaluation/live/game-*.json",
+      "status": "missing",
+      "cause": "jeux live session UI absents de cet assemblage hors-navigateur"
+    },
+    {
+      "name": "human-blind-verdict.json",
+      "status": "missing",
+      "cause": "aucune validation humaine à l’aveugle n’a été effectuée"
+    }
+  ],
+  "notes": [
+    "ZIP hors-navigateur : rejeux v3/v4, comparaisons, jeux par horizon, qualitative, réconciliation, bilan.",
+    "Pour DOM + 8 périodes live : UI Récap→Analyse → charger bridge → vérifier DOM → exporter dossier complet."
+  ]
+}

@@ -1,180 +1,185 @@
-# Mission 5 — Bilan P6 (édition `p6-sovereign-v4`)
+# Mission 5 bis — Bilan P6 (preuves rejeu 19 nov.)
 
 Verdict : **P6 partiellement démontrée — NO-GO P7.**
 
-Progrès structurels sur la souveraineté de publication, la réconciliation par identifiants, la 4ᵉ passe, les claims enrichis, les jeux A/B/C et le dossier d’audit. Le rejeu complet des huit horizons sur la sauvegarde du 19 nov. **n’a pas pu être finalisé dans la session agent** (timeouts d’environnement sur les runs >30 s) : la baseline v3 est figée ; le rejeu v4 reste à lancer localement. La démonstration produit DOM sur les huit périodes authentifiées **n’a pas été réalisée**. La comparaison humaine à l’aveugle **n’a pas été effectuée**.
+Rejeu v4 **complet** des huit horizons sur la sauvegarde du 19 novembre, comparé à la baseline v3 figée, même empreinte. Autorité `p6` et `lostSilent=0` sur les huit périodes. Qualité analytique et jeux A/B/C live **non acquis** au sens P6. DOM authentifié **non vérifié** dans Cursor. Jugement humain à l’aveugle **non effectué**.
 
-Édition active :
+Édition mesurée :
 
 `consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;…;review=collective-pass4-v1;stimulus=challenge-unknown-v1`
 
-Référence figée avant modification :
+Artefacts :
 
-`artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v3-before-mission5.json`
+- Rejeu v4 : `artifacts/analysis-eval/replays/p6-replay-v4-latest.json`
+- Baseline v3 : `artifacts/analysis-eval/replays/p6-replay-v3-baseline.json` (copie de `baselines/p6-replay-p6-sovereign-v3-before-mission5.json`)
+- Comparaison : `artifacts/analysis-eval/comparisons/v3-vs-v4.json`
+- ZIP hors-navigateur : `artifacts/analysis-eval/complete/momentum-p6-mission5-bis-latest.zip`
+- Bridge UI : `artifacts/analysis-eval/browser-bridge/eval-archive-inject.json`
 
 ---
 
-## A. Diagnostic réel des causes
+## A. Catalogue interne vs catalogue accessible
 
-| Problème observé (export 20 nov.) | Cause | Correction Mission 5 |
+| Notion | Contenu | Comptage typique (ex. 7 j) |
 |---|---|---|
-| 699 priorités+réserves P6 vs 504 accessibles | `publishableP6Card` renvoyait `null` (claim/corps manquant) ou collision d’id → **disparition silencieuse** ; `reconciled=true` ne regardait que les totaux internes | Dispositions explicites + `reconcilePublicationIds` ; autorité `p6` / `p6_partial` / `p6_unavailable` |
-| Jeu C `admissiblePreserved=true` avec 50→44 | `published <= expected + 1` validait les **pertes** | Préservation = écart entièrement expliqué par dispositions + aucun `lostSilent` |
-| Secours legacy silencieux | `p6Insights \|\| legacyInsights` | Secours marqué `publicationAuthority: 'legacy_fallback'` ; jamais présenté comme P6 |
-| Doublons / reformulations | Revue collective incomplète | Passe 4 `reviewCollectively` (contradictions, fusion, monopole sommeil, abstention) |
-| Claims = enveloppes legacy | `claimFromDiscovery` trop mince | Preuve structurée : population, fenêtres, valeurs, unités, direction, dimension de progression, événements sources, limites |
-| Jeu B trop permissif | Hypothèses `more_sessions` sans sens de variation | Direction hausse/baisse (`fewer_sessions` / `more_reps_per_session`) + cas séances proches + retours collectifs |
-| Rejeu absent du ZIP | Écriture `%TEMP%` / miroir public PII | Archive stable `artifacts/analysis-eval/replays/` ; pas de PII dans `public/analysis-eval/` |
-| Fingerprint trop faible | clés + total reps | Digest FNV des reps/checked/weights/durations (`snapshotFingerprint` v2) |
+| **Catalogue interne** | `priority ∪ reserve` du registre P6 (après sélection / passe 4) | 11 + 28 = **39** lignes |
+| **Ids uniques registre** | même catalogue dédoublonné par `stablePublicationId` | **26** |
+| **Catalogue accessible** | `shortTerm ∪ mediumTerm ∪ longTerm ∪ accessibleReserve` publiés | **26** |
+| **Écart lignes→publié** | dispositions `exact_duplicate_suppressed` | **13** |
+| **Pertes silencieuses** | ids registre absents du publié **sans** disposition | **0** |
 
-Les ~195 écarts ne sont **pas** tous des pertes illégitimes : fusionnés, doublons, invalides à la publication et divergences de comptage doivent apparaître dans `publicationDispositions`.
+Les ~195 écarts des anciens exports (totaux internes vs accessibles) sont désormais **traçables** : sur ce rejeu ils se réduisent à des suppressions de doublons d’identifiant (`exact_duplicate_suppressed`), jamais à des `lostSilent`. Une ligne fusionnée (`source_retained`) reste hors catalogue accessible.
 
 ---
 
-## B. Tableau comparatif avant/après (même sauvegarde 19 nov.)
+## B. Tableau v3 vs v4 (même sauvegarde 19 nov.)
 
-| Horizon | Avant (v3, Mission 4) Produits / Prio / Réserve / ms | Après (v4) |
+| Horizon | v3 Produits / Prio / Réserve / Fusion | v4 Produits / Prio / Réserve / Publié / Autorité / lostSilent / ms |
 |---|---|---|
-| Aujourd’hui | 6 / 6 / 0 / ~7 s | **Rejeu v4 non terminé dans la session agent** (exécutions longues interrompues ~30 s) |
-| 7 j | 51 / 11 / 28 / ~6 s | idem — à régénérer localement |
-| 30 j | 72 / 11 / 49 / ~7 s | idem |
-| 3 m | 93 / 11 / 70 / ~11 s | idem |
-| 6 m | 99 / 11 / 76 / ~11 s | idem |
-| 1 an | 91 / 12 / 76 / ~12 s | idem |
-| 2 ans | 89 / 12 / 74 / ~14 s | idem |
-| Toujours | 87 / 12 / 72 / ~12 s | idem |
+| Aujourd’hui | 6 / 6 / 0 / 0 | 6 / 6 / 0 / **6** / p6 / **0** / ~8,2 s |
+| 7 j | 51 / 11 / 28 / 12 | 51 / 11 / 28 / **26** / p6 / **0** / ~7,7 s |
+| 30 j | 72 / 11 / 49 / 12 | 72 / 11 / 49 / **39** / p6 / **0** / ~7,1 s |
+| 3 m | 93 / 11 / 70 / 12 | 93 / 11 / 70 / **53** / p6 / **0** / ~10,1 s |
+| 6 m | 99 / 11 / 76 / 12 | 99 / 11 / 76 / **58** / p6 / **0** / ~10,6 s |
+| 1 an | 91 / 12 / 76 / 3 | 91 / **11** / **77** / **60** / p6 / **0** / ~11,3 s |
+| 2 ans | 89 / 12 / 74 / 3 | 89 / **11** / **75** / **58** / p6 / **0** / ~13,4 s |
+| Toujours | 87 / 12 / 72 / 3 | 87 / **11** / **73** / **56** / p6 / **0** / ~12,3 s |
 
-Baseline v3 figée : `artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v3-before-mission5.json`.  
-`artifacts/analysis-eval/replays/p6-replay-latest.json` contient encore le snapshot v3 tant que le rejeu v4 n’a pas été relancé :
-
-```bash
-P4_REPLAY=1 npx vitest run src/utils/sport/__tests__/p4IdentityReplay.test.js
-```
+Dispositions (somme des 8) : uniquement `published` + `exact_duplicate_suppressed`. Aucune `unpublished_invalid` ni perte silencieuse sur ce snapshot.
 
 ---
 
-## C. Réconciliation détaillée des écarts de publication
+## C. Jeux A / B / C sur les huit paquets réels
 
-Pipeline audité :
-
-Données → faits → découvertes → claims → consolidation → **revue collective (passe 4)** → sélection → rédaction → **publication `insightsFromP6`** → export → DOM.
-
-Pour chaque candidat du registre `priority ∪ reserve` :
-
-- `published` — présent dans le catalogue accessible ;
-- `unpublished_invalid` — titre/corps/claim insuffisant ;
-- `exact_duplicate_suppressed` — id déjà publié ;
-- `source_retained` / `blocked` — hors catalogue utilisateur ;
-- `demoted_*` / `abstained_*` — décisions de la passe 4.
-
-`publicationReconciliation.lostSilent` doit rester vide pour une autorité `p6` pleine.  
-Une autorité `p6_partial` signale un écart encore non expliqué — **ce n’est pas** un succès silencieux.
-
----
-
-## D. Exemples de découvertes (méthodes)
-
-1. **Volume juin→septembre** — `exploreVolumeChange` distingue désormais baisse portée par la fréquence (`fewer_sessions`) vs contenu (`fewer_reps_per_session`) ; pas de détecteur spécial juin–sept.
-2. **14/16/17 nov.** — `exploreNearEqualSessions` : volumes proches ≠ séance exceptionnelle ; différences de défi / largeur / poussée-tirage.
-3. **Retours épaules/triceps** — `exploreCollectiveReturn` : transformation collective si fenêtre ≤14 j.
-4. **Sommeil** — consolidation multi-seuils (`consolidateSleepCandidates`) + limite `association_not_causation` ; budget aujourd’hui réduit en passe 4.
-5. **Claims** — `proof.observedValues`, `sourceEvents`, `progressionDimension`, `direction` exploitables sans le code source.
-
----
-
-## E. Jeux A/B/C
-
-| Jeu | Synthétique | Live (huit paquets) | Jugement humain |
+| Horizon | A (faits / preuves) | B (découverte) | C (collectif / publication) |
 |---|---|---|---|
-| A | Renforcé (preuves, densités, défi≠endurance, aujourd’hui vide, identities) | Calculé à l’export dossier (pas vitest) | **Non** |
-| B | Cas hausse/baisse/contenu, séances proches, retours collectifs ; harnais P1 **toujours manquant** | idem | **Non** |
-| C | Réconciliation par ids + dispositions ; faux positif 50→44 corrigé | Doit être rejoué sur les 8 exports | **Non** |
+| today | **FAIL** — 6 `priority_without_numeric_proof` | PASS | PASS |
+| 7d | **FAIL** — 5 sans preuve numérique | PASS | **FAIL** (voir ci-dessous) |
+| 30d | **FAIL** — 1 (GTG) | PASS | **FAIL** — monopole famille `emergence` ~78 % |
+| 3m | PASS | **FAIL** — 1 attractive incorrecte | **FAIL** — 2 doublons texte « poussée » + monopole |
+| 6m | **FAIL** | **FAIL** | **FAIL** — doublons + monopole |
+| 1y / 2y / all | **FAIL** | **FAIL** | **FAIL** — doublons + monopole |
 
-Mention explicite : reconstitution des jeux ; baselines B0/B1 non réécrites.
+**Jeu C agrégé 8 périodes :** FAIL — `exactDuplicatesAccessible=6` (carte « Le haut du corps travaille surtout en poussée » ×3 sur 3m/6m/1y), monopoles `emergence`, `admissiblePreserved=true` après correction du comptage par ids uniques (les `exact_duplicate_suppressed` d’ids déjà publiés ne comptent plus comme écart).
+
+**Jeu A :** les claims existent, mais `proof.observedValues` reste souvent vide → le jeu refuse à juste titre des priorités sans preuve numérique exploitable.
+
+**Jeu B :** distingue bien des cas synthétiques ; sur longs horizons, encore des attractives incorrectes.
+
+**Humain à l’aveugle :** non effectué. Paquet préparé : `qualitative/blind-pack.json` + clé séparée.
 
 ---
 
-## F. Quatrième passe, temporalité, mémoire
+## D. Qualité analytique — cas demandés
 
-| Élément | État |
-|---|---|
-| Passe 4 `reviewCollectively` | **Active** — contradictions, reformulations, monopole sommeil, abstention today, flag horizon, réexploration bornée (≤3) |
-| Temporalité / `horizonBoost` | **Partielle** — scoring sélection par `voiceKey` ; `temporalPlans` producteurs long horizon encore incomplets |
-| Mémoire éditoriale | **Partielle** — inchangée par export ; rotation non aléatoire héritée ; pas de preuve live de rotation inter-horizons |
+### 1. Domination des reprises individuelles (30 j)
+
+- **Avant (v3)** : Face pull / élévations / Bent-Arm en tête.
+- **Après (v4)** : même domination — 5+ cartes « format repris » / retours individuels en priorité ; `returnLikeCards=5` ; famille `emergence` ≈ 78 %.
+- **Décision éditoriale** : passe 4 n’a pas cassé le monopole reprise sur 30 j.
+- **Limite** : pas de découverte collective épaules/triceps prioritaire.
+
+### 2. Découvertes collectives épaules / triceps
+
+- **v4 30 j** : titres individuels (Face pull, Kickbacks, Extension triceps…) — **pas** de carte « reprise collective épaules/triceps ».
+- **Preuve** : `quality.priorityTitles` / insightsSlim.
+- **Limite** : `exploreCollectiveReturn` insuffisamment promu face aux émergences unitaires.
+
+### 3. Journées 14 / 16 / 17 novembre
+
+- **v4 7 j priorité #1** : « Des journées à volume proche racontent des séances différentes » — corps cite 351 / 332 / 332 reps et 13/14/17 nov. (compléments / largeur mouvements).
+- **v3** : absent des exemples de tête (concentration 13 nov. dominante).
+- **Progrès réel** ; preuve structurée encore partielle (`observedValues` vide, dates en `sourceEvents`).
+
+### 4. Trajectoire juin → novembre
+
+- **v4 6 m / 1 an** : « octobre 2026 interrompt la baisse depuis juin 2026 » + arcs de volume / moitiés de fenêtre.
+- **v3** : davantage GTG hors planning / retours pompes gilet en tête.
+- **Limite** : formulations proches sur 1y / 2y / all (faible différenciation ultra-long).
+
+### 5. Analyses chronométriques défi pompes
+
+- **7 j** : socle hebdo cite pompes endurance (complémentaire) 100 + pompes (endurance) 100.
+- **Jeu A** continue de refuser toute classification défi→endurance (contrat).
+- **Limite** : pas d’analyse chronométrique dédiée « défi pompes » en priorité distincte.
+
+### 6. Redondances sommeil
+
+- **sleepCards accessibles = 0** sur les huit horizons de ce rejeu.
+- **Limite** : absence ≠ preuve de consolidation sommeil sur d’autres snapshots.
+
+### 7. Pertinence « Aujourd’hui »
+
+- 6 cartes, autorité p6, published=6.
+- Jeu A FAIL (preuves numériques absentes sur pending / concentration).
+- Contenu cohérent « séance non commencée » + ancrage 7 j.
+
+### 8. Différenciation des huit horizons
+
+- today ≠ 7d ≠ 30d (near-equal vs reprises).
+- 3m+ : volume par séance / arcs mensuels.
+- 1y ≈ 2y ≈ all sur plusieurs titres → **différenciation insuffisante** en bout de spectre.
 
 ---
 
-## G. Vérifications DOM
+## E. DOM
 
 | Contrôle | Résultat |
 |---|---|
-| 8 périodes calculables | Oui (code + exports antérieurs) |
-| 8 périodes rendues + conformes | **Non vérifié** ici |
-| Inspecteurs priorité/réserve | Code modal présent ; parcours UI authentifié non exécuté |
-| Concordance DOM | Toute absence → `not_verifiable` / `computed_not_rendered` — **aucune validation fabriquée** |
+| Bouton UI « Vérifier les 8 périodes (DOM) » | **Présent** (Récap → Analyse, DEV/admin) |
+| Exécution authentifiée depuis Cursor | **Non** — non accessible ici |
+| Mémoire éditoriale | Non modifiée par le vérificateur (`editorialMemoryModified: false`) |
+| Preuve DOM dans le ZIP hors-navigateur | **Absente** — statut documenté dans `ARTIFACT_STATUS.json` / `MANIFEST.json` |
+
+Procédure : session authentifiée → Récap → Analyse → *Charger artefacts rejeu* (`eval-archive-inject.json`) → *Vérifier les 8 périodes (DOM)* → *Exporter le dossier d’audit complet*.
 
 ---
 
-## H. Non-régressions
+## F. ZIP transmissibles
 
-Suite ciblée Mission 5 (exécutée) :
+### Hors-navigateur (cette passe)
 
-- `p6SovereigntyMission5`, `p6Publication`, `evaluationGames`, `p6AnalyticalIntelligence`, `editionAndEditorialGate`, `draftFromClaim`, `analysisPeriodExport`, `recapStimulusCatalog`, `analysisExportDownload`, `completeAuditDossier`
+`artifacts/analysis-eval/complete/momentum-p6-mission5-bis-latest.zip` contient notamment :
 
-Préservés par contrat : densités appariées, défi `challenge-unknown-v1`, identité programme, réserve accessible, exports ZIP, normalisation sessions.
+- rejeux v3 / v4, comparaison, qualitative + clé, jeux par horizon, réconciliation, bilan, manifeste, `ARTIFACT_STATUS.json`
+
+**Manquants (cause explicite dans le manifeste)** :
+
+- `eight-periods/eight-periods.json` — export live UI non exécuté
+- `evaluation/dom-eight-periods.json` — DOM non exercé
+- jeux live session UI
+- verdict humain à l’aveugle
+
+### Via UI (après bridge + DOM)
+
+Le bouton « Exporter le dossier d’audit complet » assemble live 8 périodes, comparaisons, rejeu injecté, jeux, DOM si déjà lancé, réconciliations, manifeste avec statuts `included` / `missing`.
 
 ---
 
-## I. Performances et tailles d’export
+## G. Non-régressions (cette passe)
 
-| Métrique | Observation |
-|---|---|
-| ZIP audit 20 nov. (v3) | ~187 Mo compressé (structures dupliquées) |
-| Sérialisation | `analyticalJsonStringify` : refs partagées réémises ; cycles → `$circular` |
-| Suite | Normalisation par références stables **amorcée** via ids de publication ; réduction massive 118 Mo **non encore** complète (hors scope destructif) |
-| Rejeu 8 périodes | Coût comparable Mission 4 (dizaines de secondes à ~2 min selon machine) |
+Exécutés : `evaluationGames`, `p6SovereigntyMission5` (+ suite ciblée Mission 5 si relancée).  
+Échecs jeux A/B/C **sur paquets réels** = résultats d’évaluation, pas des régressions unitaires à masquer.
 
 ---
 
-## J. Critères P6
+## H. Critères P6 (preuve, pas contrat seul)
 
 | Critère | Statut | Preuve |
 |---|---|---|
-| Autorité de catalogue identifiable | **Validé** (contrat) | `publicationAuthority` |
-| Différences registre↔publication expliquées | **Partiel** | dispositions + tests négatifs ; à confirmer sur 8 exports live |
-| Aucun doublon exact accessible | **Validé** tests | jeu C + passe 4 |
-| Aucune source fusionnée équivalente | **Validé** tests | `insightsFromP6` |
-| Aucune perte admissible silencieuse | **Validé** contrat/tests | `lostSilent` |
-| Claims avec preuves exploitables | **Partiel** | contrat enrichi ; producteurs hérités encore variables |
-| Quatre passes actives | **Partiel** | passe 4 branchée ; profondeur qualitative limitée |
-| Analyses collectives > individuelles | **Partiel** | exploration collective présente |
-| Horizons différenciés si données | **Partiel** | `horizonBoost` |
-| Sommeil non répétitif | **Partiel** | consolidation + budget |
-| Sélection ≠ copie legacy | **Validé** | budget non gonflé par legacy |
-| Mémoire fonctionnelle / reproductible | **Partiel** | |
-| Jeux A/B/C sur vrais résultats | **Partiel** | synthétique OK ; live 8 périodes à rejouer dans l’UI |
-| Jeu C live 8 périodes | **Non acquis** ici | |
-| Concordance produit | **Non vérifié** | |
-| Dossier complet 1 clic | **Validé** code | bouton Récap→Analyse |
+| Autorité de catalogue | **OK** rejeu | `publicationAuthority=p6` ×8 |
+| Écarts registre↔publication expliqués | **OK** rejeu | dispositions ; `lostSilent=[]` |
+| Aucun doublon exact accessible | **FAIL** | 6 doublons texte sur longs horizons |
+| Sources fusionnées accessibles | **OK** | 0 |
+| Pertes admissibles silencieuses | **OK** rejeu | 0 |
+| Claims à preuves numériques | **FAIL** fréquent | jeu A |
+| Collectif > individuel (30 j) | **FAIL** | monopole émergence / reprises |
+| Horizons différenciés | **Partiel** | today/7d/30d oui ; 1y≈2y≈all |
+| Sommeil non répétitif | **N/A** ce snapshot | 0 carte sommeil |
+| Jeux A/B/C sur vrais résultats | **Exécutés — majoritairement FAIL** | replay |
+| Concordance DOM | **Non vérifié** | |
+| Dossier 1 clic | **Code OK** ; ZIP hors-nav. partiel sans DOM/live | |
 
 ---
 
-## K. Procédure unique — dossier à transmettre à ChatGPT
-
-1. Lancer l’app (Vite, port UI réel, session authentifiée admin/DEV).
-2. Sport → **Récap** → **Analyse**.
-3. Attendre la publication `ready` de la période courante.
-4. Cliquer **Exporter le dossier d’audit complet**.
-5. Envoyer le ZIP téléchargé (contient `MANIFEST.json`, huit périodes, comparaisons, jeux live, synthèse ; rejeu si présent en localStorage / sinon raison d’absence documentée).
-
-Génération optionnelle du rejeu hors UI (données personnelles, hors public) :
-
-```bash
-P4_REPLAY=1 npx vitest run src/utils/sport/__tests__/p4IdentityReplay.test.js
-```
-
-Puis recopier `artifacts/analysis-eval/replays/p6-replay-latest.json` dans l’archive locale ou le recharger via le flux d’évaluation développeur — **ne pas** exposer ce fichier en public.
-
----
-
-**GO P7 : NON** — autorisation explicite requise.
+**GO P7 : NON** — autorisation explicite requise après DOM live + correction qualité (doublons, monopole 30 j, preuves numériques).

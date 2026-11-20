@@ -47,35 +47,46 @@ export function runGameCCollective({ insights = null, p6 = null, periodPacks = n
     const p6pack = pack.p6;
     if (p6pack?.counters?.reconciled) {
       const registry = [...(p6pack.priority || []), ...(p6pack.reserve || [])];
+      const registryIds = registry.map((row) => stablePublicationId(row));
       const publishedIds = accessible.map((card) => card.id || stablePublicationId(card));
       const dispositions = pack.insights?.publicationDispositions || [];
       const idRecon = reconcilePublicationIds({
-        registryIds: registry.map((row) => stablePublicationId(row)),
+        registryIds,
         publishedIds,
         dispositions
       });
-      const expected = registry.length;
-      const published = accessible.length;
-      const explainedIds = new Set(
-        dispositions.filter((d) => d.disposition && d.disposition !== 'published').map((d) => d.id)
-      );
-      const explainedGap = explainedIds.size;
-      const gap = expected - published;
-      // Perte silencieuse = échec. L'écart attendu doit être entièrement expliqué.
+      // Comptage par identifiants uniques — pas par longueur de tableau.
+      // exact_duplicate_suppressed d’un id déjà publié n’explique PAS un écart
+      // d’unicité : seuls les ids absents du catalogue accessible doivent l’être.
+      const registryUnique = [...new Set(registryIds.filter(Boolean))];
+      const publishedSet = new Set(publishedIds.filter(Boolean));
+      const explainedUnpublished = registryUnique.filter((id) => {
+        if (publishedSet.has(id)) return false;
+        return dispositions.some(
+          (d) => d.id === id && d.disposition && d.disposition !== 'published'
+        );
+      });
+      const unexplained = registryUnique.filter((id) => {
+        if (publishedSet.has(id)) return false;
+        return !dispositions.some(
+          (d) => d.id === id && d.disposition && d.disposition !== 'published'
+        );
+      });
       const admissiblePreserved =
         idRecon.lostSilent.length === 0 &&
-        gap === explainedGap &&
-        published + explainedGap === expected &&
+        unexplained.length === 0 &&
         report.fusedSourcesAccessible === 0;
 
       if (!admissiblePreserved) report.admissiblePreserved = false;
 
       report.cases.push({
         period: pack.period || 'live',
-        expectedAccessible: expected,
-        publishedAccessible: published,
+        expectedAccessible: registryUnique.length,
+        publishedAccessible: publishedSet.size,
+        registryRows: registry.length,
         lostSilent: idRecon.lostSilent,
-        explainedGap,
+        explainedGap: explainedUnpublished.length,
+        unexplainedIds: unexplained,
         publicationAuthority: pack.insights?.publicationAuthority || null,
         idReconciled: idRecon.reconciled,
         admissiblePreserved

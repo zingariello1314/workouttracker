@@ -75,6 +75,13 @@ export default function RecapAnalyseExportBar({
         setNotice(`Export 8 périodes incomplet. ${missing || 'période manquante'}.`);
         return;
       }
+      if (result?.schema === 'momentum.domEightPeriodVerify.v1') {
+        const s = result.summary || {};
+        setNotice(
+          `DOM · conforme ${s.conform || 0}/${s.total || 0} · divergent ${s.divergent || 0} · non prêt ${s.notReady || 0}. Mémoire inchangée.`
+        );
+        return;
+      }
       const file = result?.download?.filename || 'fichier téléchargé';
       const warn =
         Array.isArray(result?.warnings) && result.warnings.length
@@ -124,21 +131,64 @@ export default function RecapAnalyseExportBar({
           Comparer deux périodes
         </button>
         {canAuditExport ? (
-          <button
-            type="button"
-            className="rounded-md border border-rose-700/40 px-2 py-1 text-[11px] text-rose-100/90 hover:bg-rose-950/40 disabled:opacity-40"
-            disabled={busy}
-            title="ZIP d’audit : 8 périodes, comparaisons, rejeu et jeux A/B/C archivés — sans relancer vitest"
-            onClick={() =>
-              run(
-                'momentumExportCompleteAudit',
-                {},
-                'Assemblage du dossier d’audit complet (export 8 périodes + artefacts)…'
-              )
-            }
-          >
-            Exporter le dossier d’audit complet
-          </button>
+          <>
+            <button
+              type="button"
+              className="rounded-md border border-rose-700/40 px-2 py-1 text-[11px] text-rose-100/90 hover:bg-rose-950/40 disabled:opacity-40"
+              disabled={busy}
+              title="ZIP d’audit complet"
+              onClick={() =>
+                run('momentumExportCompleteAudit', {}, 'Assemblage du dossier d’audit complet…')
+              }
+            >
+              Exporter le dossier d’audit complet
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-sky-700/40 px-2 py-1 text-[11px] text-sky-100/90 hover:bg-sky-950/40 disabled:opacity-40"
+              disabled={busy}
+              title="Compare paquet publié et DOM, restaure la période, sans mémoire"
+              onClick={() =>
+                run('momentumVerifyEightPeriodsDom', {}, 'Vérification DOM des 8 périodes…')
+              }
+            >
+              Vérifier les 8 périodes (DOM)
+            </button>
+            <label className="cursor-pointer rounded-md border border-slate-600/50 px-2 py-1 text-[11px] text-slate-200 hover:bg-slate-900/60">
+              Charger artefacts rejeu
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                disabled={busy}
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = '';
+                  if (!file || busy) return;
+                  setBusy(true);
+                  setNotice('Chargement des artefacts…');
+                  try {
+                    const payload = JSON.parse(await file.text());
+                    const fn = window.momentumInjectEvalArchive;
+                    if (typeof fn !== 'function') {
+                      setNotice('Injection indisponible — rechargez Récap → Analyse.');
+                      return;
+                    }
+                    const result = await fn(payload);
+                    setNotice(
+                      result?.ok
+                        ? `Artefacts chargés${result.hasReplay ? ' (rejeu inclus)' : ''}.`
+                        : 'Échec du chargement.'
+                    );
+                  } catch (error) {
+                    setNotice(`Fichier invalide : ${String(error?.message || error)}`);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              />
+            </label>
+          </>
         ) : null}
       </div>
 

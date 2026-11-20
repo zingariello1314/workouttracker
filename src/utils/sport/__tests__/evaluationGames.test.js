@@ -85,6 +85,45 @@ describe('jeux A/B/C reconstitués', () => {
     expect(structureGameCReport(report).pass).toBe(true);
   });
 
+  it('jeu C : doublons d’id registre déjà publiés ne cassent pas admissiblePreserved', () => {
+    const discovery = {
+      kind: 'disc_volume_shape',
+      nature: 'now',
+      title: 'Volume concentré',
+      body: 'Peu de journées.',
+      evidence: '3 jours'
+    };
+    const claim = claimFromDiscovery(discovery);
+    const published = { ...discovery, id: 'disc_volume_shape', claim, p6Disposition: 'autonomous' };
+    const dupRow = { ...published, p6Disposition: 'exact_duplicate_suppressed' };
+    const insights = {
+      shortTerm: [published],
+      mediumTerm: [],
+      longTerm: [],
+      accessibleReserve: [],
+      publicationAuthority: 'p6',
+      publicationDispositions: [
+        { id: 'disc_volume_shape', disposition: 'published' },
+        { id: 'disc_volume_shape', disposition: 'exact_duplicate_suppressed', reason: 'duplicate_publication_id' },
+        { id: 'disc_volume_shape', disposition: 'exact_duplicate_suppressed', reason: 'already_in_priority_or_reserve' }
+      ]
+    };
+    const report = runGameCCollective({
+      insights,
+      p6: {
+        counters: { reconciled: true, priority: 1, reserve: 1 },
+        priority: [published],
+        reserve: [dupRow]
+      }
+    });
+    const idCase = report.cases.find((c) => c.expectedAccessible != null);
+    expect(idCase.expectedAccessible).toBe(1);
+    expect(idCase.publishedAccessible).toBe(1);
+    expect(idCase.explainedGap).toBe(0);
+    expect(idCase.admissiblePreserved).toBe(true);
+    expect(report.admissiblePreserved).not.toBe(false);
+  });
+
   it('exporte un bundle structuré A/B/C vers artifacts/analysis-eval', () => {
     const discovery = {
       kind: 'disc_volume_shape',

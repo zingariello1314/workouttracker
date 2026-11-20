@@ -1,6 +1,6 @@
 # Progression d’implémentation — v2
 
-**Dernière session :** 2026-11-20 — Mission 5 P6 (`editorial=p6-sovereign-v4`, `review=collective-pass4-v1`). Souveraineté jusqu’à la publication (`publicationDispositions`, réconciliation par ids), passe 4 collective, claims enrichis, jeux A/B/C resserrés, archive d’évaluation privée sous `artifacts/analysis-eval/`, dossier d’audit ZIP. Verdict : P6 partiellement démontrée — NO-GO P7. Voir `MISSION5_BILAN_P6.md`.
+**Dernière session :** 2026-11-20 — Mission 5 bis (recette). Rejeu v4 **complet** 8 horizons vs baseline v3 (sauvegarde 19 nov.) : `lostSilent=0`, autorité `p6` ×8 ; jeux A/B/C sur paquets réels majoritairement FAIL ; doublons texte « poussée » ×6 ; monopole `emergence` 30 j+ ; DOM non vérifié ; ZIP `artifacts/analysis-eval/complete/momentum-p6-mission5-bis-latest.zip`. **NO-GO P7.** Voir `MISSION5_BILAN_P6.md`.
 
 **Session précédente :** 2026-11-19, nuit — publication réelle tenue pour démontrée (Worker ~2,9 s, `ready`, 8 cartes). Corrections visibles : fréquence qui monte n’est plus dite en baisse, « repasse » retiré pour une simple présence, « de la tronc » et codes internes retirés, série reconstruite non tenue pour un format enregistré, journée en cours non close. Consolidation branchée sur les trajectoires déjà calculées, une carte au plus, réversible. Le bouton « Pack publié » lit le cache sans recalcul.
 

@@ -1,12 +1,12 @@
 {
   "schema": "momentum.evalGamesBundle.v1",
-  "executedAt": "2026-11-20T05:39:15.180Z",
+  "executedAt": "2026-11-20T06:05:45.040Z",
   "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
   "games": {
     "A": {
       "schema": "momentum.evalGameReport.v1",
       "game": "A",
-      "executedAt": "2026-11-20T05:39:15.180Z",
+      "executedAt": "2026-11-20T06:05:45.040Z",
       "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
       "pass": true,
       "counters": {
@@ -44,7 +44,7 @@
     "B": {
       "schema": "momentum.evalGameReport.v1",
       "game": "B",
-      "executedAt": "2026-11-20T05:39:15.180Z",
+      "executedAt": "2026-11-20T06:05:45.040Z",
       "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
       "pass": true,
       "counters": {
@@ -292,13 +292,13 @@
     "C": {
       "schema": "momentum.evalGameReport.v1",
       "game": "C",
-      "executedAt": "2026-11-20T05:39:15.180Z",
+      "executedAt": "2026-11-20T06:05:45.040Z",
       "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-      "pass": false,
+      "pass": true,
       "counters": {
         "exactDuplicatesAccessible": 0,
         "fusedSourcesAccessible": 0,
-        "admissiblePreserved": false,
+        "admissiblePreserved": true,
         "horizonConfusion": 0
       },
       "cases": [
@@ -309,11 +309,13 @@
             "period": "live",
             "expectedAccessible": 0,
             "publishedAccessible": 1,
+            "registryRows": 0,
             "lostSilent": [],
             "explainedGap": 0,
+            "unexplainedIds": [],
             "publicationAuthority": null,
             "idReconciled": false,
-            "admissiblePreserved": false
+            "admissiblePreserved": true
           },
           "expected": {
             "admissiblePreserved": true,
@@ -324,19 +326,17 @@
             "period": "live",
             "expectedAccessible": 0,
             "publishedAccessible": 1,
+            "registryRows": 0,
             "lostSilent": [],
             "explainedGap": 0,
+            "unexplainedIds": [],
             "publicationAuthority": null,
             "idReconciled": false,
-            "admissiblePreserved": false
+            "admissiblePreserved": true
           },
-          "status": "fail",
+          "status": "pass",
           "justification": "qualité collective du paquet accessible",
-          "delta": {
-            "exactDuplicatesAccessible": 0,
-            "fusedSourcesAccessible": 0,
-            "admissiblePreserved": false
-          },
+          "delta": null,
           "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
@@ -348,5 +348,5 @@
       }
     }
   },
-  "pass": false
+  "pass": true
 }

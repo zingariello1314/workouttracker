@@ -1,0 +1,51 @@
+{
+  "schema": "momentum.artifactStatus.v1",
+  "executedAt": "2026-11-20T06:06:09.314Z",
+  "items": [
+    {
+      "name": "eight-periods/eight-periods.json",
+      "status": "missing",
+      "cause": "export live UI non exécuté dans cet ZIP hors-navigateur — lancer Récap→Analyse→Exporter le dossier d’audit complet après chargement du bridge"
+    },
+    {
+      "name": "evaluation/dom-eight-periods.json",
+      "status": "missing",
+      "cause": "navigateur authentifié non exercé ici — bouton « Vérifier les 8 périodes (DOM) » puis ré-export"
+    },
+    {
+      "name": "evaluation/live/game-*.json",
+      "status": "missing",
+      "cause": "jeux live session UI absents de cet assemblage hors-navigateur"
+    },
+    {
+      "name": "replays/p6-replay-v4-latest.json",
+      "status": "included",
+      "cause": null
+    },
+    {
+      "name": "replays/p6-replay-v3-baseline.json",
+      "status": "included",
+      "cause": null
+    },
+    {
+      "name": "comparisons/v3-vs-v4.json",
+      "status": "included",
+      "cause": null
+    },
+    {
+      "name": "qualitative/blind-pack.json",
+      "status": "included",
+      "cause": "préparé — jugement humain NON effectué"
+    },
+    {
+      "name": "games/games-by-period.json",
+      "status": "included",
+      "cause": null
+    },
+    {
+      "name": "human-blind-verdict.json",
+      "status": "missing",
+      "cause": "aucune validation humaine à l’aveugle n’a été effectuée"
+    }
+  ]
+}

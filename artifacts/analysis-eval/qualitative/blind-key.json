@@ -1,0 +1,26 @@
+{
+  "schema": "momentum.qualitativeBlindKey.v1",
+  "humanBlindPerformed": false,
+  "reveals": {
+    "blind-today": {
+      "A": "v3",
+      "B": "v4"
+    },
+    "blind-7d": {
+      "A": "v4",
+      "B": "v3"
+    },
+    "blind-30d": {
+      "A": "v3",
+      "B": "v4"
+    },
+    "blind-6m": {
+      "A": "v4",
+      "B": "v3"
+    },
+    "blind-1y": {
+      "A": "v3",
+      "B": "v4"
+    }
+  }
+}

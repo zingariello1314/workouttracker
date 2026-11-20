@@ -81,7 +81,9 @@ export async function assembleCompleteAuditDossier({
   p6 = null,
   snapshot = null,
   download = true,
-  includeLiveGames = true
+  includeLiveGames = true,
+  domVerify = null,
+  gamesByPeriod = null
 } = {}) {
   const assembledAt = new Date().toISOString();
   const edition = analysisEditionKey();
@@ -158,30 +160,68 @@ export async function assembleCompleteAuditDossier({
     });
   }
 
-  // 2) Replay archivé (localStorage uniquement — jamais simulé depuis l’export navigateur)
+  // 2) Rejeux archivés (localStorage / bridge injecté — jamais simulés depuis l’UI seule)
   const replay = archive.replay || null;
   const replayFp = fpKey(replay?.fingerprint || replay?.dataFingerprint || null);
   const liveFp = fpKey(liveFingerprint);
   const replayStale =
     Boolean(replay && liveFp && replayFp && replayFp !== liveFp) ||
-    Boolean(replay?.edition && replay.edition !== edition);
+    Boolean(replay?.edition && replay.edition !== edition && !String(replay.edition || '').includes('p6-sovereign-v4'));
   if (replay) {
     push('evaluation/p6-replay.json', replay, {
-      source: archive.replay ? 'localStorage' : 'public_analysis_eval',
+      source: 'localStorage_or_bridge',
       executedAt: replay.executedAt || archive.updatedAt || null,
       edition: replay.edition || archive.edition || null,
       fingerprint: replayFp,
       stale: replayStale,
       note: replayStale
-        ? 'résultat de rejeu ancien ou empreinte / édition différente de la session live'
+        ? 'rejeu empreinte/édition différente de la session live — conservé pour comparaison'
         : null
     });
+    if (String(replay.edition || '').includes('p6-sovereign-v4')) {
+      push('evaluation/p6-replay-v4.json', replay, {
+        source: 'localStorage_or_bridge',
+        executedAt: replay.executedAt,
+        edition: replay.edition
+      });
+    }
   } else {
     push('evaluation/p6-replay.json', null, {
       note:
-        'aucun rejeu dans localStorage. Générer via P4_REPLAY=1 npx vitest run src/utils/sport/__tests__/p4IdentityReplay.test.js → artifacts/analysis-eval/replays/p6-replay-latest.json (hors miroir public, données personnelles).'
+        'absent. Lancer: set P4_REPLAY=1&& npx vitest run src/utils/sport/__tests__/p6Mission5BisReplay.test.js puis coller artifacts/analysis-eval/browser-bridge/eval-archive-inject.json via le bouton « Charger artefacts rejeu ».'
+    });
+    push('evaluation/p6-replay-v4.json', null, {
+      note: 'dépend du rejeu Mission 5 bis'
     });
   }
+  if (archive.v3Baseline || archive.comparisonV3V4) {
+    // v3 peut être dans le bridge
+  }
+  push(
+    'evaluation/p6-replay-v3-baseline.json',
+    archive.v3Baseline || null,
+    {
+      note: archive.v3Baseline
+        ? null
+        : 'baseline v3 absente du bridge — fichier local artifacts/analysis-eval/baselines/…'
+    }
+  );
+  push('evaluation/comparison-v3-v4.json', archive.comparisonV3V4 || replay?.comparisonV3V4 || null, {
+    note:
+      archive.comparisonV3V4 || replay?.comparisonV3V4
+        ? null
+        : 'comparaison v3/v4 absente — générée par le rejeu Mission 5 bis'
+  });
+  push('evaluation/qualitative-blind-pack.json', archive.qualitativeBlind || null, {
+    note: archive.qualitativeBlind
+      ? 'paquet aveugle — jugement humain NON effectué'
+      : 'paquet qualitatif aveugle absent'
+  });
+  push('evaluation/qualitative-blind-key.json', archive.qualitativeKey || null, {
+    note: archive.qualitativeKey
+      ? 'clé de déchiffrement — ne pas montrer pendant un jugement humain'
+      : 'clé absente'
+  });
 
   // 3) Jeux A/B/C archivés (localStorage — pas de PII publique)
   const archivedGames = archive.games?.bundle || null;
@@ -256,6 +296,36 @@ export async function assembleCompleteAuditDossier({
           note: 'insights live indisponibles — jeux live non calculés'
         })
     );
+  }
+
+  // 4b) Jeux live par période (si fournis / bridge)
+  const byPeriod = gamesByPeriod || archive.games?.bundle?.gamesByPeriod || replay?.gamesByPeriod || null;
+  if (byPeriod) {
+    push('evaluation/live/games-by-period.json', byPeriod, {
+      source: 'bridge_or_replay',
+      executedAt: assembledAt
+    });
+  } else {
+    push('evaluation/live/games-by-period.json', null, {
+      note: 'jeux par horizon absents — disponibles après rejeu Mission 5 bis'
+    });
+  }
+
+  // DOM
+  if (domVerify && !domVerify.refused) {
+    push('evaluation/dom-eight-periods.json', domVerify, {
+      source: 'live_dom_verify',
+      executedAt: domVerify.finishedAt || assembledAt,
+      note: domVerify.editorialMemoryModified
+        ? 'ATTENTION mémoire modifiée'
+        : 'mémoire éditoriale non modifiée'
+    });
+  } else {
+    push('evaluation/dom-eight-periods.json', null, {
+      note:
+        domVerify?.reason ||
+        'DOM non vérifié dans cet export — utiliser « Vérifier les 8 périodes (DOM) » avant l’export'
+    });
   }
 
   // 5) Réconciliation publication + décisions (extrait live 8 périodes)
