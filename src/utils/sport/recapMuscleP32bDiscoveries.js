@@ -246,7 +246,14 @@ function buildExposureShift(metrics) {
       comparabilityLevel: comp.level,
       unit: 'exposure_days_primary',
       trajectoryOk: true,
-      temporalScope: { interpretingWithHistory: true }
+      temporalScope: { interpretingWithHistory: true },
+      observedValues: [
+        { id: 'daysW', value: top.daysW, unit: 'days' },
+        { id: 'daysC', value: top.daysC, unit: 'days' },
+        { id: 'deltaDays', value: top.deltaDays, unit: 'days' },
+        { id: 'monoRepsW', value: top.monoRepsW, unit: 'reps' },
+        { id: 'monoRepsC', value: top.monoRepsC, unit: 'reps' }
+      ]
     }
   });
 }

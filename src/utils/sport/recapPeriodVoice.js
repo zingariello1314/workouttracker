@@ -336,7 +336,14 @@ export function describeActivityDuration(measure) {
     0,
     Math.round(Number.isFinite(runningRaw) ? runningRaw : Math.max(0, total - other))
   );
+  const mostlyChallenge =
+    measure?.durationContract?.minutesMostlyChallenge === true ||
+    measure?.minutesMostlyChallenge === true;
   if (total <= 0 && other <= 0) return 'aucune durée de séance enregistrée';
+  // Population partielle : ne pas laisser croire que ces minutes couvrent tout le volume de reps
+  if (mostlyChallenge && other > 0) {
+    return `${formatDurationFr(other)} chronométrées sur les défis (durée hors course partielle, distincte du volume global de répétitions)`;
+  }
   if (total > other + 1) {
     const run = running > 0 ? running : total - other;
     return `${formatDurationFr(total)} d'activité enregistrée, dont ${formatDurationFr(other)} de séances hors course et ${formatDurationFr(run)} de course`;
@@ -414,8 +421,19 @@ export function discovery(partial) {
     partial.contentClass ||
     partial.metrics?.contentClass ||
     contentClassForKind(partial.kind);
+  const metrics = { ...(partial.metrics || {}), contentClass };
+  // Mission 6 : ne jamais laisser id === kind seul (collision de publication).
+  const richId =
+    partial.id && partial.id !== partial.kind
+      ? partial.id
+      : metrics.conclusionKey ||
+        metrics.occurrenceId ||
+        metrics.factId ||
+        (metrics.exerciseId != null
+          ? `${partial.kind}|ex:${metrics.exerciseId}|${metrics.date || metrics.eventDate || metrics.prevDate || 'ep:na'}`
+          : null);
   return withDiscoveryScope({
-    id: partial.id || partial.kind,
+    id: richId || partial.kind,
     kind: partial.kind,
     nature: partial.nature,
     family: partial.family,
@@ -425,7 +443,8 @@ export function discovery(partial) {
     body: partial.body,
     evidence: coerceEvidenceLine(partial.evidence),
     relevance: Math.min(0.995, 0.88 + score / 900),
-    metrics: { ...(partial.metrics || {}), contentClass },
-    ...(partial.scope ? { scope: partial.scope } : {})
+    metrics,
+    ...(partial.scope ? { scope: partial.scope } : {}),
+    ...(partial.phenomenonId ? { phenomenonId: partial.phenomenonId } : {})
   });
 }

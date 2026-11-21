@@ -465,7 +465,14 @@ export function buildThreadDiscoveries(input) {
         body: text.body,
         evidence: text.evidence,
         relevance: 0.9,
-        metrics: { thread: row.thread, axes: text.axes, sense: row.sense, factId: text.factId, analysisType: text.analysisType }
+        metrics: {
+          thread: row.thread,
+          axes: text.axes,
+          sense: row.sense,
+          factId: text.factId,
+          analysisType: text.analysisType,
+          ...(text.metrics || {})
+        }
       };
     })
     .filter(Boolean);

@@ -24,6 +24,10 @@ const V3_BASELINE = path.join(
   process.cwd(),
   'artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v3-before-mission5.json'
 );
+const V5_BASELINE = path.join(
+  process.cwd(),
+  'artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v5-before-mission7.json'
+);
 
 function loadSnapshot() {
   const backup = JSON.parse(readFileSync(BACKUP_19_NOV, 'utf8'));
@@ -37,10 +41,13 @@ function firstDateOf(snapshot) {
     .sort()[0];
 }
 
-describe.skipIf(!ENABLED)('Mission 5 bis — rejeu incrémental p6-sovereign-v4', () => {
-  it('édition courante v4', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v4/);
-    expect(analysisEditionKey()).toMatch(/review=collective-pass4-v1/);
+describe.skipIf(!ENABLED)('Mission 5 bis — rejeu incrémental p6-sovereign-v10', () => {
+  it('édition courante v10', () => {
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v10/);
+    expect(analysisEditionKey()).toMatch(/program=structural-context-v2/);
+    expect(analysisEditionKey()).toMatch(/review=collective-pass4-v7/);
+    expect(analysisEditionKey()).toMatch(/claim=proof-pipeline-v3/);
+    expect(analysisEditionKey()).toMatch(/sleep=association-prose-v2/);
   });
 
   REPLAY_PERIODS.forEach((period) => {
@@ -85,23 +92,43 @@ describe.skipIf(!ENABLED)('Mission 5 bis — rejeu incrémental p6-sovereign-v4'
         ? JSON.parse(readFileSync(V3_BASELINE, 'utf8'))
         : null;
       expect(v3, 'baseline v3 absente').toBeTruthy();
+      const v5 = existsSync(V5_BASELINE)
+        ? JSON.parse(readFileSync(V5_BASELINE, 'utf8'))
+        : null;
+      expect(v5, 'baseline v5 absente (Mission 7)').toBeTruthy();
 
       let bilanMd = null;
-      const bilanPath = path.join(
-        process.cwd(),
-        'docs/analyses-documentation/moteur analyse v2/analysis-engine/MISSION5_BILAN_P6.md'
-      );
-      if (existsSync(bilanPath)) bilanMd = readFileSync(bilanPath, 'utf8');
+      const bilanPaths = [
+        path.join(
+          process.cwd(),
+          'docs/analyses-documentation/moteur analyse v2/analysis-engine/MISSION8_BILAN_P6.md'
+        ),
+        path.join(
+          process.cwd(),
+          'docs/analyses-documentation/moteur analyse v2/analysis-engine/MISSION7_BILAN_P6.md'
+        ),
+        path.join(
+          process.cwd(),
+          'docs/analyses-documentation/moteur analyse v2/analysis-engine/MISSION6_BILAN_P6.md'
+        ),
+        path.join(
+          process.cwd(),
+          'docs/analyses-documentation/moteur analyse v2/analysis-engine/MISSION5_BILAN_P6.md'
+        )
+      ];
+      const bilanPath = bilanPaths.find((p) => existsSync(p));
+      if (bilanPath) bilanMd = readFileSync(bilanPath, 'utf8');
 
       const result = writeMission5BisArtifacts({
         snapshot,
         partial,
         v3Replay: v3,
         end: END,
-        bilanMd
+        bilanMd,
+        qualitativeBaseline: v5
       });
       expect(result.replay.complete).toBe(true);
-      expect(result.replay.edition).toMatch(/p6-sovereign-v4/);
+      expect(result.replay.edition).toMatch(/p6-sovereign-v10/);
       expect(existsSync(result.zipLatest)).toBe(true);
       expect(existsSync(result.bridgePath)).toBe(true);
 

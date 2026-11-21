@@ -8,11 +8,13 @@ import { detectStateTransitions } from '../trainingStateTransitions';
 describe('édition courante et contrôle éditorial', () => {
   it('refuse de présenter un pack d’une autre édition comme le résultat actuel', () => {
     const current = analysisEditionKey();
-    expect(current).toMatch(/editorial=p6-sovereign-v4/);
-    expect(current).toMatch(/consolidation=narrative-coherence-v2/);
+    expect(current).toMatch(/editorial=p6-sovereign-v7/);
+    expect(current).toMatch(/identity=discovery-occurrence-v1/);
+    expect(current).toMatch(/program=structural-reasoning-v1/);
+    expect(current).toMatch(/consolidation=narrative-coherence-v3/);
     expect(current).toMatch(/stimulus=challenge-unknown-v1/);
     expect(current).toMatch(/duration=paired-density-v3/);
-    expect(current).toMatch(/review=collective-pass4-v1/);
+    expect(current).toMatch(/review=collective-pass4-v4/);
     expect(
       mayPresentBundleAsCurrent(
         { analysisEdition: 'editorial=old', analysisStatus: 'ready' },

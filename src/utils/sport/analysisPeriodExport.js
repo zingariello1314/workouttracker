@@ -204,15 +204,26 @@ export function buildPeriodAuditDossier({
     end: publication?.windowEnd || requestedWindow?.end || null
   };
   const dom = correspondDom(domCapture, requestedPeriod, window, provenance);
-  const priorityTitles = new Set(priority.map((card) => card.title));
+  const priorityTitles = new Set(priority.map((card) => card.title).filter(Boolean));
+  // Périmètre DOM = catalogue accessible (priorité + réserve), pas la seule priorité
+  const accessibleTitles = new Set(
+    [...priority, ...reserve].map((card) => card.title).filter(Boolean)
+  );
   if (dom.renderedTitles) {
-    dom.missingFromDom = [...priorityTitles].filter((title) => title && !dom.renderedTitles.includes(title));
-    dom.extraInDom = dom.renderedTitles.filter((title) => !priorityTitles.has(title));
+    dom.compareScope = 'accessible_including_reserve';
+    dom.missingFromDom = [...accessibleTitles].filter(
+      (title) => title && !dom.renderedTitles.includes(title)
+    );
+    dom.missingPriorityFromDom = [...priorityTitles].filter(
+      (title) => title && !dom.renderedTitles.includes(title)
+    );
+    dom.extraInDom = dom.renderedTitles.filter((title) => !accessibleTitles.has(title));
     dom.verified =
       provenance === 'published_rendered' &&
       dom.samePeriod === true &&
       dom.sameWindow === true &&
       dom.missingFromDom.length === 0 &&
+      dom.extraInDom.length === 0 &&
       dom.renderedCount > 0;
   }
   const mismatches = [];
@@ -296,7 +307,25 @@ export function buildPeriodAuditDossier({
     selection: assessment.selectionDiagnostics || null,
     memory: {
       signature: signature || assessment.insightSignature || null,
-      historyCount: Array.isArray(history) ? history.length : null
+      // history peut être un tableau OU un objet insightHistory { entries }
+      historyCount: Array.isArray(history)
+        ? history.length
+        : Array.isArray(history?.entries)
+          ? history.entries.length
+          : Number.isFinite(Number(history?.count))
+            ? Number(history.count)
+            : null,
+      historyShape: Array.isArray(history)
+        ? 'array'
+        : Array.isArray(history?.entries)
+          ? 'insight_history_object'
+          : history == null
+            ? 'absent_not_passed_to_export'
+            : typeof history,
+      note:
+        history == null
+          ? 'historyCount nul = historique non fourni à l’export (souvent), pas forcément mémoire vide'
+          : null
     },
     horizons: priority.map((card) => card.horizon).filter(Boolean),
     timings: timings || bundle?.workerTimings || null,
@@ -331,12 +360,33 @@ export function compareAuditDossiers(left, right) {
   };
 }
 
-export function buildComparisonExport(dossierA, dossierB) {
+function slimDossierRef(dossier) {
+  if (!dossier) return null;
+  if (dossier.refused) {
+    return { refused: true, reason: dossier.reason || null, period: dossier.period || null };
+  }
   return {
-    schema: 'momentum.analysisComparisonExport.v1',
+    schema: 'momentum.analysisPeriodRef.v1',
+    period: dossier.period || dossier.requestedPeriod || null,
+    provenance: dossier.provenance || null,
+    packId: dossier.packId || null,
+    window: dossier.window || null,
+    edition: dossier.engine?.edition || null,
+    fingerprint: dossier.engine?.dataFingerprint || null,
+    counts: dossier.userAccessible?.counts || null,
+    priorityIds: (dossier.userAccessible?.priority || []).map((c) => c.id || c.kind).filter(Boolean),
+    reserveIds: (dossier.userAccessible?.reserve || []).map((c) => c.id || c.kind).filter(Boolean)
+  };
+}
+
+export function buildComparisonExport(dossierA, dossierB) {
+  // Ne plus embarquer les dossiers complets (×4 comparaisons ≈ explosion 187 Mo).
+  // Les dossiers complets restent dans eight-periods/periods/* ; ici : refs + diff.
+  return {
+    schema: 'momentum.analysisComparisonExport.v2',
     capturedAt: new Date().toISOString(),
-    periodA: dossierA || null,
-    periodB: dossierB || null,
+    periodA: slimDossierRef(dossierA),
+    periodB: slimDossierRef(dossierB),
     provenanceA: dossierA?.provenance || dossierA?.reason || null,
     provenanceB: dossierB?.provenance || dossierB?.reason || null,
     diff: dossierA?.refused || dossierB?.refused ? null : compareAuditDossiers(dossierA, dossierB)

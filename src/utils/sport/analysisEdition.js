@@ -9,13 +9,16 @@ export const ANALYSIS_EDITION_PARTS = Object.freeze({
   streak: 'window-range-v1',
   duration: 'paired-density-v3',
   gtg: 'classic-exclusive-v1',
-  program: 'planned-vs-performed-v1',
-  identity: 'program-schedule-v1',
+  program: 'structural-context-v2',
+  identity: 'discovery-occurrence-v1',
   scope: 'short-window-anchor-v1',
-  editorial: 'p6-sovereign-v4',
-  consolidation: 'narrative-coherence-v2',
+  editorial: 'p6-sovereign-v10',
+  consolidation: 'narrative-coherence-v3',
   stimulus: 'challenge-unknown-v1',
-  review: 'collective-pass4-v1'
+  review: 'collective-pass4-v7',
+  claim: 'proof-pipeline-v3',
+  sleep: 'association-prose-v2',
+  audit: 'normalized-export-v1'
 });
 
 export function analysisEditionKey(parts = ANALYSIS_EDITION_PARTS) {

@@ -29,7 +29,7 @@ export const PARTIAL_REPLAY_PATH = path.join(
   process.cwd(),
   EVAL_ARCHIVE_DIRS.root,
   'replays',
-  'p6-replay-v4-partial.json'
+  'p6-replay-partial.json'
 );
 
 export function addDays(ymd, delta) {
@@ -68,14 +68,20 @@ function textKey(card) {
     .trim()}|${String(card?.kind || '')}`;
 }
 
-export function replayOnePeriod({ snapshot, period, end, firstDate }) {
+export function replayOnePeriod({ snapshot, period, end, firstDate, activeProgram = null }) {
   const t0 = Date.now();
   const window = windowFor(period, end, firstDate);
+  const program =
+    activeProgram ||
+    snapshot?.activeProgram ||
+    (Array.isArray(snapshot?.programs) ? snapshot.programs.find((p) => p?.active) || snapshot.programs[0] : null) ||
+    null;
   const bundle = buildPeriodDiscoveryBundle({
     snapshot,
     period,
     window,
-    getExerciseNameById: null
+    getExerciseNameById: null,
+    activeProgram: program
   });
   const p6 = bundle.p6 || null;
   const insights = insightsFromP6(p6, { period });
@@ -166,15 +172,21 @@ export function replayOnePeriod({ snapshot, period, end, firstDate }) {
     p6Slim: {
       counters: p6?.counters || null,
       priority: (p6?.priority || []).map((row) => ({
-        id: row.id || row.title,
+        id: row.occurrenceId || row.id || row.title,
         title: row.title,
         body: row.body || 'x',
+        kind: row.kind || null,
+        occurrenceId: row.occurrenceId || null,
+        phenomenonId: row.phenomenonId || null,
         claim: row.claim || { id: row.id || row.title }
       })),
       reserve: (p6?.reserve || []).map((row) => ({
-        id: row.id || row.title,
+        id: row.occurrenceId || row.id || row.title,
         title: row.title,
         body: row.body || 'x',
+        kind: row.kind || null,
+        occurrenceId: row.occurrenceId || null,
+        phenomenonId: row.phenomenonId || null,
         claim: row.claim || { id: row.id || row.title },
         p6Disposition: row.p6Disposition,
         collapsedInto: row.collapsedInto || null
@@ -250,37 +262,74 @@ export function compareV3V4(v3Replay, v4Periods) {
   });
 }
 
-export function buildQualitativeBlindPack(v3Replay, v4Periods) {
+function fullTextCardsFromPeriod(row, label) {
+  const slim = row?.insightsSlim;
+  if (slim) {
+    const cards = [
+      ...(slim.shortTerm || []),
+      ...(slim.mediumTerm || []),
+      ...(slim.longTerm || [])
+    ].slice(0, 11);
+    if (cards.length) {
+      return cards.map((c) => ({
+        title: c.title || null,
+        body: c.body || null,
+        kind: c.kind || null,
+        evidence: c.evidence || null,
+        proofSample: (c.claim?.proof?.observedValues || []).slice(0, 4)
+      }));
+    }
+  }
+  // Repli : titres seuls (baseline historique incomplète) — documenté
+  const titles = row?.quality?.priorityTitles || row?.quality?.examples || row?.examples || [];
+  return (titles || []).slice(0, 11).map((t) => ({
+    title: typeof t === 'string' ? t : t?.title || null,
+    body: typeof t === 'object' ? t?.body || null : null,
+    kind: typeof t === 'object' ? t?.kind || null : null,
+    evidence: null,
+    proofSample: [],
+    incompleteHistorical: !slim,
+    sourceLabel: label
+  }));
+}
+
+export function buildQualitativeBlindPack(baselineReplay, currentPeriods) {
   const pack = {
-    schema: 'momentum.qualitativeBlindPack.v1',
-    note: 'Ordre anonymisé A/B — ne révèle pas quelle version est v3 ou v4. Jugement humain NON effectué.',
+    schema: 'momentum.qualitativeBlindPack.v2',
+    note:
+      'Ordre anonymisé A/B — textes complets lorsque disponibles des deux côtés. Jugement humain NON effectué. Si une version n’a que des titres, le champ incompleteHistorical=true.',
     humanBlindPerformed: false,
     cases: []
   };
   ['today', '7d', '30d', '6m', '1y'].forEach((period, index) => {
-    const v3 = (v3Replay?.rows || []).find((r) => r.period === period);
-    const v4 = v4Periods[period];
-    if (!v3 || !v4) return;
+    const baseline =
+      (baselineReplay?.rows || []).find((r) => r.period === period) ||
+      baselineReplay?.periods?.[period];
+    const current = currentPeriods[period];
+    if (!baseline || !current) return;
     const leftFirst = index % 2 === 0;
-    const versionA = leftFirst ? 'v3' : 'v4';
-    const versionB = leftFirst ? 'v4' : 'v3';
+    const versionA = leftFirst ? 'baseline' : 'current';
+    const versionB = leftFirst ? 'current' : 'baseline';
     const textsA =
-      versionA === 'v3'
-        ? (v3.examples || []).map((t) => ({ title: t }))
-        : v4.quality?.examples || [];
+      versionA === 'baseline'
+        ? fullTextCardsFromPeriod(baseline, 'baseline')
+        : fullTextCardsFromPeriod(current, 'current');
     const textsB =
-      versionB === 'v3'
-        ? (v3.examples || []).map((t) => ({ title: t }))
-        : v4.quality?.examples || [];
+      versionB === 'baseline'
+        ? fullTextCardsFromPeriod(baseline, 'baseline')
+        : fullTextCardsFromPeriod(current, 'current');
     pack.cases.push({
       id: `blind-${period}`,
       period,
       labelA: 'Version A',
       labelB: 'Version B',
-      // clé de déchiffrement séparée — pas dans le paquet aveugle utilisateur
       _reveal: { A: versionA, B: versionB },
       versionA: textsA,
-      versionB: textsB
+      versionB: textsB,
+      parityWarning:
+        textsA.some((t) => t.incompleteHistorical) || textsB.some((t) => t.incompleteHistorical)
+          ? 'une_version_n_a_que_des_titres_ou_un_repli'
+          : null
     });
   });
   const sealed = {
@@ -295,12 +344,18 @@ export function buildQualitativeBlindPack(v3Replay, v4Periods) {
   return { sealed, key };
 }
 
-export function assembleV4ReplayDocument({ snapshot, partial, v3Replay, end }) {
+export function assembleV4ReplayDocument({
+  snapshot,
+  partial,
+  v3Replay,
+  end,
+  qualitativeBaseline = null
+}) {
   const periods = partial.periods || {};
   const executedAt = new Date().toISOString();
   const fingerprint = snapshotFingerprint(snapshot);
   const comparison = compareV3V4(v3Replay, periods);
-  const qualitative = buildQualitativeBlindPack(v3Replay, periods);
+  const qualitative = buildQualitativeBlindPack(qualitativeBaseline || v3Replay, periods);
   const periodPacks = Object.entries(periods).map(([period, row]) => ({
     period,
     insights: row.insightsSlim || {
@@ -384,13 +439,15 @@ export function writeMission5BisArtifacts({
   partial,
   v3Replay,
   end,
-  bilanMd = null
+  bilanMd = null,
+  qualitativeBaseline = null
 }) {
   const { replay, qualitative, comparison } = assembleV4ReplayDocument({
     snapshot,
     partial,
     v3Replay,
-    end
+    end,
+    qualitativeBaseline
   });
   const executedAt = replay.executedAt;
   const written = writeEvalArtifactFiles(fs, path, {
@@ -425,9 +482,23 @@ export function writeMission5BisArtifacts({
   put('comparisons/v3-vs-v4.json', comparison);
   put('qualitative/blind-pack.json', qualitative.sealed);
   put('qualitative/blind-key.json', qualitative.key);
-  put('replays/p6-replay-v4-latest.json', replay);
+  // Noms d’artefacts alignés sur l’édition réelle (plus de « v4 » silencieux pour une v5/v6)
+  const editionTag = /p6-sovereign-v(\d+)/.exec(String(replay.edition || ''))?.[1] || 'current';
+  put(`replays/p6-replay-v${editionTag}-latest.json`, replay);
+  put('replays/p6-replay-latest.json', replay);
   if (v3Replay) put('replays/p6-replay-v3-baseline.json', v3Replay);
-  if (bilanMd) put('summaries/MISSION5_BILAN_P6.md', bilanMd);
+  if (bilanMd) {
+    const bilanName = /Mission 9/i.test(bilanMd)
+      ? 'summaries/MISSION9_BILAN_P6.md'
+      : /Mission 8/i.test(bilanMd)
+        ? 'summaries/MISSION8_BILAN_P6.md'
+        : /Mission 7/i.test(bilanMd)
+          ? 'summaries/MISSION7_BILAN_P6.md'
+          : /Mission 6/i.test(bilanMd)
+            ? 'summaries/MISSION6_BILAN_P6.md'
+            : 'summaries/MISSION5_BILAN_P6.md';
+    put(bilanName, bilanMd);
+  }
 
   const gamesByPeriod = replay.gamesByPeriod || {};
   const gameCStructured = structureGameCReport({
@@ -552,14 +623,20 @@ export function writeMission5BisArtifacts({
     '> Aucune validation humaine à l’aveugle n’a été effectuée.',
     ''
   ].join('\n');
-  put('summaries/mission5-bis-summary.md', summary);
+  const archiveTag =
+    String(replay.edition || analysisEditionKey())
+      .match(/editorial=([^;]+)/)?.[1]
+      ?.replace(/[^a-z0-9-]+/gi, '-') || `sovereign-v${editionTag}`;
+  put(`summaries/${archiveTag}-replay-summary.md`, summary);
 
   const stamp = executedAt.replace(/[:.]/g, '-');
-  const zipName = `momentum-p6-mission5-bis-${stamp}.zip`;
+  const zipName = `momentum-p6-${archiveTag}-nov19-${stamp}.zip`;
   const zipPath = path.join(completeDir, zipName);
-  const zipLatest = path.join(completeDir, 'momentum-p6-mission5-bis-latest.zip');
+  const zipLatest = path.join(completeDir, `momentum-p6-${archiveTag}-nov19-latest.zip`);
   const manifest = {
-    schema: 'momentum.mission5BisComplete.v1',
+    schema: 'momentum.p6MissionComplete.v1',
+    mission: 'mission9',
+    snapshot: 'momentum-sport-backup-2026-11-19',
     executedAt,
     edition: replay.edition,
     completeReplay: replay.complete,

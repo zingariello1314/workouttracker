@@ -134,6 +134,59 @@ export default function RecapAnalyseExportBar({
           <>
             <button
               type="button"
+              className="rounded-md border border-amber-700/40 px-2 py-1 text-[11px] text-amber-100/90 hover:bg-amber-950/40 disabled:opacity-40"
+              disabled={busy}
+              title="Markdown autonome pour ChatGPT / évaluateur"
+              onClick={() =>
+                run('momentumExportAuditIa', { mode: 'detailed' }, 'Préparation du rapport d’audit IA…')
+              }
+            >
+              Exporter le rapport d’audit IA
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-amber-700/40 px-2 py-1 text-[11px] text-amber-100/90 hover:bg-amber-950/40 disabled:opacity-40"
+              disabled={busy}
+              title="Copie le Markdown dans le presse-papiers"
+              onClick={async () => {
+                if (busy) return;
+                const fn = window.momentumCopyAuditIa;
+                if (typeof fn !== 'function') {
+                  setNotice('Copie indisponible — rechargez Récap → Analyse.');
+                  return;
+                }
+                setBusy(true);
+                try {
+                  const result = await fn({ mode: 'concise' });
+                  setNotice(
+                    result?.ok ? 'Rapport d’audit IA copié.' : `Copie échouée : ${result?.reason || '—'}`
+                  );
+                } catch (error) {
+                  setNotice(`Copie échouée : ${String(error?.message || error)}`);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Copier le rapport d’audit IA
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-violet-700/40 px-2 py-1 text-[11px] text-violet-100/90 hover:bg-violet-950/40 disabled:opacity-40"
+              disabled={busy}
+              title="JSON normalisé autonome (cartes, claims, candidats, sous-exploration)"
+              onClick={() =>
+                run(
+                  'momentumExportAnalyticalAudit',
+                  {},
+                  'Préparation des données analytiques complètes (peut inclure les 8 périodes)…'
+                )
+              }
+            >
+              Exporter les données analytiques complètes
+            </button>
+            <button
+              type="button"
               className="rounded-md border border-rose-700/40 px-2 py-1 text-[11px] text-rose-100/90 hover:bg-rose-950/40 disabled:opacity-40"
               disabled={busy}
               title="ZIP d’audit complet"

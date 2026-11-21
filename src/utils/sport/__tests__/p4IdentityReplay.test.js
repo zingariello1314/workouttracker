@@ -108,8 +108,8 @@ describe('rejeu identité sur la sauvegarde du 19 novembre', () => {
     expect(weekRow.unnamedEmergence).toBe(0);
     expect(half.unnamedEmergence).toBe(0);
     expect(half.portion).toBe(false);
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v4/);
-    expect(analysisEditionKey()).toMatch(/identity=program-schedule-v1/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v7/);
+    expect(analysisEditionKey()).toMatch(/identity=discovery-occurrence-v1/);
     expect(weekRow.grammar).toBe(false);
     expect(weekRow.p6.reconciled).toBe(true);
     const checkedBetween = (start, end) => {

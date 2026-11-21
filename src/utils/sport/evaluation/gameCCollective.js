@@ -1,9 +1,15 @@
 import { emptyGameCReport } from './evaluationTypes';
 import { reconcilePublicationIds, stablePublicationId } from '../p6Publication';
+import { detectorKind, substantiveEquivalence } from '../discoveryIdentity';
 
 /**
- * Jeu C — qualité collective et publication.
- * Compare identifiants et filiations, pas seulement des totaux.
+ * Jeu C — qualité collective et publication (Mission 7).
+ * Distingue explicitement :
+ * - doublons textuels exacts
+ * - équivalences sémantiques (évaluateur indépendant)
+ * - collisions techniques / filiations
+ * - ids inexpliqués (réconciliation)
+ * Ne compte PAS chaque paire sémantique comme un doublon textuel.
  */
 
 function textKey(card) {
@@ -11,7 +17,7 @@ function textKey(card) {
     .toLowerCase()
     .trim()}|${String(card?.body || '')
     .toLowerCase()
-    .slice(0, 80)}`;
+    .slice(0, 120)}`;
 }
 
 function accessibleCards(insights) {
@@ -24,7 +30,17 @@ function accessibleCards(insights) {
 }
 
 export function runGameCCollective({ insights = null, p6 = null, periodPacks = null } = {}) {
-  const report = emptyGameCReport();
+  const report = {
+    ...emptyGameCReport(),
+    textualDuplicatesAccessible: 0,
+    semanticEquivalentsAccessible: 0,
+    technicalCollisionLosses: 0,
+    suppressionWithoutProof: 0,
+    fusionWithoutDestination: 0,
+    unexplainedRegistryIds: 0,
+    evaluatorNotes: []
+  };
+
   const packs =
     Array.isArray(periodPacks) && periodPacks.length
       ? periodPacks
@@ -36,46 +52,51 @@ export function runGameCCollective({ insights = null, p6 = null, periodPacks = n
     accessible.forEach((card) => {
       const key = textKey(card);
       seenText.set(key, (seenText.get(key) || 0) + 1);
-      if (card?.p6Disposition === 'source_retained' || card?.collapsedInto) {
-        report.fusedSourcesAccessible += 1;
+      // Une source fusionnée ne doit pas figurer dans le catalogue accessible
+      if (
+        card?.p6Disposition === 'source_retained' ||
+        (card?.collapsedInto && card?.p6Disposition !== 'published' && card?.disposition !== 'priority')
+      ) {
+        // Ne compter que si la carte est clairement une source, pas un survivant annoté
+        if (card?.p6Disposition === 'source_retained') {
+          report.fusedSourcesAccessible += 1;
+        }
       }
     });
+    let textualDup = 0;
     seenText.forEach((count) => {
-      if (count > 1) report.exactDuplicatesAccessible += count - 1;
+      if (count > 1) textualDup += count - 1;
     });
+    report.textualDuplicatesAccessible += textualDup;
+    // Compat : exactDuplicatesAccessible = doublons TEXTUELS uniquement
+    report.exactDuplicatesAccessible += textualDup;
 
     const p6pack = pack.p6;
     if (p6pack?.counters?.reconciled) {
       const registry = [...(p6pack.priority || []), ...(p6pack.reserve || [])];
       const registryIds = registry.map((row) => stablePublicationId(row));
-      const publishedIds = accessible.map((card) => card.id || stablePublicationId(card));
+      const publishedIds = accessible.map((card) => stablePublicationId(card));
       const dispositions = pack.insights?.publicationDispositions || [];
       const idRecon = reconcilePublicationIds({
         registryIds,
         publishedIds,
         dispositions
       });
-      // Comptage par identifiants uniques — pas par longueur de tableau.
-      // exact_duplicate_suppressed d’un id déjà publié n’explique PAS un écart
-      // d’unicité : seuls les ids absents du catalogue accessible doivent l’être.
       const registryUnique = [...new Set(registryIds.filter(Boolean))];
       const publishedSet = new Set(publishedIds.filter(Boolean));
-      const explainedUnpublished = registryUnique.filter((id) => {
-        if (publishedSet.has(id)) return false;
-        return dispositions.some(
-          (d) => d.id === id && d.disposition && d.disposition !== 'published'
-        );
-      });
-      const unexplained = registryUnique.filter((id) => {
-        if (publishedSet.has(id)) return false;
-        return !dispositions.some(
-          (d) => d.id === id && d.disposition && d.disposition !== 'published'
-        );
-      });
+      // unexplained = lostSilent (même critère multi-alias) — pas un second matcher plus strict
+      const unexplained = idRecon.lostSilent;
+      report.unexplainedRegistryIds += unexplained.length;
+
+      // Annoter chaque anomalie : vraiment perdu vs alias de disposition
+      const anomalyAudit = unexplained.map((id) => ({
+        id,
+        status: 'unexplained_after_alias_match',
+        note: 'Aucune disposition (id/occurrence/phénomène/filiation) ne couvre cet identifiant'
+      }));
+
       const admissiblePreserved =
-        idRecon.lostSilent.length === 0 &&
-        unexplained.length === 0 &&
-        report.fusedSourcesAccessible === 0;
+        idRecon.lostSilent.length === 0 && report.fusedSourcesAccessible === 0;
 
       if (!admissiblePreserved) report.admissiblePreserved = false;
 
@@ -85,15 +106,20 @@ export function runGameCCollective({ insights = null, p6 = null, periodPacks = n
         publishedAccessible: publishedSet.size,
         registryRows: registry.length,
         lostSilent: idRecon.lostSilent,
-        explainedGap: explainedUnpublished.length,
         unexplainedIds: unexplained,
+        unexplainedCount: unexplained.length,
+        anomalyAudit,
+        textualDuplicates: textualDup,
         publicationAuthority: pack.insights?.publicationAuthority || null,
         idReconciled: idRecon.reconciled,
-        admissiblePreserved
+        admissiblePreserved,
+        note:
+          unexplained.length > 0
+            ? 'ids registre absents du publié sans disposition multi-alias'
+            : null
       });
     }
 
-    // Dominance excessive d'une même famille en priorité
     const priority = [
       ...(pack.insights?.shortTerm || []),
       ...(pack.insights?.mediumTerm || []),
@@ -115,14 +141,135 @@ export function runGameCCollective({ insights = null, p6 = null, periodPacks = n
         });
       }
     });
+
+    const dispositions = pack.insights?.publicationDispositions || [];
+
+    // Collision technique : ≥3 occurrences distinctes d’un détecteur, suppressions sans preuve
+    const detectorCollisions = new Map();
+    (pack.p6?.priority || []).forEach((row) => {
+      const det = detectorKind(row);
+      const pubId = stablePublicationId(row);
+      if (!detectorCollisions.has(det)) detectorCollisions.set(det, new Set());
+      detectorCollisions.get(det).add(pubId);
+    });
+    detectorCollisions.forEach((ids, det) => {
+      if (ids.size < 3) return;
+      const publishedForDet = accessible.filter((c) => detectorKind(c) === det);
+      const bad = dispositions.filter(
+        (d) =>
+          d.detectorKind === det &&
+          (d.disposition === 'exact_duplicate_suppressed' ||
+            d.disposition === 'semantic_equivalent_suppressed') &&
+          !d.equivalence?.proof &&
+          !d.collapsedInto
+      );
+      if (publishedForDet.length < ids.size && bad.length) {
+        report.technicalCollisionLosses += 1;
+        report.admissiblePreserved = false;
+        report.cases.push({
+          period: pack.period || 'live',
+          issue: 'technical_collision_loss',
+          detector: det,
+          distinctOccurrences: ids.size,
+          published: publishedForDet.length
+        });
+      }
+    });
+
+    dispositions.forEach((d) => {
+      if (
+        (d.disposition === 'exact_duplicate_suppressed' ||
+          d.disposition === 'semantic_equivalent_suppressed') &&
+        !d.collapsedInto &&
+        !d.equivalence?.proof &&
+        !d.equivalence?.reason
+      ) {
+        report.suppressionWithoutProof += 1;
+        report.admissiblePreserved = false;
+        report.cases.push({
+          period: pack.period || 'live',
+          issue: 'suppression_without_equivalence_proof',
+          id: d.id,
+          disposition: d.disposition
+        });
+      }
+      if (
+        (d.disposition === 'source_retained' || d.disposition === 'semantic_equivalent_suppressed') &&
+        !d.collapsedInto &&
+        !(d.fusionLineage?.survivorId || d.fusionLineage?.sources?.length)
+      ) {
+        report.fusionWithoutDestination += 1;
+        report.admissiblePreserved = false;
+        report.cases.push({
+          period: pack.period || 'live',
+          issue: 'fusion_without_sources',
+          id: d.id
+        });
+      }
+    });
+
+    // Équivalences sémantiques encore accessibles (compteur SÉPARÉ, pas ajouté aux textuels)
+    const semanticPairs = [];
+    for (let i = 0; i < accessible.length; i += 1) {
+      for (let j = i + 1; j < accessible.length; j += 1) {
+        const eq = substantiveEquivalence(accessible[i], accessible[j]);
+        if (eq.equivalent) {
+          semanticPairs.push({
+            left: accessible[i].id,
+            right: accessible[j].id,
+            reason: eq.reason
+          });
+        }
+      }
+    }
+    if (semanticPairs.length) {
+      report.semanticEquivalentsAccessible += semanticPairs.length;
+      report.cases.push({
+        period: pack.period || 'live',
+        issue: 'semantic_duplicates_still_accessible',
+        pairCount: semanticPairs.length,
+        sample: semanticPairs.slice(0, 5)
+      });
+      // Échec qualité collective, mais distinct des doublons textuels
+      report.pass = false;
+    }
+
+    // Multi-détecteurs / même texte
+    const textGroups = new Map();
+    accessible.forEach((card) => {
+      const key = textKey(card);
+      if (!textGroups.has(key)) textGroups.set(key, []);
+      textGroups.get(key).push(card);
+    });
+    textGroups.forEach((cards, key) => {
+      if (cards.length < 2) return;
+      const kinds = new Set(cards.map((c) => detectorKind(c)));
+      if (kinds.size >= 2) {
+        report.cases.push({
+          period: pack.period || 'live',
+          issue: 'multi_detector_same_text',
+          count: cards.length,
+          detectors: [...kinds],
+          sample: key.slice(0, 60)
+        });
+      }
+    });
   });
 
-  report.pass =
-    report.exactDuplicatesAccessible === 0 &&
-    report.fusedSourcesAccessible === 0 &&
-    report.admissiblePreserved !== false &&
-    report.horizonConfusion === 0 &&
-    report.cases.every((c) => c.admissiblePreserved !== false && c.issue !== 'family_monopoly');
+  const hardFail =
+    report.textualDuplicatesAccessible > 0 ||
+    report.fusedSourcesAccessible > 0 ||
+    report.admissiblePreserved === false ||
+    report.technicalCollisionLosses > 0 ||
+    report.suppressionWithoutProof > 0 ||
+    report.fusionWithoutDestination > 0 ||
+    report.horizonConfusion > 0 ||
+    report.semanticEquivalentsAccessible > 0;
+
+  report.pass = !hardFail;
+  report.evaluatorNotes.push(
+    'exactDuplicatesAccessible = doublons textuels uniquement ; semanticEquivalentsAccessible est séparé'
+  );
 
   return report;
 }

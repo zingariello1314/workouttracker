@@ -40,7 +40,8 @@ function captureDomCards(root = document) {
   });
 }
 
-function packTitles(insights) {
+/** Titres prioritaires seuls (colonnes). */
+function packPriorityTitles(insights) {
   return [
     ...(insights?.shortTerm || []),
     ...(insights?.mediumTerm || []),
@@ -48,6 +49,14 @@ function packTitles(insights) {
   ]
     .map((c) => String(c.title || '').trim())
     .filter(Boolean);
+}
+
+/** Catalogue accessible complet (priorité + réserve) — périmètre DOM utilisateur. */
+function packAccessibleTitles(insights) {
+  return [
+    ...packPriorityTitles(insights),
+    ...(insights?.accessibleReserve || []).map((c) => String(c.title || '').trim())
+  ].filter(Boolean);
 }
 
 /**
@@ -98,16 +107,20 @@ export async function verifyEightPeriodsAgainstDom({
         state?.analysisStatus === 'ready' &&
         String(state?.analysisPeriod || state?.selectedPeriod || '') === String(period);
       const domCards = typeof document !== 'undefined' ? captureDomCards() : [];
-      const expectedTitles = packTitles(state?.insights);
+      const priorityTitles = packPriorityTitles(state?.insights);
+      const accessibleTitles = packAccessibleTitles(state?.insights);
       const domTitles = domCards.map((c) => c.title).filter(Boolean);
-      const missingFromDom = expectedTitles.filter((t) => t && !domTitles.includes(t));
-      const extraInDom = domTitles.filter((t) => t && !expectedTitles.includes(t));
+      // Comparaison à périmètre accessible (évite de marquer la réserve comme « extra »)
+      const missingFromDom = accessibleTitles.filter((t) => t && !domTitles.includes(t));
+      const extraInDom = domTitles.filter((t) => t && !accessibleTitles.includes(t));
+      const missingPriority = priorityTitles.filter((t) => t && !domTitles.includes(t));
 
       let status = 'not_verifiable';
       if (!ready) status = 'not_ready';
       else if (domCards.length === 0) status = 'computed_not_rendered_or_unobservable';
-      else if (missingFromDom.length === 0 && expectedTitles.length > 0) status = 'rendered_and_conform';
-      else if (domCards.length > 0) status = 'rendered_and_divergent';
+      else if (missingFromDom.length === 0 && accessibleTitles.length > 0 && extraInDom.length === 0) {
+        status = 'rendered_and_conform';
+      } else if (domCards.length > 0) status = 'rendered_and_divergent';
 
       results.push({
         period,
@@ -115,12 +128,15 @@ export async function verifyEightPeriodsAgainstDom({
         ready,
         editionObserved: state?.edition || null,
         editionExpected: analysisEditionKey(),
-        packPriorityCount: expectedTitles.length,
+        packPriorityCount: priorityTitles.length,
+        packAccessibleCount: accessibleTitles.length,
         domCardCount: domCards.length,
         missingFromDom,
+        missingPriority,
         extraInDom: extraInDom.slice(0, 20),
         sampleDomTitles: domTitles.slice(0, 8),
-        samplePackTitles: expectedTitles.slice(0, 8),
+        samplePackTitles: accessibleTitles.slice(0, 8),
+        compareScope: 'accessible_including_reserve',
         memoryUntouched: true
       });
     }

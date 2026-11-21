@@ -306,6 +306,10 @@ function bodyForArc(shape) {
       : '';
   const dropBits = `${peakL} : ${fmtInt(peak.reps)} reps en ${peak.days} jours entraînés (≈${fmtInt(peak.repsPerDay)} / jour actif) → ${troughL} : ${fmtInt(trough.reps)} reps en ${trough.days} jours (≈${fmtInt(trough.repsPerDay)} / jour actif), soit ${fmtSignedPct(mechanism.repsPct)} de volume, ${fmtSignedPct(mechanism.daysPct)} de jours, ${fmtSignedPct(mechanism.rpdPct)} de volume par jour actif.${betweenBits}${splitBits}`;
   const mech = mechanismSentence(mechanism);
+  const freqLedNote =
+    mechanism?.freqShare != null && mechanism.freqShare >= 0.55
+      ? ` Cette trajectoire ne doit pas être lue comme une perte de capacité : le volume par jour actif reste proche (${fmtInt(peak.repsPerDay)} → ${fmtInt(trough.repsPerDay)}), c'est surtout la fréquence des jours actifs qui change.`
+      : '';
 
   if (arcKind === 'partial_recovery') {
     const rec = mechanism.recovery || {};
@@ -316,15 +320,15 @@ function bodyForArc(shape) {
     const reboundBits = rebound.ok
       ? ` La remontée se décompose en ${formatRepDelta(rebound.frequency)} répétitions liées aux jours actifs et ${formatRepDelta(rebound.content)} liées au contenu de chaque jour actif.`
       : '';
-    return `${dropBits}${mech} ${recentL} remonte à ${fmtInt(recent.reps)} reps en ${recent.days} jours (≈${fmtInt(recent.repsPerDay)} / jour actif, ${fmtSignedPct(rec.repsPct)} vs ${troughL}), sans retrouver le sommet de ${peakL} (${fmtInt(peak.reps)} reps).${reboundBits}`;
+    return `${dropBits}${mech}${freqLedNote} ${recentL} remonte à ${fmtInt(recent.reps)} reps en ${recent.days} jours (≈${fmtInt(recent.repsPerDay)} / jour actif, ${fmtSignedPct(rec.repsPct)} vs ${troughL}), sans retrouver le sommet de ${peakL} (${fmtInt(peak.reps)} reps).${reboundBits}`;
   }
   if (arcKind === 'full_recovery') {
-    return `${dropBits}${mech} ${recentL} revient à ${fmtInt(recent.reps)} reps (${recent.days} j.), proche du niveau de ${peakL}.`;
+    return `${dropBits}${mech}${freqLedNote} ${recentL} revient à ${fmtInt(recent.reps)} reps (${recent.days} j.), proche du niveau de ${peakL}.`;
   }
   if (arcKind === 'stabilization_after_rise') {
     return `Après la hausse vers ${peakL} (${fmtInt(peak.reps)} reps, ${peak.days} j.), ${recentL} se maintient à ${fmtInt(recent.reps)} reps en ${recent.days} jours — une stabilisation, pas une nouvelle accélération.`;
   }
-  return `${dropBits}${mech} Aucune reprise nette n’est encore visible sur le dernier mois comparable (${recentL}).`;
+  return `${dropBits}${mech}${freqLedNote} Aucune reprise nette n’est encore visible sur le dernier mois comparable (${recentL}).`;
 }
 
 /**

@@ -44,8 +44,11 @@ import { exploreSameFormatTimeChange } from './challengeFormatTimeAnalysis';
 import {
   COVERAGE as EXPLORE_COVERAGE,
   exploreCollectiveReturn,
-  exploreNearEqualSessions
+  exploreNearEqualSessions,
+  buildExerciseMuscleIndex,
+  habitualCadenceFromDates
 } from './analyticalExploration';
+import { inferMuscleLoadRolesForExercise } from './recapMuscleInference';
 import {
   detectFamilyFades,
   detectStructuralShifts,
@@ -59,6 +62,7 @@ import {
 } from './monthlyVolumeArcDiscoveries';
 import { buildTrainingRhythmDiscoveries } from './trainingRhythmDiscoveries';
 import { formatSleepHoursFr, formatSleepMinutesFr, summarizeRecentNights } from './recapSleepCorrelation';
+import { annotateTrajectoryWithProgramContext } from './programVariantContext';
 import { comparableWeeklyRates } from './recapInsightNature';
 import { sessionRhythmClause } from './recapPeriodComparisons';
 import {
@@ -145,7 +149,12 @@ export function detectDiscoveries(cmp, extras = {}) {
           title: restToday.title,
           body: restToday.body,
           evidence: restToday.evidence,
-          weights: { importance: 0.98, reliability: 0.96, novelty: 0.9, fit: 1 }
+          weights: { importance: 0.98, reliability: 0.96, novelty: 0.9, fit: 1 },
+          metrics: {
+            documentaryOnly: true,
+            nonNumericProof: true,
+            observedValues: [{ id: 'rest_day', value: 1, unit: 'flag' }]
+          }
         })
       );
     }
@@ -636,17 +645,35 @@ export function detectDiscoveries(cmp, extras = {}) {
       const challengeReps = exercises
         .filter((ex) => String(ex?.id || '').startsWith('complementary_') || /pompes \(endurance\)|défi|defi/i.test(ex?.name || ''))
         .reduce((sum, ex) => sum + (Number(ex.reps) || 0), 0);
+      const catalogSession = (extras.catalog || []).find((s) => s?.date === date);
+      const muscleKeys = [
+        ...new Set(
+          exercises
+            .map((ex) => String(ex?.muscleGroup || ex?.group || '').toLowerCase())
+            .filter(Boolean)
+        )
+      ];
       return {
         date,
         reps: Number(reps) || 0,
         challengeReps,
         programReps: Math.max(0, (Number(reps) || 0) - challengeReps),
         exerciseCount: exercises.length,
+        setCount:
+          Number(catalogSession?.setCount) ||
+          exercises.reduce((s, ex) => s + (Number(ex.sets) || Number(ex.setCount) || 0), 0) ||
+          0,
+        minutes: Number(catalogSession?.minutes) || Number(catalogSession?.durationMinutes) || 0,
+        muscleKeys,
+        pushReps: Number(catalogSession?.pushReps) || 0,
+        pullReps: Number(catalogSession?.pullReps) || 0,
         exercises
       };
     });
     const nearEqual = exploreNearEqualSessions(dayRows);
     if (nearEqual.coverage === EXPLORE_COVERAGE.CONCLUDED && nearEqual.conclusion) {
+      const nearDays = (nearEqual.nearDays || dayRows || []).slice(0, 3);
+      const dates = nearDays.map((d) => d.date).filter(Boolean);
       out.push(
         discovery({
           kind: 'disc_near_equal_sessions',
@@ -657,9 +684,24 @@ export function detectDiscoveries(cmp, extras = {}) {
           evidence: nearEqual.retained.map((row) => row.detail).join(' · '),
           weights: { importance: 0.91, reliability: 0.9, novelty: 0.93, fit: isWeek || isToday ? 1 : 0.86 },
           metrics: {
-            days: dayRows,
+            days: nearDays,
+            dates,
+            volumes: nearDays.map((d) => d.reps),
+            challengeRepsByDate: Object.fromEntries(nearDays.map((d) => [d.date, d.challengeReps])),
+            exerciseCountByDate: Object.fromEntries(nearDays.map((d) => [d.date, d.exerciseCount])),
+            comparisonMethod: 'near_equal_session_composition',
+            metricId: 'session_volume_composition',
+            operator: 'compare',
+            population: 'recorded_activity',
+            observedValues: nearDays.flatMap((d) => [
+              { id: `volume:${d.date}`, value: d.reps, unit: 'reps' },
+              { id: `challenge:${d.date}`, value: d.challengeReps, unit: 'reps' },
+              { id: `exercises:${d.date}`, value: d.exerciseCount, unit: 'count' }
+            ]),
             exploration: nearEqual,
-            producer: 'exploreNearEqualSessions'
+            nearDays,
+            producer: 'exploreNearEqualSessions',
+            conclusionKey: `near_equal|${dates.join(',')}`
           }
         })
       );
@@ -953,7 +995,16 @@ export function detectDiscoveries(cmp, extras = {}) {
         body: shareReading.body,
         evidence: ofMonthEx.map((e) => `${e.name} ${fmtPct(e.ofMonthPct)}`).join(' · '),
         weights: { importance: 0.92, reliability: 0.94, novelty: 0.9, fit: 1 },
-        metrics: { exercises: ofMonthEx.map((e) => e.name), readingBeats: shareReading.beats }
+        metrics: {
+          exercises: ofMonthEx.map((e) => e.name),
+          readingBeats: shareReading.beats,
+          totalReps: p.totalReps,
+          observedValues: ofMonthEx.flatMap((e) => [
+            { id: `reps:${e.name}`, value: e.reps, unit: 'reps' },
+            { id: `monthReps:${e.name}`, value: e.monthReps, unit: 'reps' },
+            { id: `sharePct:${e.name}`, value: e.ofMonthPct, unit: 'percent' }
+          ])
+        }
       })
     );
   }
@@ -1186,7 +1237,17 @@ export function detectDiscoveries(cmp, extras = {}) {
           })
           .join('. ')}. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble : Momentum peut suivre l'évolution de chaque mouvement, en distinguant ceux qui progressent, ceux qui se maintiennent et ceux dont l'exposition reste insuffisante.`,
         evidence: tracked.map((e) => e.name).join(' · '),
-        weights: { importance: 0.82, reliability: 0.9, novelty: 0.84, fit: 0.9 }
+        weights: { importance: 0.82, reliability: 0.9, novelty: 0.84, fit: 0.9 },
+        metrics: {
+          totalReps: d30.totalReps,
+          observedValues: tracked.flatMap((e) => {
+            const month = e.monthReps || d30.byExercise[e.id]?.reps || 0;
+            return [
+              { id: `repsNow:${e.name}`, value: e.reps, unit: 'reps' },
+              { id: `monthReps:${e.name}`, value: month, unit: 'reps' }
+            ];
+          })
+        }
       })
     );
   }
@@ -1622,8 +1683,8 @@ export function detectDiscoveries(cmp, extras = {}) {
         family: 'sleep_volume',
         title: isToday
           ? 'La nuit précédente te place dans une zone de volume déjà visible dans ton historique'
-          : 'Tes journées à fort volume s’alignent sur un seuil de sommeil personnel',
-        body: `Sur ${nLabel}, celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} lorsque le sommeil passe sous 7 h 30. L'écart est de ${fmtInt(vol75.delta)} reps, soit environ ${fmtPct(vol75.deltaPct)}.${todayPlace}${minBit}${dose8} Ce n'est pas une cause : c'est une séparation reproductible (${vol75.highN} et ${vol75.lowN} séances).`,
+          : 'Tes journées à fort volume s’alignent sur un seuil de sommeil observé dans ton historique',
+        body: `Sur ${nLabel} (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} lorsque le sommeil passe sous 7 h 30. L'écart est de ${fmtInt(vol75.delta)} reps, soit environ ${fmtPct(vol75.deltaPct)}.${todayPlace}${minBit}${dose8} Association observée sur ${vol75.highN} et ${vol75.lowN} séances — un effectif asymétrique ne démontre pas un seuil individuel fiable, ni une causalité.`,
         evidence: `≥ 7 h 30 ${fmtInt(vol75.highVol)} · < 7 h 30 ${fmtInt(vol75.lowVol)} · n=${vol75.highN + vol75.lowN}`,
         weights: {
           importance: 0.93,
@@ -1631,7 +1692,23 @@ export function detectDiscoveries(cmp, extras = {}) {
           novelty: 0.94,
           fit: 0.97
         },
-        metrics: vol75
+        metrics: {
+          ...vol75,
+          associationOnly: true,
+          populationLabel:
+            vol75.sample === 'all'
+              ? 'historique des séances appariées à une nuit (échantillon global)'
+              : `échantillon ${vol75.sample}`,
+          observedValues: [
+            { id: 'threshold', value: vol75.threshold, unit: 'hours' },
+            { id: 'highN', value: vol75.highN, unit: 'sessions' },
+            { id: 'lowN', value: vol75.lowN, unit: 'sessions' },
+            { id: 'highVol', value: vol75.highVol, unit: 'reps' },
+            { id: 'lowVol', value: vol75.lowVol, unit: 'reps' },
+            { id: 'delta', value: vol75.delta, unit: 'reps' },
+            { id: 'deltaPct', value: vol75.deltaPct, unit: 'percent' }
+          ]
+        }
       })
     );
   }
@@ -1768,7 +1845,7 @@ export function detectDiscoveries(cmp, extras = {}) {
           nature: 'trajectory',
           family: 'sleep_architecture',
           title: 'La continuité du sommeil accompagne tes journées à fort volume',
-          body: `Les séances dépassant 300 reps sont précédées de nuits à ${bits.join(', ')}.${todayAwake} Le facteur discriminant n'est pas seulement la durée : REM, éveil et recharge nocturne bougent avec le volume du lendemain.${deepBit}`,
+          body: `Les séances dépassant 300 reps sont précédées de nuits à ${bits.join(', ')}.${todayAwake} L’écart observé ne porte pas seulement sur la durée totale : REM, éveil et recharge nocturne covarient aussi avec le volume du lendemain, sans preuve que l’architecture soit la cause.${deepBit}`,
           evidence: bits.join(' · '),
           weights: { importance: 0.86, reliability: 0.84, novelty: 0.91, fit: 0.9 },
           metrics: archSleep
@@ -2021,8 +2098,8 @@ export function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_sleep_quarter',
         nature: 'journey',
         family: 'sleep_quarter',
-        title: 'Les journées les plus denses suivent plus souvent de longues nuits',
-        body: `${highShare.highOk} des ${highShare.highN} journées à au moins 300 reps ont été précédées d'une nuit d'au moins 7 h 30. Ces nuits représentent ${fmtPct(highShare.nightShare)} de l'ensemble des nuits enregistrées.${lowBit} Le lien est net, sans qu'on puisse en conclure que le sommeil cause le volume : d'autres facteurs peuvent intervenir. Ce qui ressort, c'est que le volume élevé apparaît plus souvent après une nuit longue.${streakBit}`,
+        title: 'Les journées à fort volume suivent plus souvent de longues nuits',
+        body: `${highShare.highOk} des ${highShare.highN} journées à au moins 300 répétitions ont été précédées d'une nuit d'au moins 7 h 30. Parmi les nuits qui précèdent une séance, cette part n'équivaut pas forcément à ${fmtPct(highShare.nightShare)} de toutes les nuits enregistrées — le dénominateur doit rester la population appariée.${lowBit} Association observée sur cet historique : le volume élevé apparaît plus souvent après une nuit longue, sans preuve de causalité.${streakBit}`,
         evidence: `${highShare.highOk}/${highShare.highN} journées ≥ 300 reps après ≥ 7 h 30`,
         weights: { importance: 0.93, reliability: 0.86, novelty: 0.94, fit: 0.97 },
         metrics: { ...highShare, streak }
@@ -2141,8 +2218,15 @@ export function detectDiscoveries(cmp, extras = {}) {
     if (lowerShare != null) {
       bits.push(`bas du corps ${fmtPct(lowerShare)} du volume identifié`);
     }
-    if (p.minutes > 0 && p.totalReps > 0) {
-      bits.push(`rendement ${fmtInt(p.repsPerHour)} reps/h`);
+    if (
+      p.minutes > 0 &&
+      p.totalReps > 0 &&
+      Number(p.repsPerHour) > 0 &&
+      p.durationContract?.densityPaired === true
+    ) {
+      bits.push(`densité appariée environ ${fmtInt(p.repsPerHour)} reps/h`);
+    } else if (p.durationContract?.minutesMostlyChallenge) {
+      bits.push('densité non calculable (durée surtout chronométrée sur les défis)');
     }
     if (bits.length >= 2) {
       out.push(
@@ -2188,7 +2272,23 @@ export function detectDiscoveries(cmp, extras = {}) {
               : 'Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxième version du court terme.'
           }`,
           evidence: `fin ${fmtInt(d30.totalReps)} vs début ${fmtInt(first30.totalReps)}`,
-          weights: { importance: 0.86, reliability: 0.88, novelty: 0.84, fit: 1 }
+          weights: { importance: 0.86, reliability: 0.88, novelty: 0.84, fit: 1 },
+          metrics: {
+            totalReps: d30.totalReps,
+            activeDaysNow: d30.trainingDays,
+            activeDaysThen: first30.trainingDays,
+            repsNow: d30.totalReps,
+            repsThen: first30.totalReps,
+            vsPriorPct: volPct,
+            observedValues: [
+              { id: 'end30Reps', value: d30.totalReps, unit: 'reps' },
+              { id: 'start30Reps', value: first30.totalReps, unit: 'reps' },
+              { id: 'end30Days', value: d30.trainingDays, unit: 'days' },
+              { id: 'start30Days', value: first30.trainingDays, unit: 'days' },
+              ...(freqPct != null ? [{ id: 'freqPct', value: freqPct, unit: 'percent' }] : []),
+              { id: 'volPct', value: volPct, unit: 'percent' }
+            ]
+          }
         })
       );
     }
@@ -2605,33 +2705,43 @@ export function detectDiscoveries(cmp, extras = {}) {
       const volumeOnly = (row.limits || []).some((line) =>
         /total de séance|séries est incomplet/i.test(line)
       );
+      const evidenceDates = (row.claimEvidenceDates || []).filter(Boolean);
+      const firstEvidence = evidenceDates[0] || null;
+      const lastEvidence = evidenceDates[evidenceDates.length - 1] || null;
+      const homonym = (nameCount.get(row.exerciseName || '') || 0) > 1;
+      const mechanismLabel =
+        {
+          higher_level_consolidation: 'un niveau plus haut se répète',
+          stabilized_after_drop: 'un niveau plus bas se stabilise',
+          historical_maintenance: 'le niveau historique se maintient',
+          resumed_former_level: 'un ancien niveau est retrouvé',
+          interrupted_progression: 'la progression s’interrompt',
+          partial_resume: 'la reprise reste incomplète',
+          load_variation: 'la charge change à volume tenu',
+          format_change: 'le format de séries change'
+        }[row.mechanism] || (volumeOnly ? 'un volume de séance se répète' : 'un format de séance se répète');
+      // Différencier les homonymes par historique réel, sans mention technique dans le titre
+      const titleSuffix = homonym
+        ? lastEvidence
+          ? ` (ligne vue jusqu’au ${lastEvidence})`
+          : row.supportCount
+            ? ` (${row.supportCount} séances documentées)`
+            : ''
+        : '';
+      const homonymBody =
+        homonym && lastEvidence
+          ? `Cette trajectoire (stockage distinct) s’appuie notamment sur les séances du ${firstEvidence || lastEvidence}${
+              firstEvidence && lastEvidence && firstEvidence !== lastEvidence ? ` au ${lastEvidence}` : ''
+            }. `
+          : '';
       out.push(
         discovery({
           kind: 'disc_format_consolidation',
           nature: 'trajectory',
           family: 'format_consolidation',
-          title: `${row.exerciseName}${
-            (nameCount.get(row.exerciseName || '') || 0) > 1
-              ? ' (homonyme non fusionné)'
-              : ''
-          } : ${
-            {
-              higher_level_consolidation: 'un niveau plus haut se répète',
-              stabilized_after_drop: 'un niveau plus bas se stabilise',
-              historical_maintenance: 'le niveau historique se maintient',
-              resumed_former_level: 'un ancien niveau est retrouvé',
-              interrupted_progression: 'la progression s’interrompt',
-              partial_resume: 'la reprise reste incomplète',
-              load_variation: 'la charge change à volume tenu',
-              format_change: 'le format de séries change'
-            }[row.mechanism] || (volumeOnly ? 'un volume de séance se répète' : 'un format de séance se répète')
-          }`,
-          body: `${
-            (nameCount.get(row.exerciseName || '') || 0) > 1
-              ? 'Une date ajoutée au titre ne prouve pas qu’il s’agit d’un autre mouvement. Cette ligne de stockage reste séparée. '
-              : ''
-          }${row.prose}`,
-          evidence: (row.claimEvidenceDates || []).join(' · '),
+          title: `${row.exerciseName}${titleSuffix} : ${mechanismLabel}`,
+          body: `${homonymBody}${row.prose}`,
+          evidence: evidenceDates.join(' · '),
           weights: {
             importance: priority.newPriorityCard ? 0.86 : 0.4,
             reliability: row.solidity || 0.6,
@@ -2642,12 +2752,24 @@ export function detectDiscoveries(cmp, extras = {}) {
             state: row.state,
             mechanism: row.mechanism || null,
             level: row.level ?? null,
+            supportCount: row.supportCount ?? null,
             reversible: true,
             volumeOnly,
             editorialPriority: priority.newPriorityCard,
             exerciseId: String(row.exerciseId),
             phenomenonId: row.phenomenonId,
             phenomenon: 'format_consolidation',
+            dates: evidenceDates,
+            observedValues: [
+              ...(row.level != null ? [{ id: 'level', value: row.level, unit: 'reps' }] : []),
+              ...(row.supportCount != null
+                ? [{ id: 'supportCount', value: row.supportCount, unit: 'sessions' }]
+                : []),
+              ...(row.beforeMed != null
+                ? [{ id: 'beforeMedian', value: row.beforeMed, unit: 'reps' }]
+                : [])
+            ],
+            distinctStorageLine: homonym || undefined,
             links:
               row.previousConclusionId &&
               row.transition &&
@@ -2767,29 +2889,111 @@ export function detectDiscoveries(cmp, extras = {}) {
   }
 
   {
+    // Index exercice → groupe musculaire : exercices de la fenêtre, programme actif, catalogue explicite.
+    const programExercises = Object.values(extras.activeProgram?.schedule || {}).flatMap((day) =>
+      Array.isArray(day?.exercises) ? day.exercises : []
+    );
+    const muscleIndex = buildExerciseMuscleIndex(
+      Object.values(p.exercisesByDate || {}).flat(),
+      programExercises,
+      Array.isArray(extras.exerciseCatalog) ? extras.exerciseCatalog : []
+    );
+    // Dernier recours : inférence par nom d'exercice (même source que le catalogue de séances).
+    const inferMuscleByName = (name) => {
+      if (!name) return null;
+      try {
+        const primary = inferMuscleLoadRolesForExercise({ name })?.primary || [];
+        return primary.find((g) => g && g !== MuscleGroups.FULL_BODY) || null;
+      } catch (_e) {
+        return null;
+      }
+    };
+    // Historique de dates par exercice (catalogue de séances) → cadence habituelle.
+    const datesByExercise = new Map();
+    (catalog || []).forEach((session) => {
+      (session?.exercises || []).forEach((ex) => {
+        [ex?.id, String(ex?.name || '').trim().toLowerCase()].filter(Boolean).forEach((k) => {
+          const key = String(k);
+          const list = datesByExercise.get(key) || [];
+          list.push(session.date);
+          datesByExercise.set(key, list);
+        });
+      });
+    });
+    const cadenceFor = (row, returnDate, gapDays) => {
+      const explicit =
+        row.metrics?.habitualCadenceDays ?? row.metrics?.habitualGapDays ?? row.metrics?.cadenceDays;
+      if (Number(explicit) > 0) return Number(explicit);
+      const id = row.metrics?.exerciseId || row.metrics?.storageId;
+      const nameKey = String(row.metrics?.exerciseName || row.metrics?.name || '').trim().toLowerCase();
+      const dates = (datesByExercise.get(String(id)) || datesByExercise.get(nameKey) || []).filter(
+        (d) => d && (!returnDate || d <= returnDate)
+      );
+      return habitualCadenceFromDates(dates, { excludeGapDays: gapDays });
+    };
     const returnEvents = out
-      .filter((row) => /return|reprise|gap|resume/i.test(String(row.kind || '')) || row.metrics?.gapDays >= 14)
-      .map((row) => ({
-        exerciseId: row.metrics?.exerciseId || row.metrics?.storageId || null,
-        name: row.metrics?.exerciseName || row.title,
-        date: row.metrics?.date || row.metrics?.returnDate || (Array.isArray(row.metrics?.dates) ? row.metrics.dates[0] : null),
-        family: row.family || row.metrics?.family || null
-      }))
-      .filter((row) => row.date);
-    const collective = exploreCollectiveReturn(returnEvents);
+      .filter(
+        (row) =>
+          // Seuil large (≥ 7 j) : la significativité finale dépend de la cadence habituelle (exploreCollectiveReturn).
+          Number(row.metrics?.gapDays ?? row.metrics?.daysAbsent) >= 7 ||
+          /return|reprise|gap|resume|format_consolidation/i.test(String(row.kind || ''))
+      )
+      .map((row) => {
+        const name = row.metrics?.exerciseName || row.metrics?.name || row.title;
+        const date =
+          row.metrics?.date ||
+          row.metrics?.returnDate ||
+          (Array.isArray(row.metrics?.dates) ? row.metrics.dates[0] : null);
+        const gapDays = row.metrics?.gapDays ?? row.metrics?.daysAbsent ?? null;
+        const exerciseId = row.metrics?.exerciseId || row.metrics?.storageId || null;
+        // Ne pas confondre la taxonomie éditoriale (emergence, repertoire…) avec une famille musculaire :
+        // le groupe vient des métriques, sinon du catalogue/snapshot, sinon de l'inférence par nom.
+        const muscleGroup =
+          row.metrics?.muscleGroup ||
+          row.metrics?.muscleFamily ||
+          row.metrics?.group ||
+          muscleIndex.get(String(exerciseId)) ||
+          muscleIndex.get(String(name || '').trim().toLowerCase()) ||
+          inferMuscleByName(row.metrics?.exerciseName || row.metrics?.name) ||
+          null;
+        return {
+          exerciseId,
+          name,
+          date,
+          family: muscleGroup,
+          muscleGroup,
+          gapDays,
+          habitualCadenceDays: cadenceFor(row, date, Number(gapDays)),
+          sessionFamilyId: row.metrics?.sessionFamilyId || null,
+          dayKey: row.metrics?.dayKey || null
+        };
+      })
+      .filter((row) => row.date && Number(row.gapDays) >= 7);
+    const collective = exploreCollectiveReturn(returnEvents, { muscleByExercise: muscleIndex });
     if (collective.coverage === EXPLORE_COVERAGE.CONCLUDED && collective.conclusion) {
       out.push(
         discovery({
           kind: 'disc_collective_return',
           nature: 'trajectory',
           family: 'repertoire',
-          title: 'Plusieurs mouvements reviennent ensemble',
+          title: 'Un retour collectif restructure une partie du répertoire',
           body: collective.conclusion,
-          evidence: collective.retained.map((row) => row.detail).join(' · '),
-          weights: { importance: 0.93, reliability: 0.86, novelty: 0.94, fit: isMonth || isWeek ? 1 : 0.8 },
+          evidence: (collective.namedMoves || [])
+            .map((m) => `${m.name}@${m.date || '?'}`)
+            .slice(0, 8)
+            .join(' · '),
+          weights: { importance: 0.95, reliability: 0.88, novelty: 0.95, fit: isMonth || isWeek ? 1 : 0.82 },
           metrics: {
             events: returnEvents,
+            namedMoves: collective.namedMoves || [],
+            dates: collective.dates || [],
+            spanDays: collective.spanDays,
             exploration: collective,
+            observedValues: (collective.namedMoves || []).slice(0, 8).flatMap((m) => [
+              { id: `return:${m.exerciseId || m.name}`, value: m.date, unit: 'date' },
+              ...(m.gapDays != null ? [{ id: `gap:${m.exerciseId || m.name}`, value: m.gapDays, unit: 'days' }] : [])
+            ]),
+            conclusionKey: `collective_return|${(collective.dates || []).join(',')}`,
             producer: 'exploreCollectiveReturn'
           }
         })
@@ -2861,7 +3065,19 @@ export function detectDiscoveries(cmp, extras = {}) {
       sourceDates: row.metrics?.dates || row.metrics?.date || null
     };
   });
-  return out;
+  // Contexte programme transversal : variantes prescrites ≠ recul de capacité
+  const program = extras?.activeProgram || null;
+  if (!program) return out;
+  return out.map((row) => {
+    const blob = `${row.kind || ''} ${row.title || ''} ${row.body || ''}`;
+    if (
+      row?.metrics?.exerciseId &&
+      /disc_exercise_progress|disc_ms_|decline|recul|baisse|volume moyen|progression/i.test(blob)
+    ) {
+      return annotateTrajectoryWithProgramContext(row, program);
+    }
+    return row;
+  });
 }
 
 export function appendMilestoneDiscoveries(out, extras, v) {

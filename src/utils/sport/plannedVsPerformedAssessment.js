@@ -57,6 +57,8 @@ export function matchPrescription(planned, performed) {
     matchedReps: matched,
     overshootReps: overshoot,
     omittedReps: omitted,
+    plannedSets: scheme.sets != null ? scheme.sets : Number(planned?.sets) || null,
+    performedSets: recordedSets,
     formatRespected,
     sameVolumeDifferentFormat:
       scheme.total != null && done === scheme.total && formatRespected === false,

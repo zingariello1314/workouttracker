@@ -1,33 +1,24 @@
 {
   "schema": "momentum.analysisEvalManifest.v1",
-  "executedAt": "2026-11-20T06:06:09.314Z",
-  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-  "fingerprint": {
-    "version": 2,
-    "repKeys": 770,
-    "checkedKeys": 776,
-    "weightKeys": 0,
-    "durationKeys": 0,
-    "totalReps": 32599,
-    "digest": "630d09e1",
-    "firstRepKey": "2026-01-05_101",
-    "lastRepKey": "2026-11-17_466084426"
-  },
-  "snapshotRef": {
-    "label": "momentum-sport-backup-2026-11-19",
-    "endDate": "2026-11-19"
-  },
-  "hasReplay": true,
-  "hasGames": false,
+  "executedAt": "2026-11-21T03:52:52.461Z",
+  "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v10;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v2;review=collective-pass4-v7;scope=short-window-anchor-v1;sleep=association-prose-v2;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "fingerprint": null,
+  "snapshotRef": null,
+  "hasReplay": false,
+  "hasGames": true,
   "privateArtifactsRoot": "artifacts/analysis-eval",
   "publicMirrorNote": "Le miroir public n’expose ni rejeu ni jeux bruts (données personnelles).",
   "files": [
-    "artifacts/analysis-eval/replays/p6-replay-2026-11-20T06-06-09-314Z.json",
-    "artifacts/analysis-eval/replays/p6-replay-latest.json"
+    "artifacts/analysis-eval/games/games-bundle-2026-11-21T03-52-52-461Z.json",
+    "artifacts/analysis-eval/games/games-bundle-latest.json",
+    "artifacts/analysis-eval/games/game-A-2026-11-21T03-52-52-461Z.json",
+    "artifacts/analysis-eval/games/game-B-2026-11-21T03-52-52-461Z.json",
+    "artifacts/analysis-eval/games/game-C-2026-11-21T03-52-52-461Z.json",
+    "artifacts/analysis-eval/summaries/evaluation-summary-2026-11-21T03-52-52-461Z.md",
+    "artifacts/analysis-eval/summaries/evaluation-summary-latest.md",
+    "public/analysis-eval/evaluation-summary-latest.md"
   ],
   "notes": [
-    "Mission 5 bis — rejeu incrémental v4",
-    "Complet: true",
-    "Baseline v3: artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v3-before-mission5.json"
+    "export structuré après exécution vitest des jeux A/B/C"
   ]
 }

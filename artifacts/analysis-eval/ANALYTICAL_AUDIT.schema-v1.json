@@ -1,0 +1,35 @@
+{
+  "schema": "momentum.analyticalAudit.v1",
+  "note": "Schéma Mission 11 — buildAnalyticalAudit remplit les registres ; sourceEvents/factRegistry restent des pointeurs pour éviter la duplication massive.",
+  "requiredTopLevel": [
+    "schema",
+    "manifest",
+    "cardRegistry",
+    "claimRegistry",
+    "candidateRegistry"
+  ],
+  "registries": [
+    "manifest",
+    "snapshots",
+    "sourceCoverage",
+    "metricDefinitions",
+    "identityRegistry",
+    "programRegistry",
+    "sourceEvents",
+    "factRegistry",
+    "claimRegistry",
+    "cardRegistry",
+    "candidateRegistry",
+    "relations",
+    "explorationRuns",
+    "selectionRuns",
+    "publicationRuns",
+    "periods",
+    "evaluations",
+    "comparisons",
+    "domEvidence",
+    "memoryEvidence",
+    "diagnostics"
+  ],
+  "validator": "src/utils/sport/evaluation/buildAnalyticalAudit.js#validateAnalyticalAudit"
+}

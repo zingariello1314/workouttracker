@@ -32,22 +32,70 @@ export function relateClaims(left, right) {
   const b = primaryAssertion(right);
   if (!a || !b) return RELATION.INDEPENDENT;
   const sameSubject = a.subjectId === b.subjectId;
-  const sameMetric = a.metricId === b.metricId;
+  const sameMetric =
+    a.metricId === b.metricId ||
+    (String(a.metricId || '').replace(/_now$|_trajectory$|_journey$/, '') ===
+      String(b.metricId || '').replace(/_now$|_trajectory$|_journey$/, '') &&
+      a.metricId &&
+      b.metricId);
   const sameWindow = a.windowId && a.windowId === b.windowId;
+  const leftProof = (left?.proof?.observedValues || a.observedValues || [])
+    .map((v) => `${v.id}:${v.value}`)
+    .sort()
+    .join('|');
+  const rightProof = (right?.proof?.observedValues || b.observedValues || [])
+    .map((v) => `${v.id}:${v.value}`)
+    .sort()
+    .join('|');
+  const sameProof = leftProof && leftProof === rightProof;
+  // Même thèse + mêmes preuves : équivalent même si détecteurs / natures diffèrent
+  // MAIS sujets d’exercice concrets distincts → jamais une fusion d’historique
+  const sameStatement = left.statement && left.statement === right.statement;
+  const leftSub = String(a.subjectId || '');
+  const rightSub = String(b.subjectId || '');
+  const distinctConcreteExercises =
+    leftSub !== rightSub &&
+    /^ex:/i.test(leftSub) &&
+    /^ex:/i.test(rightSub);
+  if (distinctConcreteExercises) {
+    // Similarité de séance / homonymie ≠ même trajectoire de mouvement
+    return RELATION.INDEPENDENT;
+  }
+  if (sameStatement && sameProof && sameSubject) return RELATION.EXACT_DUPLICATE;
+  if (sameStatement && sameProof && !sameSubject) {
+    // Périodes génériques seulement — pas d’exercices distincts
+    if (/^ex:/i.test(leftSub) || /^ex:/i.test(rightSub)) return RELATION.INDEPENDENT;
+  }
   if (!sameSubject && sameMetric && a.windowId && b.windowId && a.windowId !== b.windowId) {
     return RELATION.INDEPENDENT;
   }
   if (sameSubject && sameMetric && a.windowId && b.windowId && a.windowId !== b.windowId) {
+    // Photo actuelle répétée sur un horizon « journey » sans preuve d’évolution
+    if (sameProof || (a.value === b.value && a.referenceValue === b.referenceValue)) {
+      return RELATION.REFORMULATION;
+    }
     return RELATION.SAME_PHENOMENON_TWO_HORIZONS;
   }
-  if (!sameSubject || !sameMetric) return RELATION.INDEPENDENT;
+  if (!sameSubject || !sameMetric) {
+    // Sujets période génériques + mêmes chiffres push/pull
+    if (
+      sameStatement &&
+      a.value != null &&
+      a.value === b.value &&
+      a.referenceValue != null &&
+      a.referenceValue === b.referenceValue
+    ) {
+      return RELATION.REFORMULATION;
+    }
+    return RELATION.INDEPENDENT;
+  }
   if (OPPOSITES[a.operator] === b.operator && (sameWindow || (!a.windowId && !b.windowId))) {
     return RELATION.CONTRADICTION;
   }
-  const sameStatement = left.statement && left.statement === right.statement;
   const sameNumbers = a.value === b.value && a.referenceValue === b.referenceValue && a.operator === b.operator;
   if (sameNumbers && sameStatement) return RELATION.EXACT_DUPLICATE;
   if (sameNumbers && a.value != null) return RELATION.REFORMULATION;
+  if (sameProof && sameSubject) return RELATION.REFORMULATION;
   if (a.operator === b.operator && a.operator !== 'stable') return RELATION.COMPLEMENTARY;
   if (a.operator === 'stable' && b.operator === 'stable') return RELATION.COMPLEMENTARY;
   if (a.metricId !== b.metricId && sameSubject) return RELATION.EXPLANATORY;

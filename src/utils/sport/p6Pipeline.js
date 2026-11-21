@@ -10,6 +10,9 @@ import { consolidateConclusions } from './narrativeCoherenceEngine';
 import { explainPriorityCounts, reconcileCounters, selectCollectively } from './collectiveSelection';
 import { reviewCollectively } from './collectiveReview';
 import { analyticalCategory, horizonFit } from './horizonPublicationPolicy';
+import { stampDiscoveryIdentity } from './discoveryIdentity';
+import { buildConclusionHierarchyView, p7ActionabilityPrepFields } from './conclusionHierarchyContract';
+import { buildUnderexplorationReport } from './underexplorationReport';
 
 export function inspectConclusion(row) {
   return {
@@ -32,20 +35,25 @@ export function inspectConclusion(row) {
 }
 
 function wrap(discovery, window, voiceKey) {
-  const claim = claimFromDiscovery(discovery, window);
-  const fit = horizonFit(voiceKey, discovery?.nature);
+  const stamped = stampDiscoveryIdentity(discovery);
+  const claim = claimFromDiscovery(stamped, window);
+  const fit = horizonFit(voiceKey, stamped?.nature);
   if (claim) claim.horizon = fit;
-  const exploration = exploreDiscovery(discovery);
-  const drafted = draftFromClaim(discovery, claim, exploration);
+  const exploration = exploreDiscovery(stamped);
+  const drafted = draftFromClaim(stamped, claim, exploration);
+  const withIds = stampDiscoveryIdentity({
+    ...drafted,
+    claim: drafted.claim || claim
+  });
   return {
     discovery: {
-      ...drafted,
-      claim: drafted.claim || claim,
+      ...withIds,
+      claim: withIds.claim || claim,
       exploration,
-      analyticalCategory: analyticalCategory(drafted),
+      analyticalCategory: analyticalCategory(withIds),
       horizonFit: fit
     },
-    claim: drafted.claim || claim,
+    claim: withIds.claim || claim,
     exploration
   };
 }
@@ -72,7 +80,22 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
 
   // Passe 4 : examen collectif (contradictions, redondances, monopoles, preuves)
   const reviewed = reviewCollectively(consolidated.survivors, { voiceKey });
-  const afterReview = reviewed.survivors;
+  // Appliquer les conclusions de réexploration aux textes publiables
+  const afterReview = reviewed.survivors.map((row) => {
+    if (!row.reexploredFor || !row.exploration?.conclusion) return row;
+    return {
+      ...row,
+      discovery: {
+        ...row.discovery,
+        body: row.exploration.conclusion,
+        metrics: {
+          ...(row.discovery?.metrics || {}),
+          exploration: row.exploration,
+          reexploredFor: row.reexploredFor
+        }
+      }
+    };
+  });
 
   const collective = selectCollectively(afterReview, { voiceKey });
   const rejected = observations.length;
@@ -134,6 +157,17 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
     }))
   ];
 
+  const hierarchy = buildConclusionHierarchyView({
+    priority: collective.priority,
+    reserve: [...collective.reserve, ...reviewed.demoted],
+    suppressed: collective.suppressed || []
+  });
+  const underexploration = buildUnderexplorationReport({
+    discoveries: afterReview.map((r) => ({ ...r.discovery, exploration: r.exploration })),
+    reviewDecisions: reviewed.decisions,
+    voiceKey
+  });
+
   return {
     priority: priorityDiscoveries,
     reserve: reserveDiscoveries,
@@ -156,6 +190,9 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
       decisions: reviewed.decisions,
       reexplored: reviewed.reexplored
     },
+    hierarchy,
+    underexploration,
+    p7Prep: p7ActionabilityPrepFields(),
     counters,
     priorityReading: explainPriorityCounts({ selectedTotal: collective.priority.length }),
     views: {

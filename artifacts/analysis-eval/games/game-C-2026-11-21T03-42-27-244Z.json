@@ -1,0 +1,64 @@
+{
+  "schema": "momentum.evalGameReport.v1",
+  "game": "C",
+  "executedAt": "2026-11-21T03:42:27.244Z",
+  "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v10;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v2;review=collective-pass4-v7;scope=short-window-anchor-v1;sleep=association-prose-v2;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": true,
+  "counters": {
+    "exactDuplicatesAccessible": 0,
+    "fusedSourcesAccessible": 0,
+    "admissiblePreserved": true,
+    "horizonConfusion": 0
+  },
+  "cases": [
+    {
+      "id": "C-1",
+      "game": "C",
+      "referenceData": {
+        "period": "live",
+        "expectedAccessible": 0,
+        "publishedAccessible": 1,
+        "registryRows": 0,
+        "lostSilent": [],
+        "unexplainedIds": [],
+        "unexplainedCount": 0,
+        "anomalyAudit": [],
+        "textualDuplicates": 0,
+        "publicationAuthority": null,
+        "idReconciled": false,
+        "admissiblePreserved": true,
+        "note": null
+      },
+      "expected": {
+        "admissiblePreserved": true,
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0
+      },
+      "obtained": {
+        "period": "live",
+        "expectedAccessible": 0,
+        "publishedAccessible": 1,
+        "registryRows": 0,
+        "lostSilent": [],
+        "unexplainedIds": [],
+        "unexplainedCount": 0,
+        "anomalyAudit": [],
+        "textualDuplicates": 0,
+        "publicationAuthority": null,
+        "idReconciled": false,
+        "admissiblePreserved": true,
+        "note": null
+      },
+      "status": "pass",
+      "justification": "qualité collective du paquet accessible",
+      "delta": null,
+      "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v10;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v2;review=collective-pass4-v7;scope=short-window-anchor-v1;sleep=association-prose-v2;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    }
+  ],
+  "humanBlindComparison": {
+    "performed": false,
+    "reason": "not_applicable"
+  }
+}

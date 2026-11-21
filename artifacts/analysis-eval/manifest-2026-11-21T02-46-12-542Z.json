@@ -1,0 +1,24 @@
+{
+  "schema": "momentum.analysisEvalManifest.v1",
+  "executedAt": "2026-11-21T02:46:12.542Z",
+  "edition": "claim=proof-pipeline-v2;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v8;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-execution-v1;review=collective-pass4-v5;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "fingerprint": null,
+  "snapshotRef": null,
+  "hasReplay": false,
+  "hasGames": true,
+  "privateArtifactsRoot": "artifacts/analysis-eval",
+  "publicMirrorNote": "Le miroir public n’expose ni rejeu ni jeux bruts (données personnelles).",
+  "files": [
+    "artifacts/analysis-eval/games/games-bundle-2026-11-21T02-46-12-542Z.json",
+    "artifacts/analysis-eval/games/games-bundle-latest.json",
+    "artifacts/analysis-eval/games/game-A-2026-11-21T02-46-12-542Z.json",
+    "artifacts/analysis-eval/games/game-B-2026-11-21T02-46-12-542Z.json",
+    "artifacts/analysis-eval/games/game-C-2026-11-21T02-46-12-542Z.json",
+    "artifacts/analysis-eval/summaries/evaluation-summary-2026-11-21T02-46-12-542Z.md",
+    "artifacts/analysis-eval/summaries/evaluation-summary-latest.md",
+    "public/analysis-eval/evaluation-summary-latest.md"
+  ],
+  "notes": [
+    "export structuré après exécution vitest des jeux A/B/C"
+  ]
+}

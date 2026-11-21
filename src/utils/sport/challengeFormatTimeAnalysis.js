@@ -131,7 +131,21 @@ export function exploreSameFormatTimeChange({
         'Pas une preuve de force maximale',
         'Pas une preuve d’hypertrophie',
         'La provenance défi n’établit pas une nature d’endurance musculaire'
-      ]
+      ],
+      metrics: {
+        formatKey,
+        totalReps: reps,
+        sessionsNow: list.length,
+        durationMinutes: lateAvg,
+        observedValues: [
+          { id: 'formatReps', value: reps, unit: 'reps' },
+          { id: 'sessionCount', value: list.length, unit: 'sessions' },
+          { id: 'earlyAvgMinutes', value: Math.round(earlyAvg * 10) / 10, unit: 'minutes' },
+          { id: 'lateAvgMinutes', value: Math.round(lateAvg * 10) / 10, unit: 'minutes' },
+          { id: 'deltaMinutes', value: Math.round(delta * 10) / 10, unit: 'minutes' }
+        ],
+        dates: [...early.map((row) => row.date), ...late.map((row) => row.date)]
+      }
     });
   });
 

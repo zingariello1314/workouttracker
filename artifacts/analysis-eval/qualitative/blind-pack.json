@@ -1,6 +1,6 @@
 {
-  "schema": "momentum.qualitativeBlindPack.v1",
-  "note": "Ordre anonymisé A/B — ne révèle pas quelle version est v3 ou v4. Jugement humain NON effectué.",
+  "schema": "momentum.qualitativeBlindPack.v2",
+  "note": "Ordre anonymisé A/B — textes complets lorsque disponibles des deux côtés. Jugement humain NON effectué. Si une version n’a que des titres, le champ incompleteHistorical=true.",
   "humanBlindPerformed": false,
   "cases": [
     {
@@ -10,101 +10,110 @@
       "labelB": "Version B",
       "versionA": [
         {
-          "title": "La séance d'aujourd'hui n'est pas encore commencée"
-        },
-        {
-          "title": "En attendant la séance, ta semaine récente a déjà une forme"
-        },
-        {
-          "title": "La dernière séance pèse encore sur les 7 jours"
-        }
-      ],
-      "versionB": [
-        {
           "title": "La séance d'aujourd'hui n'est pas encore commencée",
-          "body": "Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse: c'est une séance en attente. Ta dernière séance (17 novembre 2026) a produit 232 répétitions — 48, 40, 36. Tes jeudis récents se situent autour de 244 reps (10 jeudis comparables): ce n'es",
+          "body": "Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse: c'est une séance en attente. Ta dernière séance (17 novembre 2026) a produit 232 répétitions — 48, 40, 36. Tes jeudis récents se situent autour de 244 reps (10 jeudis comparables): ce n'est pas un jour « off » par défaut, c'est une séance encore devant toi. Autour de toi, les 7 derniers jours totalisent déj",
           "kind": "disc_pending_session",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         },
         {
           "title": "La dernière séance pèse encore sur les 7 jours",
           "body": "Aujourd'hui n'a encore aucune répétition enregistrée. Ta dernière séance, le 17 novembre 2026, totalisait 232 répétitions. Ces 232 répétitions représentent 18,8 % des 1 234 répétitions des 7 derniers jours.",
           "kind": "disc_th_concentration_now",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         },
         {
           "title": "En attendant la séance, ta semaine récente a déjà une forme",
-          "body": "Les 7 derniers jours représentent 4 séances, 1 234 répétitions et 18 min de séances hors course enregistrées, soit environ 309 reps par séance. Dominante haut du corps: 84 pectoraux, 48 triceps, 36 épaules, 32 gainage/tronc — pectoraux ≈42,0 % du volume identifié, tirage ≈0,0 %. ",
+          "body": "Les 7 derniers jours représentent 4 séances, 1 234 répétitions et 18 min de séances hors course enregistrées, soit environ 309 reps par séance. Dominante haut du corps: 84 pectoraux, 48 triceps, 36 épaules, 32 gainage/tronc — pectoraux ≈42,0 % du volume identifié, tirage ≈0,0 %. La séance du 13 novembre 2026 concentre 351 reps, soit ≈28,4 % de la semaine récente (60 relevés de genoux à la barre, 4",
           "kind": "disc_pending_context",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         },
         {
           "title": "Suivi de plan: preuve historique indisponible",
           "body": "Aucun jour de cette fenêtre n’a de plan figé (snapshot): un taux d’adhérence au programme prévu ne peut pas être calculé. 0 jour documentent seulement le réalisé (reconstruction). Les expositions et trajectoires restent lisibles à part.",
           "kind": "disc_plan_data_insufficient",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         },
         {
           "title": "Limites du compte musculaire sur cette fenêtre",
           "body": "Aucun jour snapshot suffisant (0): aucune affirmation sur les groupes musculaires « prévus » historiques.",
           "kind": "disc_muscle_ledger_limits",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         },
         {
           "title": "Historique de révisions de programme indisponible",
           "body": "Aucun journal P3.4 n’est encore enregistré pour cette copie: les versions applicables aux journées anciennes ne peuvent pas être démontrées. Les snapshots P3.3 déjà prouvés restent la seule preuve de plan figé.",
           "kind": "disc_program_revision_journal_limit",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         }
-      ]
+      ],
+      "versionB": [
+        {
+          "title": "Aujourd'hui est un jour de repos",
+          "body": "non_numeric_documentary_proof",
+          "kind": "disc_rest_day",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "rest_day",
+              "value": 1,
+              "unit": "flag"
+            }
+          ]
+        },
+        {
+          "title": "La dernière séance pèse encore sur les 7 jours",
+          "body": "Aujourd'hui n'a encore aucune répétition enregistrée. Ta dernière séance, le 17 novembre 2026, totalisait 232 répétitions. Ces 232 répétitions représentent 18,8 % des 1 234 répétitions des 7 derniers jours.",
+          "kind": "disc_th_concentration_now",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 232,
+              "unit": "reps"
+            },
+            {
+              "id": "sharePct",
+              "value": 18.8,
+              "unit": "percent"
+            },
+            {
+              "id": "peakReps",
+              "value": 232,
+              "unit": "reps"
+            },
+            {
+              "id": "windowReps",
+              "value": 1234,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "body": "Le contenu réel du programme — pas son seul nom — fait apparaître 3 familles de séances: street Workout + Endurance fondamentale / Street Workout + Cardio (2 créneaux); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes (2 créneaux); pectoraux / Triceps / Épaules / Triceps- Épaules (2 créneaux). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un cr",
+          "kind": "disc_session_family_structure",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "familyCount",
+              "value": 3,
+              "unit": "count"
+            },
+            {
+              "id": "relatedSlots",
+              "value": 6,
+              "unit": "count"
+            }
+          ]
+        }
+      ],
+      "parityWarning": null
     },
     {
       "id": "blind-7d",
@@ -116,203 +125,455 @@
           "title": "Des journées à volume proche racontent des séances différentes",
           "body": "Des journées à volume proche (351, 332, 332 répétitions) diffèrent par 2026-11-13: 0 complément; 2026-11-14: 100 complément; 2026-11-17: 100 complément; 2026-11-13: 9 mouvements; 2026-11-14: 7 mouvements; 2026-11-17: 7 mouvements.",
           "kind": "disc_near_equal_sessions",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "evidence_date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "volume:2026-11-13",
+              "value": 351,
+              "unit": "reps"
+            },
+            {
+              "id": "challenge:2026-11-13",
+              "value": 0,
+              "unit": "reps"
+            },
+            {
+              "id": "exercises:2026-11-13",
+              "value": 9,
+              "unit": "count"
+            },
+            {
+              "id": "volume:2026-11-14",
+              "value": 332,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "body": "Le contenu réel du programme — pas son seul nom — fait apparaître 3 familles de séances: street Workout + Endurance fondamentale / Street Workout + Cardio (2 créneaux); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes (2 créneaux); pectoraux / Triceps / Épaules / Triceps- Épaules (2 créneaux). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un cr",
+          "kind": "disc_session_family_structure",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "familyCount",
+              "value": 3,
+              "unit": "count"
+            },
+            {
+              "id": "relatedSlots",
+              "value": 6,
+              "unit": "count"
+            }
+          ]
         },
         {
           "title": "Le 13 novembre 2026 porte une grande part de ces 7 jours",
           "body": "Le 13 novembre 2026 concentre 351 répétitions, soit 28,4 % des 1 234 répétitions de ces 7 jours. Les exercices de ce jour: 60 Relevés de genoux à la barre, 48 Hyperextension, 48 Tractions australiennes — prise pronation, 48 Dips. Cela décrit la répartition de cette fenêtre.",
           "kind": "disc_th_concentration_now",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 1234,
+              "unit": "reps"
+            },
+            {
+              "id": "sharePct",
+              "value": 28.4,
+              "unit": "percent"
+            },
+            {
+              "id": "peakReps",
+              "value": 351,
+              "unit": "reps"
+            },
+            {
+              "id": "peakReps",
+              "value": 351,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Deux séances apparentées redistribuent un socle commun",
+          "body": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont fortement apparentées: elles partagent 9 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tractions australiennes prise large pronation, pompes inclinees; « Street Workout + Cardio » ajoute tractions australiennes prise pronation. Le volume prescrit diffère: 429",
+          "kind": "disc_session_family_variant",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sharedMoves",
+              "value": 9,
+              "unit": "count"
+            },
+            {
+              "id": "sharedMoves",
+              "value": 9,
+              "unit": "count"
+            },
+            {
+              "id": "plannedRepsLeft",
+              "value": 429,
+              "unit": "reps"
+            },
+            {
+              "id": "plannedRepsRight",
+              "value": 404,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Le rythme de ces 7 jours reste lisible par rapport à ton habitude",
-          "body": "4 séances, 1 234 répétitions et 18 min de séances hors course enregistrées, soit environ 309 répétitions par séance. Tu es actuellement autour de 4 séances par semaine. Les séances restent longues. Ce qui change, c'est le nombre de journées, pas la durée de chacune. Ces 7 jours p",
+          "body": "4 séances, 1 234 répétitions et 18 min de séances hors course enregistrées, soit environ 309 répétitions par séance. Tu es actuellement autour de 4 séances par semaine. Les séances restent longues. Ce qui change, c'est le nombre de journées, pas la durée de chacune. Ces 7 jours portent 24,4 % des 5 055 reps des 30 derniers jours: la semaine ne résume pas le mois.",
           "kind": "disc_volume_shape",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 1234,
+              "unit": "reps"
+            },
+            {
+              "id": "activeDaysNow",
+              "value": 4,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-11-13",
+              "value": 351,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-14",
+              "value": 332,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Ces 7 jours: le volume repose sur peu de journées",
-          "body": "Du 18 novembre 2026 au 19 novembre 2026 reste sans séance. Sur 7 jours, 4 ont une séance et 3 n'en ont pas. Le creux calendaire est localisé du 18 novembre 2026 au 19 novembre 2026. Les jours sans séance font partie du rythme observé: ce n’est pas un trou à remplir automatiquemen",
+          "body": "Du 18 novembre 2026 au 19 novembre 2026 reste sans séance. Sur 7 jours, 4 ont une séance et 3 n'en ont pas. Le creux calendaire est localisé du 18 novembre 2026 au 19 novembre 2026. Les jours sans séance font partie du rythme observé: ce n’est pas un trou à remplir automatiquement par une séance « de rattrapage » hors schéma.",
           "kind": "disc_calendar_rhythm",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": []
         },
         {
           "title": "3 mouvements concentrent une part importante de ton travail récent",
-          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 hyperextension ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 48 tractions austra",
+          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 hyperextension ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 48 tractions australiennes — prise pronation ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 re",
           "kind": "disc_exercise_share",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 1234,
+              "unit": "reps"
+            },
+            {
+              "id": "reps:Relevés de genoux à la barre",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "monthReps:Relevés de genoux à la barre",
+              "value": 120,
+              "unit": "reps"
+            },
+            {
+              "id": "sharePct:Relevés de genoux à la barre",
+              "value": 50,
+              "unit": "percent"
+            }
+          ]
         },
         {
           "title": "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
           "body": "Ces 7 jours sont à environ 309 répétitions par journée de renforcement (4 journées), contre environ 340 pour les 30 jours d'avant (12 journées).",
           "kind": "disc_th_rhythm_trajectory",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "vsPriorPct",
+              "value": -9.286939475618716,
+              "unit": "percent"
+            },
+            {
+              "id": "repsPerSessionNow",
+              "value": 308.5,
+              "unit": "reps"
+            },
+            {
+              "id": "repsPerSessionThen",
+              "value": 340.0833333333333,
+              "unit": "reps"
+            },
+            {
+              "id": "activeDaysNow",
+              "value": 4,
+              "unit": "days"
+            }
+          ]
         },
         {
           "title": "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
-          "body": "Hyperextension compte 48 répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à 66,7 % de tes jambes, contre 144 reps (16,9 % de tes jambes) sur les 30 jours d'avant. La comparaison longue n'est pas l'événement de la semaine. Ce n'est plus une séance isolée; ré",
+          "body": "Hyperextension compte 48 répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à 66,7 % de tes jambes, contre 144 reps (16,9 % de tes jambes) sur les 30 jours d'avant. La comparaison longue n'est pas l'événement de la semaine. Ce n'est plus une séance isolée; répéter ce volume sur les prochaines séances dira s'il structure vraiment la jambes.",
           "kind": "disc_structural_memory",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-09-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-09-28",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-12",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-19",
+              "value": 48,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Mollets debout s'efface de tes jambes",
-          "body": "Mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. Aucune séance de Mollets debout dans la période récente: ce n’est pas un volume réduit, c’est une absence. Leur disparition explique une part de la baisse d'expositio",
+          "body": "Mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. Aucune séance de Mollets debout dans la période récente: ce n’est pas un volume réduit, c’est une absence. Leur disparition explique une part de la baisse d'exposition de cette famille.",
           "kind": "disc_family_fade",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-09-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 100,
+              "unit": "reps"
+            },
+            {
+              "id": "arcEarlyMean",
+              "value": 100,
+              "unit": "reps"
+            },
+            {
+              "id": "arcLateMean",
+              "value": 100,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-09-29",
+              "value": 100,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
+          "body": "Hyperextension compte 48 répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à 33,3 % de tes jambes, contre 96 reps (11,3 % de tes jambes) sur les 30 jours d'avant. La comparaison longue n'est pas l'événement de la semaine. Ce n'est plus une séance isolée; répéter ce volume sur les prochaines séances dira s'il structure vraiment la jambes.",
+          "kind": "disc_structural_memory",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-02",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-16",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-30",
+              "value": 48,
+              "unit": "reps"
+            }
+          ]
         }
       ],
       "versionB": [
         {
-          "title": "3 mouvements concentrent une part importante de ton travail récent"
+          "title": "Des journées à volume proche racontent des séances différentes",
+          "body": "Des journées à volume proche (351, 332, 332 répétitions) diffèrent par 2026-11-13: 0 complément; 2026-11-14: 100 complément; 2026-11-17: 100 complément; 2026-11-13: 9 mouvements; 2026-11-14: 7 mouvements; 2026-11-17: 7 mouvements.",
+          "kind": "disc_near_equal_sessions",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "volume:2026-11-13",
+              "value": 351,
+              "unit": "reps"
+            },
+            {
+              "id": "challenge:2026-11-13",
+              "value": 0,
+              "unit": "reps"
+            },
+            {
+              "id": "exercises:2026-11-13",
+              "value": 9,
+              "unit": "count"
+            },
+            {
+              "id": "volume:2026-11-14",
+              "value": 332,
+              "unit": "reps"
+            }
+          ]
         },
         {
-          "title": "Le 13 novembre 2026 porte une grande part de ces 7 jours"
+          "title": "Le 13 novembre 2026 porte une grande part de ces 7 jours",
+          "body": "Le 13 novembre 2026 concentre 351 répétitions, soit 28,4 % des 1 234 répétitions de ces 7 jours. Les exercices de ce jour: 60 Relevés de genoux à la barre, 48 Hyperextension, 48 Tractions australiennes — prise pronation, 48 Dips. Cela décrit la répartition de cette fenêtre.",
+          "kind": "disc_th_concentration_now",
+          "evidence": null,
+          "proofSample": []
         },
         {
-          "title": "Ces 7 jours sont en dessous du rythme de renforcement d'avant"
+          "title": "Le rythme de ces 7 jours reste lisible par rapport à ton habitude",
+          "body": "4 séances, 1 234 répétitions et 18 min de séances hors course enregistrées, soit environ 309 répétitions par séance. Tu es actuellement autour de 4 séances par semaine. Les séances restent longues. Ce qui change, c'est le nombre de journées, pas la durée de chacune. Ces 7 jours portent 24,4 % des 5 055 reps des 30 derniers jours: la semaine ne résume pas le mois.",
+          "kind": "disc_volume_shape",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 1234,
+              "unit": "reps"
+            },
+            {
+              "id": "activeDaysNow",
+              "value": 4,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-11-13",
+              "value": 351,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-14",
+              "value": 332,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Ces 7 jours: le volume repose sur peu de journées",
+          "body": "Du 18 novembre 2026 au 19 novembre 2026 reste sans séance. Sur 7 jours, 4 ont une séance et 3 n'en ont pas. Le creux calendaire est localisé du 18 novembre 2026 au 19 novembre 2026. Les jours sans séance font partie du rythme observé: ce n’est pas un trou à remplir automatiquement par une séance « de rattrapage » hors schéma.",
+          "kind": "disc_calendar_rhythm",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "3 mouvements concentrent une part importante de ton travail récent",
+          "body": "Les 60 relevés de genoux à la barre ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 48 hyperextension ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 reps). Les 48 tractions australiennes — prise pronation ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (96 re",
+          "kind": "disc_exercise_share",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+          "body": "Ces 7 jours sont à environ 309 répétitions par journée de renforcement (4 journées), contre environ 340 pour les 30 jours d'avant (12 journées).",
+          "kind": "disc_th_rhythm_trajectory",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
+          "body": "Hyperextension compte 48 répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à 66,7 % de tes jambes, contre 144 reps (16,9 % de tes jambes) sur les 30 jours d'avant. La comparaison longue n'est pas l'événement de la semaine. Ce n'est plus une séance isolée; répéter ce volume sur les prochaines séances dira s'il structure vraiment la jambes.",
+          "kind": "disc_structural_memory",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-09-28",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-12",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-19",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-26",
+              "value": 48,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Mollets debout s'efface de tes jambes",
+          "body": "Mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. Aucune séance de Mollets debout dans la période récente: ce n’est pas un volume réduit, c’est une absence. Leur disparition explique une part de la baisse d'exposition de cette famille.",
+          "kind": "disc_family_fade",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-09-29",
+              "value": 100,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-13",
+              "value": 100,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
+          "body": "Hyperextension compte 48 répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à 33,3 % de tes jambes, contre 96 reps (11,3 % de tes jambes) sur les 30 jours d'avant. La comparaison longue n'est pas l'événement de la semaine. Ce n'est plus une séance isolée; répéter ce volume sur les prochaines séances dira s'il structure vraiment la jambes.",
+          "kind": "disc_structural_memory",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-10-02",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-16",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-30",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-13",
+              "value": 48,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "La structure du travail de ces 7 jours se lit dans les parts classifiables",
+          "body": "Ces 7 jours répartissent 1 334 reps identifiées ainsi: 71,2 % de mouvements polyarticulaires contre 28,8 % d'isolation, 100,0 % de travail classé force contre 0,0 % d'endurance musculaire (sur le volume classifiable), 7,2 % de volume lesté, le reste au poids du corps, 10,9 % de tirage/poussée vertical contre 45,3 % d'horizontal. Par rapport à ta référence récente, la part d'isolation est plus bass",
+          "kind": "disc_stimulus_mix",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Le socle hebdomadaire n’est pas le même que ce qui structure une séance",
+          "body": "Les mouvements les plus répétés ces 7 jours (pompes endurance (complémentaire) 100, pompes (endurance) 100, relevés de genoux à la barre 60) forment le socle de la semaine. La séance du 13 novembre 2026 peut raconter autre chose: 60 relevés de genoux à la barre, 48 hyperextension, 48 tractions australiennes — prise pronation. On distingue donc les exercices que tu reproduis souvent de ceux qui str",
+          "kind": "disc_exercise_base",
+          "evidence": null,
+          "proofSample": []
         }
-      ]
+      ],
+      "parityWarning": null
     },
     {
       "id": "blind-30d",
@@ -321,216 +582,452 @@
       "labelB": "Version B",
       "versionA": [
         {
-          "title": "Tu reprends Face pull après 28 jours d'absence"
+          "title": "Tu reprends Face pull après 28 jours d'absence",
+          "body": "Il y a une semaine, tu as enregistré ta première séance depuis 28 jours sur face pull. L'écart dépasse 4 fois ton intervalle habituel. Avec 60 répétitions, tu reviens à 128 % de ton volume moyen avant l'interruption. Ce volume de reprise sert de référence pour juger les prochaines séances sur le même mouvement.",
+          "kind": "disc_ms_return",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 28,
+              "unit": "days"
+            },
+            {
+              "id": "returnReps",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "priorAvg",
+              "value": 46.875,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 128,
+              "unit": "percent"
+            }
+          ]
         },
         {
-          "title": "Élévations latérales: format repris, pas encore installé"
+          "title": "Tu reprends Élévations latérales après 28 jours d'absence",
+          "body": "Il y a une semaine, tu as enregistré ta première séance depuis 28 jours sur élévations latérales. L'écart dépasse 4 fois ton intervalle habituel. Avec 60 répétitions, tu reviens à 128 % de ton volume moyen avant l'interruption. Ce volume de reprise sert de référence pour juger les prochaines séances sur le même mouvement.",
+          "kind": "disc_ms_return",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 28,
+              "unit": "days"
+            },
+            {
+              "id": "returnReps",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "priorAvg",
+              "value": 46.875,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 128,
+              "unit": "percent"
+            }
+          ]
         },
         {
-          "title": "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé"
+          "title": "Tu reprends Kickbacks triceps après 28 jours d'absence",
+          "body": "Il y a une semaine, tu as enregistré ta première séance depuis 28 jours sur kickbacks triceps. L'écart dépasse 2,5 fois ton intervalle habituel. Avec 48 répétitions, tu reviens à 93 % de ton volume moyen avant l'interruption. Ce volume de reprise sert de référence pour juger les prochaines séances sur le même mouvement.",
+          "kind": "disc_ms_return",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 28,
+              "unit": "days"
+            },
+            {
+              "id": "returnReps",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "priorAvg",
+              "value": 51.375,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 93.43065693430657,
+              "unit": "percent"
+            }
+          ]
+        },
+        {
+          "title": "Élévations latérales: format repris, pas encore installé",
+          "body": "Élévations latérales apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 120 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé",
+          "body": "Bent-Arm Lateral Dumbbell Raise apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 120 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Face pull: format repris, pas encore installé",
+          "body": "Face pull apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 120 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Kickbacks triceps: format repris, pas encore installé",
+          "body": "Kickbacks triceps apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 96 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 96 répétitions font 66,7 % des 144 répétitions de triceps de la période.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 48,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Développé Arnold: format repris, pas encore installé",
+          "body": "Développé Arnold apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 80 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 80 répétitions font 74,1 % des 108 répétitions de épaules de la période.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+          "body": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 21 septembre 2026 à 19 novembre 2026.",
+          "kind": "disc_gtg_unplanned_role",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 0,
+              "unit": "days"
+            }
+          ]
+        },
+        {
+          "title": "Extension triceps debout avec haltère: format repris, pas encore installé",
+          "body": "Extension triceps debout avec haltère apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 80 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 80 répétitions font 55,6 % des 144 répétitions de triceps de la période.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Single-Arm Dumbbell Lying Triceps Extension: format repris, pas encore installé",
+          "body": "Single-Arm Dumbbell Lying Triceps Extension apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 80 répétitions sur la période, contre aucune sur la période précédente comparable. Ces 80 répétitions font 55,6 % des 144 répétitions de triceps de la périod",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-11-01",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-11-08",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         }
       ],
       "versionB": [
         {
+          "title": "Le volume de ces 30 jours dépasse la période précédente",
+          "body": "Ces 30 jours totalisent 5 055 répétitions sur 15 jours avec répétitions de renforcement, soit environ 337 répétitions par séance, contre 4 081 reps sur 12 jours avec répétitions de renforcement sur les 30 jours d'avant (+23,9 %, fréquence +25,0 %, 337 vs 340 reps/séance). La comparaison utile est donc période contre période de même durée.",
+          "kind": "disc_volume_shape",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 5055,
+              "unit": "reps"
+            },
+            {
+              "id": "activeDaysNow",
+              "value": 15,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-10-24",
+              "value": 332,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-10-26",
+              "value": 356,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
           "title": "Tu reprends Face pull après 28 jours d'absence",
-          "body": "Il y a une semaine, tu as enregistré ta première séance depuis 28 jours sur face pull. L'écart dépasse 4 fois ton intervalle habituel. Avec 60 répétitions, tu reviens à 128 % de ton volume moyen avant l'interruption. Ce volume de reprise sert de référence pour juger les prochaine",
+          "body": "Il y a une semaine, tu as enregistré ta première séance depuis 28 jours sur face pull. L'écart dépasse 4 fois ton intervalle habituel. Avec 60 répétitions, tu reviens à 128 % de ton volume moyen avant l'interruption. Ce volume de reprise sert de référence pour juger les prochaines séances sur le même mouvement.",
           "kind": "disc_ms_return",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-10-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-11"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 28,
+              "unit": "days"
+            },
+            {
+              "id": "returnReps",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "priorAvg",
+              "value": 46.875,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 128,
+              "unit": "percent"
+            }
+          ]
         },
         {
-          "title": "Élévations latérales: format repris, pas encore installé",
-          "body": "Élévations latérales apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 120 répétitions sur la période, contre aucune sur la période",
-          "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "body": "Le contenu réel du programme — pas son seul nom — fait apparaître 3 familles de séances: street Workout + Endurance fondamentale / Street Workout + Cardio (2 créneaux); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes (2 créneaux); pectoraux / Triceps / Épaules / Triceps- Épaules (2 créneaux). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un cr",
+          "kind": "disc_session_family_structure",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "familyCount",
+              "value": 3,
+              "unit": "count"
+            },
+            {
+              "id": "relatedSlots",
+              "value": 6,
+              "unit": "count"
+            }
+          ]
         },
         {
-          "title": "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé",
-          "body": "Bent-Arm Lateral Dumbbell Raise apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 120 répétitions sur la période, contre aucune sur",
-          "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
-        },
-        {
-          "title": "Face pull: format repris, pas encore installé",
-          "body": "Face pull apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 120 répétitions sur la période, contre aucune sur la période précédente",
-          "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
-        },
-        {
-          "title": "Kickbacks triceps: format repris, pas encore installé",
-          "body": "Kickbacks triceps apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 96 répétitions sur la période, contre aucune sur la période pré",
-          "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
-        },
-        {
-          "title": "Développé Arnold: format repris, pas encore installé",
-          "body": "Développé Arnold apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 80 répétitions sur la période, contre aucune sur la période préc",
-          "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "title": "Deux séances apparentées redistribuent un socle commun",
+          "body": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont fortement apparentées: elles partagent 9 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tractions australiennes prise large pronation, pompes inclinees; « Street Workout + Cardio » ajoute tractions australiennes prise pronation. Le volume prescrit diffère: 429",
+          "kind": "disc_session_family_variant",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sharedMoves",
+              "value": 9,
+              "unit": "count"
+            },
+            {
+              "id": "sharedMoves",
+              "value": 9,
+              "unit": "count"
+            },
+            {
+              "id": "plannedRepsLeft",
+              "value": 429,
+              "unit": "reps"
+            },
+            {
+              "id": "plannedRepsRight",
+              "value": 404,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
-          "body": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 21 septembre 2026 à 19 novemb",
+          "body": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 21 septembre 2026 à 19 novembre 2026.",
           "kind": "disc_gtg_unplanned_role",
-          "disposition": "autonomous",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [],
-            "direction": null,
-            "progressionDimension": null
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 0,
+              "unit": "days"
+            }
+          ]
         },
         {
-          "title": "Extension triceps debout avec haltère: format repris, pas encore installé",
-          "body": "Extension triceps debout avec haltère apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. C’est une répétition du format, pas encore une installation durable dans le programme. Au total, 80 répétitions sur la période, contre aucun",
-          "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-11-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-08"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "title": "Pectoraux: moins de jours d’exposition qu’en période précédente",
+          "body": "Sur deux fenêtres comparables de 15+ jours d’activité (21 septembre 2026→20 octobre 2026 puis 21 octobre 2026→19 novembre 2026), les jours d’exposition primaire aux pectoraux passent de 16 à 12 (Δ -4). Les reps mono associées vont de 494 à 888 (Δ +394). Il s’agit de jours enregistrés avec exposition, pas d’une preuve de hausse ou baisse de stimulation musculaire.",
+          "kind": "disc_muscle_exposure_shift",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "daysW",
+              "value": 12,
+              "unit": "days"
+            },
+            {
+              "id": "daysC",
+              "value": 16,
+              "unit": "days"
+            },
+            {
+              "id": "deltaDays",
+              "value": -4,
+              "unit": "days"
+            },
+            {
+              "id": "monoRepsW",
+              "value": 888,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Ton régime d'entraînement s'est installé à 3,7 séances / semaine",
+          "body": "Depuis 6 semaines, tu t'entraînes 3,7 fois par semaine, contre 2,7 sur les 6 semaines d'avant (+38 %). Cette fréquence n'est plus un pic isolé: elle tient sur six semaines.",
+          "kind": "disc_ms_regime",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Reprise et niveau habituel le même jour",
+          "body": "Le retour n'est pas seulement calendaire: tu retrouves immédiatement 128 % de ton volume habituel. L'interruption n'a pas effacé le niveau, elle l'a seulement interrompu.",
+          "kind": "disc_ms_event_combo",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Mollets debout a quitté cette fenêtre",
+          "body": "Mollets debout comptait 200 répétitions sur la période précédente et tombe à zéro ici. Le mouvement disparaît du journal sur cette fenêtre. Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas sur la fenêtre suivante, c'est un changement de répertoire.",
+          "kind": "disc_th_repertoire_journey",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "repsNow",
+              "value": 0,
+              "unit": "reps"
+            },
+            {
+              "id": "repsThen",
+              "value": 200,
+              "unit": "reps"
+            },
+            {
+              "id": "totalReps",
+              "value": 200,
+              "unit": "reps"
+            },
+            {
+              "id": "priorWindowReps",
+              "value": 200,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "100e séance enregistrée",
+          "body": "Le 10 novembre 2026, la 100e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 29 173 répétitions ont été accumulées pour y parvenir, soit environ 292 répétitions par séance. La date est celle du franchissement, dans la fenêtre affichée.",
+          "kind": "disc_ms_sessions",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "body": "Pompes endurance (complémentaire): 300 ce mois sur 300 en 30 jours. Pompes (endurance): 300 ce mois sur 300 en 30 jours. Relevés de genoux à la barre: 240 ce mois sur 240 en 30 jours. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble: momentum peut suivre l'évolution de chaque mouvement, en distinguant ceux qui progressent, ceux qui se maintiennent et ceux do",
+          "kind": "disc_repertoire",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 5055,
+              "unit": "reps"
+            },
+            {
+              "id": "repsNow:Pompes endurance (complémentaire)",
+              "value": 300,
+              "unit": "reps"
+            },
+            {
+              "id": "monthReps:Pompes endurance (complémentaire)",
+              "value": 300,
+              "unit": "reps"
+            },
+            {
+              "id": "repsNow:Pompes (endurance)",
+              "value": 300,
+              "unit": "reps"
+            }
+          ]
         }
-      ]
+      ],
+      "parityWarning": null
     },
     {
       "id": "blind-6m",
@@ -539,741 +1036,522 @@
       "labelB": "Version B",
       "versionA": [
         {
+          "title": "Pompes sur poignées avec gilet reviennent après 35 jours",
+          "body": "Le 9 août 2026, tu as enregistré ta première séance depuis 35 jours sur pompes sur poignées avec gilet. L'écart dépasse 2,5 fois ton intervalle habituel. Avec 80 répétitions, tu reviens à 152 % de ton volume moyen avant l'interruption. La séance du 5 juillet 2026: 4 séries de 15 répétitions. Cette séance: 4 séries de 20 répétitions. Le nombre de séries reste le même. Ce qui augmente, ce sont les r",
+          "kind": "disc_ms_return",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 35,
+              "unit": "days"
+            },
+            {
+              "id": "returnReps",
+              "value": 80,
+              "unit": "reps"
+            },
+            {
+              "id": "priorAvg",
+              "value": 52.5,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 152.38095238095238,
+              "unit": "percent"
+            }
+          ]
+        },
+        {
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiqu",
+          "kind": "disc_gtg_unplanned_now",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 76,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
           "title": "Tractions australiennes — prise pronation: volume par séance en hausse",
-          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise pronation passe d’environ 40 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 20 %. Sur les séances où les séries sont dét",
+          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise pronation passe d’environ 40 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 20 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 11): l’évolution du volume moyen par séance ne vient donc pas d’un changement de",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-11"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 45.3,
+              "unit": "reps"
+            },
+            {
+              "id": "arcEarlyMean",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "arcLateMean",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Dips: volume par séance en hausse",
-          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 37,3 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 28,6 %. Sur les séances où les séries sont détaillées, le format reste identiqu",
+          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 37,3 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 28,6 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séa",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-11"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 44.8,
+              "unit": "reps"
+            },
+            {
+              "id": "arcEarlyMean",
+              "value": 37.3,
+              "unit": "reps"
+            },
+            {
+              "id": "arcLateMean",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 32,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "body": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 19 novembre 2025 à 19 novembre 2026.",
+          "kind": "disc_gtg_unplanned_role",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 4,
+              "unit": "days"
+            }
+          ]
+        },
+        {
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026",
+          "body": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2026 compte 5 827 répétitions en 20 jours, août 2026 compte 5 438 répétitions en 17 jours. La baisse se décompose en −3 122 répétitions liées aux jours actifs et −121 liées au volum",
+          "kind": "disc_monthly_volume_arc",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "peakReps",
+              "value": 6947,
+              "unit": "reps"
+            },
+            {
+              "id": "troughReps",
+              "value": 3704,
+              "unit": "reps"
+            },
+            {
+              "id": "recentReps",
+              "value": 4282,
+              "unit": "reps"
+            },
+            {
+              "id": "peakDays",
+              "value": 22,
+              "unit": "days"
+            }
+          ]
+        },
+        {
+          "title": "Les deux moitiés de ces six mois n'ont pas le même volume",
+          "body": "Le bloc mai 2026 – août 2026 compte 18 301 répétitions en 60 jours, et le bloc août 2026 – novembre 2026 en compte 13 432 en 40 jours. mai 2026 – août 2026 est au-dessus de août 2026 – novembre 2026.",
+          "kind": "disc_th_rhythm_journey",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionsNow",
+              "value": 60,
+              "unit": "sessions"
+            },
+            {
+              "id": "sessionsThen",
+              "value": 40,
+              "unit": "sessions"
+            },
+            {
+              "id": "blockAReps",
+              "value": 18301,
+              "unit": "reps"
+            },
+            {
+              "id": "blockBReps",
+              "value": 13432,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "body": "Le contenu réel du programme — pas son seul nom — fait apparaître 3 familles de séances: street Workout + Endurance fondamentale / Street Workout + Cardio (2 créneaux); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes (2 créneaux); pectoraux / Triceps / Épaules / Triceps- Épaules (2 créneaux). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un cr",
+          "kind": "disc_session_family_structure",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "familyCount",
+              "value": 3,
+              "unit": "count"
+            },
+            {
+              "id": "relatedSlots",
+              "value": 6,
+              "unit": "count"
+            }
+          ]
+        },
+        {
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 055 reps en 15 jours, contre 3 464 reps en 12 jours au début de ces trois mois (+45,9 %, fréquence +25,0 %). Cette comparaison ne résume pas ces derniers mois: elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début.",
+          "kind": "disc_quarter_arc",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "repsNow",
+              "value": 5055,
+              "unit": "reps"
+            },
+            {
+              "id": "repsThen",
+              "value": 3464,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 45.929561200923786,
+              "unit": "percent"
+            },
+            {
+              "id": "totalReps",
+              "value": 5055,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Le haut du corps travaille surtout en poussée",
+          "body": "Ces six mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 1 932 répétitions de poussée contre 17 de tirage, soit environ 113,6 répétitions de poussée pour 1 de tirage. Le ratio vient en second: c’est la répartition du volume qui décrit la fenêtre.",
+          "kind": "disc_th_pushPull_journey",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "pushReps",
+              "value": 1932,
+              "unit": "reps"
+            },
+            {
+              "id": "pullReps",
+              "value": 17,
+              "unit": "reps"
+            },
+            {
+              "id": "ratio",
+              "value": 113.6,
+              "unit": "ratio"
+            },
+            {
+              "id": "pushReps",
+              "value": 1932,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "50e séance enregistrée",
+          "body": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franchissement, dans la fenêtre affichée.",
+          "kind": "disc_ms_sessions",
+          "evidence": null,
+          "proofSample": []
+        }
+      ],
+      "versionB": [
+        {
+          "title": "Tractions australiennes — prise pronation: volume par séance en hausse",
+          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise pronation passe d’environ 40 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 20 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 11): l’évolution du volume moyen par séance ne vient donc pas d’un changement de",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Dips: volume par séance en hausse",
+          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 37,3 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 28,6 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séa",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 32,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Relevés de genoux à la barre: volume par séance stable",
           "body": "Relevés de genoux à la barre apparaît sur 14 séances réparties sur 175 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Tractions australiennes — prise large pronation: volume par séance en hausse",
-          "body": "Tractions australiennes — prise large pronation: réapparition après 126 jours. La reprise totalise 818 répétitions sur 19 séances, soit 90 % du volume moyen des séances antérieures (≈48 reps/séance). Format habituel environ 4 × 10, reprise en environ 4 × 10. Sur les séances où le",
+          "body": "Tractions australiennes — prise large pronation: réapparition après 126 jours. La reprise totalise 818 répétitions sur 19 séances, soit 90 % du volume moyen des séances antérieures (≈48 reps/séance). Format habituel environ 4 × 10, reprise en environ 4 × 10. Sur les séances où les séries sont détaillées, le format reste identique (4 × 10): l’évolution du volume moyen par séance ne vient donc pas d",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-06"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 126,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-05-25",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-01",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-08",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
-          "body": "Sur 16 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 50 à 36 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 28 %. Sur les séances où les séries sont détaillées, le format reste ",
+          "body": "Sur 16 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 50 à 36 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 28 %. Sur les séances où les séries sont détaillées, le format reste identique (5 × 10): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-11"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 50,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 50,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 50,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 50,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
-          "body": "Sur la période, tu es passé de 1 à 18 séances, pour un volume moyen par séance qui reste proche (≈36 → ≈36 sur les fenêtres comparées). La variation du total vient surtout du nombre de séances (1 → 18), alors que le volume moyen par séance reste proche (≈36 → ≈36 reps/séance sur ",
+          "body": "Sur la période, tu es passé de 1 à 18 séances, pour un volume moyen par séance qui reste proche (≈36 → ≈36 sur les fenêtres comparées). La variation du total vient surtout du nombre de séances (1 → 18), alors que le volume moyen par séance reste proche (≈36 → ≈36 reps/séance sur les fenêtres comparées). Le volume par séance reste récemment stable.",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-06-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-23"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-23"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 140,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-06-02",
+              "value": 36,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-09",
+              "value": 36,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-18",
+              "value": 36,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Curl assis dos calé: le total monte surtout parce que tu t’entraînes plus souvent",
-          "body": "Curl assis dos calé: réapparition après 140 jours. La reprise totalise 622 répétitions sur 18 séances, soit 96 % du volume moyen des séances antérieures (≈36 reps/séance). Total de reprise: 35 répétitions (format antérieur observé ≈ 3 × 12; schéma médian de reprise ≈ 3 × 10 ≠ tot",
+          "body": "Curl assis dos calé: réapparition après 140 jours. La reprise totalise 622 répétitions sur 18 séances, soit 96 % du volume moyen des séances antérieures (≈36 reps/séance). Total de reprise: 35 répétitions (format antérieur observé ≈ 3 × 12; schéma médian de reprise ≈ 3 × 10 ≠ total saisi). La variation du total vient surtout du nombre de séances (1 → 18), alors que le volume moyen par séance reste",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-06-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-23"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-23"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 140,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-06-02",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-09",
+              "value": 30,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-18",
+              "value": 30,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Curl Zottman: le total monte surtout parce que tu t’entraînes plus souvent",
-          "body": "Curl Zottman: réapparition après 140 jours. La reprise totalise 618 répétitions sur 18 séances, soit 95 % du volume moyen des séances antérieures (≈36 reps/séance). Format habituel environ 3 × 12, reprise en environ 3 × 12. La variation du total vient surtout du nombre de séances",
+          "body": "Curl Zottman: réapparition après 140 jours. La reprise totalise 618 répétitions sur 18 séances, soit 95 % du volume moyen des séances antérieures (≈36 reps/séance). Format habituel environ 3 × 12, reprise en environ 3 × 12. La variation du total vient surtout du nombre de séances (1 → 18), alors que le volume moyen par séance reste proche (≈36 → ≈34 reps/séance sur les fenêtres comparées). Le reto",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-06-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-23"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-23"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-17"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 140,
+              "unit": "days"
+            },
+            {
+              "id": "sessionReps:2026-06-02",
+              "value": 30,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-09",
+              "value": 30,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-18",
+              "value": 30,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Relevés de genoux aux parallèles: volume par séance stable",
+          "body": "Relevés de genoux aux parallèles apparaît sur 13 séances réparties sur 175 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (2 × 20). Le volume par séance reste récemment stable.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026",
+          "body": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2026 compte 5 827 répétitions en 20 jours, août 2026 compte 5 438 répétitions en 17 jours. La baisse se décompose en −3 122 répétitions liées aux jours actifs et −121 liées au volum",
+          "kind": "disc_monthly_volume_arc",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "Les deux moitiés de ces six mois n'ont pas le même volume",
+          "body": "Le bloc mai 2026 – août 2026 compte 18 301 répétitions en 60 jours, et le bloc août 2026 – novembre 2026 en compte 13 432 en 40 jours. mai 2026 – août 2026 est au-dessus de août 2026 – novembre 2026.",
+          "kind": "disc_th_rhythm_journey",
+          "evidence": null,
+          "proofSample": []
         }
       ],
-      "versionB": [
-        {
-          "title": "Pompes sur poignées avec gilet reviennent après 35 jours"
-        },
-        {
-          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning"
-        },
-        {
-          "title": "Tractions australiennes — prise pronation: volume par séance en hausse"
-        }
-      ]
+      "parityWarning": null
     },
     {
       "id": "blind-1y",
@@ -1282,845 +1560,522 @@
       "labelB": "Version B",
       "versionA": [
         {
-          "title": "Pompes sur poignées avec gilet reviennent après 35 jours"
-        },
-        {
-          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning"
-        },
-        {
-          "title": "Relevés de genoux à la barre: volume par séance stable"
-        }
-      ],
-      "versionB": [
-        {
           "title": "Relevés de genoux à la barre: volume par séance stable",
           "body": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-01-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-06"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-01-05",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-12",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-19",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-25",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Dips: une séance atypique, pas encore une tendance",
-          "body": "Dips apparaît sur 30 séances réparties sur 315 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. Plusieurs mouvements comparables évoluent dans le même sens: le signal dépasse ce mouvement seul, sans prouver une caus",
+          "body": "Dips apparaît sur 30 séances réparties sur 315 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. Plusieurs mouvements comparables évoluent dans le même sens: le signal dépasse ce mouvement seul, sans prouver une cause unique.",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-01-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-06"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-06"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-01-05",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-12",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-19",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-25",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
-          "body": "Tractions australiennes — prise large pronation apparaît sur 22 séances réparties sur 301 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. La trajectoire (creux puis reprise) porte surtout ici, tandis que Tractions ",
+          "body": "Tractions australiennes — prise large pronation apparaît sur 22 séances réparties sur 301 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. La trajectoire (creux puis reprise) porte surtout ici, tandis que Tractions pronation (autour de 18 répétitions par séance) et Tractions australiennes pieds surélevés (autour de 48 répétitions par",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-01-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-06"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-01-05",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-12",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-19",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-25",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Tractions australiennes — prise pronation: volume par séance en hausse",
-          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise pronation passe d’environ 40 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 20 %. Sur les séances où les séries sont dét",
+          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Tractions australiennes — prise pronation passe d’environ 40 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 20 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 11): l’évolution du volume moyen par séance ne vient donc pas d’un changement de",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-11"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Dips: volume par séance en hausse",
-          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 37,3 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 28,6 %. Sur les séances où les séries sont détaillées, le format reste identiqu",
+          "body": "Sur 20 séances, le volume moyen de répétitions enregistré pour Dips passe d’environ 37,3 à 48 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 28,6 %. Sur les séances où les séries sont détaillées, le format reste identique (4 × 12): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces séa",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-11"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 32,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 40,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 40,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Relevés de genoux à la barre: volume par séance stable",
           "body": "Relevés de genoux à la barre apparaît sur 14 séances réparties sur 175 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Pompes déclinées: une séance atypique, pas encore une tendance",
-          "body": "Pompes déclinées apparaît sur 26 séances réparties sur 315 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. Plusieurs mouvements comparables évoluent dans le même sens: le signal dépasse ce mouvement seul, sans prou",
+          "body": "Pompes déclinées apparaît sur 26 séances réparties sur 315 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. Plusieurs mouvements comparables évoluent dans le même sens: le signal dépasse ce mouvement seul, sans prouver une cause unique.",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-01-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-01-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-25"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-08"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-06"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-27"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-10"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-07"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-01"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-03"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-14"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-15"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-16"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-01-05",
+              "value": 36,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-12",
+              "value": 36,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-19",
+              "value": 36,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-25",
+              "value": 36,
+              "unit": "reps"
+            }
+          ]
         },
         {
           "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
-          "body": "Sur 16 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 50 à 36 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 28 %. Sur les séances où les séries sont détaillées, le format reste ",
+          "body": "Sur 16 séances, le volume moyen de répétitions enregistré pour Pompes déclinées passe d’environ 50 à 36 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 28 %. Sur les séances où les séries sont détaillées, le format reste identique (5 × 10): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur",
           "kind": "disc_emergence",
-          "disposition": "promoted_over_legacy",
-          "claimProof": {
-            "metricsUsed": [],
-            "observedValues": [],
-            "units": [],
-            "sourceEvents": [
-              {
-                "type": "date",
-                "id": "2026-05-22"
-              },
-              {
-                "type": "date",
-                "id": "2026-05-29"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-05"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-12"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-19"
-              },
-              {
-                "type": "date",
-                "id": "2026-06-26"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-09"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-17"
-              },
-              {
-                "type": "date",
-                "id": "2026-07-31"
-              },
-              {
-                "type": "date",
-                "id": "2026-08-28"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-11"
-              },
-              {
-                "type": "date",
-                "id": "2026-09-18"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-02"
-              },
-              {
-                "type": "date",
-                "id": "2026-10-30"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              },
-              {
-                "type": "date",
-                "id": "2026-11-13"
-              }
-            ],
-            "direction": null,
-            "progressionDimension": "session_count"
-          }
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-22",
+              "value": 50,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-29",
+              "value": 50,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-05",
+              "value": 50,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-12",
+              "value": 50,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Face pull: volume par séance en hausse",
+          "body": "Sur 15 séances, le volume moyen de répétitions enregistré pour Face pull passe d’environ 45 à 60 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 33,3 %. Sur les séances où les séries sont détaillées, le format reste identique (3 × 15): l’évolution du volume moyen par séance ne vient donc pas d’un changement de schéma séries × reps sur ces ",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-05-13",
+              "value": 45,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-05-27",
+              "value": 45,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-03",
+              "value": 45,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-10",
+              "value": 45,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Curl Zottman s'installe dans ton entraînement",
+          "body": "Curl Zottman apparaît sur 19 séances réparties sur 308 jours — première présence connue dans l’historique disponible. Le volume par séance passe d’environ 3 × 12 à environ 3 × 12 (0 %), et ce format se maintient sur les séances suivantes. Au total, 654 répétitions sur la période, contre aucune sur la période précédente comparable.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "sessionReps:2026-01-13",
+              "value": 36,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-02",
+              "value": 30,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-09",
+              "value": 30,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-06-18",
+              "value": 30,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026",
+          "body": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2026 compte 5 827 répétitions en 20 jours, août 2026 compte 5 438 répétitions en 17 jours. La baisse se décompose en −3 122 répétitions liées aux jours actifs et −121 liées au volum",
+          "kind": "disc_monthly_volume_arc",
+          "evidence": null,
+          "proofSample": []
         }
-      ]
+      ],
+      "versionB": [
+        {
+          "title": "Pompes sur poignées avec gilet reviennent après 35 jours",
+          "body": "Le 9 août 2026, tu as enregistré ta première séance depuis 35 jours sur pompes sur poignées avec gilet. L'écart dépasse 2,5 fois ton intervalle habituel. Avec 80 répétitions, tu reviens à 152 % de ton volume moyen avant l'interruption. La séance du 5 juillet 2026: 4 séries de 15 répétitions. Cette séance: 4 séries de 20 répétitions. Le nombre de séries reste le même. Ce qui augmente, ce sont les r",
+          "kind": "disc_ms_return",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 35,
+              "unit": "days"
+            },
+            {
+              "id": "returnReps",
+              "value": 80,
+              "unit": "reps"
+            },
+            {
+              "id": "priorAvg",
+              "value": 52.5,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 152.38095238095238,
+              "unit": "percent"
+            }
+          ]
+        },
+        {
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiqu",
+          "kind": "disc_gtg_unplanned_now",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "totalReps",
+              "value": 76,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "body": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "arcEarlyMean",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "arcLateMean",
+              "value": 60,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-05",
+              "value": 60,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Dips: une séance atypique, pas encore une tendance",
+          "body": "Dips apparaît sur 30 séances réparties sur 315 jours — première présence connue dans l’historique disponible. L’écart est surtout porté par une séance atypique. Plusieurs mouvements comparables évoluent dans le même sens: le signal dépasse ce mouvement seul, sans prouver une cause unique.",
+          "kind": "disc_emergence",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "windowMeanPerSession",
+              "value": 38,
+              "unit": "reps"
+            },
+            {
+              "id": "arcEarlyMean",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "arcLateMean",
+              "value": 48,
+              "unit": "reps"
+            },
+            {
+              "id": "sessionReps:2026-01-05",
+              "value": 48,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "body": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 20 novembre 2024 à 19 novembre 2026.",
+          "kind": "disc_gtg_unplanned_role",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "gapDays",
+              "value": 4,
+              "unit": "days"
+            }
+          ]
+        },
+        {
+          "title": "Première semaine à 6 entraînements",
+          "body": "Première semaine à 6 entraînements: cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+          "kind": "disc_ms_week_freq",
+          "evidence": null,
+          "proofSample": []
+        },
+        {
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026",
+          "body": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2026 compte 5 827 répétitions en 20 jours, août 2026 compte 5 438 répétitions en 17 jours. La baisse se décompose en −3 122 répétitions liées aux jours actifs et −121 liées au volum",
+          "kind": "disc_monthly_volume_arc",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "peakReps",
+              "value": 6947,
+              "unit": "reps"
+            },
+            {
+              "id": "troughReps",
+              "value": 3704,
+              "unit": "reps"
+            },
+            {
+              "id": "recentReps",
+              "value": 4282,
+              "unit": "reps"
+            },
+            {
+              "id": "peakDays",
+              "value": 22,
+              "unit": "days"
+            }
+          ]
+        },
+        {
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "body": "Le contenu réel du programme — pas son seul nom — fait apparaître 3 familles de séances: street Workout + Endurance fondamentale / Street Workout + Cardio (2 créneaux); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes (2 créneaux); pectoraux / Triceps / Épaules / Triceps- Épaules (2 créneaux). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un cr",
+          "kind": "disc_session_family_structure",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "familyCount",
+              "value": 3,
+              "unit": "count"
+            },
+            {
+              "id": "relatedSlots",
+              "value": 6,
+              "unit": "count"
+            }
+          ]
+        },
+        {
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "body": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 055 reps en 15 jours, contre 3 464 reps en 12 jours au début de ces trois mois (+45,9 %, fréquence +25,0 %). Cette comparaison ne résume pas cette année: elle dit seulement comment les trois derniers mois se terminent par rapport à leur propre début.",
+          "kind": "disc_quarter_arc",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "repsNow",
+              "value": 5055,
+              "unit": "reps"
+            },
+            {
+              "id": "repsThen",
+              "value": 3464,
+              "unit": "reps"
+            },
+            {
+              "id": "vsPriorPct",
+              "value": 45.929561200923786,
+              "unit": "percent"
+            },
+            {
+              "id": "totalReps",
+              "value": 5055,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "Le haut du corps travaille surtout en poussée",
+          "body": "Depuis le début compté exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 1 932 répétitions de poussée contre 17 de tirage, soit environ 113,6 répétitions de poussée pour 1 de tirage. Le ratio vient en second: c’est la répartition du volume qui décrit la fenêtre.",
+          "kind": "disc_th_pushPull_journey",
+          "evidence": null,
+          "proofSample": [
+            {
+              "id": "pushReps",
+              "value": 1932,
+              "unit": "reps"
+            },
+            {
+              "id": "pullReps",
+              "value": 17,
+              "unit": "reps"
+            },
+            {
+              "id": "ratio",
+              "value": 113.6,
+              "unit": "ratio"
+            },
+            {
+              "id": "pushReps",
+              "value": 1932,
+              "unit": "reps"
+            }
+          ]
+        },
+        {
+          "title": "50e séance enregistrée",
+          "body": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franchissement, dans la fenêtre affichée.",
+          "kind": "disc_ms_sessions",
+          "evidence": null,
+          "proofSample": []
+        }
+      ],
+      "parityWarning": null
     }
   ]
 }

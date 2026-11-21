@@ -1,0 +1,64 @@
+{
+  "schema": "momentum.evalGameReport.v1",
+  "game": "C",
+  "executedAt": "2026-11-21T02:49:20.171Z",
+  "edition": "claim=proof-pipeline-v2;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v8;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-execution-v1;review=collective-pass4-v5;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": true,
+  "counters": {
+    "exactDuplicatesAccessible": 0,
+    "fusedSourcesAccessible": 0,
+    "admissiblePreserved": true,
+    "horizonConfusion": 0
+  },
+  "cases": [
+    {
+      "id": "C-1",
+      "game": "C",
+      "referenceData": {
+        "period": "live",
+        "expectedAccessible": 0,
+        "publishedAccessible": 1,
+        "registryRows": 0,
+        "lostSilent": [],
+        "unexplainedIds": [],
+        "unexplainedCount": 0,
+        "anomalyAudit": [],
+        "textualDuplicates": 0,
+        "publicationAuthority": null,
+        "idReconciled": false,
+        "admissiblePreserved": true,
+        "note": null
+      },
+      "expected": {
+        "admissiblePreserved": true,
+        "exactDuplicatesAccessible": 0,
+        "fusedSourcesAccessible": 0
+      },
+      "obtained": {
+        "period": "live",
+        "expectedAccessible": 0,
+        "publishedAccessible": 1,
+        "registryRows": 0,
+        "lostSilent": [],
+        "unexplainedIds": [],
+        "unexplainedCount": 0,
+        "anomalyAudit": [],
+        "textualDuplicates": 0,
+        "publicationAuthority": null,
+        "idReconciled": false,
+        "admissiblePreserved": true,
+        "note": null
+      },
+      "status": "pass",
+      "justification": "qualité collective du paquet accessible",
+      "delta": null,
+      "edition": "claim=proof-pipeline-v2;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v8;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-execution-v1;review=collective-pass4-v5;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    }
+  ],
+  "humanBlindComparison": {
+    "performed": false,
+    "reason": "not_applicable"
+  }
+}

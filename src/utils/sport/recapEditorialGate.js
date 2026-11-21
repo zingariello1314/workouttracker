@@ -190,6 +190,12 @@ function rewrite(card, voiceKey) {
     const role = card.metrics?.relation;
     if (role === 'period_inside_recent_month' && Number.isFinite(share) && share >= 90) {
       title = 'Ce groupe représente presque tout son volume attribué du mois';
+    } else if (/stimulus .* se déplace/i.test(title)) {
+      // Sans preuve de déplacement (part / relation), éviter le jargon « stimulus ».
+      title = title.replace(
+        /Le stimulus de (la semaine|ces \d+ jours) se déplace vers/i,
+        'Le volume attribué se concentre sur'
+      );
     }
     body = body
       .replace(/stimulus de la fenêtre/gi, 'volume attribué de la fenêtre')

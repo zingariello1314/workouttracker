@@ -1,0 +1,545 @@
+{
+  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v3;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "week": {
+    "totalReps": 1234,
+    "identifiedReps": 1234,
+    "orphanReps": 0,
+    "identifiedExercises": 30,
+    "orphanExercises": 0,
+    "orphanRows": []
+  },
+  "month": {
+    "totalReps": 5055,
+    "identifiedReps": 5055,
+    "orphanReps": 0,
+    "identifiedExercises": 50,
+    "orphanExercises": 0,
+    "topOrphans": []
+  },
+  "rows": [
+    {
+      "period": "today",
+      "ms": 7046,
+      "produced": 6,
+      "selected": 6,
+      "accessible": 0,
+      "dropped": 4,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "La séance d'aujourd'hui n'est pas encore commencée",
+        "En attendant la séance, ta semaine récente a déjà une forme",
+        "La dernière séance pèse encore sur les 7 jours"
+      ],
+      "program": [],
+      "duration": [
+        "En attendant la séance, ta semaine récente a déjà une forme"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 6,
+        "admissible": 6,
+        "rejected": 0,
+        "fused": 0,
+        "priority": 6,
+        "reserve": 0,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 2,
+        "inputRows": 2
+      },
+      "views": {
+        "aRetenir": 6,
+        "toutes": 6,
+        "autresAngles": 0
+      },
+      "comparison": [],
+      "singleSession": [
+        "La séance d'aujourd'hui n'est pas encore commencée"
+      ]
+    },
+    {
+      "period": "7d",
+      "ms": 6467,
+      "produced": 51,
+      "selected": 11,
+      "accessible": 40,
+      "dropped": 40,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "3 mouvements concentrent une part importante de ton travail récent",
+        "Le 13 novembre 2026 porte une grande part de ces 7 jours",
+        "Ces 7 jours sont en dessous du rythme de renforcement d'avant"
+      ],
+      "program": [],
+      "duration": [
+        "Le rythme de ces 7 jours reste lisible par rapport à ton habitude"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 51,
+        "admissible": 51,
+        "rejected": 0,
+        "fused": 12,
+        "priority": 11,
+        "reserve": 28,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 13,
+        "inputRows": 13
+      },
+      "views": {
+        "aRetenir": 11,
+        "toutes": 39,
+        "autresAngles": 40
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
+        "Mollets debout s'efface de tes jambes",
+        "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
+        "Ces 7 jours: le volume repose sur peu de journées",
+        "Le socle hebdomadaire n’est pas le même que ce qui structure une séance",
+        "Les pectoraux portent 6,8 % du volume de ces 7 jours"
+      ]
+    },
+    {
+      "period": "30d",
+      "ms": 7341,
+      "produced": 72,
+      "selected": 11,
+      "accessible": 61,
+      "dropped": 47,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": true,
+      "examples": [
+        "Tu reprends Face pull après 28 jours d'absence",
+        "Élévations latérales: format repris, pas encore installé",
+        "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé"
+      ],
+      "program": [],
+      "duration": [],
+      "grammar": false,
+      "p6": {
+        "produced": 72,
+        "admissible": 72,
+        "rejected": 0,
+        "fused": 12,
+        "priority": 11,
+        "reserve": 49,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 25,
+        "inputRows": 25
+      },
+      "views": {
+        "aRetenir": 11,
+        "toutes": 60,
+        "autresAngles": 61
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Hyperextension: 4 séances sur ces 30 jours",
+        "Mollets debout s'efface de tes jambes",
+        "Hyperextension: 2 séances sur ces 30 jours",
+        "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé",
+        "Ces 30 jours mêlent un bloc chargé et un creux",
+        "Lundi: jour le plus régulier"
+      ]
+    },
+    {
+      "period": "3m",
+      "ms": 11389,
+      "produced": 93,
+      "selected": 11,
+      "accessible": 82,
+      "dropped": 68,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Hyperextension: volume par séance stable",
+        "Développé couché incliné aux haltères: volume par séance stable"
+      ],
+      "program": [],
+      "duration": [
+        "GTG et séances classiques"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 93,
+        "admissible": 93,
+        "rejected": 0,
+        "fused": 12,
+        "priority": 11,
+        "reserve": 70,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 27,
+        "inputRows": 27
+      },
+      "views": {
+        "aRetenir": 11,
+        "toutes": 81,
+        "autresAngles": 82
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Cette période mêle un bloc chargé et un creux",
+        "Pompes diamant lentes: une séance atypique, pas encore une tendance",
+        "Lundi: jour le plus régulier",
+        "GTG et séances classiques",
+        "Les pectoraux portent 4,5 % du volume de cette période",
+        "Hyperextension (homonyme non fusionné): le niveau historique se maintient"
+      ]
+    },
+    {
+      "period": "6m",
+      "ms": 11439,
+      "produced": 99,
+      "selected": 11,
+      "accessible": 88,
+      "dropped": 76,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Tractions australiennes — prise pronation: volume par séance en hausse"
+      ],
+      "program": [],
+      "duration": [
+        "GTG et séances classiques"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 99,
+        "admissible": 99,
+        "rejected": 0,
+        "fused": 12,
+        "priority": 11,
+        "reserve": 76,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 26,
+        "inputRows": 26
+      },
+      "views": {
+        "aRetenir": 11,
+        "toutes": 87,
+        "autresAngles": 88
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Ces derniers mois mêlent un bloc chargé et un creux",
+        "Pompes diamant lentes: une séance atypique, pas encore une tendance",
+        "GTG et séances classiques",
+        "Les pectoraux portent 3,1 % du volume de ces derniers mois",
+        "Tractions australiennes — prise serrée supination (homonyme non fusionné): un niveau plus haut se répète",
+        "Hyperextension (homonyme non fusionné): le niveau historique se maintient"
+      ]
+    },
+    {
+      "period": "1y",
+      "ms": 12358,
+      "produced": 91,
+      "selected": 12,
+      "accessible": 79,
+      "dropped": 65,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable"
+      ],
+      "program": [],
+      "duration": [
+        "GTG et séances classiques"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 91,
+        "admissible": 91,
+        "rejected": 0,
+        "fused": 3,
+        "priority": 12,
+        "reserve": 76,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 29,
+        "inputRows": 29
+      },
+      "views": {
+        "aRetenir": 12,
+        "toutes": 88,
+        "autresAngles": 79
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Dips: une séance atypique, pas encore une tendance",
+        "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
+        "Pompes déclinées: une séance atypique, pas encore une tendance",
+        "Élévations latérales: un format plus volumineux se maintient",
+        "Cette année mêle un bloc chargé et un creux",
+        "Pompes diamant lentes: une séance atypique, pas encore une tendance"
+      ]
+    },
+    {
+      "period": "2y",
+      "ms": 13947,
+      "produced": 89,
+      "selected": 12,
+      "accessible": 77,
+      "dropped": 63,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable"
+      ],
+      "program": [],
+      "duration": [
+        "GTG et séances classiques"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 89,
+        "admissible": 89,
+        "rejected": 0,
+        "fused": 3,
+        "priority": 12,
+        "reserve": 74,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 29,
+        "inputRows": 29
+      },
+      "views": {
+        "aRetenir": 12,
+        "toutes": 86,
+        "autresAngles": 77
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Dips: une séance atypique, pas encore une tendance",
+        "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
+        "Pompes déclinées: une séance atypique, pas encore une tendance",
+        "Élévations latérales: un format plus volumineux se maintient",
+        "Ces deux années mêlent un bloc chargé et un creux",
+        "Pompes diamant lentes: une séance atypique, pas encore une tendance"
+      ]
+    },
+    {
+      "period": "all",
+      "ms": 11804,
+      "produced": 87,
+      "selected": 12,
+      "accessible": 75,
+      "dropped": 61,
+      "factual": 0,
+      "unnamedEmergence": 0,
+      "portion": false,
+      "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable"
+      ],
+      "program": [],
+      "duration": [
+        "GTG et séances classiques"
+      ],
+      "grammar": false,
+      "p6": {
+        "produced": 87,
+        "admissible": 87,
+        "rejected": 0,
+        "fused": 3,
+        "priority": 12,
+        "reserve": 72,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 29,
+        "inputRows": 29
+      },
+      "views": {
+        "aRetenir": 12,
+        "toutes": 84,
+        "autresAngles": 75
+      },
+      "comparison": [
+        "load_coverage_insufficient"
+      ],
+      "singleSession": [
+        "Dips: une séance atypique, pas encore une tendance",
+        "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
+        "Pompes déclinées: une séance atypique, pas encore une tendance",
+        "Élévations latérales: un format plus volumineux se maintient",
+        "L’ensemble du suivi mêle un bloc chargé et un creux",
+        "Pompes diamant lentes: une séance atypique, pas encore une tendance"
+      ]
+    }
+  ],
+  "populations": {
+    "octoberCheckedReps": 4167,
+    "octoberEnduranceOutsideReps": {
+      "reps": 200,
+      "records": [
+        {
+          "date": "2026-10-17",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        },
+        {
+          "date": "2026-10-20",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        }
+      ]
+    },
+    "october": {
+      "gap": 200,
+      "populations": [
+        {
+          "id": "checked_reps",
+          "value": 4167,
+          "definition": "répétitions cochées dans reps"
+        },
+        {
+          "id": "checked_plus_endurance",
+          "value": 4367,
+          "definition": "répétitions cochées plus pompes d’endurance absentes de reps"
+        }
+      ],
+      "records": [
+        {
+          "date": "2026-10-17",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        },
+        {
+          "date": "2026-10-20",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        }
+      ],
+      "explained": true
+    },
+    "sixMonthCheckedReps": 31341,
+    "sixMonthEnduranceOutsideReps": {
+      "reps": 500,
+      "records": [
+        {
+          "date": "2026-10-17",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        },
+        {
+          "date": "2026-10-20",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        },
+        {
+          "date": "2026-11-07",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        },
+        {
+          "date": "2026-11-10",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        },
+        {
+          "date": "2026-11-17",
+          "reps": 100,
+          "source": "enduranceData.sessions.pushups"
+        }
+      ]
+    },
+    "legacyCheckedOctober": 4167
+  },
+  "programPlans30d": {
+    "days": 15,
+    "historical": 0,
+    "reconstructed": 0,
+    "abstained": [
+      {
+        "date": "2026-11-05",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-06",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-07",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-08",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-09",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-10",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-11",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-12",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-13",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-14",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-15",
+        "reason": "plan_unknown"
+      },
+      {
+        "date": "2026-11-16",
+        "reason": "plan_unknown"
+      }
+    ]
+  }
+}

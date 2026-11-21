@@ -81,3 +81,49 @@ snapshot / window / period
 - Console « pourquoi perdu »
 
 Voir `IMPLEMENTATION_PROGRESS.md`.
+
+---
+
+## Chapitre Mission 7 — Compréhension structurelle et historique des programmes
+
+**Édition :** `editorial=p6-sovereign-v6` · `program=structural-adherence-v1` · `review=collective-pass4-v3`
+
+### Niveaux navigables
+
+Le moteur relie, sans second pipeline indépendant :
+
+1. Répétitions → 2. Séries → 3. Exercices → 4. Variantes → 5. Groupes musculaires → 6. Fonctions → 7. Blocs → 8. Séances → 9. Familles de séances → 10. Cycles → 11. Programmes → 12. Versions historiques → 13. Parcours réel.
+
+Modules : `sessionStructureGraph.js`, `multidimensionalAdherence.js`, `structuralProgramDiscoveries.js`, contrats P3–P5 (`plannedVsPerformedAssessment`, `recapProgramStructureReport`, ledger musculaire).
+
+### Distinction structurante
+
+| Source | Signification |
+|---|---|
+| Structure programmée (`activeProgram.schedule`) | Intention documentée |
+| Structure reconstruite (pratique) | Exécution observée |
+| Plan historique inconnu | Abstention — jamais le programme actuel appliqué au passé |
+
+Les catégories (PPL, upper/lower, full body…) sont des **repères descriptifs**, pas des cases obligatoires. La similarité de séances repose sur le contenu (exercices, muscles, volume), jamais sur une règle calendaire fixe.
+
+### Adhérence multidimensionnelle
+
+Vecteur (`momentum.adherenceVector.v1`) : reps, séries, exercices, groupes intégralement couverts, concentration des omissions, travail hors prescription. **Les dimensions ne sont pas interchangeables.** Patterns : `targeted_omission`, `uniform_reduction`, `broad_shortfall`, `complete`. Contextualisation multi-jours : omission isolée vs récurrente, sans attribution d’intention.
+
+### Profondeur des conclusions
+
+Grammaire (dimensions choisies selon la valeur) : quoi / comment / contexte / nouveauté / depuis quand / fréquence / explications démontrables / hypothèses exclues / effet organisationnel / incertitude / implications ultérieures (préparation) / surveillance.
+
+Conséquences **organisationnelles démontrables** autorisées en P6. Conséquences physiologiques, recommandations sportives complètes et projections → **P7 uniquement** (`conclusionHierarchyContract.p7ActionabilityPrepFields`).
+
+### Hiérarchie fonctionnelle des conclusions
+
+Rôles : principale · approfondissement · complémentaire autonome · catalogue admissible · historique analytique. Aucun quota arbitraire de cartes. Une preuve supplémentaire n’est pas une nouvelle principale (`conclusionHierarchyContract.js`).
+
+### Quatrième passe
+
+`collectiveReview` réexplore si couverture faible, concentration faible vs journées proches, composition near_equal sous-explorée, ou reprises individuelles sans lecture collective.
+
+### Export d’audit
+
+Secteurs : `source-data/`, `program-understanding/`, conclusions 8 périodes, `reasoning/` (dont `underexploration-report.json`), évaluation A/B/C, DOM, diagnostic. Noms d’artefacts alignés sur l’édition réelle (`p6-replay-v6-latest.json`, jamais un « v4 » silencieux pour une autre édition).

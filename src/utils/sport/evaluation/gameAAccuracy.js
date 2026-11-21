@@ -27,7 +27,9 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
       const hasProof =
         (proof.observedValues || []).length > 0 ||
         (proof.sourceEvents || []).length > 0 ||
-        assertions.some((a) => a?.value != null || a?.referenceValue != null);
+        proof.documentary === true ||
+        (card.claim.limitations || []).includes('non_numeric_documentary_proof') ||
+        assertions.some((a) => a?.value != null || a?.referenceValue != null || (a?.observedValues || []).length > 0);
       if (!hasProof && card.disposition === 'priority') {
         report.cases.push({ id: card.id, issue: 'priority_without_numeric_proof' });
         report.factualConflicts += 1;
@@ -104,6 +106,57 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
     }
     phen.set(id, card.id);
   });
+
+  // Contrôle indépendant : preuve présente mais incorrecte / population / fenêtre
+  (facts.expectedProofs || []).forEach((exp) => {
+    const card = accessible.find((c) => c.id === exp.cardId || c.title === exp.title);
+    if (!card) return;
+    const values = card?.claim?.proof?.observedValues || [];
+    (exp.values || []).forEach((want) => {
+      const got = values.find((v) => v.id === want.id);
+      if (!got) {
+        report.factualConflicts += 1;
+        report.cases.push({
+          id: card.id,
+          issue: 'proof_missing_expected_metric',
+          expected: want,
+          obtained: null
+        });
+        return;
+      }
+      if (Number(got.value) !== Number(want.value)) {
+        report.factualConflicts += 1;
+        report.cases.push({
+          id: card.id,
+          issue: 'proof_value_mismatch',
+          expected: want,
+          obtained: got
+        });
+      }
+    });
+    if (exp.populationId && card?.claim?.population?.id && card.claim.population.id !== exp.populationId) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: card.id,
+        issue: 'population_mismatch',
+        expected: exp.populationId,
+        obtained: card.claim.population.id
+      });
+    }
+  });
+
+  if (facts.wrongDenominatorExample === true) {
+    // Contre-exemple structurel : le harnais peut injecter une preuve avec mauvais dénominateur
+    const injected = facts.injectedWrongProof;
+    if (injected && Number(injected.numerator) / Number(injected.statedDenominator) !== Number(injected.claimedPct)) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        issue: 'incorrect_denominator_detected',
+        expected: injected,
+        obtained: 'caught'
+      });
+    }
+  }
 
   report.pass =
     report.factualConflicts === 0 &&

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { claimFromDiscovery } from '../analyticalClaim';
-import { insightsFromP6 } from '../p6Publication';
+import { insightsFromP6, stablePublicationId } from '../p6Publication';
 import { runGameAAccuracy } from '../evaluation/gameAAccuracy';
 import { runGameBDiscoveryQuality } from '../evaluation/gameBDiscoveryQuality';
 import { runGameCCollective } from '../evaluation/gameCCollective';
@@ -91,10 +91,12 @@ describe('jeux A/B/C reconstitués', () => {
       nature: 'now',
       title: 'Volume concentré',
       body: 'Peu de journées.',
-      evidence: '3 jours'
+      evidence: '3 jours',
+      metrics: { repsNow: 100, repsThen: 80 }
     };
     const claim = claimFromDiscovery(discovery);
-    const published = { ...discovery, id: 'disc_volume_shape', claim, p6Disposition: 'autonomous' };
+    const pubId = stablePublicationId({ ...discovery, claim });
+    const published = { ...discovery, id: pubId, claim, p6Disposition: 'autonomous' };
     const dupRow = { ...published, p6Disposition: 'exact_duplicate_suppressed' };
     const insights = {
       shortTerm: [published],
@@ -103,9 +105,15 @@ describe('jeux A/B/C reconstitués', () => {
       accessibleReserve: [],
       publicationAuthority: 'p6',
       publicationDispositions: [
-        { id: 'disc_volume_shape', disposition: 'published' },
-        { id: 'disc_volume_shape', disposition: 'exact_duplicate_suppressed', reason: 'duplicate_publication_id' },
-        { id: 'disc_volume_shape', disposition: 'exact_duplicate_suppressed', reason: 'already_in_priority_or_reserve' }
+        { id: pubId, occurrenceId: pubId, disposition: 'published' },
+        {
+          id: pubId,
+          occurrenceId: pubId,
+          disposition: 'exact_duplicate_suppressed',
+          reason: 'same_occurrence_id',
+          collapsedInto: pubId,
+          equivalence: { equivalent: true, reason: 'same_occurrence_id', proof: { occurrenceId: pubId } }
+        }
       ]
     };
     const report = runGameCCollective({
@@ -119,7 +127,7 @@ describe('jeux A/B/C reconstitués', () => {
     const idCase = report.cases.find((c) => c.expectedAccessible != null);
     expect(idCase.expectedAccessible).toBe(1);
     expect(idCase.publishedAccessible).toBe(1);
-    expect(idCase.explainedGap).toBe(0);
+    expect(idCase.unexplainedCount ?? idCase.lostSilent?.length ?? 0).toBe(0);
     expect(idCase.admissiblePreserved).toBe(true);
     expect(report.admissiblePreserved).not.toBe(false);
   });

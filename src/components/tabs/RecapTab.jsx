@@ -622,6 +622,83 @@ const RecapTab = ({ isActive = true }) => {
       });
     };
 
+    window.momentumExportAuditIa = async (opts = {}) => {
+      const { buildAuditIaMarkdown, buildAuditIaConcise } = await import(
+        '../../utils/sport/evaluation/auditIaReport'
+      );
+      const { downloadTextFile } = await import('../../utils/sport/analysisExportDownload');
+      const insights = liveBundle?.recapAssessment?.insights || recapAssessment?.insights || null;
+      const p6 = liveBundle?.recapAssessment?.periodDiscoveries?.p6 || null;
+      const md =
+        opts.mode === 'concise'
+          ? buildAuditIaConcise({ insights, p6, mission: 'Mission 11' })
+          : buildAuditIaMarkdown({ insights, p6, mode: 'detailed', mission: 'Mission 11' });
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `momentum-AUDIT_IA-${opts.mode === 'concise' ? 'concise-' : ''}${stamp}.md`;
+      if (opts.download === false) return { ok: true, markdown: md, filename };
+      const dl = downloadTextFile(filename, md, 'text/markdown');
+      return { ok: dl?.ok !== false, download: { ...dl, filename }, markdown: md };
+    };
+
+    window.momentumCopyAuditIa = async (opts = {}) => {
+      const result = await window.momentumExportAuditIa({ ...opts, download: false });
+      if (!result?.markdown) return { ok: false, reason: 'empty' };
+      try {
+        await navigator.clipboard.writeText(result.markdown);
+        return { ok: true, chars: result.markdown.length };
+      } catch (error) {
+        return { ok: false, reason: String(error?.message || error) };
+      }
+    };
+
+    window.momentumExportAnalyticalAudit = async (opts = {}) => {
+      const { buildAnalyticalAudit, validateAnalyticalAudit } = await import(
+        '../../utils/sport/evaluation/buildAnalyticalAudit'
+      );
+      const { downloadAnalysisJson } = await import('../../utils/sport/analysisExportDownload');
+      const insights = liveBundle?.recapAssessment?.insights || recapAssessment?.insights || null;
+      const p6 = liveBundle?.recapAssessment?.periodDiscoveries?.p6 || null;
+      let eightPeriodExport = opts.eightPeriodExport || null;
+      if (opts.includeEightPeriods !== false && typeof window.momentumExportEightPeriods === 'function') {
+        window.dispatchEvent(
+          new CustomEvent('momentum:analysis-export-progress', {
+            detail: { period: 'analytical', phase: 'eight_periods', index: 1, total: 2 }
+          })
+        );
+        eightPeriodExport = await window.momentumExportEightPeriods({
+          ...opts,
+          download: false
+        });
+      }
+      const doc = buildAnalyticalAudit({
+        eightPeriodExport,
+        insights,
+        p6,
+        snapshot: snapshotForRecap,
+        activeProgram,
+        gamesByPeriod: opts.gamesByPeriod || null,
+        domVerify: opts.domVerify || window.__momentumLastDomVerify || null,
+        underexploration: p6?.underexploration || null
+      });
+      const validation = validateAnalyticalAudit(doc);
+      doc.diagnostics = {
+        ...(doc.diagnostics || {}),
+        schemaValidation: validation
+      };
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `momentum-ANALYTICAL_AUDIT-${stamp}.json`;
+      if (opts.download === false) {
+        return { ok: true, document: doc, validation, filename };
+      }
+      const dl = downloadAnalysisJson(doc, { filename });
+      return {
+        ok: dl?.ok !== false,
+        download: { ...dl, filename },
+        validation,
+        schema: doc.schema
+      };
+    };
+
     window.momentumVerifyEightPeriodsDom = async (opts = {}) => {
       const { verifyEightPeriodsAgainstDom } = await import(
         '../../utils/sport/evaluation/domEightPeriodVerify'
@@ -662,6 +739,9 @@ const RecapTab = ({ isActive = true }) => {
       delete window.momentumExportEightPeriods;
       delete window.momentumExportPeriodComparison;
       delete window.momentumExportCompleteAudit;
+      delete window.momentumExportAuditIa;
+      delete window.momentumCopyAuditIa;
+      delete window.momentumExportAnalyticalAudit;
       delete window.momentumVerifyEightPeriodsDom;
       delete window.momentumInjectEvalArchive;
       delete window.momentumAnalysisExportState;

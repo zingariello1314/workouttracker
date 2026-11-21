@@ -29,9 +29,9 @@ function discovery(partial) {
 }
 
 describe('Mission 5 — souveraineté et réconciliation forte', () => {
-  it('édition v4 active', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v4/);
-    expect(analysisEditionKey()).toMatch(/review=collective-pass4-v1/);
+  it('édition P6 active (≥ v7)', () => {
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|10)/);
+    expect(analysisEditionKey()).toMatch(/review=collective-pass4-v[4567]/);
   });
 
   it('détecte une conclusion valide perdue sans disposition', () => {
@@ -97,9 +97,14 @@ describe('Mission 5 — souveraineté et réconciliation forte', () => {
       sources: [],
       blocked: []
     });
-    expect(insights.publicationDispositions.some((d) => d.id === 'bad1' && d.disposition === 'unpublished_invalid')).toBe(
-      true
-    );
+    expect(
+      insights.publicationDispositions.some(
+        (d) =>
+          d.disposition === 'unpublished_invalid' &&
+          d.reason === 'missing_claim' &&
+          (d.id === 'bad1' || d.title === 'Sans claim' || String(d.id || '').includes('Sans claim'))
+      )
+    ).toBe(true);
     expect(insights.publicationReconciliation.lostSilent).toEqual([]);
   });
 

@@ -1,141 +1,32 @@
 {
   "schema": "momentum.evalGameReport.v1",
   "game": "A",
-  "executedAt": "2026-11-20T05:52:34.411Z",
-  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-  "pass": false,
+  "executedAt": "2026-11-21T02:32:27.378Z",
+  "edition": "claim=proof-pipeline-v2;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v8;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-execution-v1;review=collective-pass4-v5;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": true,
   "counters": {
     "missingClaims": 0,
     "fusedSourcesRepublished": 0,
     "unpairedDensities": 0,
     "inventedCauses": 0,
-    "factualConflicts": 6,
+    "factualConflicts": 0,
     "identityMerges": 0
   },
   "cases": [
     {
-      "id": "disc_pending_session",
+      "id": "A-all-clear",
       "game": "A",
-      "referenceData": {
-        "issue": "priority_without_numeric_proof"
+      "referenceData": null,
+      "expected": {
+        "pass": true
       },
-      "expected": "pass_constraint",
       "obtained": {
-        "id": "disc_pending_session",
-        "issue": "priority_without_numeric_proof"
+        "pass": true
       },
-      "status": "fail",
-      "justification": "priority_without_numeric_proof",
-      "delta": {
-        "id": "disc_pending_session",
-        "issue": "priority_without_numeric_proof"
-      },
-      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-      "humanBlindPerformed": false,
-      "referenceKind": "synthetic"
-    },
-    {
-      "id": "disc_th_concentration_now",
-      "game": "A",
-      "referenceData": {
-        "issue": "priority_without_numeric_proof"
-      },
-      "expected": "pass_constraint",
-      "obtained": {
-        "id": "disc_th_concentration_now",
-        "issue": "priority_without_numeric_proof"
-      },
-      "status": "fail",
-      "justification": "priority_without_numeric_proof",
-      "delta": {
-        "id": "disc_th_concentration_now",
-        "issue": "priority_without_numeric_proof"
-      },
-      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-      "humanBlindPerformed": false,
-      "referenceKind": "synthetic"
-    },
-    {
-      "id": "disc_pending_context",
-      "game": "A",
-      "referenceData": {
-        "issue": "priority_without_numeric_proof"
-      },
-      "expected": "pass_constraint",
-      "obtained": {
-        "id": "disc_pending_context",
-        "issue": "priority_without_numeric_proof"
-      },
-      "status": "fail",
-      "justification": "priority_without_numeric_proof",
-      "delta": {
-        "id": "disc_pending_context",
-        "issue": "priority_without_numeric_proof"
-      },
-      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-      "humanBlindPerformed": false,
-      "referenceKind": "synthetic"
-    },
-    {
-      "id": "disc_plan_data_insufficient",
-      "game": "A",
-      "referenceData": {
-        "issue": "priority_without_numeric_proof"
-      },
-      "expected": "pass_constraint",
-      "obtained": {
-        "id": "disc_plan_data_insufficient",
-        "issue": "priority_without_numeric_proof"
-      },
-      "status": "fail",
-      "justification": "priority_without_numeric_proof",
-      "delta": {
-        "id": "disc_plan_data_insufficient",
-        "issue": "priority_without_numeric_proof"
-      },
-      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-      "humanBlindPerformed": false,
-      "referenceKind": "synthetic"
-    },
-    {
-      "id": "disc_muscle_ledger_limits",
-      "game": "A",
-      "referenceData": {
-        "issue": "priority_without_numeric_proof"
-      },
-      "expected": "pass_constraint",
-      "obtained": {
-        "id": "disc_muscle_ledger_limits",
-        "issue": "priority_without_numeric_proof"
-      },
-      "status": "fail",
-      "justification": "priority_without_numeric_proof",
-      "delta": {
-        "id": "disc_muscle_ledger_limits",
-        "issue": "priority_without_numeric_proof"
-      },
-      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
-      "humanBlindPerformed": false,
-      "referenceKind": "synthetic"
-    },
-    {
-      "id": "disc_program_revision_journal_limit",
-      "game": "A",
-      "referenceData": {
-        "issue": "priority_without_numeric_proof"
-      },
-      "expected": "pass_constraint",
-      "obtained": {
-        "id": "disc_program_revision_journal_limit",
-        "issue": "priority_without_numeric_proof"
-      },
-      "status": "fail",
-      "justification": "priority_without_numeric_proof",
-      "delta": {
-        "id": "disc_program_revision_journal_limit",
-        "issue": "priority_without_numeric_proof"
-      },
-      "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "status": "pass",
+      "justification": "aucune violation détectée sur le paquet fourni",
+      "delta": null,
+      "edition": "claim=proof-pipeline-v2;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v8;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-execution-v1;review=collective-pass4-v5;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
       "humanBlindPerformed": false,
       "referenceKind": "synthetic"
     }

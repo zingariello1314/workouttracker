@@ -14,25 +14,22 @@
     },
     "v4": {
       "produced": 6,
-      "priority": 6,
-      "reserve": 0,
+      "priority": 3,
+      "reserve": 3,
       "fused": 0,
       "publishedAccessible": 6,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
-        "La séance d'aujourd'hui n'est pas encore commencée",
+        "Aujourd'hui est un jour de repos",
         "La dernière séance pèse encore sur les 7 jours",
-        "En attendant la séance, ta semaine récente a déjà une forme",
-        "Suivi de plan: preuve historique indisponible",
-        "Limites du compte musculaire sur cette fenêtre",
-        "Historique de révisions de programme indisponible"
+        "Ton programme s'organise en 3 familles de séances apparentées"
       ]
     },
     "delta": {
       "produced": 0,
-      "priority": 0,
-      "reserve": 0,
+      "priority": -3,
+      "reserve": 3,
       "publishedVsRegistry": 0
     }
   },
@@ -50,31 +47,32 @@
       ]
     },
     "v4": {
-      "produced": 51,
+      "produced": 53,
       "priority": 11,
-      "reserve": 28,
+      "reserve": 30,
       "fused": 12,
-      "publishedAccessible": 26,
+      "publishedAccessible": 41,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
         "Des journées à volume proche racontent des séances différentes",
+        "Ton programme s'organise en 3 familles de séances apparentées",
         "Le 13 novembre 2026 porte une grande part de ces 7 jours",
+        "Deux séances apparentées redistribuent un socle commun",
         "Le rythme de ces 7 jours reste lisible par rapport à ton habitude",
         "Ces 7 jours: le volume repose sur peu de journées",
         "3 mouvements concentrent une part importante de ton travail récent",
         "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
         "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué",
         "Mollets debout s'efface de tes jambes",
-        "La structure du travail de ces 7 jours se lit dans les parts classifiables",
-        "Le socle hebdomadaire n’est pas le même que ce qui structure une séance"
+        "Hyperextension: une séance sur ces 7 jours, exercice déjà pratiqué"
       ]
     },
     "delta": {
-      "produced": 0,
+      "produced": 2,
       "priority": 0,
-      "reserve": 0,
-      "publishedVsRegistry": -13
+      "reserve": 2,
+      "publishedVsRegistry": 0
     }
   },
   {
@@ -91,30 +89,32 @@
       ]
     },
     "v4": {
-      "produced": 72,
+      "produced": 74,
       "priority": 11,
       "reserve": 49,
-      "fused": 12,
-      "publishedAccessible": 39,
+      "fused": 14,
+      "publishedAccessible": 60,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
+        "Le volume de ces 30 jours dépasse la période précédente",
         "Tu reprends Face pull après 28 jours d'absence",
-        "Élévations latérales: format repris, pas encore installé",
-        "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé",
-        "Face pull: format repris, pas encore installé",
-        "Kickbacks triceps: format repris, pas encore installé",
-        "Développé Arnold: format repris, pas encore installé",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Deux séances apparentées redistribuent un socle commun",
         "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
-        "Extension triceps debout avec haltère: format repris, pas encore installé",
-        "Single-Arm Dumbbell Lying Triceps Extension: format repris, pas encore installé"
+        "Pectoraux: moins de jours d’exposition qu’en période précédente",
+        "Ton régime d'entraînement s'est installé à 3,7 séances / semaine",
+        "Reprise et niveau habituel le même jour",
+        "Mollets debout a quitté cette fenêtre",
+        "100e séance enregistrée",
+        "Tes mouvements de référence commencent à disposer d’un historique assez fourni"
       ]
     },
     "delta": {
-      "produced": 0,
+      "produced": 2,
       "priority": 0,
       "reserve": 0,
-      "publishedVsRegistry": -21
+      "publishedVsRegistry": 0
     }
   },
   {
@@ -133,30 +133,30 @@
     "v4": {
       "produced": 93,
       "priority": 11,
-      "reserve": 70,
-      "fused": 12,
-      "publishedAccessible": 53,
+      "reserve": 67,
+      "fused": 15,
+      "publishedAccessible": 78,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Tu reprends Élévations latérales après 28 jours d'absence",
+        "Tu reprends Face pull après 28 jours d'absence",
         "Hyperextension: volume par séance stable",
         "Développé couché incliné aux haltères: volume par séance stable",
-        "Élévations latérales: volume par séance en hausse",
-        "Face pull: volume par séance en hausse",
-        "Tractions australiennes — prise serrée supination: volume par séance stable",
-        "Kickbacks triceps: le total baisse surtout parce que tu t’entraînes moins souvent",
-        "Mollets debout: format repris, pas encore installé",
-        "Squat haltères: format repris, pas encore installé",
-        "Hyperextension: volume par séance stable",
-        "Développé couché incliné aux haltères: volume par séance stable",
-        "Curl concentration: volume par séance stable"
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Le trimestre a une trajectoire interne, pas seulement un total",
+        "Le haut du corps travaille surtout en poussée",
+        "100e séance enregistrée",
+        "Le 16 octobre 2026, tu as dépassé 25 000 répétitions cumulées"
       ]
     },
     "delta": {
       "produced": 0,
       "priority": 0,
-      "reserve": 0,
-      "publishedVsRegistry": -28
+      "reserve": -3,
+      "publishedVsRegistry": 0
     }
   },
   {
@@ -175,30 +175,30 @@
     "v4": {
       "produced": 99,
       "priority": 11,
-      "reserve": 76,
-      "fused": 12,
-      "publishedAccessible": 58,
+      "reserve": 73,
+      "fused": 15,
+      "publishedAccessible": 84,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
         "Tractions australiennes — prise pronation: volume par séance en hausse",
         "Dips: volume par séance en hausse",
-        "Relevés de genoux à la barre: volume par séance stable",
-        "Tractions australiennes — prise large pronation: volume par séance en hausse",
-        "Pompes déclinées: recul confirmé sur plusieurs séances",
-        "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
-        "Curl assis dos calé: le total monte surtout parce que tu t’entraînes plus souvent",
-        "Curl Zottman: le total monte surtout parce que tu t’entraînes plus souvent",
-        "Relevés de genoux aux parallèles: volume par séance stable",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
         "octobre 2026 interrompt la baisse depuis juin 2026",
-        "Les deux moitiés de ces six mois n'ont pas le même volume"
+        "Les deux moitiés de ces six mois n'ont pas le même volume",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Le haut du corps travaille surtout en poussée",
+        "50e séance enregistrée"
       ]
     },
     "delta": {
       "produced": 0,
       "priority": 0,
-      "reserve": 0,
-      "publishedVsRegistry": -29
+      "reserve": -3,
+      "publishedVsRegistry": 0
     }
   },
   {
@@ -215,32 +215,32 @@
       ]
     },
     "v4": {
-      "produced": 91,
+      "produced": 92,
       "priority": 11,
-      "reserve": 77,
-      "fused": 3,
-      "publishedAccessible": 60,
+      "reserve": 75,
+      "fused": 6,
+      "publishedAccessible": 86,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
         "Relevés de genoux à la barre: volume par séance stable",
         "Dips: une séance atypique, pas encore une tendance",
-        "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
-        "Tractions australiennes — prise pronation: volume par séance en hausse",
-        "Dips: volume par séance en hausse",
-        "Relevés de genoux à la barre: volume par séance stable",
-        "Pompes déclinées: une séance atypique, pas encore une tendance",
-        "Pompes déclinées: recul confirmé sur plusieurs séances",
-        "Face pull: volume par séance en hausse",
-        "Curl Zottman s'installe dans ton entraînement",
-        "octobre 2026 interrompt la baisse depuis juin 2026"
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Première semaine à 6 entraînements",
+        "octobre 2026 interrompt la baisse depuis juin 2026",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Le haut du corps travaille surtout en poussée",
+        "50e séance enregistrée"
       ]
     },
     "delta": {
-      "produced": 0,
+      "produced": 1,
       "priority": -1,
-      "reserve": 1,
-      "publishedVsRegistry": -28
+      "reserve": -1,
+      "publishedVsRegistry": 0
     }
   },
   {
@@ -257,32 +257,32 @@
       ]
     },
     "v4": {
-      "produced": 89,
+      "produced": 90,
       "priority": 11,
       "reserve": 75,
-      "fused": 3,
-      "publishedAccessible": 58,
+      "fused": 4,
+      "publishedAccessible": 86,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Tu reprends Pompes pseudo-planche inclinées après 35 jours d'absence",
         "Relevés de genoux à la barre: volume par séance stable",
         "Dips: une séance atypique, pas encore une tendance",
-        "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
-        "Tractions australiennes — prise pronation: volume par séance en hausse",
-        "Dips: volume par séance en hausse",
-        "Relevés de genoux à la barre: volume par séance stable",
-        "Pompes déclinées: une séance atypique, pas encore une tendance",
-        "Pompes déclinées: recul confirmé sur plusieurs séances",
-        "Face pull: volume par séance en hausse",
-        "Curl Zottman s'installe dans ton entraînement",
-        "octobre 2026 interrompt la baisse depuis juin 2026"
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Première semaine à 6 entraînements",
+        "octobre 2026 interrompt la baisse depuis juin 2026",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Les trois derniers mois ont une trajectoire interne",
+        "50e séance enregistrée"
       ]
     },
     "delta": {
-      "produced": 0,
+      "produced": 1,
       "priority": -1,
       "reserve": 1,
-      "publishedVsRegistry": -28
+      "publishedVsRegistry": 0
     }
   },
   {
@@ -299,32 +299,32 @@
       ]
     },
     "v4": {
-      "produced": 87,
+      "produced": 88,
       "priority": 11,
       "reserve": 73,
-      "fused": 3,
-      "publishedAccessible": 56,
+      "fused": 4,
+      "publishedAccessible": 84,
       "authority": "p6",
       "lostSilent": 0,
       "examples": [
+        "Pompes sur poignées avec gilet reviennent après 35 jours",
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Tu reprends Pompes pseudo-planche inclinées après 35 jours d'absence",
         "Relevés de genoux à la barre: volume par séance stable",
         "Dips: une séance atypique, pas encore une tendance",
-        "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tendance",
-        "Tractions australiennes — prise pronation: volume par séance en hausse",
-        "Dips: volume par séance en hausse",
-        "Relevés de genoux à la barre: volume par séance stable",
-        "Pompes déclinées: une séance atypique, pas encore une tendance",
-        "Pompes déclinées: recul confirmé sur plusieurs séances",
-        "Face pull: volume par séance en hausse",
-        "Curl Zottman s'installe dans ton entraînement",
-        "octobre 2026 interrompt la baisse depuis juin 2026"
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Première semaine à 6 entraînements",
+        "octobre 2026 interrompt la baisse depuis juin 2026",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Les trois derniers mois ont une trajectoire interne",
+        "50e séance enregistrée"
       ]
     },
     "delta": {
-      "produced": 0,
+      "produced": 1,
       "priority": -1,
       "reserve": 1,
-      "publishedVsRegistry": -28
+      "publishedVsRegistry": 0
     }
   }
 ]

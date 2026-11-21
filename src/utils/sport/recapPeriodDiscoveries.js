@@ -63,6 +63,9 @@ import {
   buildPeriodComparisonsAsync
 } from './recapPeriodComparisons';
 import { detectDiscoveries } from './recapPeriodDetectDiscoveries';
+import { composeStructuralProgramDiscoveries } from './structuralProgramDiscoveries';
+import { assessHistoricalPlans } from './plannedVsPerformedAssessment';
+import { parisTodayYmd } from './recapTemporalContracts';
 import {
   accessibleDiscoveryCatalog,
   selectPeriodDiscoveriesWithTrace,
@@ -185,7 +188,14 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
         trainedPairs: journeyPairs,
         allNights: journeyNights,
         vs: 'sessions'
-      })
+      }),
+      planAssessments: measure('planAssessments', () =>
+        assessHistoricalPlans(
+          opts.snapshot,
+          opts.window,
+          opts.todayYmd || parisTodayYmd()
+        )
+      )
     }));
   const sleepRaw =
     pre?.sleepRaw ||
@@ -341,8 +351,29 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       }
     })
   );
+  const structuralPack = measure('structuralProgram', () =>
+    composeStructuralProgramDiscoveries({
+      activeProgram: opts.activeProgram || extras.activeProgram || null,
+      voiceKey: comparisons.voice?.key || 'week',
+      assessments: extras.planAssessments || [],
+      window: opts.window || null
+    })
+  );
+  const structuralRaw = (structuralPack.discoveries || []).map((card) =>
+    discovery({
+      kind: card.kind,
+      nature: card.nature,
+      family: card.family,
+      title: card.title,
+      body: card.body,
+      evidence: card.evidence,
+      weights: card.weights,
+      metrics: card.metrics
+    })
+  );
   const rawAll = [
     ...measure('detectDiscoveries', () => detectDiscoveries(comparisons, extras)),
+    ...structuralRaw,
     ...measure('rewriteSleep', () => rewriteSleepDiscoveries(sleepRaw, allNights)),
     ...measure('threads', () =>
       buildThreadDiscoveries({
@@ -495,7 +526,12 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
           accessible: [...p6.priority, ...p6.reserve, ...p6.sources]
         }
       : accessibleCatalog,
-    p6,
+    p6: {
+      ...p6,
+      structuralGraph: structuralPack?.graph || null,
+      omissionCtx: structuralPack?.omissionCtx || null
+    },
+    structuralGraph: structuralPack?.graph || null,
     packRole: 'pipeline',
     /** E0 : limites méthodologiques (ex. plan sans snapshot) — contexte, pas cartes principales. */
     reliabilityNotes: traced.reliabilityNotes || [],
@@ -685,7 +721,14 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
       trainedPairs: journeyPairs,
       allNights: journeyNights,
       vs: 'sessions'
-    })
+    }),
+    planAssessments: measure('planAssessments', () =>
+      assessHistoricalPlans(
+        opts.snapshot,
+        opts.window,
+        opts.todayYmd || parisTodayYmd()
+      )
+    )
   }));
 
   await coopGate(coop);

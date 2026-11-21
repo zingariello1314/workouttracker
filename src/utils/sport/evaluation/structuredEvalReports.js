@@ -89,18 +89,33 @@ export function structureGameBReport(raw, { edition = analysisEditionKey() } = {
   const cases = (raw?.cases || []).map((row) => {
     const ref = refs.find((item) => item.id === row.id) || null;
     const status =
-      row.result === 'hit' ? 'pass' : row.result === 'shallow' ? 'partial' : 'fail';
+      row.result === 'hit' || row.result === 'hit_abstain'
+        ? 'pass'
+        : row.result === 'not_applicable'
+          ? 'not_applicable'
+          : row.result === 'shallow' || row.result === 'scored' || row.result === 'partial'
+            ? 'partial'
+            : 'fail';
     return caseRow({
       id: row.id || 'B-case',
       game: EVAL_GAME.B_DISCOVERY_QUALITY,
-      referenceData: ref?.input || ref?.days || ref?.events || null,
-      expected: ref
-        ? {
-            prefer: ref.prefer || null,
-            rejectAttractive: ref.rejectAttractive || null,
-            mode: ref.mode || 'volume'
-          }
-        : null,
+      referenceData:
+        row.referenceData ||
+        ref?.input ||
+        ref?.days ||
+        ref?.events ||
+        (row.kind || row.title
+          ? { kind: row.kind || null, title: row.title || null, body: row.body || null }
+          : null),
+      expected: row.expected
+        ? row.expected
+        : ref
+          ? {
+              prefer: ref.prefer || null,
+              rejectAttractive: ref.rejectAttractive || null,
+              mode: ref.mode || 'volume'
+            }
+          : null,
       obtained: row,
       status,
       justification:
@@ -108,10 +123,19 @@ export function structureGameBReport(raw, { edition = analysisEditionKey() } = {
           ? row.referenceKind === 'synthetic'
             ? 'référence synthétique satisfaite'
             : 'référence satisfaite'
+          : row.result === 'hit_abstain'
+            ? 'abstention correcte (référence négative satisfaite)'
+            : row.result === 'not_applicable'
+              ? row.reason || 'référence non applicable aux données du snapshot'
           : row.result === 'shallow'
             ? 'signal partiel — pas une découverte aboutie'
-            : 'écart à la référence',
-      delta: status === 'pass' ? null : row,
+            : row.result === 'scored'
+              ? 'dimensions de qualité scorées (informatif, hors PASS/FAIL binaire)'
+            : row.result === 'sleep_causality_overclaim'
+              ? row.reason ||
+                `causalité sommeil suspecte${row.incriminatedSpan ? ` (« ${row.incriminatedSpan} »)` : ''}`
+              : 'écart à la référence',
+      delta: status === 'pass' || status === 'not_applicable' || status === 'partial' ? null : row,
       edition,
       humanBlind: false,
       referenceKind: row.referenceKind || ref?.kind || 'synthetic'

@@ -3,6 +3,16 @@
  * pas d'un ancien paragraphe réécrit après coup.
  */
 
+/** Codes de limitation → prose naturelle (ou null = ne pas injecter dans le corps). */
+const LIMIT_PROSE = Object.freeze({
+  association_not_causation:
+    'Association descriptive observée : ce n’est pas une preuve que le sommeil cause le volume ou la performance.',
+  association_only: null,
+  non_numeric_documentary_proof: null,
+  multi_threshold_consolidated: 'Plusieurs seuils convergent vers la même lecture descriptive.',
+  missing_claim: null
+});
+
 function cleanSentence(text) {
   return String(text || '')
     .replace(/\s+/g, ' ')
@@ -24,36 +34,62 @@ function titleFromClaim(claim, discovery) {
   return statement;
 }
 
+function limitToProse(code) {
+  const key = String(code || '').trim();
+  if (!key) return null;
+  if (Object.prototype.hasOwnProperty.call(LIMIT_PROSE, key)) return LIMIT_PROSE[key];
+  // Ne jamais publier un identifiant technique brut comme corps.
+  if (/^[a-z0-9_]+$/i.test(key) && key.includes('_')) return null;
+  return cleanSentence(key);
+}
+
 function bodyFromParts({ claim, exploration, discovery }) {
   const parts = [];
   const conclusion = cleanSentence(exploration?.conclusion || '');
-  const statement = cleanSentence(claim?.statement || '');
   const legacy = cleanSentence(discovery?.body || discovery?.text || '');
-  if (conclusion) parts.push(conclusion);
-  else if (statement && statement !== conclusion) parts.push(statement);
+  const statement = cleanSentence(claim?.statement || '');
+  const title = titleFromClaim(claim, discovery);
+
+  // Contenu analytique d’abord : exploration → corps hérité → thèse (si distincte du titre)
+  if (conclusion) {
+    parts.push(conclusion);
+  } else if (legacy) {
+    parts.push(legacy);
+  } else if (statement && statement !== title) {
+    parts.push(statement);
+  }
+
   const retained = (exploration?.hypotheses || []).filter((row) => row.status === 'supported');
-  if (retained.length && !conclusion) {
+  if (retained.length && !conclusion && !legacy) {
     parts.push(`Les observations retenues : ${retained.map((row) => row.detail).join(' ; ')}.`);
   }
+
+  // Limitations structurées → prose utile uniquement si le corps ne l’exprime déjà pas
   const limits = Array.isArray(claim?.limitations) ? claim.limitations.filter(Boolean) : [];
-  if (limits.length) {
-    parts.push(cleanSentence(limits[0]));
-  }
-  // Héritage uniquement s'il apporte une preuve absente de la thèse.
-  if (legacy && !parts.some((part) => part.includes(legacy.slice(0, 40)))) {
-    const evidence = cleanSentence(discovery?.evidence || '');
-    if (evidence && legacy.includes(evidence.slice(0, Math.min(24, evidence.length)))) {
-      // garder le corps hérité s'il porte encore les preuves chiffrées
-      if (!conclusion) parts.push(legacy);
+  const bodySoFar = parts.join(' ').toLowerCase();
+  for (const lim of limits) {
+    const prose = limitToProse(lim);
+    if (!prose) continue;
+    if (/caus|association|pas une preuve/i.test(bodySoFar) && /caus|association/i.test(prose)) {
+      continue;
     }
+    parts.push(prose);
+    break; // une seule précision méthodologique dans le corps public
   }
+
   let body = parts.filter(Boolean).join(' ');
   body = cleanSentence(body);
-  const title = titleFromClaim(claim, discovery);
   if (title && body.startsWith(title)) {
     body = cleanSentence(body.slice(title.length).replace(/^[:.\s—-]+/, ''));
   }
-  return body || legacy || statement;
+  // Garde-fou : jamais un corps = code technique seul, ni limitation seule si un corps analytique existe
+  const onlyLimit =
+    body &&
+    Object.values(LIMIT_PROSE).some((p) => p && body === cleanSentence(p));
+  if (!body || /^[a-z0-9_]+$/i.test(body) || (onlyLimit && legacy && legacy.length > body.length)) {
+    body = legacy || (statement !== title ? statement : '') || body || '';
+  }
+  return body;
 }
 
 /**
@@ -67,8 +103,14 @@ export function draftFromClaim(discovery, claim, exploration = null) {
   const allowed = Array.isArray(claim.allowedStatements) ? claim.allowedStatements : [];
   const textOk =
     !allowed.length ||
-    allowed.some((line) => body.includes(cleanSentence(line).slice(0, 24)) || title.includes(cleanSentence(line).slice(0, 24))) ||
-    Boolean(exploration?.conclusion);
+    allowed.some(
+      (line) =>
+        body.includes(cleanSentence(line).slice(0, 24)) ||
+        title.includes(cleanSentence(line).slice(0, 24)) ||
+        line === 'association_only'
+    ) ||
+    Boolean(exploration?.conclusion) ||
+    Boolean(discovery?.body);
   return {
     ...discovery,
     title,
@@ -86,3 +128,5 @@ export function draftFromClaim(discovery, claim, exploration = null) {
     }
   };
 }
+
+export { bodyFromParts, limitToProse, titleFromClaim };

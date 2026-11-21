@@ -3,24 +3,24 @@
   "humanBlindPerformed": false,
   "reveals": {
     "blind-today": {
-      "A": "v3",
-      "B": "v4"
+      "A": "baseline",
+      "B": "current"
     },
     "blind-7d": {
-      "A": "v4",
-      "B": "v3"
+      "A": "current",
+      "B": "baseline"
     },
     "blind-30d": {
-      "A": "v3",
-      "B": "v4"
+      "A": "baseline",
+      "B": "current"
     },
     "blind-6m": {
-      "A": "v4",
-      "B": "v3"
+      "A": "current",
+      "B": "baseline"
     },
     "blind-1y": {
-      "A": "v3",
-      "B": "v4"
+      "A": "baseline",
+      "B": "current"
     }
   }
 }

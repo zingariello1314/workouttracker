@@ -1,7 +1,9 @@
 {
-  "schema": "momentum.mission5BisComplete.v1",
-  "executedAt": "2026-11-20T06:06:09.314Z",
-  "edition": "consolidation=narrative-coherence-v2;duration=paired-density-v3;editorial=p6-sovereign-v4;gtg=classic-exclusive-v1;identity=program-schedule-v1;program=planned-vs-performed-v1;review=collective-pass4-v1;scope=short-window-anchor-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "schema": "momentum.p6MissionComplete.v1",
+  "mission": "mission9",
+  "snapshot": "momentum-sport-backup-2026-11-19",
+  "executedAt": "2026-11-21T03:16:35.488Z",
+  "edition": "claim=proof-pipeline-v3;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v9;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-execution-v1;review=collective-pass4-v6;scope=short-window-anchor-v1;sleep=association-prose-v1;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
   "completeReplay": true,
   "humanBlindPerformed": false,
   "domVerified": false,
@@ -20,7 +22,11 @@
       "status": "included"
     },
     {
-      "name": "replays/p6-replay-v4-latest.json",
+      "name": "replays/p6-replay-v9-latest.json",
+      "status": "included"
+    },
+    {
+      "name": "replays/p6-replay-latest.json",
       "status": "included"
     },
     {
@@ -28,7 +34,7 @@
       "status": "included"
     },
     {
-      "name": "summaries/MISSION5_BILAN_P6.md",
+      "name": "summaries/MISSION8_BILAN_P6.md",
       "status": "included"
     },
     {
@@ -56,7 +62,7 @@
       "status": "included"
     },
     {
-      "name": "summaries/mission5-bis-summary.md",
+      "name": "summaries/p6-sovereign-v9-replay-summary.md",
       "status": "included"
     }
   ],

@@ -791,9 +791,12 @@ export function consolidateSleepCandidates(candidates = []) {
   if (volumeLike.length <= 1) return rows;
   const primary = { ...volumeLike[0] };
   const extras = volumeLike.slice(1);
+  const baseBody = String(primary.body || primary.text || '').trim();
   primary.body = [
-    primary.body || primary.text || '',
-    `Plusieurs seuils convergent (${extras.length + 1} lectures) : association descriptive, pas une causalité.`
+    baseBody,
+    /seuils convergent|association descriptive/i.test(baseBody)
+      ? null
+      : `Plusieurs seuils convergent (${extras.length + 1} lectures) : association descriptive, pas une causalité.`
   ]
     .filter(Boolean)
     .join(' ');
@@ -801,9 +804,17 @@ export function consolidateSleepCandidates(candidates = []) {
     ...(primary.metrics || {}),
     associationOnly: true,
     consolidatedSleepThresholds: extras.map((row) => row.kind || row.id || row.title).filter(Boolean),
-    limits: [...(primary.metrics?.limits || []), 'association_not_causation', 'multi_threshold_consolidated']
+    limits: [
+      ...(primary.metrics?.limits || []).filter((x) => x !== 'association_not_causation'),
+      'multi_threshold_consolidated'
+    ],
+    observedValues: primary.metrics?.observedValues || null
   };
-  primary.limitations = [...(primary.limitations || []), 'association_not_causation'];
+  // Limitation structurée uniquement — le corps conserve l’analyse rédigée
+  primary.limitations = [
+    ...(primary.limitations || []).filter((x) => x !== 'association_not_causation'),
+    'association_not_causation'
+  ];
   const drop = new Set(extras);
   return [primary, ...rows.filter((row) => !drop.has(row) && row !== volumeLike[0])];
 }

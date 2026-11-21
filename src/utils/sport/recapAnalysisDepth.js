@@ -59,7 +59,19 @@ function concentrationIdea(dossier) {
       analysisType: 'anomaly',
       title: 'La dernière séance pèse encore sur les 7 jours',
       body,
-      factId: `last-session|${o.lastSession.dateLabel}`
+      factId: `last-session|${o.lastSession.dateLabel}`,
+      metrics: {
+        totalReps: o.lastSession.reps,
+        sharePct: share?.share ?? null,
+        windowReps: share?.wideReps ?? null,
+        peakReps: share?.reps ?? o.lastSession.reps,
+        dates: [o.lastSession.date || o.lastSession.dateLabel].filter(Boolean),
+        observedValues: [
+          { id: 'lastSessionReps', value: o.lastSession.reps, unit: 'reps' },
+          ...(hasNum(share?.share) ? [{ id: 'sharePct', value: share.share, unit: 'percent' }] : []),
+          ...(hasNum(share?.wideReps) ? [{ id: 'windowReps', value: share.wideReps, unit: 'reps' }] : [])
+        ]
+      }
     };
   }
   const peak = o.peak;
@@ -75,7 +87,18 @@ function concentrationIdea(dossier) {
     analysisType: 'anomaly',
     title: `Le ${peak.dateLabel} porte une grande part de ${String(dossier.windowLabel || 'la fenêtre').toLowerCase()}`,
     body: `Le ${peak.dateLabel} concentre ${fmtInt(peak.reps)} répétitions, soit ${fmtPct(peak.share)}${of}.${names} Cela décrit la répartition de cette fenêtre.`,
-    factId: `peak|${peak.dateLabel}|${dossier.voice || ''}`
+    factId: `peak|${peak.dateLabel}|${dossier.voice || ''}`,
+    metrics: {
+      peakReps: peak.reps,
+      sharePct: peak.share,
+      totalReps: o.reps ?? null,
+      dates: [peak.date || peak.dateLabel].filter(Boolean),
+      observedValues: [
+        { id: 'peakReps', value: peak.reps, unit: 'reps' },
+        { id: 'sharePct', value: peak.share, unit: 'percent' },
+        ...(hasNum(o.reps) ? [{ id: 'windowReps', value: o.reps, unit: 'reps' }] : [])
+      ]
+    }
   };
 }
 
@@ -96,7 +119,18 @@ function rhythmIdea(dossier) {
       title: 'Les deux moitiés de ces six mois n\'ont pas le même volume',
       body: `Le bloc ${a.label} compte ${fmtInt(a.reps)} répétitions en ${fmtInt(a.sessions)} jours, et le bloc ${b.label} en compte ${fmtInt(b.reps)} en ${fmtInt(b.sessions)} jours. ${up.label} est au-dessus de ${down.label}.`,
       factId: `blocks|6m|${a.label}|${b.label}`,
-      metrics: { blockAReps: a.reps, blockBReps: b.reps }
+      metrics: {
+        blockAReps: a.reps,
+        blockBReps: b.reps,
+        sessionsNow: a.sessions,
+        sessionsThen: b.sessions,
+        observedValues: [
+          { id: 'blockAReps', value: a.reps, unit: 'reps' },
+          { id: 'blockBReps', value: b.reps, unit: 'reps' },
+          { id: 'blockADays', value: a.sessions, unit: 'days' },
+          { id: 'blockBDays', value: b.sessions, unit: 'days' }
+        ]
+      }
     };
   }
   if (dossier.voice === '1y' && dossier.coverage) {
@@ -120,7 +154,15 @@ function rhythmIdea(dossier) {
       analysisType: 'comparison',
       title: 'L\'année comptée n\'a pas le même poids chaque mois',
       body: lines.join(' '),
-      factId: 'coverage|1y'
+      factId: 'coverage|1y',
+      metrics: {
+        peakReps: c.high?.reps ?? null,
+        troughReps: c.low?.reps ?? null,
+        observedValues: [
+          ...(hasNum(c.high?.reps) ? [{ id: 'highMonthReps', value: c.high.reps, unit: 'reps' }] : []),
+          ...(hasNum(c.low?.reps) ? [{ id: 'lowMonthReps', value: c.low.reps, unit: 'reps' }] : [])
+        ]
+      }
     };
   }
   if (dossier.voice === 'today') return null;
@@ -140,7 +182,20 @@ function rhythmIdea(dossier) {
       ? `${label} sont au-dessus du rythme de renforcement d'avant`
       : `${label} sont en dessous du rythme de renforcement d'avant`,
     body: `${label} sont à environ ${fmtInt(o.repsPerSession)} répétitions par journée de renforcement (${fmtInt(o.strengthDays)} journées), contre environ ${fmtInt(cmp.repsPerSession)} pour ${cmp.label} (${fmtInt(cmp.strengthDays)} journées).`,
-    factId: `rate|${dossier.voice || ''}|${cmp.label}`
+    factId: `rate|${dossier.voice || ''}|${cmp.label}`,
+    metrics: {
+      repsPerSessionNow: o.repsPerSession,
+      repsPerSessionThen: cmp.repsPerSession,
+      activeDaysNow: o.strengthDays,
+      activeDaysThen: cmp.strengthDays,
+      vsPriorPct: pct,
+      observedValues: [
+        { id: 'repsPerSessionNow', value: o.repsPerSession, unit: 'reps' },
+        { id: 'repsPerSessionThen', value: cmp.repsPerSession, unit: 'reps' },
+        { id: 'strengthDaysNow', value: o.strengthDays, unit: 'days' },
+        { id: 'strengthDaysThen', value: cmp.strengthDays, unit: 'days' }
+      ]
+    }
   };
 }
 
@@ -152,7 +207,17 @@ function continuityIdea(dossier) {
     analysisType: 'comparison',
     title: `${c.narrowLabel} pèsent une grande part de ${c.wideLabel}`,
     body: `${c.narrowLabel} comptent ${fmtInt(c.narrowReps)} répétitions, soit ${fmtPct(c.share)} des ${fmtInt(c.wideReps)} répétitions de ${c.wideLabel}.`,
-    factId: `share|${c.narrowLabel}|${c.wideLabel}`
+    factId: `share|${c.narrowLabel}|${c.wideLabel}`,
+    metrics: {
+      totalReps: c.narrowReps,
+      windowReps: c.wideReps,
+      sharePct: c.share,
+      observedValues: [
+        { id: 'narrowReps', value: c.narrowReps, unit: 'reps' },
+        { id: 'wideReps', value: c.wideReps, unit: 'reps' },
+        { id: 'sharePct', value: c.share, unit: 'percent' }
+      ]
+    }
   };
 }
 
@@ -173,7 +238,17 @@ function repertoireIdea(dossier) {
         ? `Sur une fenêtre courte, la capacité spécifique tient encore. Le reprendre plus bas que ${fmtInt(exit.reps)} montre si le geste revient.`
         : `Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas sur la fenêtre suivante, c'est un changement de répertoire.`
     }`,
-    factId: `exit|${String(label).toLowerCase()}|${dossier.voice || ''}`
+    factId: `exit|${String(label).toLowerCase()}|${dossier.voice || ''}`,
+    metrics: {
+      totalReps: exit.reps,
+      repsThen: exit.reps,
+      repsNow: 0,
+      name: label,
+      observedValues: [
+        { id: 'priorWindowReps', value: exit.reps, unit: 'reps' },
+        { id: 'currentWindowReps', value: 0, unit: 'reps' }
+      ]
+    }
   };
 }
 
@@ -205,7 +280,16 @@ function pushPullIdea(dossier) {
       : 'Le haut du corps travaille surtout en tirage',
     body: `${meaning} ${numbers}${ratioBit}. Le ratio vient en second : c’est la répartition du volume qui décrit la fenêtre.`,
     factId: `pushPull|${dossier.voice || ''}|${pushHeavy ? 'push' : 'pull'}`,
-    metrics: { pushReps: push, pullReps: pull, ratio: Math.round(ratio * 10) / 10 }
+    metrics: {
+      pushReps: push,
+      pullReps: pull,
+      ratio: Math.round(ratio * 10) / 10,
+      observedValues: [
+        { id: 'pushReps', value: push, unit: 'reps' },
+        { id: 'pullReps', value: pull, unit: 'reps' },
+        { id: 'pushPullRatio', value: Math.round(ratio * 100) / 100, unit: 'ratio' }
+      ]
+    }
   };
 }
 
@@ -229,7 +313,20 @@ function compositionIdea(dossier) {
     title: `${capFirst(lead.label)} portent une part nette de ${String(label).toLowerCase()}`,
     body: `${fmtInt(lead.reps)} des ${fmtInt(total)} répétitions concernent ${lead.label}, soit ${fmtPct(share)}.${secondBit} Ce chiffre décrit où va le volume de ${String(label).toLowerCase()}.`,
     factId: `composition|${String(lead.label).toLowerCase()}|${dossier.voice || ''}`,
-    metrics: { leadLabel: lead.label, leadReps: lead.reps, share }
+    metrics: {
+      leadLabel: lead.label,
+      leadReps: lead.reps,
+      sharePct: share,
+      totalReps: total,
+      observedValues: [
+        { id: 'leadReps', value: lead.reps, unit: 'reps' },
+        { id: 'windowReps', value: total, unit: 'reps' },
+        { id: 'sharePct', value: share, unit: 'percent' },
+        ...(second?.label && hasNum(second.reps)
+          ? [{ id: 'secondReps', value: second.reps, unit: 'reps' }]
+          : [])
+      ]
+    }
   };
 }
 

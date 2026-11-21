@@ -103,7 +103,8 @@ describe('export de la période demandée', () => {
         renderedPeriod: '7d',
         renderedWindowStart: week.start,
         renderedWindowEnd: week.end,
-        cards: [{ title: 'Volume concentré' }]
+        // Périmètre accessible = priorité + réserve
+        cards: [{ title: 'Volume concentré' }, { title: 'Le répertoire tient' }]
       }
     });
     expect(dossier.userAccessible.priority).toHaveLength(1);

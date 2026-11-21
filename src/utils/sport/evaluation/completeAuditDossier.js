@@ -18,6 +18,8 @@ import {
   upsertEvalArchiveSlice
 } from './evalArchive';
 import { runStructuredEvalSuite } from './structuredEvalReports';
+import { buildAuditIaMarkdown, buildAuditIaConcise } from './auditIaReport';
+import { buildAnalyticalAudit, validateAnalyticalAudit } from './buildAnalyticalAudit';
 
 function fpKey(fp) {
   if (!fp) return null;
@@ -123,6 +125,57 @@ export async function assembleCompleteAuditDossier({
     return true;
   };
 
+  // 0) Rapport d’audit IA + JSON normalisé (Mission 11)
+  const auditIaOpts = {
+    eightPeriodExport,
+    insights,
+    measure,
+    p6,
+    snapshotFingerprint: liveFingerprint,
+    gamesByPeriod,
+    underexploration: p6?.underexploration || null,
+    domVerify,
+    mission: 'Mission 11'
+  };
+  push('AUDIT_IA.md', buildAuditIaMarkdown({ ...auditIaOpts, mode: 'detailed' }), {
+    source: 'assembled',
+    executedAt: assembledAt,
+    note: 'Markdown autonome pour évaluateur extérieur'
+  });
+  push('AUDIT_IA_concise.md', buildAuditIaConcise(auditIaOpts), {
+    source: 'assembled',
+    executedAt: assembledAt
+  });
+  const analyticalAudit = buildAnalyticalAudit({
+    eightPeriodExport,
+    insights,
+    measure,
+    p6,
+    snapshot,
+    activeProgram: snapshot?.activeProgram || null,
+    gamesByPeriod,
+    domVerify,
+    memorySummary: {
+      note: 'historyCount nul = souvent historique non passé à l’export, pas mémoire vide'
+    },
+    underexploration: p6?.underexploration || null
+  });
+  const auditValidation = validateAnalyticalAudit(analyticalAudit);
+  if (!auditValidation.ok) {
+    warnings.push(`ANALYTICAL_AUDIT validation: ${auditValidation.errors.join(', ')}`);
+  }
+  push('ANALYTICAL_AUDIT.json', analyticalAudit, {
+    source: 'assembled',
+    executedAt: assembledAt,
+    fingerprint: fpKey(liveFingerprint),
+    note: `schema v1 · cards=${auditValidation.counts.cards} · claims=${auditValidation.counts.claims} · candidates=${auditValidation.counts.candidates}`
+  });
+  push(
+    'ANALYTICAL_AUDIT.validation.json',
+    { ...auditValidation, assembledAt, edition },
+    { source: 'assembled', executedAt: assembledAt }
+  );
+
   // 1) Export 8 périodes + markdown + comparaisons
   if (eightPeriodExport && !eightPeriodExport.refused) {
     push('eight-periods/eight-periods.json', eightPeriodExport, {
@@ -166,7 +219,7 @@ export async function assembleCompleteAuditDossier({
   const liveFp = fpKey(liveFingerprint);
   const replayStale =
     Boolean(replay && liveFp && replayFp && replayFp !== liveFp) ||
-    Boolean(replay?.edition && replay.edition !== edition && !String(replay.edition || '').includes('p6-sovereign-v4'));
+    Boolean(replay?.edition && replay.edition !== edition && !/p6-sovereign-v[45]/.test(String(replay.edition || '')));
   if (replay) {
     push('evaluation/p6-replay.json', replay, {
       source: 'localStorage_or_bridge',
@@ -178,20 +231,20 @@ export async function assembleCompleteAuditDossier({
         ? 'rejeu empreinte/édition différente de la session live — conservé pour comparaison'
         : null
     });
-    if (String(replay.edition || '').includes('p6-sovereign-v4')) {
-      push('evaluation/p6-replay-v4.json', replay, {
+    const replayEditionTag =
+      /p6-sovereign-v(\d+)/.exec(String(replay.edition || ''))?.[1] || null;
+    if (replayEditionTag) {
+      push(`evaluation/p6-replay-v${replayEditionTag}.json`, replay, {
         source: 'localStorage_or_bridge',
         executedAt: replay.executedAt,
-        edition: replay.edition
+        edition: replay.edition,
+        note: `rejeu aligné sur l’édition réelle v${replayEditionTag}`
       });
     }
   } else {
     push('evaluation/p6-replay.json', null, {
       note:
         'absent. Lancer: set P4_REPLAY=1&& npx vitest run src/utils/sport/__tests__/p6Mission5BisReplay.test.js puis coller artifacts/analysis-eval/browser-bridge/eval-archive-inject.json via le bouton « Charger artefacts rejeu ».'
-    });
-    push('evaluation/p6-replay-v4.json', null, {
-      note: 'dépend du rejeu Mission 5 bis'
     });
   }
   if (archive.v3Baseline || archive.comparisonV3V4) {
@@ -329,21 +382,48 @@ export async function assembleCompleteAuditDossier({
   }
 
   // 5) Réconciliation publication + décisions (extrait live 8 périodes)
+  // Les dossiers v2 portent les dispositions sous registry.*, pas insights.*
   if (eightPeriodExport?.periods) {
+    const extractDispositions = (dossier) =>
+      dossier?.registry?.publicationDispositions ||
+      dossier?.insights?.publicationDispositions ||
+      dossier?.internal?.publicationDispositions ||
+      dossier?.publication?.publicationDispositions ||
+      [];
+    const extractReconciliation = (dossier) =>
+      dossier?.registry?.publicationReconciliation ||
+      dossier?.insights?.publicationReconciliation ||
+      dossier?.internal?.publicationReconciliation ||
+      null;
+    const extractCounters = (dossier) =>
+      dossier?.registry?.counters ||
+      dossier?.internal?.p6?.counters ||
+      dossier?.p6?.counters ||
+      null;
+
     const reconciliation = Object.entries(eightPeriodExport.periods).map(([period, dossier]) => {
-      const insights = dossier?.insights || dossier?.userAccessible || null;
-      const p6 = dossier?.internal?.p6 || dossier?.p6 || null;
+      const dispositions = extractDispositions(dossier);
+      const publicationReconciliation = extractReconciliation(dossier);
+      const counters = extractCounters(dossier);
+      const registryExpected = counters
+        ? (counters.priority || 0) + (counters.reserve || 0)
+        : dossier?.registryAccessibleExpected ??
+          dossier?.userAccessible?.counts?.accessible ??
+          null;
       return {
         period,
-        publicationAuthority: insights?.publicationAuthority || dossier?.publicationAuthority || null,
-        registryExpected: p6?.counters
-          ? (p6.counters.priority || 0) + (p6.counters.reserve || 0)
-          : null,
+        publicationAuthority:
+          dossier?.publicationAuthority ||
+          dossier?.insights?.publicationAuthority ||
+          publicationReconciliation?.authority ||
+          null,
+        registryExpected,
         publishedAccessible:
           (dossier?.userAccessible?.priority || []).length +
           (dossier?.userAccessible?.reserve || []).length,
-        publicationReconciliation: insights?.publicationReconciliation || null,
-        dispositionsCount: (insights?.publicationDispositions || []).length,
+        publicationReconciliation,
+        dispositionsCount: Array.isArray(dispositions) ? dispositions.length : 0,
+        dispositionsSample: Array.isArray(dispositions) ? dispositions.slice(0, 8) : [],
         dom: {
           verified: dossier?.domVerified === true,
           status: dossier?.domVerified
@@ -360,18 +440,34 @@ export async function assembleCompleteAuditDossier({
       source: 'live_export',
       executedAt: eightPeriodExport.capturedAt || assembledAt
     });
+    const dispositionsByPeriod = Object.fromEntries(
+      Object.entries(eightPeriodExport.periods).map(([period, dossier]) => [
+        period,
+        extractDispositions(dossier)
+      ])
+    );
     push(
       'evaluation/selection-dispositions.json',
       {
-        note: 'Dispositions par période lorsque présentes dans le paquet',
-        periods: Object.fromEntries(
-          Object.entries(eightPeriodExport.periods).map(([period, dossier]) => [
-            period,
-            dossier?.insights?.publicationDispositions ||
-              dossier?.internal?.publicationDispositions ||
-              []
-          ])
-        )
+        note: 'Dispositions par période extraites de registry/insights du JSON principal',
+        periods: dispositionsByPeriod,
+        concordance: {
+          schema: 'momentum.dispositionsConcordance.v1',
+          periods: Object.entries(eightPeriodExport.periods).map(([period, dossier]) => {
+            const extracted = extractDispositions(dossier);
+            const mainCount = Array.isArray(extracted) ? extracted.length : 0;
+            return {
+              period,
+              extractedCount: mainCount,
+              matchesMain: mainCount > 0 || !dossier?.registry,
+              source: dossier?.registry?.publicationDispositions
+                ? 'registry.publicationDispositions'
+                : dossier?.insights?.publicationDispositions
+                  ? 'insights.publicationDispositions'
+                  : 'none'
+            };
+          })
+        }
       },
       { source: 'live_export', executedAt: eightPeriodExport.capturedAt || assembledAt }
     );
@@ -434,25 +530,100 @@ export async function assembleCompleteAuditDossier({
     fingerprint: liveFp
   });
 
-  // 7) Bilan Mission 5 s’il est servi localement (fetch optionnel)
-  try {
-    const bilanRes = await fetch('/docs/analyses-documentation/moteur%20analyse%20v2/analysis-engine/MISSION5_BILAN_P6.md', {
-      cache: 'no-store'
-    });
-    if (bilanRes.ok) {
-      push('evaluation/MISSION5_BILAN_P6.md', await bilanRes.text(), {
-        source: 'docs_fetch',
-        executedAt: assembledAt
-      });
-    } else {
-      push('evaluation/MISSION5_BILAN_P6.md', null, {
-        note: 'bilan non servi par le serveur de dev — joindre le fichier docs localement si besoin'
-      });
+  // 6b) Secteurs Mission 7 — compréhension programme + sous-exploration (si présents live)
+  push(
+    'program-understanding/program-structure.json',
+    p6?.structuralGraph || insights?.structuralGraph || null,
+    { note: p6?.structuralGraph || insights?.structuralGraph ? null : 'graphe structurel absent de cette session' }
+  );
+  push(
+    'program-understanding/multidimensional-adherence.json',
+    p6?.adherenceVectors || insights?.adherenceVectors || null,
+    { note: 'vecteurs d’adhérence si calculés' }
+  );
+  push(
+    'reasoning/underexploration-report.json',
+    p6?.underexploration || null,
+    { note: p6?.underexploration ? null : 'rapport de sous-exploration absent' }
+  );
+  push(
+    'reasoning/conclusion-hierarchy.json',
+    p6?.hierarchy || null,
+    { note: p6?.hierarchy ? null : 'hiérarchie des conclusions absente' }
+  );
+  push(
+    'reasoning/p7-actionability-prep.json',
+    p6?.p7Prep || { schema: 'momentum.p7ActionabilityPrep.v1', limit: 'préparation P7 — non développé' },
+    { source: 'assembled', executedAt: assembledAt }
+  );
+  const periodKeys = eightPeriodExport?.periods ? Object.keys(eightPeriodExport.periods) : [];
+  const coverageBySource = {
+    program: Boolean(snapshot?.activeProgram || snapshot?.programs?.length),
+    identities: Boolean(snapshot?.exercises || snapshot?.exerciseCatalog),
+    loads: Boolean(snapshot?.loads || snapshot?.weightHistory),
+    sets: Boolean(snapshot?.history || snapshot?.days),
+    durations: Boolean(measure?.minutes != null || measure?.durationContract),
+    garmin: Boolean(snapshot?.garminData || measure?.activeKcal != null),
+    sleep: Boolean(
+      snapshot?.garminData?.dailyMetrics ||
+        periodKeys.some((p) =>
+          JSON.stringify(eightPeriodExport?.periods?.[p]?.conclusions || [])
+            .toLowerCase()
+            .includes('sommeil')
+        )
+    ),
+    challenges: Boolean(snapshot?.challenges || measure?.durationContract?.challengeSessionMinutes)
+  };
+  push(
+    'source-data/data-coverage.json',
+    {
+      schema: 'momentum.dataCoverage.v2',
+      note: 'Couverture réelle par source — le fingerprint seul ne suffit pas.',
+      liveFingerprint,
+      hasSnapshot: Boolean(snapshot),
+      hasEightPeriods: Boolean(eightPeriodExport?.periods),
+      periodCount: periodKeys.length,
+      sources: coverageBySource,
+      fingerprintMustCover: [
+        'program',
+        'identities',
+        'loads',
+        'sets',
+        'durations',
+        'garmin',
+        'sleep',
+        'challenges'
+      ]
+    },
+    { source: 'assembled', executedAt: assembledAt, fingerprint: liveFp }
+  );
+
+  // 7) Bilans Mission 9/10 (+ archives) s’ils sont servis localement
+  const bilanNames = [
+    'MISSION11_BILAN_P6.md',
+    'DIAGNOSTIC_INTELLIGENCE_ANALYTIQUE_P6.md',
+    'MISSION10_BILAN_P6.md',
+    'MISSION9_BILAN_P6.md'
+  ];
+  for (const name of bilanNames) {
+    try {
+      const bilanRes = await fetch(
+        `/docs/analyses-documentation/moteur%20analyse%20v2/analysis-engine/${name}`,
+        { cache: 'no-store' }
+      );
+      if (bilanRes.ok) {
+        push(`evaluation/${name}`, await bilanRes.text(), {
+          source: 'docs_fetch',
+          executedAt: assembledAt
+        });
+      } else {
+        push(`evaluation/${name}`, null, {
+          note: 'bilan non servi par le serveur de dev'
+        });
+      }
+    } catch {
+      push(`evaluation/${name}`, null, { note: 'bilan non accessible depuis le navigateur' });
     }
-  } catch {
-    push('evaluation/MISSION5_BILAN_P6.md', null, {
-      note: 'bilan non accessible depuis le navigateur'
-    });
   }
 
   const manifest = {
@@ -504,6 +675,8 @@ export async function assembleCompleteAuditDossier({
     warnings,
     manifest,
     download: downloadResult,
-    zipFilesPreview: zipFiles.map((f) => f.name)
+    zipFilesPreview: zipFiles.map((f) => f.name),
+    // Contenu inspectable hors téléchargement (tests / agent) — pas exposé en public
+    zipFiles: download ? undefined : zipFiles
   };
 }
