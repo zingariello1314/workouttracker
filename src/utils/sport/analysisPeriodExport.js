@@ -199,6 +199,33 @@ export function buildPeriodAuditDossier({
   );
   const fusedTitles = new Set(fused.map((card) => card.title).filter(Boolean));
   const accessibleClean = [...priority, ...reserve].filter((card) => !fusedTitles.has(card.title));
+  // Mission 13 : réconciliation finale contre le catalogue accessible exporté (pas seulement le registre pré-polish)
+  const baseRecon = insights?.publicationReconciliation || null;
+  const finalAccessibleIds = accessibleClean.map((c) => c.id).filter(Boolean);
+  const registryIdsForFinal = (baseRecon?.missingFromAccessible
+    ? null
+    : null);
+  void registryIdsForFinal;
+  const finalCountGap =
+    baseRecon && Number.isFinite(baseRecon.publishedCount)
+      ? Number(baseRecon.publishedCount) - accessibleClean.length
+      : null;
+  const finalCatalogReconciliation = {
+    schema: 'momentum.finalCatalogReconciliation.v1',
+    publishedBeforeExportFilter: baseRecon?.publishedCount ?? null,
+    accessibleExported: accessibleClean.length,
+    removedByFusedTitleFilter: [...priority, ...reserve].length - accessibleClean.length,
+    countGapVsPublication: finalCountGap,
+    reconciledStrict:
+      baseRecon?.reconciledStrict === true &&
+      (finalCountGap === 0 || finalCountGap == null) &&
+      accessibleClean.length ===
+        (baseRecon?.finalAccessibleCount ?? accessibleClean.length),
+    note:
+      finalCountGap && finalCountGap !== 0
+        ? 'Écart entre publicationReconciliation et userAccessible.accessible — filtre titres fusionnés ou dédup export'
+        : 'Catalogue exporté aligné sur la publication post-polish'
+  };
   const window = {
     start: publication?.windowStart || requestedWindow?.start || null,
     end: publication?.windowEnd || requestedWindow?.end || null
@@ -300,6 +327,7 @@ export function buildPeriodAuditDossier({
       review: p6.review || null,
       publicationDispositions: insights?.publicationDispositions || null,
       publicationReconciliation: insights?.publicationReconciliation || null,
+      finalCatalogReconciliation,
       technicalNonDiscoveries: (discoveries.all || [])
         .filter((card) => /SNAPSHOTS=0|JOURNAL_ABSENT|MULTISHARE|CMP-SOLID|plan_unknown|methodology/i.test(`${card?.title || ''} ${card?.body || ''}${card?.kind || ''}`))
         .map((card) => serializeConclusion(card, 'technical', { section: 'technical' }))

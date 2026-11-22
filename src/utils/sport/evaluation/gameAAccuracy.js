@@ -1,5 +1,6 @@
 import { emptyGameAReport } from './evaluationTypes';
 import { classifyStimulus } from '../recapStimulusCatalog';
+import { checkInterHorizonFactCoherence } from '../interHorizonFactCoherence';
 
 /**
  * Jeu A — exactitude (reconstitué).
@@ -42,9 +43,44 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
         }
       }
     }
-    if (card?.p6Disposition === 'source_retained' || card?.collapsedInto) {
+    const isDeepeningCard =
+      card?.disposition === 'deepening_of_collective' ||
+      card?.p6Disposition === 'deepening_of_collective' ||
+      card?.disposition === 'deepening_accessible';
+    if (
+      card?.p6Disposition === 'source_retained' ||
+      (card?.collapsedInto && !isDeepeningCard && card?.disposition !== 'demoted_priority')
+    ) {
       report.fusedSourcesRepublished += 1;
       report.cases.push({ id: card?.id || card?.title, issue: 'fused_source_accessible' });
+    }
+
+    // Mission 14 : calcul juste mais interprétation verbale fausse (dénominateurs)
+    const body = `${card.title || ''} ${card.body || ''}`;
+    const rel = card.metrics?.relativeConcentration || card.metrics;
+    if (
+      rel?.moveShareOfParentWindow != null &&
+      rel?.globalShareOfParentWindow != null &&
+      /représentent environ .+% du volume de (?:7 jours|aujourd)/i.test(body) &&
+      !/volume de ces mouvements/i.test(body)
+    ) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: card.id,
+        issue: 'correct_ratio_wrong_denominator_verbalization',
+        note: 'Part des mouvements dans leur volume parent verbalisée comme part du volume de la fenêtre courte'
+      });
+    }
+    if (
+      card.kind === 'disc_composed_relative_concentration' &&
+      /% du volume de 7 jours,\s*contre\s*.+% du volume de 30/i.test(body)
+    ) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: card.id,
+        issue: 'swapped_concentration_denominators',
+        note: '50% ≠ part du volume hebdo ; 22% ≠ part de ces mouvements dans le mois'
+      });
     }
     if (facts.forbiddenTitles?.some((t) => t && card.title === t)) {
       report.factualConflicts += 1;
@@ -157,6 +193,52 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
       });
     }
   }
+
+  // Mission 12 — cohérence inter-horizons + formulations interdites
+  if (Array.isArray(facts.periodFacts) && facts.periodFacts.length >= 2) {
+    const coherence = checkInterHorizonFactCoherence(facts.periodFacts);
+    report.interHorizon = coherence;
+    if (!coherence.ok) {
+      report.factualConflicts += coherence.contradictionCount + coherence.labelMismatchCount;
+      coherence.contradictions.forEach((c) => {
+        report.cases.push({
+          issue: 'inter_horizon_fact_contradiction',
+          subject: c.subject,
+          metric: c.metric,
+          values: c.values
+        });
+      });
+      coherence.labelMismatches.forEach((c) => {
+        report.cases.push({
+          issue: 'temporal_label_window_mismatch',
+          ...c
+        });
+      });
+    }
+  }
+
+  accessible.forEach((card) => {
+    const text = `${card.title || ''} ${card.body || ''} ${card.evidence || ''}`;
+    if (/rendement\s+0\s*reps\/h|densité\s+0\s*reps\/h/i.test(text)) {
+      report.factualConflicts += 1;
+      report.cases.push({ id: card.id, issue: 'unknown_density_presented_as_zero' });
+    }
+    if (/seuil de sommeil personnel|séparation reproductible/i.test(text)) {
+      report.factualConflicts += 1;
+      report.cases.push({ id: card.id, issue: 'sleep_overclaim_language' });
+    }
+    if (/s['']efface|dispara[iî]t/i.test(text) && /\d+\s*%|\d+\s*reps/i.test(text) && !/part|proportion|relative/i.test(text)) {
+      report.cases.push({
+        id: card.id,
+        issue: 'share_drop_labeled_as_disappearance',
+        note: 'heuristique — vérifier populations'
+      });
+    }
+    if (/association_not_causation|snapshots=\d|primary\/secondary|socle_commun_avec_variantes/i.test(text)) {
+      report.factualConflicts += 1;
+      report.cases.push({ id: card.id, issue: 'technical_code_in_user_prose' });
+    }
+  });
 
   report.pass =
     report.factualConflicts === 0 &&

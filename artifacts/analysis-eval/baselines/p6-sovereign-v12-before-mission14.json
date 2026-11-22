@@ -1,0 +1,43 @@
+{
+  "schema": "momentum.editionFreeze.v2",
+  "frozenAt": "2026-11-21",
+  "mission": "Mission 14",
+  "editionBefore": "editorial=p6-sovereign-v12;classification=modality-authority-v1;matching=session-slot-v1;composition=phenomenon-compose-v2",
+  "editionAfterTarget": "editorial=p6-sovereign-v13;hierarchy=verified-deepening-v1;composition=phenomenon-compose-v3;review=collective-pass4-v9",
+  "source": "exports utilisateur huit horizons 21 novembre 2026 (évaluation indépendante)",
+  "accessibleCounts": {
+    "today": 15,
+    "7d": 62,
+    "30d": 84,
+    "3m": 101,
+    "6m": 74,
+    "1y": 82,
+    "2y": 80,
+    "all": 80,
+    "total": 578,
+    "note": "Régression vs v11 (706) — 38/33/33/33 source_retained deepening_of_collective sur horizons longs"
+  },
+  "knownDefects": [
+    {
+      "id": "load_phase_absorbs_format_consolidations",
+      "horizon": "6m+",
+      "detail": "disc_composed_load_phase absorbe disc_format_consolidation / resistance / progress sans sujet+épisode",
+      "countApprox": 38
+    },
+    {
+      "id": "collapsedInto_drops_from_accessible",
+      "detail": "insightsFromP6 traite collapsedInto comme source_retained → hors catalogue accessible"
+    },
+    {
+      "id": "relative_concentration_swapped_denominators",
+      "horizon": "7d",
+      "detail": "50% et 22,2% calculés juste (180/360 et 1340/6044) mais verbalisés comme parts du volume 7j vs 30j"
+    },
+    {
+      "id": "catalog_63_vs_62",
+      "horizon": "7d",
+      "detail": "published dispositions vs accessible ; pushPull manquant du catalogue accessible mais vu DOM"
+    }
+  ],
+  "note": "Baseline logique + défauts constatés. Textes complets : rejouer export v12 utilisateur. Aucun commit."
+}

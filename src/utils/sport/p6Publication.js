@@ -16,7 +16,7 @@ import {
   stampDiscoveryIdentity,
   substantiveEquivalence
 } from './discoveryIdentity';
-import { polishCardProse } from './editorialProseGuard';
+import { polishCardProse, polishPublishedInsights } from './editorialProseGuard';
 
 const NATURE_COLUMN = {
   now: 'shortTerm',
@@ -361,14 +361,53 @@ export function insightsFromP6(p6, { period = null } = {}) {
 
   const accessibleReserve = [];
   (p6.reserve || []).forEach((row) => {
+    // Mission 14 : un approfondissement avec parent n’est PAS une source absorbée.
+    // Il reste consultable (réserve / deepening), avec lien hiérarchique explicite.
+    const isDeepening =
+      row?.p6Disposition === 'deepening_of_collective' ||
+      row?.p6Disposition === 'deepening_accessible';
+    if (isDeepening) {
+      const stampedDeep = stampDiscoveryIdentity(row);
+      const card = publishRow(stampedDeep, {
+        column: NATURE_COLUMN[row.nature] || null,
+        dispositionLabel: 'deepening_of_collective'
+      });
+      if (card) {
+        accessibleReserve.push({
+          ...card,
+          period: period || card.period || null,
+          disposition: 'deepening_of_collective',
+          reason: 'verified_hierarchy_deepening',
+          parentId: row.collapsedInto || row.hierarchyLink?.proof?.parentId || null,
+          hierarchyLink: row.hierarchyLink || row.metrics?.hierarchyLink || null,
+          collapsedInto: row.collapsedInto || null
+        });
+        dispositions.push(
+          dispositionRecord(stampedDeep, 'deepening_accessible', 'verified_parent_child', {
+            collapsedInto: row.collapsedInto,
+            equivalence: row.hierarchyLink || null
+          })
+        );
+      }
+      return;
+    }
     if (
       row?.p6Disposition === 'source_retained' ||
       row?.p6Disposition === 'exact_duplicate_suppressed' ||
-      row?.p6Disposition === 'semantic_equivalent_suppressed' ||
-      row?.collapsedInto
+      row?.p6Disposition === 'semantic_equivalent_suppressed'
     ) {
       dispositions.push(
         dispositionRecord(row, 'source_retained', row.p6Disposition || 'collapsed', {
+          collapsedInto: row.collapsedInto,
+          fusionLineage: row.fusionLineage || null
+        })
+      );
+      return;
+    }
+    // collapsedInto sans disposition deepening = source absorbée (fusion)
+    if (row?.collapsedInto && !isDeepening) {
+      dispositions.push(
+        dispositionRecord(row, 'source_retained', 'collapsed_into_parent', {
           collapsedInto: row.collapsedInto,
           fusionLineage: row.fusionLineage || null
         })
@@ -431,11 +470,18 @@ export function insightsFromP6(p6, { period = null } = {}) {
     );
   });
 
+  // Mission 13 : polish AVANT réconciliation finale (souveraineté jusqu’au catalogue accessible)
+  const polished = polishPublishedInsights({
+    ...empty,
+    ...columns,
+    accessibleReserve
+  });
+
   const published = [
-    ...columns.shortTerm,
-    ...columns.mediumTerm,
-    ...columns.longTerm,
-    ...accessibleReserve
+    ...(polished.shortTerm || []),
+    ...(polished.mediumTerm || []),
+    ...(polished.longTerm || []),
+    ...(polished.accessibleReserve || [])
   ];
   const publicationReconciliation = reconcilePublicationIds({
     registryIds,
@@ -443,7 +489,11 @@ export function insightsFromP6(p6, { period = null } = {}) {
     dispositions
   });
 
-  const priorityAccessibleIds = new Set(priorityPublished.map((card) => card.id));
+  const priorityAccessibleIds = new Set(
+    [...(polished.shortTerm || []), ...(polished.mediumTerm || []), ...(polished.longTerm || [])].map(
+      (card) => card.id
+    )
+  );
   const priorityMissingAccessible = (p6.priority || [])
     .map((row) => stampDiscoveryIdentity(row))
     .filter((row) => {
@@ -471,27 +521,34 @@ export function insightsFromP6(p6, { period = null } = {}) {
   );
 
   const priorityContractOk = priorityMissingAccessible.length === 0;
+  // reconciledStrict exige aussi le catalogue final post-polish
+  const finalCatalogOk =
+    publicationReconciliation.reconciledStrict === true && priorityContractOk;
   const authority =
-    publicationReconciliation.reconciled &&
-    unjustifiedSuppressions.length === 0 &&
-    priorityContractOk
-      ? 'p6'
-      : 'p6_partial';
+    finalCatalogOk && unjustifiedSuppressions.length === 0 ? 'p6' : 'p6_partial';
 
   return {
     ...empty,
-    ...columns,
-    accessibleReserve,
+    shortTerm: polished.shortTerm,
+    mediumTerm: polished.mediumTerm,
+    longTerm: polished.longTerm,
+    accessibleReserve: polished.accessibleReserve,
     publicationAuthority: authority,
     fusedSourcesExcluded: (p6.sources || []).length,
     blockedExcluded: (p6.blocked || []).length,
     publicationDispositions: dispositions,
-    publicationReconciliation,
+    publicationReconciliation: {
+      ...publicationReconciliation,
+      finalCatalogAfterPolish: true,
+      finalAccessibleCount: published.length,
+      reconciledStrict: finalCatalogOk
+    },
     registryAccessibleExpected: (p6.priority || []).length + (p6.reserve || []).length,
     publishedAccessible: published.length,
-    priorityPublished: priorityPublished.length,
+    priorityPublished: priorityAccessibleIds.size,
     priorityMissingAccessible,
     priorityContractOk,
-    unjustifiedSuppressions
+    unjustifiedSuppressions,
+    editorialPolishApplied: true
   };
 }

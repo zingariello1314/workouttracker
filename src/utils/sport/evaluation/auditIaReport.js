@@ -3,7 +3,7 @@
  * Destiné à être copié / joint sans accès au dépôt.
  */
 
-import { analysisEditionKey } from '../analysisEdition';
+import { analysisEditionKey, analysisMissionLabel } from '../analysisEdition';
 import { auditInsightsProse } from '../editorialProseGuard';
 
 function cardsOf(insights) {
@@ -56,19 +56,28 @@ export function buildAuditIaMarkdown({
   underexploration = null,
   previousEditionCompare = null,
   domVerify = null,
-  mission = 'Mission 11'
+  mission = null
 } = {}) {
   const edition = analysisEditionKey();
+  const missionLabel = mission || analysisMissionLabel();
   const assembledAt = new Date().toISOString();
   const lines = [];
-  lines.push(`# Rapport d’audit IA — ${mission}`);
+  lines.push(`# Rapport d’audit IA — ${missionLabel}`);
   lines.push('');
   lines.push(`Mode : **${mode}** · Généré : ${assembledAt} · Fuseau : Europe/Paris (réf. calendrier)`);
   lines.push('');
   lines.push('## 1. Identification du run');
   lines.push('');
+  const fpLabel =
+    snapshotFingerprint == null
+      ? 'non fourni'
+      : typeof snapshotFingerprint === 'string'
+        ? snapshotFingerprint
+        : snapshotFingerprint.digest ||
+          snapshotFingerprint.hash ||
+          JSON.stringify(snapshotFingerprint);
   lines.push(`- Édition : \`${edition}\``);
-  lines.push(`- Fingerprint snapshot : \`${snapshotFingerprint || 'non fourni'}\``);
+  lines.push(`- Fingerprint snapshot : \`${fpLabel}\``);
   lines.push(`- Provenance export 8 périodes : \`${eightPeriodExport?.schema || 'absent'}\``);
   lines.push(`- DOM : ${domVerify ? JSON.stringify(domVerify.summary || domVerify.refused || 'présent') : 'non observé'}`);
   lines.push('');

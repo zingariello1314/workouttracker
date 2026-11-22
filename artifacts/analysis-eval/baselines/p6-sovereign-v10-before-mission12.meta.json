@@ -1,0 +1,9 @@
+{
+  "schema": "momentum.editionFreeze.v1",
+  "frozenAt": "2026-11-21",
+  "mission": "Mission 12",
+  "editionBefore": "editorial=p6-sovereign-v10;program=structural-context-v2;review=collective-pass4-v7;sleep=association-prose-v2;audit=normalized-export-v1",
+  "editionAfterTarget": "editorial=p6-sovereign-v11;program=structural-context-v3;review=collective-pass4-v8;sleep=association-prose-v3;composition=phenomenon-compose-v1;coherence=inter-horizon-v1",
+  "fullReplayBaseline": "artifacts/analysis-eval/baselines/p6-replay-p6-sovereign-v9-before-mission11.json",
+  "note": "Gel logique v10 avant modifications M12. Le rejeu binaire v10 live reste à produire depuis Récap → Analyse si disponible. Aucun commit."
+}

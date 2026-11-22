@@ -48,7 +48,17 @@ import {
   buildExerciseMuscleIndex,
   habitualCadenceFromDates
 } from './analyticalExploration';
-import { inferMuscleLoadRolesForExercise } from './recapMuscleInference';
+import {
+  buildOccurrenceLedgerFromCatalog,
+  buildReturnEventsFromLedger,
+  clusterLedgerReturnEpisodes,
+  qualifyEpisodeLevels
+} from './sessionEpisodeLedger';
+import {
+  decomposeMonthlyProgramChange,
+  discoveryFromMonthlyComposition
+} from './monthlyProgramComposition';
+import { inferMuscleLoadRolesForExercise, inferMuscleGroupsForExercise } from './recapMuscleInference';
 import {
   detectFamilyFades,
   detectStructuralShifts,
@@ -62,7 +72,18 @@ import {
 } from './monthlyVolumeArcDiscoveries';
 import { buildTrainingRhythmDiscoveries } from './trainingRhythmDiscoveries';
 import { formatSleepHoursFr, formatSleepMinutesFr, summarizeRecentNights } from './recapSleepCorrelation';
-import { annotateTrajectoryWithProgramContext } from './programVariantContext';
+import {
+  annotateTrajectoryWithProgramContext,
+  isVariantMixCompatibleDiscovery,
+  sessionsForExerciseFromCatalog
+} from './programVariantContext';
+import {
+  composeCollectiveReturnReading,
+  composeVolumeFrequencyContentReading,
+  composeLoadProgressionPhase,
+  composeRelativeConcentrationReading
+} from './phenomenonComposition';
+import { extractSessionTemplates } from './sessionStructureGraph';
 import { comparableWeeklyRates } from './recapInsightNature';
 import { sessionRhythmClause } from './recapPeriodComparisons';
 import {
@@ -976,19 +997,52 @@ export function detectDiscoveries(cmp, extras = {}) {
       const exact = Math.abs(e.ofMonthPct - 25) < 1.2;
       return `Les ${fmtInt(e.reps)} ${e.name.toLowerCase()} ${isToday ? "réalisé(e)s aujourd'hui" : v.now} représentent ${exact ? 'exactement' : 'environ'} ${fmtPct(e.ofMonthPct)} de tout ton volume de 30 jours sur ce mouvement (${fmtInt(e.monthReps)} reps)`;
     });
+    // Mission 13 : concentration relative vs part globale de la fenêtre dans le mois
+    const localReps = ofMonthEx.reduce((s, e) => s + (Number(e.reps) || 0), 0);
+    const monthRepsForMoves = ofMonthEx.reduce((s, e) => s + (Number(e.monthReps) || 0), 0);
+    const globalShare =
+      d30 && Number(d30.totalReps) > 0 ? Number(p.totalReps) / Number(d30.totalReps) : null;
+    const moveShare = monthRepsForMoves > 0 ? localReps / monthRepsForMoves : null;
+    const relative =
+      globalShare != null && moveShare != null
+        ? composeRelativeConcentrationReading({
+            localReps,
+            moveShareOfParentWindow: moveShare,
+            globalShareOfParentWindow: globalShare,
+            localShareOfPeriod: moveShare,
+            globalShareOfPeriod: globalShare,
+            localRepsInParent: monthRepsForMoves,
+            globalRepsShort: Number(p.totalReps) || null,
+            globalRepsParent: Number(d30.totalReps) || null,
+            moveNames: ofMonthEx.map((e) => e.name),
+            periodLabel: isToday ? 'aujourd’hui' : '7 jours',
+            parentPeriodLabel: '30 jours'
+          })
+        : { coverage: 'no_data' };
+    const relativeBit =
+      relative.coverage === 'concluded'
+        ? ` ${relative.conclusion}`
+        : moveShare != null && globalShare != null && moveShare / globalShare >= 1.4
+          ? ` Ces mouvements concentrent ≈${fmtPct(moveShare * 100)} de leur volume mensuel dans ${v.thisPeriod}, contre ≈${fmtPct(globalShare * 100)} pour le volume global — surreprésentation relative ≈${Math.round((moveShare / globalShare) * 100) / 100}×.`
+          : '';
     const shareReading = composeAnalyticalReading({
       titleThesis:
-        ofMonthEx.length === 1
-          ? `${ofMonthEx[0].name} pèse beaucoup plus lourd dans ton mois que le total de reps ne le dit`
-          : `${ofMonthEx.length} mouvements concentrent une part importante de ton travail récent`,
-      constat: bits.join('. '),
+        relative.coverage === 'concluded'
+          ? relative.title
+          : ofMonthEx.length === 1
+            ? `${ofMonthEx[0].name} pèse beaucoup plus lourd dans ton mois que le total de reps ne le dit`
+            : `${ofMonthEx.length} mouvements concentrent une part importante de ton travail récent`,
+      constat: `${bits.join('. ')}.${relativeBit}`,
       mechanism: null,
       scope: null,
       implication: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} pèse beaucoup plus lourd dans ton historique récent que ses ${fmtInt(p.totalReps)} reps totales ne le laissent penser`
     });
     out.push(
       discovery({
-        kind: 'disc_exercise_share',
+        kind:
+          relative.coverage === 'concluded'
+            ? 'disc_composed_relative_concentration'
+            : 'disc_exercise_share',
         nature: isToday ? 'now' : 'trajectory',
         family: 'exercise_share',
         title: shareReading.title,
@@ -999,6 +1053,14 @@ export function detectDiscoveries(cmp, extras = {}) {
           exercises: ofMonthEx.map((e) => e.name),
           readingBeats: shareReading.beats,
           totalReps: p.totalReps,
+          relativeConcentration: relative.coverage === 'concluded' ? relative.metrics : null,
+          moveShareOfMonth: moveShare,
+          weekShareOfMonthGlobal: globalShare,
+          population: 'nested_window_same_exercises',
+          producer:
+            relative.coverage === 'concluded'
+              ? 'composeRelativeConcentrationReading'
+              : 'disc_exercise_share',
           observedValues: ofMonthEx.flatMap((e) => [
             { id: `reps:${e.name}`, value: e.reps, unit: 'reps' },
             { id: `monthReps:${e.name}`, value: e.monthReps, unit: 'reps' },
@@ -1683,7 +1745,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         family: 'sleep_volume',
         title: isToday
           ? 'La nuit précédente te place dans une zone de volume déjà visible dans ton historique'
-          : 'Tes journées à fort volume s’alignent sur un seuil de sommeil observé dans ton historique',
+          : 'Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique',
         body: `Sur ${nLabel} (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} lorsque le sommeil passe sous 7 h 30. L'écart est de ${fmtInt(vol75.delta)} reps, soit environ ${fmtPct(vol75.deltaPct)}.${todayPlace}${minBit}${dose8} Association observée sur ${vol75.highN} et ${vol75.lowN} séances — un effectif asymétrique ne démontre pas un seuil individuel fiable, ni une causalité.`,
         evidence: `≥ 7 h 30 ${fmtInt(vol75.highVol)} · < 7 h 30 ${fmtInt(vol75.lowVol)} · n=${vol75.highN + vol75.lowN}`,
         weights: {
@@ -2294,18 +2356,20 @@ export function detectDiscoveries(cmp, extras = {}) {
     }
   }
 
-  const structSrc = isToday || isWeek ? d30 : p;
+  // Population canonique partagée : d30 ↔ prev30 (jamais le volume d’un horizon long
+  // libellé « 30 derniers jours »). Les horizons longs citent cette sous-fenêtre explicitement.
+  const structSrc = d30;
   const structThen = prev30;
   const structural = detectStructuralShifts(structSrc, structThen);
   const structLeads = structural
-    .filter((row) => (p.byExercise[row.id]?.reps || 0) >= 24)
+    .filter((row) => (p.byExercise[row.id]?.reps || 0) >= 24 || (d30?.byExercise?.[row.id]?.reps || 0) >= 24)
     .slice(0, v.key === 'today' ? 1 : v.key === 'week' ? 2 : 3);
   structLeads.forEach((structLead, structIdx) => {
     const thenBit =
       structLead.thenReps >= 12
         ? `contre ${fmtInt(structLead.thenReps)} reps (${fmtPct(structLead.thenShare)} ${possessiveMuscleShare(structLead.family)}) sur les 30 jours d'avant`
         : `alors qu'ils étaient encore marginaux ou absents sur les 30 jours d'avant`;
-    const structWin = (isToday || isWeek) && p.window?.start ? p.window : structSrc.window || p.window;
+    const structWin = d30?.window || structSrc?.window || p.window;
     const traj = measureTraj(() =>
       buildExerciseTrajectory({
         snapshot: extras.snapshot,
@@ -2318,9 +2382,12 @@ export function detectDiscoveries(cmp, extras = {}) {
       })
     );
     const weekReps = p.byExercise?.[structLead.id]?.reps || 0;
+    const longHorizon = v.key === 'year' || v.key === 'long' || (p.spanDays != null && p.spanDays > 40);
     const shareLead = isWeek
       ? `${structLead.name} compte ${fmtInt(weekReps)} répétitions dans ces 7 jours. Le contexte des 30 jours place cette part à ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}. La comparaison longue n'est pas l'événement de la semaine.`
-      : `${structLead.name} pèsent désormais ${fmtInt(structLead.nowReps)} reps sur ${structLead.nowDays} séances des 30 derniers jours, soit ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}.`;
+      : longHorizon
+        ? `${structLead.name} totalisent ${fmtInt(structLead.nowReps)} reps sur ${structLead.nowDays} séances des 30 derniers jours (sous-fenêtre de ${v.thisPeriod}), soit ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}. Ce n’est pas le volume cumulé de ${v.thisPeriod}.`
+        : `${structLead.name} pèsent désormais ${fmtInt(structLead.nowReps)} reps sur ${structLead.nowDays} séances des 30 derniers jours, soit ${fmtPct(structLead.nowShare)} ${possessiveMuscleShare(structLead.family)}, ${thenBit}.`;
     const legacyTitle =
       structLead.nowDays < 6
         ? `${structLead.name} entre dans ${possessiveMuscleShare(structLead.family)}`
@@ -2757,9 +2824,24 @@ export function detectDiscoveries(cmp, extras = {}) {
             volumeOnly,
             editorialPriority: priority.newPriorityCard,
             exerciseId: String(row.exerciseId),
+            exerciseName: row.exerciseName || null,
+            name: row.exerciseName || null,
             phenomenonId: row.phenomenonId,
             phenomenon: 'format_consolidation',
             dates: evidenceDates,
+            // Mission 16 : exposer l’épisode d’interruption pour la composition collective
+            date: row.gap?.after || lastEvidence || firstEvidence || null,
+            returnDate: row.gap?.after || lastEvidence || null,
+            prevDate: row.gap?.before || null,
+            gapDays: row.gap?.days ?? null,
+            daysAbsent: row.gap?.days ?? null,
+            gapBefore: row.gap?.before || null,
+            gapAfter: row.gap?.after || null,
+            prevReps: row.beforeMed ?? null,
+            priorAvg: row.beforeMed ?? null,
+            currentReps: row.level ?? null,
+            lastReps: row.level ?? null,
+            returnReps: row.level ?? null,
             observedValues: [
               ...(row.level != null ? [{ id: 'level', value: row.level, unit: 'reps' }] : []),
               ...(row.supportCount != null
@@ -2767,6 +2849,9 @@ export function detectDiscoveries(cmp, extras = {}) {
                 : []),
               ...(row.beforeMed != null
                 ? [{ id: 'beforeMedian', value: row.beforeMed, unit: 'reps' }]
+                : []),
+              ...(row.gap?.days != null
+                ? [{ id: 'gapDays', value: row.gap.days, unit: 'days' }]
                 : [])
             ],
             distinctStorageLine: homonym || undefined,
@@ -2877,10 +2962,18 @@ export function detectDiscoveries(cmp, extras = {}) {
           weights: { importance: 0.78, reliability: 0.8, novelty: 0.66, fit: 0.88 },
           metrics: {
             exerciseId: rise.exerciseId,
+            exerciseName: rise.name,
+            name: rise.name,
             deltaKg: rise.delta,
             mode: rise.mode,
             setCount: rise.setCount,
             reps: rise.reps,
+            loadBefore: rise.fromValue,
+            loadAfter: rise.toValue,
+            fromValue: rise.fromValue,
+            toValue: rise.toValue,
+            date: rise.toDate || rise.fromDate || null,
+            formatStable: true,
             phenomenon: 'resistance_progression'
           }
         })
@@ -2931,75 +3024,354 @@ export function detectDiscoveries(cmp, extras = {}) {
       );
       return habitualCadenceFromDates(dates, { excludeGapDays: gapDays });
     };
-    const returnEvents = out
-      .filter(
-        (row) =>
-          // Seuil large (≥ 7 j) : la significativité finale dépend de la cadence habituelle (exploreCollectiveReturn).
-          Number(row.metrics?.gapDays ?? row.metrics?.daysAbsent) >= 7 ||
-          /return|reprise|gap|resume|format_consolidation/i.test(String(row.kind || ''))
-      )
-      .map((row) => {
-        const name = row.metrics?.exerciseName || row.metrics?.name || row.title;
-        const date =
-          row.metrics?.date ||
-          row.metrics?.returnDate ||
-          (Array.isArray(row.metrics?.dates) ? row.metrics.dates[0] : null);
-        const gapDays = row.metrics?.gapDays ?? row.metrics?.daysAbsent ?? null;
-        const exerciseId = row.metrics?.exerciseId || row.metrics?.storageId || null;
-        // Ne pas confondre la taxonomie éditoriale (emergence, repertoire…) avec une famille musculaire :
-        // le groupe vient des métriques, sinon du catalogue/snapshot, sinon de l'inférence par nom.
+    // Familles de séances programme → lier les retours à un créneau par composition (pas par jour)
+    const programTemplates = extras?.activeProgram
+      ? extractSessionTemplates(extras.activeProgram)
+      : [];
+    const sessionFamilyForName = (moveName) => {
+      const n = String(moveName || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      if (!n) return null;
+      const hits = programTemplates.filter((tpl) =>
+        (tpl.exerciseKeys || []).some((k) => String(k).toLowerCase().includes(n.slice(0, 18)))
+      );
+      if (!hits.length) return null;
+      // Même famille si plusieurs créneaux partagent le mouvement
+      return hits.length === 1 ? hits[0].dayKey : hits.map((h) => h.dayKey).sort().join('+');
+    };
+    // Mission 19 : événements de reprise depuis le ledger de séances (pas les cartes publiées).
+    const occurrenceLedger = buildOccurrenceLedgerFromCatalog(catalog || []);
+    const resolveExName = (id, fallback) => {
+      try {
+        const n =
+          (typeof extras?.getExerciseNameById === 'function'
+            ? extras.getExerciseNameById(id)
+            : '') ||
+          fallback ||
+          '';
+        return String(n).trim();
+      } catch {
+        return String(fallback || '').trim();
+      }
+    };
+    const ledgerReturnEvents = buildReturnEventsFromLedger(occurrenceLedger, { minGapDays: 14 }).map(
+      (e) => {
+        const name = resolveExName(e.exerciseId, e.name) || String(e.exerciseId);
+        const sessionFamilyId = sessionFamilyForName(name) || e.sessionFamilyId || null;
         const muscleGroup =
-          row.metrics?.muscleGroup ||
-          row.metrics?.muscleFamily ||
-          row.metrics?.group ||
-          muscleIndex.get(String(exerciseId)) ||
+          e.muscleGroup ||
+          muscleIndex.get(String(e.exerciseId)) ||
           muscleIndex.get(String(name || '').trim().toLowerCase()) ||
-          inferMuscleByName(row.metrics?.exerciseName || row.metrics?.name) ||
+          inferMuscleByName(name) ||
           null;
         return {
-          exerciseId,
+          ...e,
           name,
-          date,
           family: muscleGroup,
           muscleGroup,
-          gapDays,
-          habitualCadenceDays: cadenceFor(row, date, Number(gapDays)),
-          sessionFamilyId: row.metrics?.sessionFamilyId || null,
-          dayKey: row.metrics?.dayKey || null
+          sessionFamilyId,
+          dayKey: sessionFamilyId || e.sessionKey || null,
+          habitualCadenceDays:
+            e.habitualCadenceDays ??
+            cadenceFor(
+              { metrics: { exerciseId: e.exerciseId, exerciseName: name } },
+              e.returnDate,
+              Number(e.gapDays)
+            )
         };
-      })
-      .filter((row) => row.date && Number(row.gapDays) >= 7);
-    const collective = exploreCollectiveReturn(returnEvents, { muscleByExercise: muscleIndex });
+      }
+    );
+    // Enrichissement optionnel depuis cartes (niveaux / mechanism) — non requis pour l’existence.
+    const cardByEx = new Map();
+    out.forEach((row) => {
+      const id = String(row.metrics?.exerciseId || row.metrics?.storageId || '');
+      if (!id) return;
+      if (
+        Number(row.metrics?.gapDays ?? row.metrics?.daysAbsent) >= 7 ||
+        /format_consolidation|ms_return|emergence/i.test(String(row.kind || ''))
+      ) {
+        cardByEx.set(id, row);
+      }
+    });
+    const returnEvents = ledgerReturnEvents.map((e) => {
+      const card = cardByEx.get(String(e.exerciseId || ''));
+      if (!card) return e;
+      const m = card.metrics || {};
+      return {
+        ...e,
+        prevReps: e.prevReps ?? m.prevReps ?? m.priorAvg ?? m.level ?? null,
+        currentReps: e.currentReps ?? m.currentReps ?? m.level ?? m.lastReps ?? null,
+        mechanism: m.mechanism || e.mechanism,
+        gapProvenByConsolidation:
+          e.gapProvenByConsolidation ||
+          (/resumed_former_level|partial_resume/i.test(String(m.mechanism || '')) &&
+            Number(e.gapDays) >= 21)
+      };
+    });
+    const ledgerEpisodes = clusterLedgerReturnEpisodes(returnEvents, { window: p?.window || null });
+    const collective = exploreCollectiveReturn(returnEvents, {
+      muscleByExercise: muscleIndex,
+      window: p?.window || null,
+      inferMuscleGroups: inferMuscleGroupsForExercise
+    });
     if (collective.coverage === EXPLORE_COVERAGE.CONCLUDED && collective.conclusion) {
+      const eventByKey = new Map();
+      returnEvents.forEach((e) => {
+        [e.exerciseId, String(e.name || '').toLowerCase()].filter(Boolean).forEach((k) => {
+          eventByKey.set(String(k), e);
+        });
+      });
+      const windowStart = p?.window?.start || null;
+      const windowEnd = p?.window?.end || null;
+      const returnInWindow = (collective.dates || []).some(
+        (d) => (!windowStart || d >= windowStart) && (!windowEnd || d <= windowEnd)
+      );
+      const confirmInWindow = (collective.confirmationDates || []).some(
+        (d) => (!windowStart || d >= windowStart) && (!windowEnd || d <= windowEnd)
+      );
+      // Aujourd’hui : pas de collectif sans lien concret avec la journée courante.
+      if (isToday && !returnInWindow && !confirmInWindow) {
+        // abstention volontaire
+      } else {
+      const readingMode =
+        isWeek && confirmInWindow && !returnInWindow
+          ? 'confirmation'
+          : returnInWindow
+            ? 'return'
+            : confirmInWindow
+              ? 'confirmation'
+              : 'episode';
+      const composed = composeCollectiveReturnReading({
+        namedMoves: (collective.namedMoves || []).map((m) => {
+          const hit =
+            eventByKey.get(String(m.exerciseId || '')) ||
+            eventByKey.get(String(m.name || '').toLowerCase());
+          return {
+            ...m,
+            prevReps: hit?.prevReps ?? m.prevReps,
+            currentReps: hit?.currentReps ?? m.currentReps,
+            gapDays: hit?.gapDays ?? m.gapDays,
+            lastBefore: hit?.lastBefore ?? m.lastBefore,
+            confirmationDates: hit?.confirmationDates ?? m.confirmationDates
+          };
+        }),
+        dates: collective.dates || [],
+        confirmationDates: collective.confirmationDates || [],
+        spanDays: collective.spanDays,
+        families: collective.families || [],
+        sessionFamilyLinked: (collective.retained || []).some(
+          (h) =>
+            h.id === 'shared_session_family' ||
+            h.id === 'shared_return_cooccurrence'
+        ),
+        readingMode,
+        baseConclusion: collective.conclusion
+      });
+      const confirmationTitle = isWeek
+        ? 'La reprise collective se confirme cette semaine'
+        : isMonth
+          ? 'La reprise collective se confirme sur ces 30 jours'
+          : 'La reprise collective se confirme sur cette période';
       out.push(
         discovery({
           kind: 'disc_collective_return',
           nature: 'trajectory',
           family: 'repertoire',
-          title: 'Un retour collectif restructure une partie du répertoire',
-          body: collective.conclusion,
+          title:
+            readingMode === 'confirmation'
+              ? confirmationTitle
+              : composed.coverage === 'concluded'
+                ? 'Une composante de ton entraînement se réinstalle'
+                : 'Un retour collectif restructure une partie du répertoire',
+          body: composed.conclusion || collective.conclusion,
           evidence: (collective.namedMoves || [])
             .map((m) => `${m.name}@${m.date || '?'}`)
-            .slice(0, 8)
             .join(' · '),
-          weights: { importance: 0.95, reliability: 0.88, novelty: 0.95, fit: isMonth || isWeek ? 1 : 0.82 },
+          weights: {
+            importance: 0.98,
+            reliability: 0.9,
+            novelty: 0.96,
+            fit: isMonth || isWeek ? 1 : 0.85
+          },
+          drafting: { authority: 'composition' },
           metrics: {
             events: returnEvents,
             namedMoves: collective.namedMoves || [],
             dates: collective.dates || [],
+            returnDates: collective.dates || [],
+            confirmationDates: collective.confirmationDates || [],
+            readingMode,
             spanDays: collective.spanDays,
             exploration: collective,
-            observedValues: (collective.namedMoves || []).slice(0, 8).flatMap((m) => [
+            composition: composed,
+            narrativeAuthority: 'composition',
+            thesis: 'collective_return',
+            episodeId: `return_episode|${(collective.dates || []).join(',')}`,
+            episodeQual: qualifyEpisodeLevels(collective.namedMoves || returnEvents),
+            ledgerEpisodeRank: ledgerEpisodes[0]
+              ? {
+                  episodeId: ledgerEpisodes[0].episodeId,
+                  date: ledgerEpisodes[0].date,
+                  size: ledgerEpisodes[0].size
+                }
+              : null,
+            window: p?.window || null,
+            observedValues: (collective.namedMoves || []).flatMap((m) => [
               { id: `return:${m.exerciseId || m.name}`, value: m.date, unit: 'date' },
-              ...(m.gapDays != null ? [{ id: `gap:${m.exerciseId || m.name}`, value: m.gapDays, unit: 'days' }] : [])
+              ...(m.gapDays != null
+                ? [{ id: `gap:${m.exerciseId || m.name}`, value: m.gapDays, unit: 'days' }]
+                : []),
+              ...(m.prevReps != null
+                ? [{ id: `prevReps:${m.exerciseId || m.name}`, value: m.prevReps, unit: 'reps' }]
+                : []),
+              ...(m.currentReps != null
+                ? [{ id: `currentReps:${m.exerciseId || m.name}`, value: m.currentReps, unit: 'reps' }]
+                : [])
             ]),
-            conclusionKey: `collective_return|${(collective.dates || []).join(',')}`,
-            producer: 'exploreCollectiveReturn'
+            conclusionKey: `collective_return|${readingMode}|${(collective.dates || []).join(',')}`,
+            producer: 'sessionEpisodeLedger+exploreCollectiveReturn+composeCollectiveReturnReading',
+            informativeValue: 96
+          }
+        })
+      );
+      } // else : publier collectif
+    }
+
+    // Mission 19 — décomposition mensuelle volume × familles (socle catalogue + programme)
+    if (isMonth || isWeek) {
+      try {
+        const decomp = decomposeMonthlyProgramChange({
+          catalog: catalog || [],
+          window: p?.window || null,
+          activeProgram: extras?.activeProgram || null,
+          getExerciseNameById: extras?.getExerciseNameById || null
+        });
+        const monthlyCard = discoveryFromMonthlyComposition(decomp, {
+          voiceKey: v?.key || 'month'
+        });
+        if (monthlyCard && decomp.deltaVolume !== 0) {
+          // Sur 7j : seulement si l’angle famille apporte une info absente du volume brut
+          if (isMonth || (isWeek && (decomp.drivers || []).length >= 1)) {
+            out.push(discovery(monthlyCard));
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+    }
+
+    // Phase collective de charges — resistance_progression + consolidations (Mission 13 : champs réels)
+    const loadEvents = out
+      .filter((row) =>
+        /resistance_progression|load_progression|disc_format_consolidation|disc_ms_resistance/i.test(
+          String(row.kind || '')
+        ) ||
+        /charge monte|load_progression|résistance/i.test(String(row.title || ''))
+      )
+      .map((row) => {
+        const m = row.metrics || {};
+        const before = m.loadBefore ?? m.priorLoad ?? m.fromValue ?? null;
+        const after = m.loadAfter ?? m.newLoad ?? m.toValue ?? null;
+        const name =
+          m.exerciseName ||
+          m.name ||
+          String(row.title || '')
+            .split(':')[0]
+            .replace(/\s*la charge.*$/i, '')
+            .trim();
+        return {
+          name,
+          date: m.date || m.toDate || m.returnDate || m.fromDate || null,
+          loadBefore: before != null ? Number(before) : null,
+          loadAfter: after != null ? Number(after) : null,
+          formatStable: m.formatStable !== false
+        };
+      })
+      .filter(
+        (e) =>
+          e.name &&
+          Number.isFinite(e.loadBefore) &&
+          Number.isFinite(e.loadAfter) &&
+          e.loadAfter > e.loadBefore
+      );
+    const loadPhase = composeLoadProgressionPhase({ events: loadEvents });
+    if (loadPhase.coverage === 'concluded' && loadPhase.conclusion) {
+      out.push(
+        discovery({
+          kind: 'disc_composed_load_phase',
+          nature: 'trajectory',
+          family: 'progression',
+          title: loadPhase.title,
+          body: loadPhase.conclusion,
+          evidence: loadEvents
+            .slice(0, 6)
+            .map((e) => `${e.name} ${e.loadBefore}→${e.loadAfter}`)
+            .join(' · '),
+          weights: {
+            importance: 0.94,
+            reliability: 0.88,
+            novelty: 0.93,
+            fit: isMonth || isLongVoice(v) ? 1 : 0.8
+          },
+          metrics: {
+            events: loadEvents,
+            composition: loadPhase,
+            producer: 'composeLoadProgressionPhase',
+            informativeValue: 90
           }
         })
       );
     }
   }
+
+  // Décomposition volume : dénominateur = journées avec reps de renforcement (pas calendrier)
+  if (!isToday && !isWeek && volumeBaseline) {
+    const daysBefore = Number(volumeBaseline.strengthDays ?? volumeBaseline.trainingDays);
+    const daysAfter = Number(p.strengthDays ?? p.trainingDays);
+    if (daysBefore >= 2 && daysAfter >= 2) {
+      const half = composeVolumeFrequencyContentReading({
+        repsBefore: Number(volumeBaseline.totalReps),
+        repsAfter: Number(p.totalReps),
+        daysBefore,
+        daysAfter,
+        labelBefore: volumeBaselineLabel,
+        labelAfter: v?.thisPeriod || 'cette période'
+      });
+      if (
+        half.coverage === 'concluded' &&
+        half.decomposition?.ok &&
+        Math.abs(Number(half.decomposition.volumePct) || 0) >= 8
+      ) {
+        const populationNote =
+          ' Population : journées avec répétitions de renforcement (pas toutes les journées actives du calendrier).';
+        out.push(
+          discovery({
+            kind: 'disc_composed_volume_decomp',
+            nature: 'trajectory',
+            family: 'volume_shape',
+            title: half.title,
+            body: `${half.conclusion}${populationNote}`,
+            evidence: `${fmtInt(volumeBaseline.totalReps)}→${fmtInt(p.totalReps)} · ${daysBefore}→${daysAfter} j. renforcement`,
+            weights: { importance: 0.93, reliability: 0.9, novelty: 0.88, fit: 0.95 },
+            metrics: {
+              ...half.decomposition,
+              composition: half,
+              population: 'strength_positive_reps_days',
+              strengthDaysBefore: daysBefore,
+              strengthDaysAfter: daysAfter,
+              calendarTrainingDaysBefore: volumeBaseline.trainingDays ?? null,
+              calendarTrainingDaysAfter: p.trainingDays ?? null,
+              producer: 'composeVolumeFrequencyContentReading',
+              informativeValue: 88
+            }
+          })
+        );
+      }
+    }
+  }
+
 
   if (extras?.snapshot && p.window?.start && p.window?.end) {
     exploreSameFormatTimeChange({
@@ -3065,18 +3437,64 @@ export function detectDiscoveries(cmp, extras = {}) {
       sourceDates: row.metrics?.dates || row.metrics?.date || null
     };
   });
-  // Contexte programme transversal : variantes prescrites ≠ recul de capacité
+  // Contexte programme transversal : variantes prescrites peuvent changer la thèse
   const program = extras?.activeProgram || null;
   if (!program) return out;
+  // `catalog` déjà déclaré en tête de detectDiscoveries (extras.catalog)
   return out.map((row) => {
     const blob = `${row.kind || ''} ${row.title || ''} ${row.body || ''}`;
-    if (
-      row?.metrics?.exerciseId &&
-      /disc_exercise_progress|disc_ms_|decline|recul|baisse|volume moyen|progression/i.test(blob)
-    ) {
-      return annotateTrajectoryWithProgramContext(row, program);
+    const exerciseScoped =
+      row?.metrics?.exerciseId ||
+      row?.metrics?.exerciseName ||
+      row?.metrics?.name;
+    if (!exerciseScoped || !isVariantMixCompatibleDiscovery(row)) {
+      // Slot match seul possible hors mix (contexte créneau), sans greffer une thèse volume.
+      if (!exerciseScoped) return row;
+      const sessions = sessionsForExerciseFromCatalog(
+        catalog,
+        row.metrics?.exerciseId,
+        row.metrics?.exerciseName || row.metrics?.name
+      );
+      if (!sessions.length) return row;
+      const realizedSession = {
+        date: sessions[sessions.length - 1].date,
+        exercises: sessions[sessions.length - 1].exercises || [
+          {
+            name: row.metrics?.exerciseName || row.metrics?.name,
+            reps: sessions[sessions.length - 1].totalReps
+          }
+        ]
+      };
+      return annotateTrajectoryWithProgramContext(row, program, {
+        sessions: [],
+        realizedSession,
+        windowStart: p?.window?.start || extras?.window?.start || null,
+        windowEnd: p?.window?.end || extras?.window?.end || null
+      });
     }
-    return row;
+    const sessions = sessionsForExerciseFromCatalog(
+      catalog,
+      row.metrics?.exerciseId,
+      row.metrics?.exerciseName || row.metrics?.name
+    );
+    const realizedSession =
+      sessions.length > 0
+        ? {
+            date: sessions[sessions.length - 1].date,
+            exercises: sessions[sessions.length - 1].exercises || [
+              {
+                name: row.metrics?.exerciseName || row.metrics?.name,
+                reps: sessions[sessions.length - 1].totalReps
+              }
+            ]
+          }
+        : null;
+    return annotateTrajectoryWithProgramContext(row, program, {
+      sessions,
+      realizedSession,
+      windowStart: p?.window?.start || extras?.window?.start || null,
+      windowEnd: p?.window?.end || extras?.window?.end || null
+    });
   });
 }
 

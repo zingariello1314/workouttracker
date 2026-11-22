@@ -1,0 +1,38 @@
+{
+  "schema": "momentum.evalGameReport.v1",
+  "game": "A",
+  "executedAt": "2026-11-21T18:20:58.914Z",
+  "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": true,
+  "counters": {
+    "missingClaims": 0,
+    "fusedSourcesRepublished": 0,
+    "unpairedDensities": 0,
+    "inventedCauses": 0,
+    "factualConflicts": 0,
+    "identityMerges": 0
+  },
+  "cases": [
+    {
+      "id": "A-all-clear",
+      "game": "A",
+      "referenceData": null,
+      "expected": {
+        "pass": true
+      },
+      "obtained": {
+        "pass": true
+      },
+      "status": "pass",
+      "justification": "aucune violation détectée sur le paquet fourni",
+      "delta": null,
+      "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    }
+  ],
+  "humanBlindComparison": {
+    "performed": false,
+    "reason": "not_requested"
+  }
+}

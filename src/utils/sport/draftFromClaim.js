@@ -43,24 +43,51 @@ function limitToProse(code) {
   return cleanSentence(key);
 }
 
+/**
+ * Mission 19 — autorité narrative : une conclusion déjà composée / thèse établie
+ * ne doit pas être écrasée par une ré-exploration brute.
+ */
+function authoritativeBody(discovery, exploration) {
+  const composed = cleanSentence(discovery?.metrics?.composition?.conclusion || '');
+  const authority = String(
+    discovery?.metrics?.narrativeAuthority || discovery?.drafting?.authority || ''
+  );
+  const legacy = cleanSentence(discovery?.body || discovery?.text || '');
+  const conclusion = cleanSentence(exploration?.conclusion || '');
+  if (authority === 'composition' && (composed || legacy)) {
+    return composed || legacy;
+  }
+  if (composed && discovery?.metrics?.thesis) {
+    return composed;
+  }
+  if (
+    /variant_mix_shift|collective_return|program_variant_mix/i.test(
+      `${discovery?.metrics?.thesis || ''} ${discovery?.metrics?.composition || ''} ${discovery?.kind || ''}`
+    ) &&
+    legacy
+  ) {
+    // Préférer le corps déjà aligné à la thèse plutôt qu’une conclusion d’exploration plate.
+    return legacy;
+  }
+  return conclusion || legacy;
+}
+
 function bodyFromParts({ claim, exploration, discovery }) {
   const parts = [];
-  const conclusion = cleanSentence(exploration?.conclusion || '');
   const legacy = cleanSentence(discovery?.body || discovery?.text || '');
   const statement = cleanSentence(claim?.statement || '');
   const title = titleFromClaim(claim, discovery);
+  const primary = authoritativeBody(discovery, exploration);
 
-  // Contenu analytique d’abord : exploration → corps hérité → thèse (si distincte du titre)
-  if (conclusion) {
-    parts.push(conclusion);
-  } else if (legacy) {
-    parts.push(legacy);
+  // Contenu analytique : autorité établie → exploration → thèse
+  if (primary) {
+    parts.push(primary);
   } else if (statement && statement !== title) {
     parts.push(statement);
   }
 
   const retained = (exploration?.hypotheses || []).filter((row) => row.status === 'supported');
-  if (retained.length && !conclusion && !legacy) {
+  if (retained.length && !primary) {
     parts.push(`Les observations retenues : ${retained.map((row) => row.detail).join(' ; ')}.`);
   }
 
@@ -96,10 +123,56 @@ function bodyFromParts({ claim, exploration, discovery }) {
  * Réécrit title/body à partir du claim et de l'exploration.
  * Ne fabrique aucune assertion absente du claim.
  */
+/**
+ * Mission 20 — détecte contradiction de direction titre ↔ delta numérique,
+ * sans liste spéciale de kinds.
+ */
+function resolveDirectionAwareTitle(title, discovery, body) {
+  const metrics = discovery?.metrics || {};
+  const delta =
+    metrics.deltaVolume ??
+    metrics.decomposition?.deltaVolume ??
+    (Array.isArray(metrics.observedValues)
+      ? metrics.observedValues.find((v) => v?.id === 'deltaVolume')?.value
+      : null);
+  if (!Number.isFinite(Number(delta))) return { title, directionMismatch: false };
+  const n = Number(delta);
+  const titleText = String(title || '');
+  const bodyText = String(body || '');
+  const saysUp = /hausse|augmentation|monte|progression de volume/i.test(titleText);
+  const saysDown = /baisse|diminution|recul|baisse de volume/i.test(titleText);
+  if (n < -30 && saysUp) {
+    const fixed = titleText.replace(/hausse/gi, 'baisse').replace(/augmentation/gi, 'diminution');
+    return { title: fixed, directionMismatch: true, expected: 'down' };
+  }
+  if (n > 30 && saysDown) {
+    const fixed = titleText.replace(/baisse/gi, 'hausse').replace(/diminution/gi, 'augmentation');
+    return { title: fixed, directionMismatch: true, expected: 'up' };
+  }
+  // Corps vs titre : « baisse » chiffrée dans le corps avec titre « hausse »
+  if (saysUp && /passe de\s+\d[\d\s]*\s+à\s+\d/i.test(bodyText)) {
+    const m = bodyText.match(/passe de\s+([\d\s]+)\s+à\s+([\d\s]+)/i);
+    if (m) {
+      const a = parseInt(String(m[1]).replace(/\s/g, ''), 10);
+      const b = parseInt(String(m[2]).replace(/\s/g, ''), 10);
+      if (Number.isFinite(a) && Number.isFinite(b) && b < a * 0.92) {
+        return {
+          title: titleText.replace(/hausse/gi, 'baisse').replace(/augmentation/gi, 'diminution'),
+          directionMismatch: true,
+          expected: 'down'
+        };
+      }
+    }
+  }
+  return { title, directionMismatch: false };
+}
+
 export function draftFromClaim(discovery, claim, exploration = null) {
   if (!discovery || !claim) return discovery;
-  const title = titleFromClaim(claim, discovery);
+  let title = titleFromClaim(claim, discovery);
   const body = bodyFromParts({ claim, exploration, discovery });
+  const directionFix = resolveDirectionAwareTitle(title, discovery, body);
+  title = directionFix.title;
   const allowed = Array.isArray(claim.allowedStatements) ? claim.allowedStatements : [];
   const textOk =
     !allowed.length ||
@@ -124,7 +197,8 @@ export function draftFromClaim(discovery, claim, exploration = null) {
     drafting: {
       authority: 'claim',
       explorationCoverage: exploration?.coverage || null,
-      textOk
+      textOk,
+      directionMismatch: directionFix.directionMismatch || false
     }
   };
 }

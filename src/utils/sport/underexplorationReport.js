@@ -99,8 +99,20 @@ export function buildCoverageMatrix({
     let method = null;
     let abstention = null;
     if (hits.length > 0) {
-      const conclusive = hits.filter((d) => d?.body || d?.title || d?.claim);
-      status = conclusive.length ? 'tested_with_candidate' : 'tested_non_conclusive';
+      const conclusive = hits.filter(
+        (d) =>
+          (d?.body || d?.title || d?.claim) &&
+          (d?.disposition === 'priority' ||
+            d?.p6Disposition === 'priority' ||
+            d?.metrics?.composition ||
+            d?.exploration?.coverage === 'concluded')
+      );
+      // kind compatible ≠ méthode exécutée / conclusion publiée
+      status = conclusive.length
+        ? 'tested_with_candidate'
+        : hits.some((d) => d?.body || d?.title)
+          ? 'candidate_kind_present_not_elevated'
+          : 'tested_non_conclusive';
       method = `kinds:${[...new Set(hits.map(discoveryKind))].slice(0, 6).join(',')}`;
     } else if (graphHas && (rel.id === 'exercise_x_session' || rel.id === 'exercise_x_muscle')) {
       status = 'data_present_not_elevated';

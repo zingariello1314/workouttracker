@@ -9,16 +9,26 @@ export const ANALYSIS_EDITION_PARTS = Object.freeze({
   streak: 'window-range-v1',
   duration: 'paired-density-v3',
   gtg: 'classic-exclusive-v1',
-  program: 'structural-context-v2',
+  program: 'structural-context-v4',
   identity: 'discovery-occurrence-v1',
   scope: 'short-window-anchor-v1',
-  editorial: 'p6-sovereign-v10',
+  editorial: 'p6-sovereign-v19',
   consolidation: 'narrative-coherence-v3',
   stimulus: 'challenge-unknown-v1',
-  review: 'collective-pass4-v7',
-  claim: 'proof-pipeline-v3',
-  sleep: 'association-prose-v2',
-  audit: 'normalized-export-v1'
+  review: 'collective-pass4-v13',
+  claim: 'assertion-window-v2',
+  sleep: 'association-prose-v4',
+  audit: 'normalized-export-v5',
+  composition: 'phenomenon-compose-v7',
+  coherence: 'inter-horizon-v4',
+  classification: 'modality-authority-v1',
+  matching: 'session-slot-v3',
+  hierarchy: 'verified-deepening-v1',
+  programReasoning: 'variant-mix-direction-v3',
+  collectiveReturn: 'session-episode-ledger-v5',
+  narrativeAuthority: 'thesis-composition-v2',
+  populations: 'canonical-populations-v1',
+  fingerprint: 'exercise-weights-v3'
 });
 
 export function analysisEditionKey(parts = ANALYSIS_EDITION_PARTS) {
@@ -26,6 +36,18 @@ export function analysisEditionKey(parts = ANALYSIS_EDITION_PARTS) {
     .sort()
     .map((key) => `${key}=${parts[key]}`)
     .join(';');
+}
+
+/**
+ * Libellé de mission dérivé de l’édition (évite les hardcodes Mission N).
+ * Convention : editorial p6-sovereign-vN → Mission (N+1) depuis v12↔M13.
+ */
+export function analysisMissionLabel(parts = ANALYSIS_EDITION_PARTS) {
+  const ed = String(parts.editorial || '');
+  const m = ed.match(/p6-sovereign-v(\d+)/i);
+  if (!m) return 'Mission P6';
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? `Mission ${n + 1}` : 'Mission P6';
 }
 
 /**

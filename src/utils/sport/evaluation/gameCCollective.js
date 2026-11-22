@@ -254,6 +254,81 @@ export function runGameCCollective({ insights = null, p6 = null, periodPacks = n
         });
       }
     });
+
+    // Mission 14 : validité sémantique des dispositions (pas seulement leur existence)
+    let unjustifiedDeepenings = 0;
+    let deepeningInaccessible = 0;
+    dispositions.forEach((d) => {
+      if (
+        d.disposition === 'source_retained' &&
+        /deepening_of_collective|individual_load_under_phase|individual_return/i.test(
+          String(d.reason || '')
+        )
+      ) {
+        unjustifiedDeepenings += 1;
+        report.admissiblePreserved = false;
+        report.cases.push({
+          period: pack.period || 'live',
+          issue: 'unjustified_deepening_or_absorption',
+          id: d.id,
+          disposition: d.disposition,
+          reason: d.reason
+        });
+      }
+      if (
+        d.disposition === 'deepening_accessible' ||
+        (d.disposition === 'deepening_of_collective' && d.reason === 'verified_parent_child')
+      ) {
+        const stillAccessible = accessible.some(
+          (c) => stablePublicationId(c) === d.id || c.id === d.id
+        );
+        if (!stillAccessible && d.collapsedInto) {
+          const parentPublished = accessible.some(
+            (c) => c.id === d.collapsedInto || stablePublicationId(c) === d.collapsedInto
+          );
+          if (parentPublished) {
+            deepeningInaccessible += 1;
+            report.cases.push({
+              period: pack.period || 'live',
+              issue: 'deepening_declared_but_not_accessible',
+              id: d.id,
+              parentId: d.collapsedInto
+            });
+          }
+        }
+      }
+    });
+    const absorbByParent = new Map();
+    dispositions.forEach((d) => {
+      if (
+        d.collapsedInto &&
+        (d.disposition === 'source_retained' || d.disposition === 'deepening_of_collective')
+      ) {
+        absorbByParent.set(d.collapsedInto, (absorbByParent.get(d.collapsedInto) || 0) + 1);
+      }
+    });
+    absorbByParent.forEach((count, parentId) => {
+      if (count < 8) return;
+      const withProof = dispositions.filter(
+        (d) =>
+          d.collapsedInto === parentId &&
+          (d.equivalence?.proof ||
+            d.equivalence?.reason === 'verified_parent_child' ||
+            d.reason === 'verified_parent_child')
+      ).length;
+      if (withProof < Math.ceil(count * 0.5)) {
+        report.admissiblePreserved = false;
+        report.cases.push({
+          period: pack.period || 'live',
+          issue: 'parent_absorbs_many_without_proofs',
+          parentId,
+          absorbedCount: count,
+          withProof
+        });
+      }
+    });
+    report.unjustifiedDeepenings = (report.unjustifiedDeepenings || 0) + unjustifiedDeepenings;
+    report.deepeningInaccessible = (report.deepeningInaccessible || 0) + deepeningInaccessible;
   });
 
   const hardFail =
@@ -264,11 +339,16 @@ export function runGameCCollective({ insights = null, p6 = null, periodPacks = n
     report.suppressionWithoutProof > 0 ||
     report.fusionWithoutDestination > 0 ||
     report.horizonConfusion > 0 ||
-    report.semanticEquivalentsAccessible > 0;
+    report.semanticEquivalentsAccessible > 0 ||
+    (report.unjustifiedDeepenings || 0) > 0 ||
+    (report.deepeningInaccessible || 0) > 0;
 
   report.pass = !hardFail;
   report.evaluatorNotes.push(
     'exactDuplicatesAccessible = doublons textuels uniquement ; semanticEquivalentsAccessible est séparé'
+  );
+  report.evaluatorNotes.push(
+    'Mission 14 : dispositions deepening/absorption validées sémantiquement (sujet/épisode/preuve)'
   );
 
   return report;

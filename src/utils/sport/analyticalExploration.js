@@ -246,9 +246,34 @@ function muscleFamilyOf(row) {
   return String(raw).trim();
 }
 
+function inferMusclesFromMove(row, inferFn) {
+  const fromRow = Array.isArray(row?.muscleGroups)
+    ? row.muscleGroups.map(String).filter(Boolean)
+    : [];
+  const existing = muscleFamilyOf(row);
+  let inferred = [];
+  if (typeof inferFn === 'function') {
+    try {
+      inferred = (inferFn({ name: row?.name, id: row?.exerciseId || row?.storageId }) || [])
+        .map((g) => String(g || '').trim())
+        .filter((g) => g && !TAXONOMY_FAMILIES.has(g.toLowerCase()));
+    } catch {
+      inferred = [];
+    }
+  }
+  return [...new Set([...fromRow, ...(existing ? [existing] : []), ...inferred])];
+}
+
 function significantGap(row) {
   const gap = Number(row?.gapDays);
   if (!Number.isFinite(gap) || gap <= 0) return false;
+  // Gap déjà établi par consolidation de format (≥ 21 j) : ne pas l’invalider via une cadence estimée.
+  if (
+    row?.gapProvenByConsolidation === true ||
+    /resumed_former_level|partial_resume/i.test(String(row?.mechanism || ''))
+  ) {
+    if (gap >= 21) return true;
+  }
   const habitual = Number(
     row?.habitualGapDays ?? row?.usualGapDays ?? row?.cadenceDays ?? row?.habitualCadenceDays
   );
@@ -314,41 +339,69 @@ export function habitualCadenceFromDates(dates = [], { excludeGapDays = null } =
   return s.length % 2 ? s[mid] : Math.round(((s[mid - 1] + s[mid]) / 2) * 10) / 10;
 }
 
-export function exploreCollectiveReturn(events = [], context = {}) {
-  const muscleIndex =
-    context.muscleByExercise ||
-    (Array.isArray(context.exerciseCatalog) ? buildExerciseMuscleIndex(context.exerciseCatalog) : null);
-  // Enrichissement : groupe musculaire (catalogue/snapshot) + cadence habituelle (fréquence connue).
-  const keysOf = (row) => [row.exerciseId, row.storageId, String(row.name || '').trim().toLowerCase()];
-  const enriched = (events || [])
-    .filter((row) => row && (row.exerciseId || row.name))
-    .map((row) => {
-      const muscleGroup =
-        muscleFamilyOf(row) || muscleFamilyOf({ muscleGroup: lookupInto(muscleIndex, keysOf(row)) });
-      const cadenceRaw =
-        row.habitualGapDays ??
-        row.usualGapDays ??
-        row.cadenceDays ??
-        row.habitualCadenceDays ??
-        lookupInto(context.cadenceByExercise, keysOf(row));
-      const cadence = Number(cadenceRaw) > 0 ? Number(cadenceRaw) : null;
-      return {
-        ...row,
-        muscleGroup: muscleGroup || null,
-        family: muscleGroup || null,
-        habitualCadenceDays: cadence
-      };
-    });
-  // Un vrai retour exige une interruption significative — gap 0 / émergence pure ≠ retour.
-  const rows = enriched.filter((row) => significantGap(row));
-  if (rows.length < 3) {
+/**
+ * Date d’épisode de reprise (pas la confirmation ultérieure).
+ */
+export function episodeReturnDateOf(row) {
+  return String(row?.returnDate || row?.gapAfter || row?.date || '').slice(0, 10) || null;
+}
+
+/**
+ * Regroupe les retours par jour de reprise.
+ * Mission 18 : éviter la dilution multi-dates (mai→nov) qui faisait échouer
+ * sameWindow / co-occurrence majoritaire alors qu’un épisode dense existait.
+ */
+export function clusterReturnEventsByEpisodeDate(rows = []) {
+  const byDate = new Map();
+  (rows || []).forEach((row) => {
+    const d = episodeReturnDateOf(row);
+    if (!d) return;
+    if (!byDate.has(d)) byDate.set(d, []);
+    byDate.get(d).push(row);
+  });
+  return [...byDate.entries()]
+    .map(([date, cluster]) => ({ date, rows: cluster, size: cluster.length }))
+    .sort((a, b) => b.size - a.size || a.date.localeCompare(b.date));
+}
+
+/**
+ * Noyau d’exploration sur un ensemble déjà filtré (un épisode / un cluster).
+ * @private
+ */
+function exploreCollectiveReturnFlat(rows, context = {}, sourceEvents = null) {
+  // Date d’épisode = reprise (returnDate), pas la confirmation ultérieure.
+  const episodeDateOf = episodeReturnDateOf;
+  const datesEarly = [...new Set(rows.map((row) => episodeDateOf(row)).filter(Boolean))].sort();
+  const familiesEarly = [...new Set(rows.map((row) => muscleFamilyOf(row)).filter(Boolean))];
+  const sessionKeysEarly = rows.map((r) => r.sessionFamilyId || r.dayKey || null).filter(Boolean);
+  // Co-occurrence : plusieurs mouvements reprennent le même jour → organisation de séance commune.
+  const coOccurCounts = new Map();
+  rows.forEach((r) => {
+    const d = episodeDateOf(r);
+    if (!d) return;
+    coOccurCounts.set(d, (coOccurCounts.get(d) || 0) + 1);
+  });
+  const maxCoOccur = Math.max(0, ...coOccurCounts.values());
+  const coOccurrenceLinked =
+    maxCoOccur >= 2 && maxCoOccur >= Math.ceil(rows.length * 0.5);
+  const linkedEarly =
+    coOccurrenceLinked ||
+    (familiesEarly.length >= 1 &&
+      familiesEarly.length <= 2 &&
+      rows.filter((row) => muscleFamilyOf(row)).length >= 2) ||
+    (sessionKeysEarly.length >= 2 && new Set(sessionKeysEarly).size <= 2);
+  // Mission 14/17 : 2 retours liés (co-occurrence, famille ou créneau) ; sinon seuil 3
+  const minRows = linkedEarly ? 2 : 3;
+  if (rows.length < minRows) {
     return {
-      coverage: (events || []).length === 0 ? COVERAGE.NO_DATA : COVERAGE.UNDER_EXPLORED,
+      coverage: (sourceEvents || []).length === 0 && rows.length === 0 ? COVERAGE.NO_DATA : COVERAGE.UNDER_EXPLORED,
       hypotheses: [
         hypothesis(
           'collective_return',
           'method_unavailable',
-          'moins de trois retours avec interruption significative (≥ 14 j, ou au-delà de la cadence habituelle quand elle est connue)'
+          linkedEarly
+            ? 'moins de deux retours liés avec interruption significative'
+            : 'moins de trois retours avec interruption significative, ou lien musculaire/séance insuffisant pour abaisser le seuil à 2'
         )
       ],
       retained: [],
@@ -356,26 +409,43 @@ export function exploreCollectiveReturn(events = [], context = {}) {
       conclusion: null
     };
   }
-  const dates = [...new Set(rows.map((row) => String(row.date || '').slice(0, 10)).filter(Boolean))].sort();
+  const dates = datesEarly;
   const spanDays =
     dates.length >= 2
       ? Math.round((new Date(`${dates[dates.length - 1]}T12:00:00`) - new Date(`${dates[0]}T12:00:00`)) / 86400000)
       : 0;
   const sameWindow = spanDays <= 14;
-  const families = [...new Set(rows.map((row) => muscleFamilyOf(row)).filter(Boolean))];
+  // Familles pour le lien structurel (majorité) vs inventaire complet pour la prose.
+  const linkFamilies = familiesEarly;
+  const families = [
+    ...new Set(
+      rows.flatMap((r) =>
+        Array.isArray(r.muscleGroups) && r.muscleGroups.length
+          ? r.muscleGroups
+          : muscleFamilyOf(r)
+            ? [muscleFamilyOf(r)]
+            : []
+      )
+    )
+  ];
   // Une famille musculaire ne lie que si la majorité des retours la documente (≥ 2/3).
   const familyDocumented = rows.filter((row) => muscleFamilyOf(row)).length;
   const sameFamily =
-    families.length >= 1 &&
-    families.length <= 2 &&
+    linkFamilies.length >= 1 &&
+    linkFamilies.length <= 2 &&
     familyDocumented >= Math.max(2, Math.ceil(rows.length * (2 / 3)));
-  const sessionKeys = rows.map((r) => r.sessionFamilyId || r.dayKey || null).filter(Boolean);
+  const sessionKeys = sessionKeysEarly;
   const sharedSession =
     sessionKeys.length >= 2 && new Set(sessionKeys).size <= 2
       ? 'supported'
       : sessionKeys.length === 0
         ? 'method_unavailable'
         : 'rejected';
+  const coOccurrenceStatus = coOccurrenceLinked
+    ? 'supported'
+    : maxCoOccur >= 2
+      ? 'probable'
+      : 'method_unavailable';
   const programVersion =
     context.programVersionChanged === true
       ? 'supported'
@@ -385,14 +455,41 @@ export function exploreCollectiveReturn(events = [], context = {}) {
   const gaps = rows
     .map((r) => Number(r.gapDays))
     .filter((n) => Number.isFinite(n) && n > 0);
+  const confirmationDates = [
+    ...new Set(
+      rows
+        .flatMap((r) => {
+          const ret = episodeDateOf(r);
+          const conf = Array.isArray(r.confirmationDates)
+            ? r.confirmationDates
+            : Array.isArray(r.dates)
+              ? r.dates
+              : [];
+          return conf
+            .map((d) => String(d).slice(0, 10))
+            .filter((d) => d && (!ret || d > ret));
+        })
+        .filter(Boolean)
+    )
+  ].sort();
   const namedMoves = rows.map((r) => ({
     name: r.name || String(r.exerciseId),
-    date: String(r.date || '').slice(0, 10) || null,
+    date: episodeDateOf(r),
+    returnDate: episodeDateOf(r),
+    lastBefore: r.lastBefore || r.gapBefore || r.prevDate || null,
+    muscleGroup: muscleFamilyOf(r),
+    muscleGroups: Array.isArray(r.muscleGroups) ? r.muscleGroups : [],
+    confirmationDates: (Array.isArray(r.confirmationDates) ? r.confirmationDates : r.dates || [])
+      .map((d) => String(d).slice(0, 10))
+      .filter((d) => d && d > (episodeDateOf(r) || '')),
     gapDays: Number.isFinite(Number(r.gapDays)) ? Number(r.gapDays) : null,
     family: muscleFamilyOf(r),
     muscleGroup: muscleFamilyOf(r),
     exerciseId: r.exerciseId || null,
     habitualCadenceDays: r.habitualCadenceDays || null,
+    prevReps: r.prevReps ?? null,
+    currentReps: r.currentReps ?? null,
+    mechanism: r.mechanism || null,
     gapVsCadence:
       r.habitualCadenceDays && Number(r.gapDays) > 0
         ? Math.round((Number(r.gapDays) / r.habitualCadenceDays) * 10) / 10
@@ -403,14 +500,25 @@ export function exploreCollectiveReturn(events = [], context = {}) {
     hypothesis('simultaneous_return', sameWindow ? 'supported' : 'rejected', `fenêtre de ${spanDays} jours`),
     hypothesis(
       'shared_family',
-      sameFamily ? 'supported' : families.length === 0 ? 'method_unavailable' : 'rejected',
-      families.join(', ') || 'familles musculaires non documentées'
+      sameFamily ? 'supported' : linkFamilies.length === 0 ? 'method_unavailable' : 'rejected',
+      linkFamilies.join(', ') || 'familles musculaires non documentées'
     ),
     hypothesis('shared_session_family', sharedSession, 'appartenance à une famille de séances documentée'),
+    hypothesis(
+      'shared_return_cooccurrence',
+      coOccurrenceStatus === 'supported'
+        ? 'supported'
+        : coOccurrenceStatus === 'probable'
+          ? 'probable'
+          : 'method_unavailable',
+      `co-occurrence max ${maxCoOccur}/${rows.length} le même jour de reprise`
+    ),
     hypothesis('program_version_link', programVersion, 'lien à une nouvelle version de programme')
   ];
-  const retained = hypotheses.filter((row) => row.status === 'supported');
-  // Une fenêtre courte seule ne suffit pas : il faut un lien réel (famille / séance / version)
+  const retained = hypotheses.filter(
+    (row) => row.status === 'supported' || row.status === 'probable'
+  );
+  // Une fenêtre courte seule ne suffit pas : il faut un lien réel (famille / séance / co-occurrence / version)
   const linked = retained.some((h) => h.id !== 'simultaneous_return');
   const coverage =
     sameWindow && linked
@@ -424,17 +532,19 @@ export function exploreCollectiveReturn(events = [], context = {}) {
     dates.length === 1
       ? `autour du ${dates[0]}`
       : `entre le ${dates[0]} et le ${dates[dates.length - 1]} (${spanDays} jours)`;
-  const conclusion =
+  let conclusion =
     coverage === COVERAGE.CONCLUDED
       ? [
           `${rows.length} mouvements reviennent ${dateLabel} : ${nameList}${namedMoves.length > 6 ? '…' : ''}.`,
           retained.some((h) => h.id === 'shared_session_family')
             ? 'Ils appartiennent à une même famille de séances documentée.'
-            : retained.some((h) => h.id === 'shared_family')
-              ? `Ils se rattachent à des familles musculaires proches (${families.join(', ')}).`
-              : retained.some((h) => h.id === 'program_version_link')
-                ? 'Leur retour coïncide avec une évolution documentée du programme.'
-                : null,
+            : retained.some((h) => h.id === 'shared_return_cooccurrence')
+              ? 'Ils reprennent ensemble le même jour : organisation de séance commune, pas seulement une coïncidence calendaire.'
+              : retained.some((h) => h.id === 'shared_family')
+                ? `Ils se rattachent à des familles musculaires proches (${families.join(', ')}).`
+                : retained.some((h) => h.id === 'program_version_link')
+                  ? 'Leur retour coïncide avec une évolution documentée du programme.'
+                  : null,
           gaps.length
             ? `Les interruptions documentées vont de ${Math.min(...gaps)} à ${Math.max(...gaps)} jours.`
             : null,
@@ -451,14 +561,187 @@ export function exploreCollectiveReturn(events = [], context = {}) {
       : sameWindow
         ? `${rows.length} mouvements réapparaissent dans une fenêtre courte (${spanDays} jours), mais le lien structurel (famille de séances, famille musculaire documentée ou version de programme) n'est pas encore démontré : la simultanéité seule ne prouve pas une transformation collective.`
         : null;
+
+  // Mission 12 : composition — rythme de réinstallation si volumes antérieurs fournis
+  if (coverage === COVERAGE.CONCLUDED) {
+    try {
+      // import dynamique évité : composition synchrone via metrics sur les rows
+      const withLevels = namedMoves.filter(
+        (m) =>
+          Number.isFinite(Number(m.prevReps)) &&
+          Number.isFinite(Number(m.currentReps)) &&
+          Number(m.prevReps) > 0
+      );
+      if (withLevels.length >= 2) {
+        const full = withLevels.filter((m) => Number(m.currentReps) >= Number(m.prevReps) * 0.9);
+        const partial = withLevels.filter((m) => Number(m.currentReps) < Number(m.prevReps) * 0.9);
+        const formatBits = [
+          full.length
+            ? `${full.length} retrouvent un volume proche de leur niveau antérieur.`
+            : null,
+          partial.length
+            ? `${partial.length} restent en retrait (${partial
+                .slice(0, 3)
+                .map((m) => `${m.name} : ${Math.round(m.currentReps)} vs ${Math.round(m.prevReps)}`)
+                .join(' ; ')}).`
+            : null,
+          'Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur chaque exercice isolé.'
+        ]
+          .filter(Boolean)
+          .join(' ');
+        conclusion = `${conclusion} ${formatBits}`.trim();
+      }
+    } catch {
+      /* composition best-effort */
+    }
+  }
+
   return {
     coverage,
     hypotheses,
     retained,
     namedMoves,
     dates,
+    returnDates: dates,
+    confirmationDates,
     spanDays,
+    families,
+    coOccurrenceMax: maxCoOccur,
     conclusion
+  };
+}
+
+/**
+ * Explore un retour collectif.
+ * Par défaut : clusterise par jour de reprise pour ne pas diluer un épisode dense
+ * (ex. 9 reprises le 11 nov) parmi des retours isolés d’autres mois.
+ * `context.flat === true` conserve l’ancien comportement (tous les événements ensemble).
+ */
+export function exploreCollectiveReturn(events = [], context = {}) {
+  const muscleIndex =
+    context.muscleByExercise ||
+    (Array.isArray(context.exerciseCatalog) ? buildExerciseMuscleIndex(context.exerciseCatalog) : null);
+  const inferFn = context.inferMuscleGroups || null;
+  const keysOf = (row) => [row.exerciseId, row.storageId, String(row.name || '').trim().toLowerCase()];
+  const enriched = (events || [])
+    .filter((row) => row && (row.exerciseId || row.name))
+    .map((row) => {
+      const fromIndex = muscleFamilyOf({ muscleGroup: lookupInto(muscleIndex, keysOf(row)) });
+      const inferred = inferMusclesFromMove(
+        { ...row, muscleGroup: muscleFamilyOf(row) || fromIndex },
+        inferFn
+      );
+      const muscleGroup = muscleFamilyOf(row) || fromIndex || inferred[0] || null;
+      const cadenceRaw =
+        row.habitualGapDays ??
+        row.usualGapDays ??
+        row.cadenceDays ??
+        row.habitualCadenceDays ??
+        lookupInto(context.cadenceByExercise, keysOf(row));
+      const cadence = Number(cadenceRaw) > 0 ? Number(cadenceRaw) : null;
+      return {
+        ...row,
+        muscleGroup: muscleGroup || null,
+        muscleGroups: inferred.length ? inferred : muscleGroup ? [muscleGroup] : [],
+        family: muscleGroup || null,
+        habitualCadenceDays: cadence
+      };
+    });
+  const rows = enriched.filter((row) => significantGap(row));
+  if (!rows.length) {
+    return {
+      coverage: (events || []).length === 0 ? COVERAGE.NO_DATA : COVERAGE.UNDER_EXPLORED,
+      hypotheses: [
+        hypothesis(
+          'collective_return',
+          'method_unavailable',
+          'aucun retour avec interruption significative'
+        )
+      ],
+      retained: [],
+      namedMoves: [],
+      conclusion: null
+    };
+  }
+
+  if (context.flat === true) {
+    return exploreCollectiveReturnFlat(rows, context, events);
+  }
+
+  const clusters = clusterReturnEventsByEpisodeDate(rows);
+  const window = context.window || null;
+  const inWindowDate = (d) =>
+    Boolean(
+      d &&
+        (!window?.start || d >= window.start) &&
+        (!window?.end || d <= window.end)
+    );
+  const scoreCluster = (cluster, result) => {
+    const n = (result.namedMoves || []).length;
+    const returnInWin = inWindowDate(cluster.date) ? 1_000_000 : 0;
+    const confirmInWin = (result.confirmationDates || []).some((d) => inWindowDate(d))
+      ? 100_000
+      : 0;
+    // Préférer l’épisode ancré dans la fenêtre courante, puis le plus dense / récent.
+    return returnInWin + confirmInWin + n * 1_000 + Date.parse(`${cluster.date}T12:00:00`) / 1e11;
+  };
+  const attempts = [];
+  let best = null;
+  let bestScore = -Infinity;
+  for (const cluster of clusters) {
+    if (cluster.size < 2) continue;
+    const result = exploreCollectiveReturnFlat(cluster.rows, context, events);
+    attempts.push({
+      date: cluster.date,
+      size: cluster.size,
+      coverage: result.coverage,
+      coOccurrenceMax: result.coOccurrenceMax ?? null,
+      inWindow: inWindowDate(cluster.date)
+    });
+    if (result.coverage === COVERAGE.CONCLUDED) {
+      const score = scoreCluster(cluster, result);
+      if (score > bestScore) {
+        bestScore = score;
+        best = {
+          ...result,
+          episodeClusterDate: cluster.date,
+          episodeEvidenceLevel: 'same_day_cooccurrence',
+          clusterAttempts: attempts
+        };
+      }
+    }
+  }
+  if (best) return best;
+
+  // Filet : tentative plate (lien familial / créneau sur dates proches).
+  const flat = exploreCollectiveReturnFlat(rows, context, events);
+  if (flat.coverage === COVERAGE.CONCLUDED) {
+    return {
+      ...flat,
+      episodeClusterDate: null,
+      episodeEvidenceLevel: 'flat_multi_date',
+      clusterAttempts: attempts
+    };
+  }
+
+  const densest = clusters[0] || null;
+  return {
+    ...flat,
+    coverage: COVERAGE.UNDER_EXPLORED,
+    episodeClusterDate: densest?.date || null,
+    clusterAttempts: attempts,
+    dilution: {
+      totalSignificant: rows.length,
+      distinctReturnDates: clusters.length,
+      densestDate: densest?.date || null,
+      densestSize: densest?.size || 0,
+      byDate: Object.fromEntries(clusters.map((c) => [c.date, c.size])),
+      detail:
+        clusters.length > 1
+          ? `plusieurs dates de reprise (${clusters.length}) diluent l’épisode ; densest=${densest?.date || '?'} (${densest?.size || 0})`
+          : flat.hypotheses?.[0]?.detail || 'épisode collectif non conclu'
+    },
+    conclusion: null
   };
 }
 
@@ -473,7 +756,23 @@ export function exploreDiscovery(discovery) {
     return exploreNearEqualSessions(days);
   }
   if (discovery?.kind === 'disc_collective_return' || discovery?.kind === 'disc_family_return') {
-    return exploreCollectiveReturn(metrics.events || metrics.returns || []);
+    // Mission 19 : ne pas écraser une lecture déjà composée (reprise vs confirmation).
+    if (metrics.composition?.conclusion || metrics.narrativeAuthority === 'composition') {
+      return {
+        coverage: COVERAGE.CONCLUDED,
+        conclusion: metrics.composition?.conclusion || discovery.body || null,
+        hypotheses: metrics.exploration?.hypotheses || [],
+        retained: metrics.exploration?.retained || [],
+        namedMoves: metrics.namedMoves || metrics.exploration?.namedMoves || [],
+        dates: metrics.returnDates || metrics.dates || [],
+        confirmationDates: metrics.confirmationDates || [],
+        episodeClusterDate: metrics.exploration?.episodeClusterDate || null,
+        fromComposition: true
+      };
+    }
+    return exploreCollectiveReturn(metrics.events || metrics.returns || [], {
+      window: metrics.window || null
+    });
   }
   if (discovery?.kind !== 'disc_volume_shape' && discovery?.kind !== 'span_volume_vs_frequency') {
     return null;

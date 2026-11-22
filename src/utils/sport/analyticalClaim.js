@@ -178,24 +178,38 @@ function observedValuesOf(metrics) {
 
 function sourceEventsOf(discovery, metrics) {
   const events = [];
+  const pushDate = (date, type = 'date') => {
+    if (!date) return;
+    const id = String(date).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
+    if (events.some((e) => e.id === id && e.type === type)) return;
+    events.push({ type, id });
+  };
   const dates = metrics.dates || metrics.sourceDates || discovery?.lineage?.sourceDates || null;
   if (Array.isArray(dates)) {
-    dates.filter(Boolean).forEach((date) => events.push({ type: 'date', id: String(date) }));
+    dates.filter(Boolean).forEach((date) => pushDate(date, 'date'));
   } else if (typeof dates === 'string' && dates) {
-    events.push({ type: 'date', id: dates });
+    pushDate(dates, 'date');
+  }
+  // Mission 20 — preuves de confirmation et retours doivent voyager dans le claim.
+  if (Array.isArray(metrics.returnDates)) {
+    metrics.returnDates.forEach((date) => pushDate(date, 'return_date'));
+  }
+  if (Array.isArray(metrics.confirmationDates)) {
+    metrics.confirmationDates.forEach((date) => pushDate(date, 'confirmation_date'));
   }
   if (Array.isArray(metrics.days)) {
     metrics.days.forEach((day) => {
-      if (day?.date) events.push({ type: 'session_day', id: String(day.date) });
+      if (day?.date) pushDate(day.date, 'session_day');
     });
   }
-  if (metrics.eventDate) events.push({ type: 'date', id: String(metrics.eventDate) });
-  if (metrics.date) events.push({ type: 'date', id: String(metrics.date) });
-  if (metrics.prevDate) events.push({ type: 'date', id: String(metrics.prevDate) });
-  if (metrics.lastDate) events.push({ type: 'date', id: String(metrics.lastDate) });
+  if (metrics.eventDate) pushDate(metrics.eventDate, 'date');
+  if (metrics.date) pushDate(metrics.date, 'date');
+  if (metrics.prevDate) pushDate(metrics.prevDate, 'prev_date');
+  if (metrics.lastDate) pushDate(metrics.lastDate, 'date');
   if (metrics.sessionId) events.push({ type: 'session', id: String(metrics.sessionId) });
   if (discovery?.evidence && /^\d{4}-\d{2}-\d{2}/.test(String(discovery.evidence))) {
-    events.push({ type: 'evidence_date', id: String(discovery.evidence).slice(0, 10) });
+    pushDate(String(discovery.evidence).slice(0, 10), 'evidence_date');
   }
   return events;
 }

@@ -36,8 +36,8 @@ const pushPairVariant = [
 
 describe('Mission 11 — banque et structure', () => {
   it('édition ≥ v10', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v1[0]/);
-    expect(analysisEditionKey()).toMatch(/program=structural-context-v2/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v1[0-9]/);
+    expect(analysisEditionKey()).toMatch(/program=structural-context-v[234]/);
   });
 
   it('ne traite pas street_workout/muscu/cardio comme muscles', () => {

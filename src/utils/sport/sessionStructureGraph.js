@@ -107,23 +107,130 @@ function plannedSetsOf(ex) {
   return Number(ex?.sets ?? ex?.meta?.setCount) || 0;
 }
 
+/** Presses / muscu : jamais cardio même si programCategory contient « cardio ». */
+const STRENGTH_NAME_NOT_CARDIO =
+  /developp|couche|haltere|bench\s*press|shoulder press|pec\s*deck|butterfly|ecartes?|flyes?\b|chest press|arnold|military press|curl|rowing|traction|pompes?|dips?|squat|fente|soulev|hip thrust|kickback|oiseau|face\s*pull|elevation|lateral|presse|extension|flex/;
+
+const ISOMETRIC_NAME =
+  /gainage|planche|isometr|isométr|wall\s*sit|chaise\s*(murale|au mur)|hold\b|statique/;
+
+const CARDIO_NAME_EXPLICIT =
+  /course\s+endurance|endurance\s+fondamentale|\bfooting\b|\bfractionn|\brunning\b|\bnatation\b|\bvelo\b|\bvélo\b|\brameur\b|corde\s+a\s+sauter|corde\s+à\s+sauter|\bhiit\b|\bcycling\b|\bswim\b/;
+
 /**
- * Modalité de travail — distincte du muscle et de l’intitulé libre.
+ * Modalité de travail — axes indépendants du muscle et de l’intitulé libre.
+ * Règles (Mission 13) :
+ * - programCategory / type « cardio » ≠ modalité si le nom est un mouvement de force.
+ * - Une durée (min/s) seule ≠ cardio.
+ * - Le mot « endurance » dans un intitulé libre ≠ stimulus cardio automatique.
  */
 export function exerciseWorkModality(ex) {
-  const blob = `${ex?.name || ''} ${ex?.exerciseName || ''} ${ex?.type || ''} ${ex?.programCategory || ''} ${ex?.exerciseBankKey || ''}`.toLowerCase();
-  if (
-    /course|footing|fractionn|running|natation|velo|vélo|rameur|corde a sauter|corde à sauter|endurance fondamentale|cardio/.test(
-      blob
-    )
-  ) {
+  const name = String(ex?.name || ex?.exerciseName || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const bankKey = String(ex?.exerciseBankKey || ex?.databaseKey || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const series = String(ex?.series || ex?.scheme || '').toLowerCase();
+  const activity = String(ex?.programCategory || ex?.category || '')
+    .toLowerCase()
+    .trim();
+  const typeField = String(ex?.type || ex?.modality || '')
+    .toLowerCase()
+    .trim();
+
+  // 1) Isométrie par nom / banque (wall sit, gainage…)
+  if (ISOMETRIC_NAME.test(name) || ISOMETRIC_NAME.test(bankKey)) {
+    return 'isometric';
+  }
+  // Séries en secondes + nom de maintien
+  if (/\d+\s*s\b|\d+\s*sec|\d+\s*second/.test(series) && /hold|statique|gainage|planche|sit|chaise/.test(name)) {
+    return 'isometric';
+  }
+
+  // 2) Renforcement connu : jamais cardio via catégorie programme
+  if (STRENGTH_NAME_NOT_CARDIO.test(name) || STRENGTH_NAME_NOT_CARDIO.test(bankKey)) {
+    if (/compl[ée]mentaire|endurance.*pomp/.test(name)) return 'complementary';
+    return 'strength_reps';
+  }
+
+  // 3) Cardio explicite par nom / clé banque (pas par programCategory seule)
+  if (CARDIO_NAME_EXPLICIT.test(name) || CARDIO_NAME_EXPLICIT.test(bankKey)) {
     return 'cardio';
   }
-  if (/gainage|planche|isometr|isométr|hold|seconde/.test(blob) || /s\b/.test(String(ex?.series || ''))) {
-    if (/gainage|planche|isometr|isométr|hold/.test(blob)) return 'isometric';
+  // type/modality explicite cardio UNIQUEMENT si le nom n’est pas de la force
+  if (
+    (typeField === 'cardio' || typeField === 'running' || typeField === 'endurance') &&
+    !STRENGTH_NAME_NOT_CARDIO.test(name)
+  ) {
+    if (CARDIO_NAME_EXPLICIT.test(name) || /course|run|velo|vélo|natation|corde|rameur|hiit/.test(name)) {
+      return 'cardio';
+    }
+    // type=cardio sans nom cardio : incertitude → ne pas classer cardio
   }
-  if (/compl[ée]mentaire|endurance.*pomp/.test(blob)) return 'complementary';
+  // programCategory « cardio » seule : insuffisante
+  if (activity === 'cardio' && CARDIO_NAME_EXPLICIT.test(`${name} ${bankKey}`)) {
+    return 'cardio';
+  }
+
+  if (/compl[ée]mentaire|endurance.*pomp/.test(name)) return 'complementary';
   return 'strength_reps';
+}
+
+/**
+ * Classification multi-axes (Mission 13) — ne fusionne pas les dimensions.
+ */
+export function classifyExerciseAxes(ex) {
+  const modality = exerciseWorkModality(ex);
+  const muscles = resolveExerciseMusclesFromBank(ex);
+  const series = String(ex?.series || '');
+  const name = String(ex?.name || ex?.exerciseName || '');
+  const bankKey = String(ex?.exerciseBankKey || ex?.databaseKey || '');
+  const hasBankSignal = Boolean(bankKey) || muscles.primary.length > 0;
+  const hasNameSignal = name.trim().length >= 3;
+  const unit =
+    modality === 'isometric' || /\d+\s*s\b|\d+\s*min\b/i.test(series)
+      ? /min/i.test(series)
+        ? 'minutes'
+        : 'seconds'
+      : modality === 'cardio'
+        ? /km|distance/i.test(series)
+          ? 'distance'
+          : 'duration_or_reps'
+        : 'reps';
+  // Mission 14 : ne pas présenter un inconnu comme force certaine
+  let certainty = 'probable';
+  if (modality === 'cardio' || modality === 'isometric') certainty = 'certain';
+  else if (hasBankSignal && hasNameSignal) certainty = 'certain';
+  else if (!hasNameSignal && !hasBankSignal) certainty = 'indeterminate';
+  else if (muscles.unknown && !hasBankSignal) certainty = 'indeterminate';
+  return {
+    schema: 'momentum.exerciseClassification.v2',
+    modality: certainty === 'indeterminate' ? 'indeterminate' : modality,
+    modalityFallback: modality,
+    certainty,
+    recordedUnit: unit,
+    primaryMuscles: muscles.primary,
+    secondaryMuscles: muscles.secondary,
+    activityCategory: muscles.activityCategory,
+    unknownMuscles: muscles.unknown,
+    name: ex?.name || ex?.exerciseName || null,
+    justification: {
+      modalitySource:
+        certainty === 'indeterminate'
+          ? 'insufficient_metadata'
+          : modality === 'cardio'
+            ? 'explicit_cardio_name_or_bank'
+            : modality === 'isometric'
+              ? 'isometric_name_or_timed_hold'
+              : hasBankSignal
+                ? 'bank_or_known_strength_name'
+                : 'name_heuristic_probable',
+      note: 'programCategory n’impose pas la modalité ; indeterminate ≠ inventer strength_reps'
+    }
+  };
 }
 
 /**

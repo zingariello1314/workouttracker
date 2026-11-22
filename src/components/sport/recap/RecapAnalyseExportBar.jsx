@@ -172,18 +172,18 @@ export default function RecapAnalyseExportBar({
             </button>
             <button
               type="button"
-              className="rounded-md border border-violet-700/40 px-2 py-1 text-[11px] text-violet-100/90 hover:bg-violet-950/40 disabled:opacity-40"
+              className="rounded-md border border-violet-700/50 px-2 py-1 text-[11px] font-medium text-violet-100 hover:bg-violet-950/50 disabled:opacity-40"
               disabled={busy}
-              title="JSON normalisé autonome (cartes, claims, candidats, sous-exploration)"
+              title="Télécharge ANALYTICAL_AUDIT.json (8 horizons) sans ZIP — même run que le dossier complet"
               onClick={() =>
                 run(
                   'momentumExportAnalyticalAudit',
                   {},
-                  'Préparation des données analytiques complètes (peut inclure les 8 périodes)…'
+                  'Préparation du JSON analytique complet (8 périodes)…'
                 )
               }
             >
-              Exporter les données analytiques complètes
+              Exporter le JSON analytique complet
             </button>
             <button
               type="button"

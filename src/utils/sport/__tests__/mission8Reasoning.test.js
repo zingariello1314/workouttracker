@@ -20,8 +20,8 @@ import { claimFromDiscovery } from '../analyticalClaim';
 
 describe('Mission 8 — raisonnement et filiation', () => {
   it('édition ≥ v7 (Mission 8 fondations toujours actives)', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|10)/);
-    expect(analysisEditionKey()).toMatch(/program=structural-(?:reasoning|execution|context)-v[12]/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|1[0-9])/);
+    expect(analysisEditionKey()).toMatch(/program=structural-(?:reasoning|execution|context)-v\d+/);
   });
 
   it('ne fusionne pas deux exercices distincts malgré un texte identique', () => {

@@ -691,12 +691,25 @@ const PRESERVE_STRUCTURAL_BODY = new Set([
   'disc_ms_return',
   'disc_ms_return_durable',
   'disc_ms_first_exercise',
-  'disc_ms_pr'
+  'disc_ms_pr',
+  // Mission 18 : ne pas écraser une thèse programme déjà rédigée
+  'disc_variant_mix_shift',
+  'disc_collective_return'
 ]);
+
+function shouldPreserveProgramThesis(discovery) {
+  const thesis = String(discovery?.metrics?.thesis || '');
+  const composition = String(discovery?.metrics?.composition || '');
+  return (
+    PRESERVE_STRUCTURAL_BODY.has(String(discovery?.kind || '')) ||
+    thesis === 'variant_mix_shift' ||
+    /program_variant_mix|collective_return/i.test(composition)
+  );
+}
 
 export function applyComposedNarrationToDiscovery(discovery, { getExerciseNameById = null } = {}) {
   if (!discovery?.metrics?.composedEvidence?.composed) return discovery;
-  if (PRESERVE_STRUCTURAL_BODY.has(String(discovery.kind || ''))) {
+  if (shouldPreserveProgramThesis(discovery)) {
     return {
       ...discovery,
       metrics: {

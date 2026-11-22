@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
+import { formStateFromStored } from '../utils/sessionFeedbackSchema';
 import { useTranslation } from '../utils/translations';
 import { useFormatters } from '../utils/translations/formatters-hook';
 
@@ -41,27 +42,9 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
     { value: 'chaud', label: t('sessionFeedback.step3.weather.hot'), icon: '🔥' }
   ];
   
-  const [feedback, setFeedback] = useState({
-    ressenti: 0, // 1-10
-    difficulte: 0, // 1-10
-    energieDebut: 0, // 1-10
-    energieFin: 0, // 1-10
-    motivation: 0, // 1-10
-    douleur: 0, // 0-10 (0 = aucune douleur)
-    sommeil: 0, // 1-10 (qualité du sommeil la nuit précédente)
-    hydratation: 0, // 1-10
-    nutrition: 0, // 1-10
-    tags: [],
-    notes: '',
-    objectifAtteint: null, // true/false/null
-    prochainObjectif: '',
-    tempsRepos: '', // temps de repos entre les séries
-    musiquesEcoutees: '',
-    environnement: '', // salle, maison, extérieur
-    partenaire: false, // seul ou avec quelqu'un
-    meteo: '', // si extérieur
-    equipementUtilise: []
-  });
+  const [feedback, setFeedback] = useState(() =>
+    formStateFromStored(sessionData?.existingFeedback)
+  );
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
@@ -85,31 +68,10 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   ];
 
   useEffect(() => {
-    if (isOpen) {
-      setCurrentStep(1);
-      setFeedback({
-        ressenti: 0,
-        difficulte: 0,
-        energieDebut: 0,
-        energieFin: 0,
-        motivation: 0,
-        douleur: 0,
-        sommeil: 0,
-        hydratation: 0,
-        nutrition: 0,
-        tags: [],
-        notes: '',
-        objectifAtteint: null,
-        prochainObjectif: '',
-        tempsRepos: '',
-        musiquesEcoutees: '',
-        environnement: '',
-        partenaire: false,
-        meteo: '',
-        equipementUtilise: []
-      });
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    setCurrentStep(1);
+    setFeedback(formStateFromStored(sessionData?.existingFeedback));
+  }, [isOpen, sessionData]);
 
   const handleStarClick = (field, value) => {
     setFeedback(prev => ({ ...prev, [field]: value }));

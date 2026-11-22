@@ -147,10 +147,19 @@ export function calendarLoad(
           const checked = dayCheckedReps(agg, ymd);
           const pack = classicExclusiveRepsForDay(snapshot, ymd);
           const classic = pack?.classicTotalReps > 0 ? pack.classicExclusiveReps : checked;
-          return (
-            classic +
-            Math.floor(Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0)
+          const enduranceCal = Math.floor(
+            Number(computeEnduranceDayMetricsForCalendar(snapshot, ymd)?.reps) || 0
           );
+          // Mission 20 — aligner bannière et strengthReps : défis pompes non syncés.
+          let unsyncedPushups = 0;
+          if (!endurancePushupsAlreadyInWorkoutTotals(snapshot, ymd)) {
+            (collectPushupEnduranceSessions(snapshot) || []).forEach((session) => {
+              if (isMockEnduranceSession(session)) return;
+              if (normalizeDateString(session?.date) !== ymd) return;
+              unsyncedPushups += enduranceRepsForSession('pushups', session) || 0;
+            });
+          }
+          return classic + enduranceCal + unsyncedPushups;
         })()
       }
     }))

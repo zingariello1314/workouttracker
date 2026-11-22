@@ -234,6 +234,15 @@ export function detectMonthlyVolumeArcShape(months, { windowEndYmd = null } = {}
 
   const riseFromTrough = pct(recent.reps, trough.reps);
   const stillBelowPeak = pct(recent.reps, peak.reps);
+  // Premier retournement après le creux (pas automatiquement le dernier mois).
+  let firstRebound = null;
+  for (let i = troughIdx + 1; i < series.length; i += 1) {
+    const rise = pct(series[i].reps, trough.reps);
+    if (rise != null && rise >= 10) {
+      firstRebound = series[i];
+      break;
+    }
+  }
   let arcKind = 'prolonged_decline';
   if (troughIdx < series.length - 1 && riseFromTrough != null && riseFromTrough >= 10) {
     if (stillBelowPeak != null && stillBelowPeak > -12) arcKind = 'full_recovery';
@@ -248,19 +257,28 @@ export function detectMonthlyVolumeArcShape(months, { windowEndYmd = null } = {}
 
   if (arcKind === 'partial_recovery' || arcKind === 'full_recovery') {
     mechanism.recovery = decomposeDrop(trough, recent);
+    if (firstRebound && firstRebound.ym !== recent.ym) {
+      mechanism.firstReboundYm = firstRebound.ym;
+      mechanism.firstReboundReps = firstRebound.reps;
+      mechanism.confirmationYm = recent.ym;
+    }
   }
 
-  return { arcKind, peak, trough, recent, mechanism, months: series };
+  return { arcKind, peak, trough, recent, firstRebound, mechanism, months: series };
 }
 
 function titleForArc(shape) {
-  const { arcKind, peak, trough, recent, mechanism } = shape;
+  const { arcKind, peak, trough, recent, firstRebound, mechanism } = shape;
+  const reboundMonth = firstRebound || recent;
 
   if (arcKind === 'partial_recovery') {
-    return `${monthLabelFr(recent.ym)} interrompt la baisse depuis ${monthLabelFr(peak.ym)}`;
+    if (firstRebound && firstRebound.ym !== recent.ym) {
+      return `${monthLabelFr(firstRebound.ym)} interrompt la baisse depuis ${monthLabelFr(peak.ym)} ; ${monthLabelFr(recent.ym)} confirme`;
+    }
+    return `${monthLabelFr(reboundMonth.ym)} interrompt la baisse depuis ${monthLabelFr(peak.ym)}`;
   }
   if (arcKind === 'full_recovery') {
-    return `${monthLabelFr(recent.ym)} revient près du niveau de ${monthLabelFr(peak.ym)}`;
+    return `${monthLabelFr(reboundMonth.ym)} revient près du niveau de ${monthLabelFr(peak.ym)}`;
   }
   if (arcKind === 'stabilization_after_rise') {
     return `Stabilisation après la hausse de ${monthLabelFr(peak.ym)}`;
@@ -286,9 +304,13 @@ function mechanismSentence(mechanism) {
 }
 
 function bodyForArc(shape) {
-  const { arcKind, peak, trough, recent, mechanism } = shape;
+  const { arcKind, peak, trough, recent, firstRebound, mechanism } = shape;
   const peakL = monthLabelFr(peak.ym);
   const troughL = monthLabelFr(trough.ym);
+  const reboundBit =
+    firstRebound && firstRebound.ym !== recent.ym
+      ? ` Le premier retournement documenté apparaît en ${monthLabelFr(firstRebound.ym)} (${fmtInt(firstRebound.reps)} reps) ; ${monthLabelFr(recent.ym)} prolonge cette remontée plutôt que de l’initier.`
+      : '';
   const recentL = monthLabelFr(recent.ym);
   const between = (shape.months || []).filter((month) => month.ym > peak.ym && month.ym < trough.ym);
   const betweenBits = between.length
@@ -320,10 +342,10 @@ function bodyForArc(shape) {
     const reboundBits = rebound.ok
       ? ` La remontée se décompose en ${formatRepDelta(rebound.frequency)} répétitions liées aux jours actifs et ${formatRepDelta(rebound.content)} liées au contenu de chaque jour actif.`
       : '';
-    return `${dropBits}${mech}${freqLedNote} ${recentL} remonte à ${fmtInt(recent.reps)} reps en ${recent.days} jours (≈${fmtInt(recent.repsPerDay)} / jour actif, ${fmtSignedPct(rec.repsPct)} vs ${troughL}), sans retrouver le sommet de ${peakL} (${fmtInt(peak.reps)} reps).${reboundBits}`;
+    return `${dropBits}${mech}${freqLedNote}${reboundBit} ${recentL} remonte à ${fmtInt(recent.reps)} reps en ${recent.days} jours (≈${fmtInt(recent.repsPerDay)} / jour actif, ${fmtSignedPct(rec.repsPct)} vs ${troughL}), sans retrouver le sommet de ${peakL} (${fmtInt(peak.reps)} reps).${reboundBits}`;
   }
   if (arcKind === 'full_recovery') {
-    return `${dropBits}${mech}${freqLedNote} ${recentL} revient à ${fmtInt(recent.reps)} reps (${recent.days} j.), proche du niveau de ${peakL}.`;
+    return `${dropBits}${mech}${freqLedNote}${reboundBit} ${recentL} revient à ${fmtInt(recent.reps)} reps (${recent.days} j.), proche du niveau de ${peakL}.`;
   }
   if (arcKind === 'stabilization_after_rise') {
     return `Après la hausse vers ${peakL} (${fmtInt(peak.reps)} reps, ${peak.days} j.), ${recentL} se maintient à ${fmtInt(recent.reps)} reps en ${recent.days} jours — une stabilisation, pas une nouvelle accélération.`;

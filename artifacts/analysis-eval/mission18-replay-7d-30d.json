@@ -1,0 +1,169 @@
+{
+  "generatedAt": "2026-11-21T22:06:15.837Z",
+  "mission": "Mission 18",
+  "edition": "p6-sovereign-v17",
+  "editionKey": "audit=normalized-export-v5;claim=assertion-window-v1;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=episode-cluster-v3;composition=phenomenon-compose-v5;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v17;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v1;identity=discovery-occurrence-v1;matching=session-slot-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v2;review=collective-pass4-v12;scope=short-window-anchor-v1;sleep=association-prose-v4;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "backup": "C:\\Users\\zinga\\.cursor\\projects\\c-Users-zinga-Desktop-momentum\\attachments\\2154474a-0603-44f8-8ebb-a86ce443fdec\\momentum-sport-backup-2026-11-19.json",
+  "end": "2026-11-19",
+  "firstDate": "2026-01-05",
+  "latestSessionInBackup": "2026-11-17",
+  "coverageNote": "La sauvegarde du 19 nov. s’arrête avant le 18 nov. : confirmation du 18 absente. Pour le mode confirmation 7j, exporter un backup sport ≥ 2026-11-21 depuis l’app (pas seulement l’audit JSON).",
+  "periods": {
+    "7d": {
+      "window": {
+        "start": "2026-11-13",
+        "end": "2026-11-19"
+      },
+      "ms": 6356,
+      "counts": {
+        "all": 54,
+        "selected": 11,
+        "accessible": 54,
+        "collectiveInAll": 1,
+        "collectiveInSelected": 1,
+        "collectiveInAccessible": 1,
+        "targetConsolidations": 0
+      },
+      "collectives": [
+        {
+          "kind": "disc_collective_return",
+          "title": "La reprise collective se confirme cette semaine",
+          "body": "La reprise de cette composante de tes séances, commencée le 16 octobre 2026 après environ 7 semaines d’interruption, se confirme le 13 novembre 2026 : Relevés de genoux à la barre, Relevés de genoux aux parallèles. Composante musculaire documentée : core. Les interruptions documentées vont de 49 à 77 jours. Les formats antérieurs ne sont pas tous documentés : la lecture reste limitée à la simultan",
+          "disposition": null,
+          "readingMode": "confirmation",
+          "dates": [
+            "2026-10-16"
+          ],
+          "confirmationDates": [
+            "2026-11-13"
+          ],
+          "named": [
+            "Relevés de genoux à la barre",
+            "Relevés de genoux aux parallèles"
+          ],
+          "episodeClusterDate": "2026-10-16",
+          "evidenceLevel": "same_day_cooccurrence",
+          "informativeValue": 96
+        }
+      ],
+      "targetConsolidations": [],
+      "selectedTitles": [
+        "La reprise collective se confirme cette semaine",
+        "Concentration relative au-delà du volume général",
+        "Des journées à volume proche racontent des séances différentes",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Deux séances apparentées redistribuent un socle commun",
+        "Le 13 novembre 2026 porte une grande part de ces 7 jours",
+        "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+        "Le rythme de ces 7 jours reste lisible par rapport à ton habitude",
+        "Hyperextension: 4 séances sur ces 30 jours",
+        "Mollets debout s'efface de tes jambes",
+        "Hyperextension: 2 séances sur ces 30 jours"
+      ]
+    },
+    "30d": {
+      "window": {
+        "start": "2026-10-21",
+        "end": "2026-11-19"
+      },
+      "ms": 6594,
+      "counts": {
+        "all": 81,
+        "selected": 11,
+        "accessible": 81,
+        "collectiveInAll": 1,
+        "collectiveInSelected": 1,
+        "collectiveInAccessible": 1,
+        "targetConsolidations": 5
+      },
+      "collectives": [
+        {
+          "kind": "disc_collective_return",
+          "title": "Une composante de ton entraînement se réinstalle",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Pompes pseudo-planche, Élévations latérales, Face pull, Extensions triceps unilatérales, Kickbacks triceps. Ces retours appartiennent à une même organisation de séance documentée. Les interruptions documentées vont de 28 à 28 jours. 3 mouvements retrouvent un volume proche de leur",
+          "disposition": null,
+          "readingMode": "return",
+          "dates": [
+            "2026-11-11"
+          ],
+          "confirmationDates": [],
+          "named": [
+            "Pompes pseudo-planche",
+            "Élévations latérales",
+            "Face pull",
+            "Extensions triceps unilatérales",
+            "Kickbacks triceps"
+          ],
+          "episodeClusterDate": "2026-11-11",
+          "evidenceLevel": "same_day_cooccurrence",
+          "informativeValue": 96
+        }
+      ],
+      "targetConsolidations": [
+        {
+          "id": "302",
+          "name": "Pompes pseudo-planche",
+          "returnDate": "2026-11-11",
+          "gapDays": 28,
+          "mechanism": "resumed_former_level",
+          "dates": [
+            "2026-11-11"
+          ]
+        },
+        {
+          "id": "304",
+          "name": "Élévations latérales",
+          "returnDate": "2026-11-11",
+          "gapDays": 28,
+          "mechanism": "resumed_former_level",
+          "dates": [
+            "2026-11-11"
+          ]
+        },
+        {
+          "id": "306",
+          "name": "Face pull",
+          "returnDate": "2026-11-11",
+          "gapDays": 28,
+          "mechanism": "resumed_former_level",
+          "dates": [
+            "2026-11-11"
+          ]
+        },
+        {
+          "id": "307",
+          "name": "Extensions triceps unilatérales",
+          "returnDate": "2026-11-11",
+          "gapDays": 28,
+          "mechanism": "interrupted_progression",
+          "dates": [
+            "2026-11-11"
+          ]
+        },
+        {
+          "id": "308",
+          "name": "Kickbacks triceps",
+          "returnDate": "2026-11-11",
+          "gapDays": 28,
+          "mechanism": "partial_resume",
+          "dates": [
+            "2026-11-11"
+          ]
+        }
+      ],
+      "selectedTitles": [
+        "Pompes pseudo-planche: volume par séance en hausse",
+        "Une composante de ton entraînement se réinstalle",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Le volume suit surtout ta fréquence",
+        "Deux séances apparentées redistribuent un socle commun",
+        "Mollets debout a quitté cette fenêtre",
+        "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+        "Pectoraux: moins de jours d’exposition qu’en période précédente",
+        "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+        "100e séance enregistrée",
+        "Le volume de ces 30 jours dépasse la période précédente"
+      ]
+    }
+  }
+}

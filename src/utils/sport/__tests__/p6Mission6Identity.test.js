@@ -34,12 +34,12 @@ function returnCard({ exerciseId, name, date = '2026-11-20', gapDays = 28 }) {
 }
 
 describe('Mission 6 — identité et preuves', () => {
-  it('édition v5 + occurrence + review v2', () => {
+  it('édition courante conserve identité + revue collective', () => {
     const key = analysisEditionKey();
-    expect(key).toMatch(/editorial=p6-sovereign-v7/);
+    expect(key).toMatch(/editorial=p6-sovereign-v1[0-9]/);
     expect(key).toMatch(/identity=discovery-occurrence-v1/);
-    expect(key).toMatch(/program=structural-reasoning-v1/);
-    expect(key).toMatch(/review=collective-pass4-v4/);
+    expect(key).toMatch(/program=structural-/);
+    expect(key).toMatch(/review=collective-pass4-/);
   });
 
   it('même détecteur, sujets différents → publications distinctes (pas de fausse suppression)', () => {

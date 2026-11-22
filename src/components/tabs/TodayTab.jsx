@@ -77,6 +77,13 @@ import {
 } from '../../utils/exerciseLoadVolume';
 import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
 import {
+  countRelevantExercisesForDate,
+  isSessionFeedbackAutoOpenEnabled,
+  markSessionFeedbackInvitation,
+  readSessionFeedbackInvitation,
+  shouldOfferSessionFeedback
+} from '../../utils/sessionFeedbackOffer';
+import {
   buildSetLogFromPrescription,
   syncExerciseSetLogWeightsFromLegacy
 } from '../../utils/exerciseSetLogUtils';
@@ -1073,6 +1080,8 @@ const TodayTab = () => {
     const dirtyAtClick = getSessionCommitDirty();
     const hadExercisesDraft = dirtyAtClick.exercises;
     const hadStretchesDraft = dirtyAtClick.stretches;
+    // Instantané avant clear du brouillon : getCurrentData() peut être en retard après skipReact.
+    const snapshotBeforeSave = hadExercisesDraft ? getCurrentData() : null;
     savingLockRef.current = true;
     try {
       await yieldToNextPaint();
@@ -1093,6 +1102,21 @@ const TodayTab = () => {
       scheduleTodayCheckIdle(() => {
         syncSportLinkedQuestsWithProgramSnapshot(currentDate, getCurrentData());
       });
+
+      if (hadExercisesDraft && snapshotBeforeSave) {
+        const inviteDate = dateStr;
+        const decision = shouldOfferSessionFeedback({
+          saveSucceeded: true,
+          hasRelevantExercises: countRelevantExercisesForDate(snapshotBeforeSave, inviteDate),
+          existingFeedback: snapshotBeforeSave?.sessionFeedbacks?.[inviteDate] || null,
+          autoOpenEnabled: isSessionFeedbackAutoOpenEnabled(snapshotBeforeSave?.trainingPrefs),
+          invitationStatus: readSessionFeedbackInvitation(inviteDate)
+        });
+        if (decision.offer) {
+          markSessionFeedbackInvitation(inviteDate, 'offered');
+          handleSessionFeedback({ snapshot: snapshotBeforeSave, source: 'auto' });
+        }
+      }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des exercices:', error);
       if (isSessionSaveTimeoutError(error)) {
@@ -1679,9 +1703,10 @@ const TodayTab = () => {
     [currentDate, workout, isGymMode, getCurrentData, data, hasUnsavedExercises]
   );
 
-  const handleSessionFeedback = () => {
+  const handleSessionFeedback = (options = {}) => {
+    const snapshot = options.snapshot || getCurrentData();
     const seriesOverridesToday = getExerciseSeriesOverrides(
-      getCurrentData()?.dailyVariations,
+      snapshot?.dailyVariations,
       dateStr
     );
     const programExercisesMerged = mergeSeriesIntoProgramExercises(
@@ -1691,13 +1716,12 @@ const TodayTab = () => {
 
     // Calculer la durée réelle basée sur les exercices accomplis
     const calculateSessionDuration = () => {
-      const sessionData = getCurrentData();
       const completedExercises = programExercisesMerged.filter((exercise) => {
         const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
           isGymMode,
           workoutIsGymMode: workout.isGymMode
         });
-        return keys.some((k) => sessionData.checkedExercises?.[k] === true);
+        return keys.some((k) => snapshot.checkedExercises?.[k] === true);
       });
       
       if (completedExercises.length === 0) return 0;
@@ -1761,8 +1785,6 @@ const TodayTab = () => {
       return Math.round(totalDurationMinutes);
     };
 
-    const snapshot = getCurrentData();
-
     const buildProgramExerciseRow = (exercise) => {
       const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
         isGymMode,
@@ -1787,21 +1809,26 @@ const TodayTab = () => {
     };
 
     const programRows = programExercisesMerged.map(buildProgramExerciseRow).filter(Boolean);
-    const complementaryRows =
+    const complementaryChecked =
       workout.complementaryActivity &&
-      data.checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`]
-        ? [
-            {
-              id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
-              name: workout.complementaryActivity.name,
-              completed: true,
-              reps: 0,
-              duration: workout.complementaryActivity.duration
-            }
-          ]
-        : [];
+      snapshot?.checkedExercises?.[
+        `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`
+      ];
+    const complementaryRows = complementaryChecked
+      ? [
+          {
+            id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
+            name: workout.complementaryActivity.name,
+            completed: true,
+            reps: 0,
+            duration: workout.complementaryActivity.duration
+          }
+        ]
+      : [];
 
-    const exceptionalCompletedReps = (additionalExercises || []).reduce((sum, ex) => {
+    const dayAdditional =
+      snapshot?.dailyVariations?.[dateStr]?.additionalExercises || additionalExercises || [];
+    const exceptionalCompletedReps = (dayAdditional || []).reduce((sum, ex) => {
       if (!ex?.completed) return sum;
       if (ex?.type !== 'reps') return sum;
       const n = Math.max(
@@ -1823,7 +1850,9 @@ const TodayTab = () => {
         programRows.reduce((total, ex) => total + (parseInt(ex.reps, 10) || 0), 0) + exceptionalCompletedReps,
       estimatedDuration: Math.max(30, programExercisesMerged.length * 3),
       duration: calculateSessionDuration(),
-      workoutLoadSnapshot: collectWorkoutLoadSubsetForDate(snapshot, dateStr)
+      workoutLoadSnapshot: collectWorkoutLoadSubsetForDate(snapshot, dateStr),
+      existingFeedback: snapshot?.sessionFeedbacks?.[dateStr] || null,
+      openSource: options.source === 'auto' ? 'auto' : 'manual'
     };
     
     setSessionData(todayData);
@@ -3139,7 +3168,7 @@ const TodayTab = () => {
       <div className="text-center">
         <button
           type="button"
-          onClick={handleSessionFeedback}
+          onClick={() => handleSessionFeedback({ source: 'manual' })}
           className="today-btn-feedback mx-auto flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F5C45]/55 bg-black px-8 py-3 text-base font-semibold text-teal-50 shadow-lg shadow-black/40 transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/25"
         >
           <MessageSquare className="h-5 w-5 text-teal-400" />

@@ -51,7 +51,7 @@ export function createEmptyWorkoutAggregate() {
     circuitDefinitions: {},
     circuitProgress: {},
     circuitDefinitionsVersion: '1.0',
-    trainingPrefs: { swapRestConfirmEnabled: true },
+    trainingPrefs: { swapRestConfirmEnabled: true, sessionFeedbackAutoOpen: true },
     restDaySwaps: {},
     /** Snapshots figés repos planifiés par mois (YYYY-MM). */
     calendarMonthPlanSnapshots: {},

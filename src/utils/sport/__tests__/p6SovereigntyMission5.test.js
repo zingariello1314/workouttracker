@@ -30,8 +30,8 @@ function discovery(partial) {
 
 describe('Mission 5 — souveraineté et réconciliation forte', () => {
   it('édition P6 active (≥ v7)', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|10)/);
-    expect(analysisEditionKey()).toMatch(/review=collective-pass4-v[4567]/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|1[0-9])/);
+    expect(analysisEditionKey()).toMatch(/review=collective-pass4-v\d+/);
   });
 
   it('détecte une conclusion valide perdue sans disposition', () => {

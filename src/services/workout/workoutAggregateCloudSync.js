@@ -1,4 +1,5 @@
 import { putMomentumApiV1WorkoutAggregate } from '../sync/fetchMomentumApiV1.js';
+import { mergeSessionFeedbackMaps } from '../../utils/sessionFeedbackSchema.js';
 import { mergeWorkoutTableLists } from './workoutAggregateDefaults.js';
 
 const DEBOUNCE_MS = 3500;
@@ -210,6 +211,7 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
       C.calendarDayPlanSnapshots
     ),
     circuitProgress: mergeShallowRecordMaps(L.circuitProgress, C.circuitProgress),
+    sessionFeedbacks: mergeSessionFeedbackMaps(L.sessionFeedbacks, C.sessionFeedbacks),
     lastSaved: C.lastSaved || L.lastSaved,
     dataVersion: C.dataVersion || L.dataVersion || '1.0'
   };

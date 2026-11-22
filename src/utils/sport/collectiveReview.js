@@ -13,6 +13,7 @@ import {
   stablePublicationId,
   substantiveEquivalence
 } from './discoveryIdentity';
+import { justifyParentChildLink } from './hierarchyLink';
 
 const MAX_TARGETED_REEXPLORES = 3;
 
@@ -120,17 +121,34 @@ export function reviewCollectively(rows, { voiceKey = 'week', maxReexplore = MAX
               String(p?.discovery?.kind || '')
             )
           )
-          .map((p) => ({
-            exerciseId: p?.discovery?.metrics?.exerciseId || null,
-            name: p?.discovery?.metrics?.name || p?.discovery?.title,
-            date:
-              p?.discovery?.metrics?.date ||
-              p?.discovery?.metrics?.returnDate ||
-              (Array.isArray(p?.discovery?.metrics?.dates) ? p.discovery.metrics.dates[0] : null),
-            family: p?.discovery?.family || p?.discovery?.metrics?.family || null,
-            sessionFamilyId: p?.discovery?.metrics?.sessionFamilyId || null,
-            dayKey: p?.discovery?.metrics?.dayKey || null
-          }));
+          .map((p) => {
+            const m = p?.discovery?.metrics || {};
+            const dates = Array.isArray(m.dates) ? m.dates.filter(Boolean) : [];
+            const returnDate = m.returnDate || m.gapAfter || m.date || null;
+            const gapDays = m.gapDays ?? m.daysAbsent ?? null;
+            const mechanism = m.mechanism || null;
+            return {
+              exerciseId: m.exerciseId || null,
+              name: m.exerciseName || m.name || p?.discovery?.title,
+              date: returnDate || (dates.length ? dates[dates.length - 1] : null),
+              returnDate: returnDate || null,
+              confirmationDates: dates
+                .map((d) => String(d).slice(0, 10))
+                .filter((d) => d && (!returnDate || d > String(returnDate).slice(0, 10))),
+              dates,
+              gapDays,
+              gapProvenByConsolidation:
+                /resumed_former_level|partial_resume/i.test(String(mechanism || '')) &&
+                Number(gapDays) >= 21,
+              mechanism,
+              family: m.muscleGroup || m.muscleFamily || p?.discovery?.family || m.family || null,
+              muscleGroup: m.muscleGroup || m.muscleFamily || null,
+              sessionFamilyId: m.sessionFamilyId || m.slotMatch?.primary?.dayKey || null,
+              dayKey: m.dayKey || null,
+              prevReps: m.prevReps ?? m.priorAvg ?? null,
+              currentReps: m.currentReps ?? m.level ?? m.lastReps ?? null
+            };
+          });
         again = exploreCollectiveReturn(events);
       }
       reexplored += 1;
@@ -330,51 +348,106 @@ export function reviewCollectively(rows, { voiceKey = 'week', maxReexplore = MAX
       });
   }
 
-  // 4b) Retour collectif justifié → les reprises individuelles deviennent preuves / secondaires
-  const collectiveIdx = working.findIndex(
-    (row, index) =>
-      !dropIndexes.has(index) && /disc_collective_return/i.test(String(row?.discovery?.kind || ''))
-  );
-  if (collectiveIdx >= 0) {
+  // 4b) Collectifs → approfondissements UNIQUEMENT si lien parent–enfant justifié
+  // (sujet + épisode + dimension). Pas d’absorption par famille éditoriale.
+  const markDeepenings = (collectiveIdx, childRe, reason, opts = {}) => {
+    if (collectiveIdx < 0) return;
     const collective = working[collectiveIdx];
-    const coverage = collective?.exploration?.coverage || collective?.discovery?.metrics?.exploration?.coverage;
-    if (coverage === 'concluded' || collective?.discovery?.metrics?.namedMoves?.length >= 3) {
-      working.forEach((row, index) => {
-        if (index === collectiveIdx || dropIndexes.has(index)) return;
-        if (!/disc_ms_return|disc_emergence|disc_format_consolidation|disc_structural_memory/i.test(String(row?.discovery?.kind || ''))) {
-          return;
-        }
-        // Garder en survivors mais hors priorité forcée : marquer comme deepening
-        row.p6Disposition = 'deepening_of_collective';
-        row.collapsedInto = stablePublicationId(collective.discovery || collective);
-        row.wasPriority = false;
-        if (row.discovery) {
-          row.discovery = {
-            ...row.discovery,
-            informativeValue: Math.min(Number(row.discovery.informativeValue) || 20, 18)
-          };
-        }
+    const coverage =
+      collective?.exploration?.coverage || collective?.discovery?.metrics?.exploration?.coverage;
+    const composed =
+      coverage === 'concluded' ||
+      collective?.discovery?.metrics?.namedMoves?.length >= 2 ||
+      collective?.discovery?.metrics?.composition?.coverage === 'concluded' ||
+      /composed_|collective_|load_phase/i.test(String(collective?.discovery?.kind || ''));
+    if (!composed) return;
+    const parentId = stablePublicationId(collective.discovery || collective);
+    const childIds = [];
+    const rejectedLinks = [];
+    working.forEach((row, index) => {
+      if (index === collectiveIdx || dropIndexes.has(index)) return;
+      if (!childRe.test(String(row?.discovery?.kind || ''))) return;
+      const link = justifyParentChildLink(collective, row, {
+        maxEpisodeGapDays: opts.maxEpisodeGapDays ?? 45
+      });
+      if (!link.ok) {
+        rejectedLinks.push({
+          id: stablePublicationId(row.discovery || row),
+          reason: link.reason,
+          proof: link.proof
+        });
         decisions.push({
           id: stablePublicationId(row.discovery || row),
-          action: 'demote_to_deepening',
-          reason: 'individual_return_under_collective',
-          into: stablePublicationId(collective.discovery || collective)
+          action: 'keep_independent',
+          reason: `deepening_rejected:${link.reason}`,
+          into: parentId,
+          linkProof: link.proof
         });
-      });
-      // Enrichir le corps collectif si la réexploration a produit une conclusion plus riche
-      if (collective.exploration?.conclusion && collective.discovery) {
-        collective.discovery = {
-          ...collective.discovery,
-          body: collective.exploration.conclusion,
-          evidence:
-            (collective.exploration.namedMoves || [])
-              .map((m) => `${m.name}@${m.date || '?'}`)
-              .slice(0, 8)
-              .join(' · ') || collective.discovery.evidence
+        return;
+      }
+      row.p6Disposition = 'deepening_of_collective';
+      row.collapsedInto = parentId;
+      row.hierarchyLink = link;
+      row.wasPriority = false;
+      if (row.discovery) {
+        row.discovery = {
+          ...row.discovery,
+          p6Disposition: 'deepening_of_collective',
+          collapsedInto: parentId,
+          hierarchyLink: link,
+          // Ne pas écraser la valeur informative : l’approfondissement reste consultable
+          informativeValue: Number(row.discovery.informativeValue) || 20
         };
       }
+      childIds.push(stablePublicationId(row.discovery || row));
+      decisions.push({
+        id: stablePublicationId(row.discovery || row),
+        action: 'demote_to_deepening',
+        reason,
+        into: parentId,
+        linkProof: link.proof
+      });
+    });
+    if (collective.discovery) {
+      collective.discovery = {
+        ...collective.discovery,
+        childIds,
+        hierarchyChildren: childIds,
+        rejectedDeepeningLinks: rejectedLinks.slice(0, 40),
+        ...(collective.exploration?.conclusion
+          ? {
+              body: collective.exploration.conclusion,
+              evidence:
+                (collective.exploration.namedMoves || [])
+                  .map((m) => `${m.name}@${m.date || '?'}`)
+                  .slice(0, 8)
+                  .join(' · ') || collective.discovery.evidence
+            }
+          : {})
+      };
     }
-  }
+  };
+
+  markDeepenings(
+    working.findIndex(
+      (row, index) =>
+        !dropIndexes.has(index) && /disc_collective_return/i.test(String(row?.discovery?.kind || ''))
+    ),
+    /disc_ms_return|disc_emergence|disc_format_consolidation|disc_structural_memory/i,
+    'individual_return_under_collective',
+    { maxEpisodeGapDays: 21 }
+  );
+  markDeepenings(
+    working.findIndex(
+      (row, index) =>
+        !dropIndexes.has(index) &&
+        /disc_composed_load_phase|disc_load_phase/i.test(String(row?.discovery?.kind || ''))
+    ),
+    // format_consolidation / exercise_progress exclus : dimension ≠ load
+    /resistance_progression|load_progression|disc_composed_load/i,
+    'individual_load_under_phase',
+    { maxEpisodeGapDays: 45 }
+  );
 
   // 5) Preuves insuffisantes → abstention justifiée (hors priorité)
   working.forEach((row, index) => {

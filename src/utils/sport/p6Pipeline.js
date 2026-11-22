@@ -83,6 +83,21 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
   // Appliquer les conclusions de réexploration aux textes publiables
   const afterReview = reviewed.survivors.map((row) => {
     if (!row.reexploredFor || !row.exploration?.conclusion) return row;
+    // Mission 19 : ne pas écraser une narration d’autorité compositionnelle.
+    const authority = row.discovery?.metrics?.narrativeAuthority || row.discovery?.drafting?.authority;
+    if (authority === 'composition' || row.discovery?.metrics?.composition?.conclusion) {
+      return {
+        ...row,
+        discovery: {
+          ...row.discovery,
+          metrics: {
+            ...(row.discovery?.metrics || {}),
+            exploration: row.exploration,
+            reexploredFor: row.reexploredFor
+          }
+        }
+      };
+    }
     return {
       ...row,
       discovery: {

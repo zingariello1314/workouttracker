@@ -1,0 +1,8 @@
+{
+  "schema": "momentum.editionFreeze.v1",
+  "frozenAt": "2026-11-21",
+  "mission": "Mission 13",
+  "editionBefore": "editorial=p6-sovereign-v11;composition=phenomenon-compose-v1;coherence=inter-horizon-v1",
+  "editionAfterTarget": "editorial=p6-sovereign-v12;classification=modality-authority-v1;matching=session-slot-v1;composition=phenomenon-compose-v2",
+  "note": "Gel logique v11 (exports live 21 nov) avant corrections M13. Aucun commit. Rejeu binaire live à produire depuis Récap → Analyse."
+}

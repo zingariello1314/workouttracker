@@ -1,0 +1,26 @@
+{
+  "schema": "momentum.editionFreeze.v2",
+  "frozenAt": "2026-11-21",
+  "mission": "Mission 16",
+  "editionBefore": "editorial=p6-sovereign-v14;claim=assertion-window-v1;audit=normalized-export-v3",
+  "editionAfterTarget": "editorial=p6-sovereign-v15;programReasoning=variant-mix-thesis-v1;collectiveReturn=gap-propagated-v1;audit=normalized-export-v4",
+  "rootCausesFixedInCode": [
+    "format_consolidation.gapDays not copied into discovery metrics → collective returnEvents empty",
+    "rewriteTrajectoryWithPrescriptions only appended disclaimer → now can change thesis to variant_mix_shift",
+    "applySlotMatchToTrajectory unwired → annotateTrajectoryWithProgramContext can pass realizedSession",
+    "factRegistry subject=detector kind + empty windows → subject=exercise/day/period + required window"
+  ],
+  "sourceExports": [
+    "momentum-ANALYTICAL_AUDIT-p6-sovereign-v14-2026-11-21T19-52-13-882Z.json",
+    "momentum-AUDIT_IA-2026-11-21T19-50-05-822Z.md"
+  ],
+  "productVerdict": {
+    "cards8horizons": 714,
+    "identicalToV13TitlesBodies": 714,
+    "identicalPriorities": "83/83",
+    "collectiveReturnCards": 0,
+    "claimDivergencesFixed": 37,
+    "note": "Infrastructure OK ; intelligence narrative inchangée vs v13"
+  },
+  "note": "Baseline produit v14. Aucun commit."
+}

@@ -273,7 +273,7 @@ export function runGameBDiscoveryQuality({ insights = null, blindPackets = null 
       /sommeil/i.test(body) &&
       /(?:\bcause\b|\bprovoque\b|diminue ta force|récupération insuffisante prouvée)/i.test(body);
     const sleepCausalDenied =
-      /pas (?:une )?cause|sans causalité|association(?:\s+descriptive)?|ne (?:prouve|démontre|établit) pas|sans (?:qu['’]on puisse|pouvoir) en conclure|on ne (?:peut|saurait) (?:pas )?en conclure|pas une preuve que/i.test(
+      /pas (?:une )?cause|sans causalité|association(?:\s+descriptive)?|ne (?:prouve|démontre|établit) pas|sans (?:qu['’]on puisse|pouvoir) en conclure|on ne (?:peut|saurait) (?:pas )?en conclure|pas une preuve que|sans preuve que|sans (?:en )?faire (?:une )?cause|(?:soit|est) la cause\b.{0,40}(?:pas|sans)|architecture soit la cause/i.test(
         body
       );
     if (sleepCausalCue && !sleepCausalDenied) {

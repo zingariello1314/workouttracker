@@ -1,3 +1,5 @@
+import { reconcileSessionFeedbackEntry } from '../../utils/sessionFeedbackSchema.js';
+
 const TODAY_API_BASE = '/v1/today';
 
 const isBrowser = typeof window !== 'undefined';
@@ -257,10 +259,13 @@ export const todayRepository = {
     // Ne pas supprimer une justification calendrier si le payload Aujourd’hui n’en contient pas.
 
     const nextSessionFeedbacks = { ...(safeBase.sessionFeedbacks || {}) };
+    const previousFeedback = nextSessionFeedbacks[dateStr];
     if (normalized.sessionFeedback) {
-      nextSessionFeedbacks[dateStr] = normalized.sessionFeedback;
-    } else {
-      delete nextSessionFeedbacks[dateStr];
+      const reconciled = reconcileSessionFeedbackEntry(previousFeedback, normalized.sessionFeedback);
+      if (reconciled) nextSessionFeedbacks[dateStr] = reconciled;
+    } else if (previousFeedback) {
+      // Un jour serveur sans feedback n’est pas une suppression.
+      nextSessionFeedbacks[dateStr] = previousFeedback;
     }
 
     const currentEndurance = safeBase.enduranceData && typeof safeBase.enduranceData === 'object'

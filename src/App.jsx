@@ -70,6 +70,7 @@ import { isSportSubTab } from './constants/sportSubTabs';
 import { isCodeSubTab } from './constants/codeSubTabs';
 import { isAdminUser } from './utils/accessControl';
 import { getDateStr } from './utils/dateUtils';
+import { markSessionFeedbackInvitation } from './utils/sessionFeedbackOffer';
 import ProfileQuestionnaireModal, { registerProfileQuestionnaireOpenHandler } from './features/profileQuestionnaire/ProfileQuestionnaireModal';
 import { useProfileQuestionnaire } from './features/profileQuestionnaire/useProfileQuestionnaire';
 import Phase3SyncEffects from './components/sync/Phase3SyncEffects';
@@ -674,7 +675,12 @@ const WorkoutTrackerContent = () => {
           >
             <SessionFeedback
               isOpen={showSessionFeedback}
-              onClose={() => setShowSessionFeedback(false)}
+              onClose={() => {
+                if (sessionData?.openSource === 'auto' && sessionData?.date) {
+                  markSessionFeedbackInvitation(sessionData.date, 'dismissed');
+                }
+                setShowSessionFeedback(false);
+              }}
               onSave={async (feedbackData) => {
                 // ✅ Sauvegarder le feedback avec la date comme clé
                 if (feedbackData.date && saveSessionFeedback) {

@@ -16,7 +16,7 @@ import { buildConclusionHierarchyView, CONCLUSION_ROLE } from '../conclusionHier
 
 describe('Mission 9 — clôture P6 partielle', () => {
   it('édition ≥ v8 (fondations Mission 9)', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[89]|10)/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[89]|1[0-9])/);
     expect(analysisEditionKey()).toMatch(/claim=proof-pipeline-v[23]/);
   });
 

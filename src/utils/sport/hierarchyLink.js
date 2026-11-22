@@ -1,0 +1,196 @@
+/**
+ * Justification vérifiable d’un lien parent–enfant hiérarchique (Mission 14).
+ * Une famille éditoriale commune ≠ approfondissement.
+ */
+
+function ymd(v) {
+  return v == null ? null : String(v).slice(0, 10);
+}
+
+function normName(v) {
+  return String(v || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function subjectIdsOf(row) {
+  const d = row?.discovery || row;
+  const m = d?.metrics || {};
+  const ids = new Set();
+  if (m.exerciseId != null && m.exerciseId !== '') ids.add(String(m.exerciseId));
+  if (m.storageId != null && m.storageId !== '') ids.add(String(m.storageId));
+  if (m.name) ids.add(`name:${normName(m.name)}`);
+  (m.namedMoves || m.composition?.namedMoves || []).forEach((n) => {
+    if (n?.exerciseId != null) ids.add(String(n.exerciseId));
+    if (n?.name) ids.add(`name:${normName(n.name)}`);
+  });
+  (m.events || []).forEach((e) => {
+    if (e?.exerciseId != null) ids.add(String(e.exerciseId));
+    if (e?.name) ids.add(`name:${normName(e.name)}`);
+  });
+  return ids;
+}
+
+function episodeDatesOf(row) {
+  const d = row?.discovery || row;
+  const m = d?.metrics || {};
+  const dates = new Set();
+  const push = (v) => {
+    const y = ymd(v);
+    if (y) dates.add(y);
+  };
+  push(m.date);
+  push(m.eventDate);
+  push(m.returnDate);
+  push(m.peakDate);
+  (Array.isArray(m.dates) ? m.dates : []).forEach(push);
+  (m.namedMoves || []).forEach((n) => push(n?.date));
+  (m.events || []).forEach((e) => push(e?.date));
+  (d?.claim?.proof?.sourceEvents || []).forEach((e) => {
+    if (e?.id && /^\d{4}-\d{2}-\d{2}/.test(String(e.id))) push(String(e.id).slice(0, 10));
+  });
+  return dates;
+}
+
+function analyticalDimension(row) {
+  const kind = String((row?.discovery || row)?.kind || '');
+  if (/load_phase|resistance_progression|load_progression|charge/i.test(kind)) return 'load';
+  if (/collective_return|ms_return|emergence|format_consolidation|structural_memory/i.test(kind)) {
+    return 'return_or_format';
+  }
+  if (/relative_concentration|exercise_share|th_concentration|span_volume/i.test(kind)) {
+    return 'concentration';
+  }
+  if (/volume_decomp|volume_shape|composed_volume/i.test(kind)) return 'volume';
+  if (/adherence|session_family|slot/i.test(kind)) return 'program_structure';
+  if (/sleep|rest/i.test(kind)) return 'sleep';
+  return 'other';
+}
+
+function daysBetween(a, b) {
+  if (!a || !b) return null;
+  return Math.round((new Date(`${b}T12:00:00`) - new Date(`${a}T12:00:00`)) / 86400000);
+}
+
+/**
+ * @returns {{
+ *   ok: boolean,
+ *   relation: string|null,
+ *   reason: string,
+ *   proof: object
+ * }}
+ */
+export function justifyParentChildLink(parent, child, { maxEpisodeGapDays = 45 } = {}) {
+  if (!parent || !child) {
+    return { ok: false, relation: null, reason: 'missing_rows', proof: {} };
+  }
+  const parentDim = analyticalDimension(parent);
+  const childDim = analyticalDimension(child);
+  const parentSubjects = subjectIdsOf(parent);
+  const childSubjects = subjectIdsOf(child);
+  const parentDates = episodeDatesOf(parent);
+  const childDates = episodeDatesOf(child);
+
+  const sharedSubjects = [...childSubjects].filter((s) => parentSubjects.has(s));
+  const subjectCompatible =
+    sharedSubjects.length > 0 ||
+    (parentSubjects.size === 0 && childSubjects.size === 0 && parentDim === childDim);
+
+  // Dimension : load parent n’absorbe que load ; return parent n’absorbe return/format
+  let dimensionCompatible = false;
+  if (parentDim === 'load') {
+    dimensionCompatible = childDim === 'load';
+  } else if (parentDim === 'return_or_format') {
+    dimensionCompatible = childDim === 'return_or_format';
+  } else if (parentDim === childDim && parentDim !== 'other') {
+    dimensionCompatible = true;
+  }
+
+  let episodeCompatible = false;
+  let minGap = null;
+  if (!parentDates.size || !childDates.size) {
+    // pas de dates → n’autoriser que si sujet partagé ET même dimension stricte
+    episodeCompatible = subjectCompatible && dimensionCompatible && sharedSubjects.length > 0;
+  } else {
+    for (const cd of childDates) {
+      for (const pd of parentDates) {
+        const gap = Math.abs(daysBetween(pd, cd) || 9999);
+        if (minGap == null || gap < minGap) minGap = gap;
+        if (gap <= maxEpisodeGapDays) episodeCompatible = true;
+      }
+    }
+    // Enfant entièrement dans l’enveloppe parent
+    if (parentDates.size >= 1 && childDates.size >= 1) {
+      const pMin = [...parentDates].sort()[0];
+      const pMax = [...parentDates].sort().at(-1);
+      const cMin = [...childDates].sort()[0];
+      const cMax = [...childDates].sort().at(-1);
+      if (cMin >= pMin && cMax <= pMax) episodeCompatible = true;
+      // tolérance : enfant dans ±maxEpisodeGapDays de l’enveloppe
+      if (
+        daysBetween(pMin, cMin) >= -maxEpisodeGapDays &&
+        daysBetween(cMax, pMax) >= -maxEpisodeGapDays
+      ) {
+        // encore trop large si l’enfant est des mois après — déjà couvert par minGap
+      }
+    }
+  }
+
+  if (!dimensionCompatible) {
+    return {
+      ok: false,
+      relation: null,
+      reason: 'incompatible_analytical_dimension',
+      proof: { parentDim, childDim, sharedSubjects, minGap }
+    };
+  }
+  if (!subjectCompatible || sharedSubjects.length === 0) {
+    return {
+      ok: false,
+      relation: null,
+      reason: 'no_shared_subject',
+      proof: {
+        parentSubjects: [...parentSubjects].slice(0, 8),
+        childSubjects: [...childSubjects].slice(0, 8),
+        parentDim,
+        childDim,
+        minGap
+      }
+    };
+  }
+  if (!episodeCompatible) {
+    return {
+      ok: false,
+      relation: null,
+      reason: 'incompatible_episode',
+      proof: {
+        sharedSubjects,
+        parentDates: [...parentDates].slice(0, 6),
+        childDates: [...childDates].slice(0, 6),
+        minGap,
+        maxEpisodeGapDays
+      }
+    };
+  }
+
+  return {
+    ok: true,
+    relation: 'deepening',
+    reason: 'verified_parent_child',
+    proof: {
+      sharedSubjects,
+      parentDim,
+      childDim,
+      parentDates: [...parentDates].slice(0, 6),
+      childDates: [...childDates].slice(0, 6),
+      minGap,
+      contribution: 'child_documents_component_of_parent_thesis'
+    }
+  };
+}
+
+export function isAccessibleDeepeningDisposition(disposition) {
+  return disposition === 'deepening_of_collective' || disposition === 'deepening_accessible';
+}

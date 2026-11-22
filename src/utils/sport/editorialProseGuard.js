@@ -144,14 +144,22 @@ export function polishCardProse(card = {}) {
     evidence = evidence.replace(re, to);
   });
 
-  // Soften sleep overclaims in place
-  body = body
-    .replace(/seuil de sommeil personnel/gi, 'seuil observé dans ton historique')
-    .replace(/séparation reproductible/gi, 'séparation observée')
-    .replace(/facteur discriminant/gi, 'écart observé')
-    .replace(/Le lien est net/gi, 'L’association est visible');
+  const soften = (text) =>
+    String(text || '')
+      .replace(/seuil de sommeil personnel/gi, 'écart de durée de sommeil observé')
+      .replace(/seuil de sommeil observé(?: dans ton historique)?/gi, 'écart de durée de sommeil observé')
+      .replace(/seuil observé dans ton historique/gi, 'écart observé dans ton historique')
+      .replace(/séparation reproductible/gi, 'séparation observée')
+      .replace(/facteur discriminant/gi, 'écart observé')
+      .replace(/Le lien est net/gi, 'L’association est visible')
+      .replace(/\brendement\s+0\s*reps\/h\b/gi, 'densité non calculable')
+      .replace(/\b0\s*reps\/h\b/gi, 'densité non calculable')
+      .replace(/Les journées les plus denses/gi, 'Les journées à fort volume')
+      .replace(/seuil de sommeil/gi, 'durée de sommeil');
 
-  title = title.replace(/Les journées les plus denses/gi, 'Les journées à fort volume');
+  title = soften(title);
+  body = soften(body);
+  evidence = soften(evidence);
 
   return {
     ...card,

@@ -447,7 +447,19 @@ function claimDatesFor(period, sessions, window, reading) {
     return [...new Set([reading.gap.before, reading.gap.after, ...split.observed.map((s) => s.date)])];
   }
   const split = splitForHorizon(period, sessions, window);
-  return split.observed.map((s) => s.date);
+  const observed = split.observed.map((s) => s.date);
+  // Mission 18 : une reprise (gap.after) dans la fenêtre reste une preuve d’épisode,
+  // même si le découpage début/fin de fenêtre la classe hors « observed »
+  // (ex. seule séance du 11 nov. → mid=1 → observed vide → no_evidence_in_window à tort).
+  const after = reading?.gap?.after ? String(reading.gap.after).slice(0, 10) : null;
+  const afterInWindow =
+    after &&
+    (!window?.start || after >= window.start) &&
+    (!window?.end || after <= window.end);
+  if (afterInWindow) {
+    return [...new Set([...observed, after].filter(Boolean))];
+  }
+  return observed;
 }
 
 function enrichReading(reading, sessions, period, window) {

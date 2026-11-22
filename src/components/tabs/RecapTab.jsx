@@ -627,15 +627,42 @@ const RecapTab = ({ isActive = true }) => {
         '../../utils/sport/evaluation/auditIaReport'
       );
       const { downloadTextFile } = await import('../../utils/sport/analysisExportDownload');
+      const { snapshotFingerprint } = await import('../../utils/sport/analysisEnvironmentDossier');
       const insights = liveBundle?.recapAssessment?.insights || recapAssessment?.insights || null;
       const p6 = liveBundle?.recapAssessment?.periodDiscoveries?.p6 || null;
+      let eightPeriodExport = opts.eightPeriodExport || null;
+      if (
+        opts.includeEightPeriods !== false &&
+        opts.mode !== 'concise' &&
+        typeof window.momentumExportEightPeriods === 'function'
+      ) {
+        window.dispatchEvent(
+          new CustomEvent('momentum:analysis-export-progress', {
+            detail: { period: 'audit_ia', phase: 'eight_periods', index: 1, total: 2 }
+          })
+        );
+        eightPeriodExport = await window.momentumExportEightPeriods({
+          ...opts,
+          download: false
+        });
+      }
+      const fp = snapshotForRecap ? snapshotFingerprint(snapshotForRecap) : null;
+      const mdOpts = {
+        insights,
+        p6,
+        mission: undefined,
+        eightPeriodExport,
+        snapshotFingerprint: fp,
+        underexploration: p6?.underexploration || null,
+        domVerify: opts.domVerify || window.__momentumLastDomVerify || null
+      };
       const md =
         opts.mode === 'concise'
-          ? buildAuditIaConcise({ insights, p6, mission: 'Mission 11' })
-          : buildAuditIaMarkdown({ insights, p6, mode: 'detailed', mission: 'Mission 11' });
+          ? buildAuditIaConcise(mdOpts)
+          : buildAuditIaMarkdown({ ...mdOpts, mode: 'detailed' });
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `momentum-AUDIT_IA-${opts.mode === 'concise' ? 'concise-' : ''}${stamp}.md`;
-      if (opts.download === false) return { ok: true, markdown: md, filename };
+      if (opts.download === false) return { ok: true, markdown: md, filename, eightPeriodExport };
       const dl = downloadTextFile(filename, md, 'text/markdown');
       return { ok: dl?.ok !== false, download: { ...dl, filename }, markdown: md };
     };
@@ -656,6 +683,7 @@ const RecapTab = ({ isActive = true }) => {
         '../../utils/sport/evaluation/buildAnalyticalAudit'
       );
       const { downloadAnalysisJson } = await import('../../utils/sport/analysisExportDownload');
+      const { analysisEditionKey: editionKey } = await import('../../utils/sport/analysisEdition');
       const insights = liveBundle?.recapAssessment?.insights || recapAssessment?.insights || null;
       const p6 = liveBundle?.recapAssessment?.periodDiscoveries?.p6 || null;
       let eightPeriodExport = opts.eightPeriodExport || null;
@@ -670,15 +698,24 @@ const RecapTab = ({ isActive = true }) => {
           download: false
         });
       }
+      const edition = editionKey();
+      const editorialSlug =
+        edition.match(/editorial=([^;]+)/)?.[1]?.replace(/[^a-z0-9.-]+/gi, '-') || 'edition';
+      const runId =
+        eightPeriodExport?.analysisRunId ||
+        `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
       const doc = buildAnalyticalAudit({
         eightPeriodExport,
-        insights,
-        p6,
+        insights: eightPeriodExport?.periods ? null : insights,
+        p6: eightPeriodExport?.periods ? null : p6,
         snapshot: snapshotForRecap,
         activeProgram,
         gamesByPeriod: opts.gamesByPeriod || null,
         domVerify: opts.domVerify || window.__momentumLastDomVerify || null,
-        underexploration: p6?.underexploration || null
+        underexploration: p6?.underexploration || null,
+        currentPeriod: deferredPeriod || analysisPeriod || null,
+        analysisRunId: runId,
+        computedAt: eightPeriodExport?.capturedAt || new Date().toISOString()
       });
       const validation = validateAnalyticalAudit(doc);
       doc.diagnostics = {
@@ -686,16 +723,18 @@ const RecapTab = ({ isActive = true }) => {
         schemaValidation: validation
       };
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `momentum-ANALYTICAL_AUDIT-${stamp}.json`;
+      const filename = `momentum-ANALYTICAL_AUDIT-${editorialSlug}-${stamp}.json`;
       if (opts.download === false) {
-        return { ok: true, document: doc, validation, filename };
+        return { ok: true, document: doc, validation, filename, analysisRunId: runId };
       }
       const dl = downloadAnalysisJson(doc, { filename });
       return {
         ok: dl?.ok !== false,
         download: { ...dl, filename },
         validation,
-        schema: doc.schema
+        schema: doc.schema,
+        analysisRunId: runId,
+        edition
       };
     };
 

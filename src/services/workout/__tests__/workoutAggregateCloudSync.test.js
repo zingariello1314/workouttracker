@@ -102,4 +102,25 @@ describe('workoutAggregateCloudSync', () => {
     const n = normalizeWorkoutAggregateRawForIdb({ reps: { x: '1' }, lastSaved: 't' }, 'user-1');
     expect(n.id).toBe('user-1');
   });
+
+  it('mergeCloudWinningRowOverLocal garde un feedback local absent du cloud plus récent', () => {
+    const local = {
+      id: 'u',
+      lastSaved: '2026-01-01T00:00:00.000Z',
+      sessionFeedbacks: {
+        '2026-11-20': { ressenti: 6, updatedAt: '2026-11-20T12:00:00.000Z' },
+        '2026-11-21': { ressenti: 8, updatedAt: '2026-11-21T18:00:00.000Z', notePerso: 'ici' }
+      }
+    };
+    const cloud = {
+      lastSaved: '2026-01-03T00:00:00.000Z',
+      sessionFeedbacks: {
+        '2026-11-21': { ressenti: 3, updatedAt: '2026-11-21T09:00:00.000Z' }
+      }
+    };
+    const out = mergeCloudWinningRowOverLocal(local, cloud, 'u');
+    expect(out.sessionFeedbacks['2026-11-20'].ressenti).toBe(6);
+    expect(out.sessionFeedbacks['2026-11-21'].ressenti).toBe(8);
+    expect(out.sessionFeedbacks['2026-11-21'].notePerso).toBe('ici');
+  });
 });

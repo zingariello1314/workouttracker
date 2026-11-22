@@ -41,6 +41,7 @@ import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 import { yieldToNextPaint, scheduleTodayCheckIdle } from '../utils/todayCheckMeasure';
 import { withIdbOperationTimeout } from '../utils/sessionSaveTimeout.js';
 import { classifySaveOutcome, createSaveOperationId } from '../services/workout/saveOutcome.js';
+import { commitSessionFeedback } from '../utils/sessionFeedbackSchema.js';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -236,9 +237,10 @@ const INITIAL_WORKOUT_DATA = {
   circuitProgress: {},
   /** Version du schéma circuits — pour migrations futures. */
   circuitDefinitionsVersion: '1.0',
-  /** Préférences entraînement persistées (swap repos, confirmations, etc.). */
+  /** Préférences entraînement persistées (swap repos, feedback auto, etc.). */
   trainingPrefs: {
-    swapRestConfirmEnabled: true
+    swapRestConfirmEnabled: true,
+    sessionFeedbackAutoOpen: true
   },
   /** Swap hebdo du jour de repos : { [programId]: { [weekStartDate]: { fromDay, toDay, updatedAt } } } */
   restDaySwaps: {},
@@ -605,8 +607,12 @@ export const useWorkoutData = (options = {}) => {
       circuitDefinitionsVersion: migratedData.circuitDefinitionsVersion || '1.0',
       trainingPrefs:
         migratedData.trainingPrefs && typeof migratedData.trainingPrefs === 'object'
-          ? { swapRestConfirmEnabled: migratedData.trainingPrefs.swapRestConfirmEnabled !== false }
-          : { swapRestConfirmEnabled: true },
+          ? {
+              ...migratedData.trainingPrefs,
+              swapRestConfirmEnabled: migratedData.trainingPrefs.swapRestConfirmEnabled !== false,
+              sessionFeedbackAutoOpen: migratedData.trainingPrefs.sessionFeedbackAutoOpen !== false
+            }
+          : { swapRestConfirmEnabled: true, sessionFeedbackAutoOpen: true },
       restDaySwaps:
         migratedData.restDaySwaps && typeof migratedData.restDaySwaps === 'object'
           ? { ...migratedData.restDaySwaps }
@@ -1562,17 +1568,18 @@ export const useWorkoutData = (options = {}) => {
 
   // Fonction pour sauvegarder un feedback de session
   const saveSessionFeedback = useCallback(async (date, feedbackData) => {
+    const current = dataRef.current || data;
+    const previous = current?.sessionFeedbacks?.[date];
+    const stored = commitSessionFeedback(previous, { ...feedbackData, date });
     const newData = {
-      ...data,
+      ...current,
       sessionFeedbacks: {
-        ...data.sessionFeedbacks,
-        [date]: {
-          ...feedbackData,
-          timestamp: new Date().toISOString()
-        }
+        ...(current?.sessionFeedbacks || {}),
+        [date]: stored
       }
     };
-    
+
+    dataRef.current = newData;
     // ✅ Sauvegarder immédiatement sans attendre le debounce
     setData(newData);
     

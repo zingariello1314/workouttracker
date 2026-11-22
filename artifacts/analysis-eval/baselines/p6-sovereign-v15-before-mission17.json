@@ -1,0 +1,30 @@
+{
+  "schema": "momentum.editionFreeze.v2",
+  "frozenAt": "2026-11-21",
+  "mission": "Mission 17",
+  "editionBefore": "editorial=p6-sovereign-v15",
+  "editionAfterTarget": "editorial=p6-sovereign-v16;collectiveReturn=episode-cooccurrence-v2;programReasoning=variant-mix-direction-v2",
+  "sourceExports": [
+    "momentum-ANALYTICAL_AUDIT-p6-sovereign-v15-2026-11-21T20-20-53-313Z.json",
+    "momentum-AUDIT_IA-2026-11-21T20-22-57-082Z.md"
+  ],
+  "productVerdict": {
+    "cards": 720,
+    "accessibleAnnounced": 717,
+    "prioritiesUnchanged": "76/83",
+    "variantMixCards": 26,
+    "distinctVariantBodies": 6,
+    "collectiveReturn": 0,
+    "atomicFacts": 3,
+    "note": "gapDays propagé mais collectif absent ; mix avec contradictions directionnelles"
+  },
+  "rootCausesFixedInCode": [
+    "collective: multi-familles musculaires sans lien → co-occurrence même jour de reprise",
+    "collective: confirmation 18 nov confondue avec reprise 11 nov → identité d'épisode",
+    "variant: prose 'baisse' figée alors que delta positif",
+    "variant: greffe sur titres incompatibles (part musculaire / reprise format)",
+    "facts: total périodique attribué à day:peakDate",
+    "mission hardcode RecapTab / audit defaults"
+  ],
+  "note": "Baseline produit v15. Aucun commit."
+}

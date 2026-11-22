@@ -53,7 +53,14 @@ export function subjectKey(row) {
   }
   if (m.population) return `pop:${m.population}`;
   if (Array.isArray(m.dates) && m.dates.length) return `dates:${m.dates.slice(0, 3).join(',')}`;
-  if (/pushPull|push_pull|stimulus_mix|volume_shape|near_equal|th_concentration|th_rhythm/i.test(detectorKind(row))) {
+  if (
+    /pushPull|push_pull|stimulus_mix|volume_shape|near_equal|th_concentration|th_rhythm|span_volume|session_share|day_share|peak/i.test(
+      detectorKind(row)
+    ) ||
+    /porte une grande part|concentre une part|bloc dépasse le niveau/i.test(
+      clean(row?.title || row?.discovery?.title)
+    )
+  ) {
     return 'period:activity';
   }
   return 'period:global';
@@ -97,6 +104,43 @@ function metricAspect(row) {
   );
 }
 
+const FR_MONTHS = Object.freeze({
+  janvier: '01',
+  février: '02',
+  fevrier: '02',
+  mars: '03',
+  avril: '04',
+  mai: '05',
+  juin: '06',
+  juillet: '07',
+  août: '08',
+  aout: '08',
+  septembre: '09',
+  octobre: '10',
+  novembre: '11',
+  décembre: '12',
+  decembre: '12'
+});
+
+/**
+ * Normalise une date de pic (ISO ou libellé FR) vers YYYY-MM-DD quand possible.
+ */
+export function normalizePeakDayKey(raw) {
+  if (raw == null || raw === '') return '';
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const fr = s.match(
+    /(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)(?:\s+(\d{4}))?/i
+  );
+  if (fr) {
+    const day = String(fr[1]).padStart(2, '0');
+    const month = FR_MONTHS[fr[2].toLowerCase()] || '00';
+    const year = fr[3] || '2026';
+    return `${year}-${month}-${day}`;
+  }
+  return s.slice(0, 24).toLowerCase();
+}
+
 /**
  * Clé sémantique : même thèse / même population / même métrique / même preuve
  * peut unifier plusieurs détecteurs (ex. pushPull_now vs _trajectory vs _journey).
@@ -105,6 +149,26 @@ export function semanticPhenomenonKey(row) {
   const m = metricBag(row?.metrics || row?.discovery?.metrics);
   const kind = detectorKind(row);
   const family = clean(row?.family || row?.discovery?.family);
+  const titleBlob = `${row?.title || ''} ${row?.discovery?.title || ''}`;
+  // Concentration / pic de journée : même date dominante = même thèse (avant proofSig divergent)
+  if (
+    /th_concentration|peak|span_volume|session_share|day_share/i.test(kind) ||
+    /porte une grande part|concentre une part|bloc dépasse le niveau/i.test(titleBlob)
+  ) {
+    const peakRaw =
+      m.peakDate ||
+      m.date ||
+      m.eventDate ||
+      (Array.isArray(m.dates) ? m.dates[0] : null) ||
+      titleBlob.match(
+        /(\d{1,2}\s+(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)(?:\s+\d{4})?)/i
+      )?.[1];
+    // Mission 18 : normaliser FR (« 18 novembre 2026 ») et ISO pour ne pas diverger.
+    const peak = normalizePeakDayKey(peakRaw);
+    // Sujet partagé : deux libellés (« porte une grande part » / « concentre »)
+    // du même jour ne doivent pas diverger via subjectKey.
+    if (peak) return `period:activity|peak_concentration|${String(peak).slice(0, 24)}`;
+  }
   // Familles temporelles d’un même constat (now/trajectory/journey)
   const stem = kind
     .replace(/_now$|_trajectory$|_journey$/, '')
@@ -265,6 +329,19 @@ export function substantiveEquivalence(left, right) {
 
   const leftSem = semanticPhenomenonKey(left);
   const rightSem = semanticPhenomenonKey(right);
+  // Pic / concentration du même jour : équivalents même si subjectKey diverge légèrement
+  if (
+    leftSem &&
+    leftSem === rightSem &&
+    /peak_concentration/.test(leftSem) &&
+    /th_concentration|peak|span_volume|session_share|day_share/i.test(`${leftKind} ${rightKind}`)
+  ) {
+    return {
+      equivalent: true,
+      reason: 'same_peak_concentration_day',
+      proof: { leftSem, rightSem, leftKind, rightKind }
+    };
+  }
   // Même clé sémantique uniquement si le sujet est compatible (évite period:global collapse)
   if (
     leftSem &&

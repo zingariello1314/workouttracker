@@ -1,0 +1,285 @@
+{
+  "audit": "momentum-ANALYTICAL_AUDIT-p6-sovereign-v16-2026-11-21T21-43-08-347Z.json",
+  "periods": {
+    "7d": {
+      "cardCount": 9,
+      "detectEvents": [
+        {
+          "id": "302",
+          "name": "Pompes pseudo-planche",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "304",
+          "name": "Élévations latérales",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "306",
+          "name": "Face pull",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "307",
+          "name": "Extension triceps debout avec haltère",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "partial_resume"
+        },
+        {
+          "id": "308",
+          "name": "Kickbacks triceps",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "partial_resume"
+        },
+        {
+          "id": "1599606959",
+          "name": "Développé Arnold",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "1735485569",
+          "name": "Bent-Arm Lateral Dumbbell Raise",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "369862756",
+          "name": "Single-Arm Dumbbell Lying Triceps Extension",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "1250363242",
+          "name": "Side-Lying Single-Arm Dumbbell Triceps Extension",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        }
+      ],
+      "detect": {
+        "coverage": "concluded",
+        "dates": [
+          "2026-11-11"
+        ],
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "retained": [
+          {
+            "id": "simultaneous_return",
+            "status": "supported",
+            "detail": "fenêtre de 0 jours"
+          },
+          {
+            "id": "shared_return_cooccurrence",
+            "status": "supported",
+            "detail": "co-occurrence max 9/9 le même jour de reprise"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "simultaneous_return",
+            "status": "supported",
+            "detail": "fenêtre de 0 jours"
+          },
+          {
+            "id": "shared_family",
+            "status": "method_unavailable",
+            "detail": "familles musculaires non documentées"
+          },
+          {
+            "id": "shared_session_family",
+            "status": "method_unavailable",
+            "detail": "appartenance à une famille de séances documentée"
+          },
+          {
+            "id": "shared_return_cooccurrence",
+            "status": "supported",
+            "detail": "co-occurrence max 9/9 le même jour de reprise"
+          },
+          {
+            "id": "program_version_link",
+            "status": "method_unavailable",
+            "detail": "lien à une nouvelle version de programme"
+          }
+        ],
+        "named": 9,
+        "conclusionSlice": "9 mouvements reviennent autour du 2026-11-11 : Pompes pseudo-planche (après 28 j), Élévations latérales (après 28 j), Face pull (après 28 j), Extension triceps debout avec haltère (après 28 j), Kickbacks triceps (après 28 j), Développé Arno"
+      },
+      "reviewWithoutGap": {
+        "coverage": "under_explored",
+        "hypotheses": [
+          {
+            "id": "collective_return",
+            "status": "method_unavailable",
+            "detail": "moins de trois retours avec interruption significative, ou lien musculaire/séance insuffisant pour abaisser le seuil à 2"
+          }
+        ],
+        "named": 0
+      },
+      "composedTitleHint": "confirmation",
+      "composedSlice": "La reprise de cette composante de tes séances, commencée le 2026-11-11 après environ 4 semaines d’interruption, se confirme le 2026-11-18 : Pompes pseudo-planche, Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Développé Arnold…. Ces ret"
+    },
+    "30d": {
+      "cardCount": 9,
+      "detectEvents": [
+        {
+          "id": "302",
+          "name": "Pompes pseudo-planche",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "304",
+          "name": "Élévations latérales",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "306",
+          "name": "Face pull",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "307",
+          "name": "Extension triceps debout avec haltère",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "partial_resume"
+        },
+        {
+          "id": "308",
+          "name": "Kickbacks triceps",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "partial_resume"
+        },
+        {
+          "id": "1599606959",
+          "name": "Développé Arnold",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "1735485569",
+          "name": "Bent-Arm Lateral Dumbbell Raise",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "369862756",
+          "name": "Single-Arm Dumbbell Lying Triceps Extension",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        },
+        {
+          "id": "1250363242",
+          "name": "Side-Lying Single-Arm Dumbbell Triceps Extension",
+          "date": "2026-11-11",
+          "gap": 28,
+          "proven": true,
+          "mech": "resumed_former_level"
+        }
+      ],
+      "detect": {
+        "coverage": "concluded",
+        "dates": [
+          "2026-11-11"
+        ],
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "retained": [
+          {
+            "id": "simultaneous_return",
+            "status": "supported",
+            "detail": "fenêtre de 0 jours"
+          },
+          {
+            "id": "shared_return_cooccurrence",
+            "status": "supported",
+            "detail": "co-occurrence max 9/9 le même jour de reprise"
+          }
+        ],
+        "hypotheses": [
+          {
+            "id": "simultaneous_return",
+            "status": "supported",
+            "detail": "fenêtre de 0 jours"
+          },
+          {
+            "id": "shared_family",
+            "status": "method_unavailable",
+            "detail": "familles musculaires non documentées"
+          },
+          {
+            "id": "shared_session_family",
+            "status": "method_unavailable",
+            "detail": "appartenance à une famille de séances documentée"
+          },
+          {
+            "id": "shared_return_cooccurrence",
+            "status": "supported",
+            "detail": "co-occurrence max 9/9 le même jour de reprise"
+          },
+          {
+            "id": "program_version_link",
+            "status": "method_unavailable",
+            "detail": "lien à une nouvelle version de programme"
+          }
+        ],
+        "named": 9,
+        "conclusionSlice": "9 mouvements reviennent autour du 2026-11-11 : Pompes pseudo-planche (après 28 j), Élévations latérales (après 28 j), Face pull (après 28 j), Extension triceps debout avec haltère (après 28 j), Kickbacks triceps (après 28 j), Développé Arno"
+      },
+      "reviewWithoutGap": {
+        "coverage": "under_explored",
+        "hypotheses": [
+          {
+            "id": "collective_return",
+            "status": "method_unavailable",
+            "detail": "moins de trois retours avec interruption significative, ou lien musculaire/séance insuffisant pour abaisser le seuil à 2"
+          }
+        ],
+        "named": 0
+      },
+      "composedTitleHint": "return",
+      "composedSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Pompes pseudo-planche, Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Développé Arnold…. Ces retours appartiennent à une mê"
+    }
+  }
+}

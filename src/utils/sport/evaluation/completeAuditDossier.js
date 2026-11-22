@@ -135,7 +135,7 @@ export async function assembleCompleteAuditDossier({
     gamesByPeriod,
     underexploration: p6?.underexploration || null,
     domVerify,
-    mission: 'Mission 11'
+    mission: null
   };
   push('AUDIT_IA.md', buildAuditIaMarkdown({ ...auditIaOpts, mode: 'detailed' }), {
     source: 'assembled',
@@ -557,28 +557,76 @@ export async function assembleCompleteAuditDossier({
     { source: 'assembled', executedAt: assembledAt }
   );
   const periodKeys = eightPeriodExport?.periods ? Object.keys(eightPeriodExport.periods) : [];
+  const cardsMention = (needle) =>
+    periodKeys.some((p) => {
+      const blob = JSON.stringify(eightPeriodExport?.periods?.[p] || {}).toLowerCase();
+      return blob.includes(needle);
+    });
+  const fp = liveFingerprint || {};
+  const statusOf = ({ inEngine, inSnapshot, inFingerprint, inExporter }) => ({
+    inEngine: Boolean(inEngine),
+    inSnapshot: Boolean(inSnapshot),
+    inFingerprint: Boolean(inFingerprint),
+    inExporter: Boolean(inExporter),
+    // false global historique = souvent « absent du snapshot passé à l’exporteur », pas « moteur sans source »
+    legacyBoolean: Boolean(inSnapshot)
+  });
   const coverageBySource = {
-    program: Boolean(snapshot?.activeProgram || snapshot?.programs?.length),
-    identities: Boolean(snapshot?.exercises || snapshot?.exerciseCatalog),
-    loads: Boolean(snapshot?.loads || snapshot?.weightHistory),
-    sets: Boolean(snapshot?.history || snapshot?.days),
-    durations: Boolean(measure?.minutes != null || measure?.durationContract),
-    garmin: Boolean(snapshot?.garminData || measure?.activeKcal != null),
-    sleep: Boolean(
-      snapshot?.garminData?.dailyMetrics ||
-        periodKeys.some((p) =>
-          JSON.stringify(eightPeriodExport?.periods?.[p]?.conclusions || [])
-            .toLowerCase()
-            .includes('sommeil')
-        )
-    ),
-    challenges: Boolean(snapshot?.challenges || measure?.durationContract?.challengeSessionMinutes)
+    program: statusOf({
+      inEngine: cardsMention('program') || Boolean(snapshot?.activeProgram),
+      inSnapshot: Boolean(snapshot?.activeProgram || snapshot?.programs?.length),
+      inFingerprint: (fp.programKeys ?? fp.scheduleDays ?? null) != null,
+      inExporter: Boolean(snapshot)
+    }),
+    identities: statusOf({
+      inEngine: cardsMention('exercise') || cardsMention('ex:'),
+      inSnapshot: Boolean(snapshot?.exercises || snapshot?.exerciseCatalog || snapshot?.reps),
+      inFingerprint: (fp.identityKeys ?? fp.exerciseKeys ?? 0) > 0 || Boolean(fp.repsKeys),
+      inExporter: Boolean(snapshot)
+    }),
+    loads: statusOf({
+      inEngine: cardsMention('charge') || cardsMention('resistance_progression') || cardsMention('fromvalue'),
+      inSnapshot: Boolean(snapshot?.loads || snapshot?.weightHistory || snapshot?.weights),
+      inFingerprint: (fp.weightKeys ?? 0) > 0,
+      inExporter: Boolean(snapshot)
+    }),
+    sets: statusOf({
+      inEngine: cardsMention('série') || cardsMention('series') || cardsMention('setcount'),
+      inSnapshot: Boolean(snapshot?.history || snapshot?.days || snapshot?.reps),
+      inFingerprint: (fp.repsKeys ?? 0) > 0,
+      inExporter: Boolean(snapshot)
+    }),
+    durations: statusOf({
+      inEngine: measure?.minutes != null || cardsMention('minute'),
+      inSnapshot: Boolean(measure?.minutes != null || measure?.durationContract || snapshot?.sessionDurations),
+      inFingerprint: (fp.durationKeys ?? 0) > 0,
+      inExporter: Boolean(measure || snapshot)
+    }),
+    garmin: statusOf({
+      inEngine: measure?.activeKcal != null || cardsMention('garmin') || cardsMention('kcal'),
+      inSnapshot: Boolean(snapshot?.garminData),
+      inFingerprint: Boolean(fp.garminHash || fp.garminKeys),
+      inExporter: Boolean(snapshot)
+    }),
+    sleep: statusOf({
+      inEngine: cardsMention('sommeil') || cardsMention('sleep'),
+      inSnapshot: Boolean(snapshot?.garminData?.dailyMetrics || snapshot?.sleep),
+      inFingerprint: Boolean(fp.sleepKeys || fp.garminHash),
+      inExporter: Boolean(snapshot)
+    }),
+    challenges: statusOf({
+      inEngine: cardsMention('défi') || cardsMention('challenge'),
+      inSnapshot: Boolean(snapshot?.challenges || measure?.durationContract?.challengeSessionMinutes),
+      inFingerprint: (fp.challengeKeys ?? 0) > 0,
+      inExporter: Boolean(snapshot)
+    })
   };
   push(
     'source-data/data-coverage.json',
     {
-      schema: 'momentum.dataCoverage.v2',
-      note: 'Couverture réelle par source — le fingerprint seul ne suffit pas.',
+      schema: 'momentum.dataCoverage.v3',
+      note:
+        'Quatre statuts distincts : inEngine (conclusions utilisent la source), inSnapshot (présent dans le snapshot), inFingerprint (empreinte), inExporter (passé à l’assemblage). Un fingerprint weightKeys=0 n’infirme pas des cartes de charges si inEngine=true.',
       liveFingerprint,
       hasSnapshot: Boolean(snapshot),
       hasEightPeriods: Boolean(eightPeriodExport?.periods),
@@ -600,6 +648,20 @@ export async function assembleCompleteAuditDossier({
 
   // 7) Bilans Mission 9/10 (+ archives) s’ils sont servis localement
   const bilanNames = [
+    'MISSION15_BILAN_P6.md',
+    'DIAGNOSTIC_INTEGRITE_EXPORTS_MISSION15.md',
+    'RAPPORT_COMPARATIF_V13_V14_MISSION15.md',
+    'RAPPORT_VALIDATION_P6_MISSION15.md',
+    'MISSION14_BILAN_P6.md',
+    'DIAGNOSTIC_HIERARCHIE_ET_RAISONNEMENT_MISSION14.md',
+    'RAPPORT_COMPARATIF_V12_V13_MISSION14.md',
+    'MISSION13_BILAN_P6.md',
+    'DIAGNOSTIC_CAUSES_RACINES_MISSION13.md',
+    'RAPPORT_CLASSIFICATION_EXERCICES_MISSION13.md',
+    'RAPPORT_COMPARATIF_V11_V12_MISSION13.md',
+    'RAPPORT_COHERENCE_INTER_HORIZONS_MISSION13.md',
+    'MISSION12_BILAN_P6.md',
+    'DIAGNOSTIC_RAISONNEMENT_MISSION12.md',
     'MISSION11_BILAN_P6.md',
     'DIAGNOSTIC_INTELLIGENCE_ANALYTIQUE_P6.md',
     'MISSION10_BILAN_P6.md',

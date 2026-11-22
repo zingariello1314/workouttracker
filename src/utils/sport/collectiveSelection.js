@@ -5,6 +5,7 @@
  */
 
 import { relateClaims, RELATION } from './narrativeCoherenceEngine';
+import { substantiveEquivalence } from './discoveryIdentity';
 
 export const PRIORITY_COLUMN_BUDGET = 11;
 
@@ -41,16 +42,28 @@ function horizonBoost(row, voiceKey) {
     return -4;
   }
   if (voiceKey === 'week') {
-    if (/session_family|adherence_|near_equal|challenge|gtg/.test(kind)) return 10;
+    // Mission 12 : composition / collectif / décomposition avant portraits individuels
+    if (/composed_|collective_return|relative_concentration|load_phase|variant_mix/.test(kind)) return 28;
+    if (fam === 'program_variant_mix' || /program_variant_mix_explains/.test(String(row?.discovery?.metrics?.composition || '')))
+      return 26;
+    if (/session_family|adherence_|near_equal|challenge|gtg|span_volume/.test(kind)) return 14;
     if (/volume_shape|session|return/.test(kind)) return 5;
     if (/monthly_arc|quarter|year/.test(kind)) return -6;
-    // Monopole de reprises individuelles : pénalité relative
-    if (/disc_ms_return|disc_emergence/.test(kind) && fam !== 'program_structure') return -6;
+    if (/disc_ms_return|disc_emergence/.test(kind) && fam !== 'program_structure') return -10;
+    if (/load_progression|resistance/.test(kind)) return 12;
   }
   if (voiceKey === 'month') {
-    if (/session_family|adherence_|collective_return|repertoire|program_structure/.test(kind) || cat === 'structure' || fam === 'program_structure')
-      return 22;
-    if (/disc_ms_return|disc_emergence|format_consolidation|exercise_progress/.test(kind)) return -22;
+    if (
+      /session_family|adherence_|collective_return|repertoire|program_structure|composed_|load_phase|span_volume|variant_mix/.test(
+        kind
+      ) ||
+      cat === 'structure' ||
+      fam === 'program_structure' ||
+      fam === 'program_variant_mix'
+    )
+      return 28;
+    if (/disc_ms_return|disc_emergence|format_consolidation|exercise_progress/.test(kind)) return -28;
+    if (/load_progression/.test(kind)) return 18;
   }
   if (voiceKey === 'quarter' || voiceKey === 'long' || voiceKey === 'year' || voiceKey === 'all' || voiceKey === '2y') {
     const longRange = voiceKey !== 'quarter';
@@ -67,7 +80,8 @@ function horizonBoost(row, voiceKey) {
 
 const LONG_HORIZONS = new Set(['quarter', 'long', 'year', 'all', '2y']);
 
-const STRUCTURAL_MAJOR_RE = /session_family|adherence_|collective_return|monthly_volume_arc|span_volume/i;
+const STRUCTURAL_MAJOR_RE =
+  /session_family|adherence_|collective_return|monthly_volume_arc|span_volume|composed_volume|composed_relative|composed_load|composed_collective/i;
 
 /**
  * Couverture identique entre deux horizons (ex. 2y ou all vs 1y quand le suivi ne remonte pas plus loin).
@@ -107,6 +121,10 @@ export function acknowledgeIdenticalCoverage({
 export function marginalValue(candidate, chosen) {
   const base = intrinsic(candidate);
   const redundant = (chosen || []).some((other) => {
+    const left = candidate.discovery || candidate;
+    const right = other.discovery || other;
+    const substantive = substantiveEquivalence(left, right);
+    if (substantive.equivalent) return true;
     const relation = relateClaims(candidate.claim, other.claim);
     return relation === RELATION.EXACT_DUPLICATE || relation === RELATION.REFORMULATION;
   });

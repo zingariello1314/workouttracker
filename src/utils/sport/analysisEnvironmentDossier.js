@@ -120,7 +120,17 @@ export function snapshotFingerprint(snapshot) {
     snapshot?.checkedExercises && typeof snapshot.checkedExercises === 'object'
       ? snapshot.checkedExercises
       : {};
-  const weights = snapshot?.weights && typeof snapshot.weights === 'object' ? snapshot.weights : {};
+  // Mission 20 — les charges vivent sous exerciseWeights (pas snapshot.weights).
+  const weights =
+    snapshot?.exerciseWeights && typeof snapshot.exerciseWeights === 'object'
+      ? snapshot.exerciseWeights
+      : snapshot?.weights && typeof snapshot.weights === 'object'
+        ? snapshot.weights
+        : {};
+  const setLogs =
+    snapshot?.exerciseSetLogs && typeof snapshot.exerciseSetLogs === 'object'
+      ? snapshot.exerciseSetLogs
+      : {};
   const durations =
     snapshot?.sessionDurations && typeof snapshot.sessionDurations === 'object'
       ? snapshot.sessionDurations
@@ -134,6 +144,7 @@ export function snapshotFingerprint(snapshot) {
   });
   const repKeys = Object.keys(reps).sort();
   const weightKeys = Object.keys(weights).sort();
+  const setLogKeys = Object.keys(setLogs).sort();
   const durationKeys = Object.keys(durations).sort();
   const payload = [
     repKeys.map((k) => `${k}=${reps[k]}`).join('|'),
@@ -142,18 +153,24 @@ export function snapshotFingerprint(snapshot) {
       .map((k) => `${k}=${checked[k] === true ? 1 : 0}`)
       .join('|'),
     weightKeys.map((k) => `${k}=${weights[k]}`).join('|'),
+    setLogKeys.map((k) => `${k}=${JSON.stringify(setLogs[k])}`).join('|'),
     durationKeys.map((k) => `${k}=${durations[k]}`).join('|')
   ].join('||');
   return {
-    version: 2,
+    version: 3,
     repKeys: repKeys.length,
     checkedKeys: Object.keys(checked).length,
     weightKeys: weightKeys.length,
+    setLogKeys: setLogKeys.length,
     durationKeys: durationKeys.length,
     totalReps,
     digest: fnv1a(payload),
     firstRepKey: repKeys[0] || null,
-    lastRepKey: repKeys[repKeys.length - 1] || null
+    lastRepKey: repKeys[repKeys.length - 1] || null,
+    sources: {
+      weightsField: snapshot?.exerciseWeights ? 'exerciseWeights' : snapshot?.weights ? 'weights' : 'none',
+      setLogsField: snapshot?.exerciseSetLogs ? 'exerciseSetLogs' : 'none'
+    }
   };
 }
 

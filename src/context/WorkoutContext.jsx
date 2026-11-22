@@ -616,6 +616,21 @@ const WorkoutProvider = ({ children }) => {
     [getCurrentData, updateData]
   );
 
+  const setSessionFeedbackAutoOpenEnabled = useCallback(
+    async (enabled) => {
+      const currentData = getCurrentData();
+      const nextData = {
+        ...currentData,
+        trainingPrefs: {
+          ...(currentData.trainingPrefs || {}),
+          sessionFeedbackAutoOpen: enabled !== false
+        }
+      };
+      await updateData(nextData);
+    },
+    [getCurrentData, updateData]
+  );
+
   const applyWeeklyRestDaySwap = useCallback(
     async ({ programId, date, fromDay, toDay }) => {
       if (!programId || !date || !isValidWeekDay(fromDay) || !isValidWeekDay(toDay) || fromDay === toDay) {
@@ -1766,6 +1781,7 @@ const WorkoutProvider = ({ children }) => {
     getEffectiveRestDayForDate,
     applyWeeklyRestDaySwap,
     setSwapRestConfirmEnabled,
+    setSessionFeedbackAutoOpenEnabled,
     
     // Données et fonctions de données
     data,

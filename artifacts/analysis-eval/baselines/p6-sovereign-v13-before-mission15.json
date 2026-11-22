@@ -1,0 +1,53 @@
+{
+  "schema": "momentum.editionFreeze.v2",
+  "frozenAt": "2026-11-21",
+  "mission": "Mission 15",
+  "editionBefore": "editorial=p6-sovereign-v13;hierarchy=verified-deepening-v1;composition=phenomenon-compose-v3",
+  "editionAfterTarget": "editorial=p6-sovereign-v14;claim=assertion-window-v1;audit=normalized-export-v3",
+  "source": "exports utilisateur 21 nov 2026 — ANALYTICAL_AUDIT + AUDIT_IA 19:31",
+  "accessibleCounts": {
+    "today": 15,
+    "7d": 62,
+    "30d": 84,
+    "3m": 101,
+    "6m": 111,
+    "1y": 114,
+    "2y": 112,
+    "all": 112,
+    "total": 711,
+    "deltaFromV12": 133
+  },
+  "knownDefects": [
+    {
+      "id": "claim_registry_collision",
+      "detail": "claimRegistry[claim.id]=claim écrase fenêtres ; 37 divergences carte↔claim (ex. pompes 36 vs 45.5)"
+    },
+    {
+      "id": "live_period_duplicate",
+      "detail": "63 cartes live + 714 huit périodes = 777 cardRegistry"
+    },
+    {
+      "id": "programRegistry_false_negative",
+      "detail": "available=false reason=no_program alors que conclusions citent 3 familles"
+    },
+    {
+      "id": "audit_ia_mission11_label",
+      "detail": "chemin momentumExportAuditIa hardcodait Mission 11 sans fingerprint/8 périodes"
+    },
+    {
+      "id": "stub_registries",
+      "detail": "factRegistry/sourceEvents/identityRegistry = notes seules ; evaluations=null"
+    },
+    {
+      "id": "reconciledStrict_with_63_vs_62",
+      "detail": "7j published 63 / accessible 62 avec reconciledStrict=true"
+    }
+  ],
+  "confirmedImprovementsVsV12": [
+    "restauration accessibles longs (+133)",
+    "concentration relative dénominateurs corrects",
+    "phase charges event≠exercise",
+    "description 3 familles + prescriptions"
+  ],
+  "note": "Baseline produit v13. Textes complets = exports utilisateur. Aucun commit."
+}

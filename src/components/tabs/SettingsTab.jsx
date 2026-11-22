@@ -118,6 +118,7 @@ const SettingsTab = () => {
     deleteMockEnduranceSessions,
     setActiveTab,
     setSwapRestConfirmEnabled,
+    setSessionFeedbackAutoOpenEnabled,
     programs,
     activeProgram,
     programHistory,
@@ -232,6 +233,7 @@ const SettingsTab = () => {
   const [showProfileCardSettings, setShowProfileCardSettings] = useState(false);
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
   const swapRestConfirmEnabled = data?.trainingPrefs?.swapRestConfirmEnabled !== false;
+  const sessionFeedbackAutoOpenEnabled = data?.trainingPrefs?.sessionFeedbackAutoOpen !== false;
 
   // Hooks personnalisés
   const stats = useSettingsStats();
@@ -852,6 +854,31 @@ const SettingsTab = () => {
                 className={`${swapRestConfirmEnabled ? settingsUi.btnPrimary : settingsUi.btnSecondary} w-full`}
               >
                 {swapRestConfirmEnabled ? 'Popup activée (cliquer pour désactiver)' : 'Popup désactivée (cliquer pour activer)'}
+              </button>
+            </CardContent>
+          </Card>
+
+          <Card variant="settings" className="mt-4">
+            <CardHeader variant="settings">
+              <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+                Feedback de séance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-red-100/80 mb-4">
+                Après un enregistrement réussi des exercices dans Aujourd’hui, ouvrir automatiquement le feedback.
+                Le bouton manuel reste toujours disponible.
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  await setSessionFeedbackAutoOpenEnabled(!sessionFeedbackAutoOpenEnabled);
+                }}
+                className={`${sessionFeedbackAutoOpenEnabled ? settingsUi.btnPrimary : settingsUi.btnSecondary} w-full`}
+              >
+                {sessionFeedbackAutoOpenEnabled
+                  ? 'Ouverture automatique activée (cliquer pour désactiver)'
+                  : 'Ouverture automatique désactivée (cliquer pour activer)'}
               </button>
             </CardContent>
           </Card>
