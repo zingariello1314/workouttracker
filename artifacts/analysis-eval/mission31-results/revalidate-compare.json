@@ -1,0 +1,3453 @@
+{
+  "schema": "momentum.mission31.revalidateCompare.v1",
+  "mission": "Mission 31",
+  "codeEdition": "p6-sovereign-v30",
+  "initialDivergences": 75,
+  "revalidation": {
+    "cleared": 75,
+    "stillHardFail": 0,
+    "nonComparableNotes": 75,
+    "byPeriod": {
+      "3m": 1,
+      "6m": 17,
+      "1y": 19,
+      "2y": 19,
+      "all": 19
+    },
+    "byClass": {
+      "noncomparable_explicit": 75
+    },
+    "miniAuditIntegrityOk": false,
+    "miniAuditDivergenceErrors": 0
+  },
+  "samples": {
+    "cleared": [
+      {
+        "period": "3m",
+        "cardId": "disc_exercise_progress|ex:503|dates:2026-09-18,2026-09-25,2026-10-02,2026-10-16,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "kind": "disc_exercise_progress",
+        "title": "Dips: volume par séance stable",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 480,
+            "mean": 48,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 384,
+            "absGap": 96
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 480,
+              "mean": 48,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:104|fact:emergence|104|stable_format",
+        "kind": "disc_emergence",
+        "title": "Pompes déclinées reviennent et se réinstalle",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 718,
+            "mean": 39.9,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 319.2,
+            "absGap": 398.8
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 718,
+              "mean": 39.9,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+        "kind": "disc_emergence",
+        "title": "Relevés de genoux à la barre: le total monte surtout parce que tu t’entraînes plus souvent",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 1080,
+            "mean": 60,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 480,
+            "absGap": 600
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 1080,
+              "mean": 60,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:103|fact:emergence|103|stable_format",
+        "kind": "disc_emergence",
+        "title": "Dips: le total monte surtout parce que tu t’entraînes plus souvent",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 959,
+            "mean": 45.7,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 365.6,
+            "absGap": 593.4
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 959,
+              "mean": 45.7,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:102|fact:emergence|102|stable_format",
+        "kind": "disc_emergence",
+        "title": "Tractions australiennes — prise large pronation: volume par séance en hausse",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 818,
+            "mean": 43.1,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 344.8,
+            "absGap": 473.2
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 818,
+              "mean": 43.1,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:203|fact:emergence|203|same_sets_fewer_reps",
+        "kind": "disc_emergence",
+        "title": "Curl assis dos calé: le total monte surtout parce que tu t’entraînes plus souvent",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 622,
+            "mean": 34.6,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 276.8,
+            "absGap": 345.2
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 622,
+              "mean": 34.6,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:107|fact:emergence|107|stable_format",
+        "kind": "disc_emergence",
+        "title": "Relevés de genoux aux parallèles: le total monte surtout parce que tu t’entraînes plus sou",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 520,
+            "mean": 40,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 320,
+            "absGap": 200
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 520,
+              "mean": 40,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      },
+      {
+        "period": "6m",
+        "cardId": "disc_emergence|ex:105|fact:emergence|105|stable_format",
+        "kind": "disc_emergence",
+        "title": "Pompes inclinées: volume par séance en hausse",
+        "oldConflict": {
+          "metric": "sum_mean_sample_consistency",
+          "card": {
+            "total": 517,
+            "mean": 30.4,
+            "sampleSize": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "claim": {
+            "expectedProduct": 243.2,
+            "absGap": 273.8
+          },
+          "note": "same_population_required"
+        },
+        "classif": "noncomparable_explicit",
+        "ok": true,
+        "notes": [
+          {
+            "metric": "sum_mean_sample_noncomparable",
+            "severity": "info",
+            "card": {
+              "total": 517,
+              "mean": 30.4,
+              "arcDateCount": 8,
+              "populationSource": "dates.fallback_possibly_arc"
+            },
+            "note": "populations_not_bound_skip_triple"
+          }
+        ]
+      }
+    ],
+    "stillFailing": []
+  },
+  "comparisonV28V29": {
+    "skipped": false,
+    "fingerprint28": "c8aa227e",
+    "fingerprint29": "c8aa227e",
+    "nameMap28": 0,
+    "nameMap29": 0,
+    "accessible28": 717,
+    "accessible29": 711,
+    "sharedPhenomena": 586,
+    "onlyV28": 131,
+    "onlyV29": 125,
+    "modifiedBodies": 43,
+    "onlyV28Sample": [
+      {
+        "key": "today::period:global|pending_context|text:en attendant la séance, ta semaine récente a déjà une forme|les 7 derniers jours représentent 4 séances, 1 340 répétitions et 4 h 08 de séances hors course enregistrées, soit envir",
+        "title": "En attendant la séance, ta semaine récente a déjà une forme",
+        "kind": "disc_pending_context",
+        "role": "priority",
+        "period": "today"
+      },
+      {
+        "key": "7d::dates:2026-11-16,2026-11-17,2026-11-18|volume_shape|1340",
+        "title": "Le rythme de ces 7 jours reste lisible par rapport à ton habitude",
+        "kind": "disc_volume_shape",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|th_composition|18.880597014925375,1340",
+        "title": "Triceps portent une part nette de ces 7 jours",
+        "kind": "disc_th_composition_now",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:activity|peak_concentration|2026-11-16",
+        "title": "Un bloc dépasse le niveau de séance de ces 7 jours",
+        "kind": "disc_calendar_rhythm",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::pop:nested_window_same_exercises|composed_relative_concentration|1340",
+        "title": "Concentration relative au-delà du volume général",
+        "kind": "disc_composed_relative_concentration",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:106|ms_return_durable|text:la reprise de relevés de genoux à la barre est devenue durable|la reprise de relevés de genoux à la barre est devenue durable : 6 séances en 41 jours, alors que l'interruption avait d",
+        "title": "La reprise de relevés de genoux à la barre est devenue durable",
+        "kind": "disc_ms_return_durable",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:activity|stimulus_mix|text:la structure du travail de ces 7 jours se lit dans les parts classifiables|ces 7 jours répartissent 1 340 reps identifiées ainsi : 60,4 % de mouvements polyarticulaires contre 39,6 % d'isolation,",
+        "title": "La structure du travail de ces 7 jours se lit dans les parts classifiables",
+        "kind": "disc_stimulus_mix",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|rhythm_streak|text:3 jours de renforcement consécutifs|sur la période, la plus longue série de journées avec répétitions de renforcement atteint 3 jours calendaires d’affilée ",
+        "title": "3 jours de renforcement consécutifs",
+        "kind": "disc_rhythm_streak",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|steps_level|text:les pas de ces 7 jours sont en dessous de ton niveau des 30 jours d'avant|les jours avec un compte de pas se situent autour de 5 757 pas (médiane, 5 jours). sur les 30 jours d'avant, la médiane ",
+        "title": "Les pas de ces 7 jours sont en dessous de ton niveau des 30 jours d'avant",
+        "kind": "disc_steps_level",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|exercise_base|text:le socle hebdomadaire n’est pas le même que ce qui structure une séance|les mouvements les plus répétés ces 7 jours (pompes endurance (complémentaire) 100, relevés de genoux à la barre 60, élé",
+        "title": "Le socle hebdomadaire n’est pas le même que ce qui structure une séance",
+        "kind": "disc_exercise_base",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:activity|th_pushPull|743,316",
+        "title": "Le haut du corps travaille surtout en poussée",
+        "kind": "disc_th_pushPull_journey",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:105|exercise_progress|text:pompes inclinées : volume par séance en hausse|sur 8 séances, le volume moyen de répétitions enregistré pour pompes inclinées passe d’environ 30,7 à 36 répétitions par",
+        "title": "Pompes inclinées: volume par séance en hausse",
+        "kind": "disc_exercise_progress",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|program_family_volume_decomposition|text:la baisse de volume se lit dans la composition des familles de séances|le volume classique passe de 1572 à 1240 répétitions. les journées de renforcement classique passent de 5 à 4. principau",
+        "title": "La baisse de volume se lit dans la composition des familles de séances",
+        "kind": "disc_program_family_volume_decomposition",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|ratio_structure|text:la structure de ces 7 jours se lit dans les ratios, pas seulement dans le total|ces 7 jours : poussée/tirage 59,6 % / 25,4 %, bas du corps 6,7 % du volume identifié, densité non calculable (durée surt",
+        "title": "La structure de ces 7 jours se lit dans les ratios, pas seulement dans le total",
+        "kind": "disc_ratio_structure",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|anchor|text:ces 7 jours deviennent un nouveau point d'ancrage dans ton historique|sur les 30 derniers jours, tu as accumulé 6 403 reps en 18 jours calendaires d’entraînement, et ces 7 jours représentent",
+        "title": "Ces 7 jours deviennent un nouveau point d'ancrage dans ton historique",
+        "kind": "disc_anchor",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|repertoire|6403",
+        "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+        "kind": "disc_repertoire",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:304|exercise_progress|text:élévations latérales : volume par séance en hausse|sur 8 séances, le volume moyen de répétitions enregistré pour élévations latérales passe d’environ 50 à 60 répétitions p",
+        "title": "Élévations latérales: volume par séance en hausse",
+        "kind": "disc_exercise_progress",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:103|format_consolidation|48,42,48",
+        "title": "Dips (dernière apparition le 16 novembre 2026): un niveau plus haut se répète",
+        "kind": "disc_format_consolidation",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:105|format_consolidation|36,24,42,36",
+        "title": "Pompes inclinées: un ancien niveau est retrouvé",
+        "kind": "disc_format_consolidation",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|muscle_movement_structure|text:volume mono : dominante poussée|du 16 novembre 2026 au 22 novembre 2026, le volume mono-principal compte 526 reps de poussée et 224 de tirage (plus 0 po",
+        "title": "Volume mono: dominante poussée",
+        "kind": "disc_muscle_movement_structure",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|quarter_profile|text:ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil|sur le trimestre, tu as réalisé 14 309 répétitions, dont environ 2 095 triceps, environ 2 088 épaules, environ 2 548 pec",
+        "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "kind": "disc_quarter_profile",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:105|vs_habit|text:pompes inclinées : ces 7 jours sont au-dessus de ton niveau habituel|tes séances de pompes inclinées se situent habituellement autour de 24 répétitions (médiane, écart interquartile 24–36).",
+        "title": "Pompes inclinées: ces 7 jours sont au-dessus de ton niveau habituel",
+        "kind": "disc_vs_habit",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::grp:core|muscle_share_shift|text:la part attribuée aux gainage/tronc a augmenté plus vite que le volume global|les gainage/tronc représentent actuellement 6,5 % du volume musculaire attribué (indicatif), contre 4,5 % sur les 30 jou",
+        "title": "La part attribuée aux gainage/tronc a augmenté plus vite que le volume global",
+        "kind": "disc_muscle_share_shift",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::dates:2026-11-16,2026-11-17|session_work_comparison|text:deux séances de la fenêtre n’ont pas la même nature de travail|les deux séances n’ont pas la même nature de travail enregistrée. celle du 17 novembre 2026 compte 332 répétitions, la s",
+        "title": "Deux séances de la fenêtre n’ont pas la même nature de travail",
+        "kind": "session_work_comparison",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|freq_continuity|text:ces 7 jours s'inscrivent dans une pratique déjà documentée|la période se lit avec 18 jours entraînés sur les 30 derniers jours et 4 jours sur les 7 derniers jours, soit une fréque",
+        "title": "Ces 7 jours s'inscrivent dans une pratique déjà documentée",
+        "kind": "disc_freq_continuity",
+        "role": "reserve",
+        "period": "7d"
+      }
+    ],
+    "onlyV29Sample": [
+      {
+        "key": "today::period:global|pending_context|text:en attendant la séance, ta semaine récente a déjà une forme|les 7 derniers jours représentent 3 séances, 1 021 répétitions et 3 h 04 de séances hors course enregistrées, soit envir",
+        "title": "En attendant la séance, ta semaine récente a déjà une forme",
+        "kind": "disc_pending_context",
+        "role": "priority",
+        "period": "today"
+      },
+      {
+        "key": "7d::dates:2026-11-17,2026-11-18,2026-11-20|volume_shape|1021",
+        "title": "Peu de journées portent le volume",
+        "kind": "disc_volume_shape",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::dates:2026-11-17,2026-11-18,2026-11-20|calendar_rhythm|text:ces 7 jours mêlent un bloc chargé et un creux|le 18 novembre 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 332 répétitions, pic 426). du 21 nove",
+        "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+        "kind": "disc_calendar_rhythm",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::pop:nested_window_same_exercises|composed_relative_concentration|1021",
+        "title": "Concentration relative au-delà du volume général",
+        "kind": "disc_composed_relative_concentration",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:505|ms_return_durable|text:la reprise de relevés de genoux à la barre est devenue durable|la reprise de relevés de genoux à la barre est devenue durable : 5 séances en 38 jours, alors que l'interruption avait d",
+        "title": "La reprise de relevés de genoux à la barre est devenue durable",
+        "kind": "disc_ms_return_durable",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:304|comparable|text:élévations latérales : volume par séance en hausse|sur 8 séances, le volume moyen de répétitions enregistré pour élévations latérales passe d’environ 50 à 60 répétitions p",
+        "title": "Élévations latérales: volume par séance en hausse",
+        "kind": "disc_comparable",
+        "role": "priority",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|th_composition|22.526934378060727,1021",
+        "title": "Épaules portent une part nette de ces 7 jours",
+        "kind": "disc_th_composition_now",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|sleep_assoc|text:autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil|sur 11 séances dépassant 300 reps, 11 ont été précédées d'au moins 7 h 30 de sommeil. à l'inverse, 3 des 8 séances sous ",
+        "title": "Autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil",
+        "kind": "disc_sleep_assoc",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:activity|stimulus_mix|text:la structure du travail de ces 7 jours se lit dans les parts classifiables|ces 7 jours répartissent 1 021 reps identifiées ainsi : 52,8 % de mouvements polyarticulaires contre 47,2 % d'isolation,",
+        "title": "La structure du travail de ces 7 jours se lit dans les parts classifiables",
+        "kind": "disc_stimulus_mix",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|exercise_base|text:le socle hebdomadaire n’est pas le même que ce qui structure une séance|les mouvements les plus répétés ces 7 jours (pompes endurance (complémentaire) 100, élévations latérales 60, face pull 6",
+        "title": "Le socle hebdomadaire n’est pas le même que ce qui structure une séance",
+        "kind": "disc_exercise_base",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:activity|th_pushPull|623,243",
+        "title": "Le haut du corps travaille surtout en poussée",
+        "kind": "disc_th_pushPull_journey",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|program_family_volume_decomposition|text:la baisse de volume se lit dans la composition des familles de séances|le volume classique passe de 1560 à 921 répétitions. les journées de renforcement classique passent de 5 à 3. principaux",
+        "title": "La baisse de volume se lit dans la composition des familles de séances",
+        "kind": "disc_program_family_volume_decomposition",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::dates:2026-11-22|program_practice|text:le programme prouvé et la séance réalisée ne se confondent pas|1 jour avec un plan historiquement prouvé.",
+        "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+        "kind": "disc_program_practice",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|ratio_structure|text:la structure de ces 7 jours se lit dans les ratios, pas seulement dans le total|ces 7 jours : poussée/tirage 64,4 % / 25,1 %, bas du corps 3,5 % du volume identifié, densité non calculable (durée surt",
+        "title": "La structure de ces 7 jours se lit dans les ratios, pas seulement dans le total",
+        "kind": "disc_ratio_structure",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|anchor|text:ces 7 jours deviennent un nouveau point d'ancrage dans ton historique|sur les 30 derniers jours, tu as accumulé 6 071 reps en 17 jours calendaires d’entraînement, et ces 7 jours représentent",
+        "title": "Ces 7 jours deviennent un nouveau point d'ancrage dans ton historique",
+        "kind": "disc_anchor",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|repertoire|6071",
+        "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+        "kind": "disc_repertoire",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|muscle_movement_structure|text:volume mono : dominante poussée|du 17 novembre 2026 au 23 novembre 2026, le volume mono-principal compte 454 reps de poussée et 176 de tirage (plus 0 po",
+        "title": "Volume mono: dominante poussée",
+        "kind": "disc_muscle_movement_structure",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|quarter_profile|text:ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil|sur le trimestre, tu as réalisé 14 309 répétitions, dont environ 2 088 épaules, environ 2 095 triceps, environ 2 548 pec",
+        "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "kind": "disc_quarter_profile",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::ex:304|vs_habit|text:élévations latérales : ces 7 jours sont au-dessus de ton niveau habituel|tes séances de élévations latérales se situent habituellement autour de 45 répétitions (médiane, écart interquartile 45–",
+        "title": "Élévations latérales: ces 7 jours sont au-dessus de ton niveau habituel",
+        "kind": "disc_vs_habit",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::grp:quads|muscle_share_shift|text:la part attribuée aux quadriceps a diminué plus vite que le volume global|les quadriceps représentent actuellement 2,3 % du volume musculaire attribué (indicatif), contre 7,4 % sur les 30 jours ",
+        "title": "La part attribuée aux quadriceps a diminué plus vite que le volume global",
+        "kind": "disc_muscle_share_shift",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::dates:2026-11-17,2026-11-18|session_work_comparison|text:deux séances de la fenêtre n’ont pas la même nature de travail|les deux séances n’ont pas la même nature de travail enregistrée. celle du 18 novembre 2026 compte 426 répétitions, la s",
+        "title": "Deux séances de la fenêtre n’ont pas la même nature de travail",
+        "kind": "session_work_comparison",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|freq_continuity|text:ces 7 jours s'inscrivent dans une pratique déjà documentée|la période se lit avec 17 jours entraînés sur les 30 derniers jours et 3 jours sur les 7 derniers jours, soit une fréque",
+        "title": "Ces 7 jours s'inscrivent dans une pratique déjà documentée",
+        "kind": "disc_freq_continuity",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|muscle_reorient|text:la part attribuée aux épaules de ces 7 jours ressort face aux 30 derniers jours|les épaules représentent ces 7 jours 230 répétitions attribuées, soit 21,6 % des 1 063 répétitions attribuées à ce group",
+        "title": "La part attribuée aux épaules de ces 7 jours ressort face aux 30 derniers jours",
+        "kind": "disc_muscle_reorient",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:activity|push_pull|text:la poussée domine nettement le tirage de ces 7 jours|ces 7 jours totalisent environ 107 reps attribuées dos contre 393 reps pectoraux + triceps (et 623 en comptant aussi les",
+        "title": "La poussée domine nettement le tirage de ces 7 jours",
+        "kind": "disc_push_pull",
+        "role": "reserve",
+        "period": "7d"
+      },
+      {
+        "key": "7d::period:global|kcal_profile|text:les kcal actives journalières ne mesurent pas la séance|les 1 627 kcal actives journalières cumulées ces 7 jours additionnent le suivi de la journée. ce ne sont pas des kcal dé",
+        "title": "Les kcal actives journalières ne mesurent pas la séance",
+        "kind": "disc_kcal_profile",
+        "role": "reserve",
+        "period": "7d"
+      }
+    ],
+    "modifiedSample": [
+      {
+        "key": "today::period:global|pending_session|text:la séance d'aujourd'hui n'est pas encore commencée|aujourd'hui, tu n'as encore rien coché (0 répétition). ce n'est pas un jour vide d'analyse : c'est une séance en attente",
+        "title28": "La séance d'aujourd'hui n'est pas encore commencée",
+        "title29": "La séance d'aujourd'hui n'est pas encore commencée",
+        "bodyChanged": true,
+        "kind": "disc_pending_session"
+      },
+      {
+        "key": "today::period:activity|peak_concentration|2026-11-20",
+        "title28": "La dernière séance pèse encore sur les 7 jours",
+        "title29": "La dernière séance pèse encore sur les 7 jours",
+        "bodyChanged": true,
+        "kind": "disc_th_concentration_now"
+      },
+      {
+        "key": "today::period:global|sleep_quarter|text:les journées à fort volume suivent plus souvent de longues nuits|11 des 11 journées à au moins 300 répétitions ont été précédées d'une nuit d'au moins 7 h 30. parmi les nuits qui précèd",
+        "title28": "Les journées à fort volume suivent plus souvent de longues nuits",
+        "title29": "Les journées à fort volume suivent plus souvent de longues nuits",
+        "bodyChanged": true,
+        "kind": "disc_sleep_quarter"
+      },
+      {
+        "key": "7d::period:activity|peak_concentration|2026-11-18",
+        "title28": "Le 18 novembre 2026 porte une grande part de ces 7 jours",
+        "title29": "Le 18 novembre 2026 porte une grande part de ces 7 jours",
+        "bodyChanged": true,
+        "kind": "disc_th_concentration_now"
+      },
+      {
+        "key": "7d::ex:503|format_consolidation|48,41.5,48",
+        "title28": "Dips (dernière apparition le 20 novembre 2026): un niveau plus haut se répète",
+        "title29": "Dips: un niveau plus haut se répète",
+        "bodyChanged": true,
+        "kind": "disc_format_consolidation"
+      },
+      {
+        "key": "7d::ex:505|format_consolidation|60,49,60",
+        "title28": "Relevés de genoux à la barre (dernière apparition le 20 novembre 2026): un ancien niveau est retrouvé",
+        "title29": "Relevés de genoux à la barre: un ancien niveau est retrouvé",
+        "bodyChanged": true,
+        "kind": "disc_format_consolidation"
+      },
+      {
+        "key": "7d::period:global|sleep_zones|text:cette semaine sépare deux zones de sommeil|dans tes séances documentées, deux zones ont assez de nuits : au-dessus de 8 h, 16 nuits et environ 317 répétitions le l",
+        "title28": "Cette semaine sépare deux zones de sommeil",
+        "title29": "Cette semaine sépare deux zones de sommeil",
+        "bodyChanged": true,
+        "kind": "disc_sleep_zones"
+      },
+      {
+        "key": "7d::period:global|sleep_quarter|text:les journées à fort volume suivent plus souvent de longues nuits|11 des 11 journées à au moins 300 répétitions ont été précédées d'une nuit d'au moins 7 h 30. parmi les nuits qui précèd",
+        "title28": "Les journées à fort volume suivent plus souvent de longues nuits",
+        "title29": "Les journées à fort volume suivent plus souvent de longues nuits",
+        "bodyChanged": true,
+        "kind": "disc_sleep_quarter"
+      },
+      {
+        "key": "7d::period:global|sleep_rhythm_obs|1",
+        "title28": "Observation: le 16 novembre 2026, coucher à 5 h 19, lever à 15 h 37, soit environ 10 h 18",
+        "title29": "Observation: le 18 novembre 2026, coucher à 6 h 41, lever à 16 h 08, soit environ 9 h 27",
+        "bodyChanged": true,
+        "kind": "disc_sleep_rhythm_obs"
+      },
+      {
+        "key": "30d::period:global|gtg_unplanned_role|0",
+        "title28": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+        "title29": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+        "bodyChanged": true,
+        "kind": "disc_gtg_unplanned_role"
+      },
+      {
+        "key": "30d::period:global|rhythm_streak|text:une série de 6 jours de renforcement d’affilée|sur la période, la plus longue série de journées avec répétitions de renforcement atteint 6 jours calendaires d’affilée ",
+        "title28": "Une série de 6 jours de renforcement d’affilée",
+        "title29": "Une série de 6 jours de renforcement d’affilée",
+        "bodyChanged": true,
+        "kind": "disc_rhythm_streak"
+      },
+      {
+        "key": "30d::period:global|quarter_profile|text:ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil|sur le trimestre, tu as réalisé 14 309 répétitions, dont environ 2 548 pectoraux, environ 2 088 épaules, environ 2 095 t",
+        "title28": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "title29": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "bodyChanged": true,
+        "kind": "disc_quarter_profile"
+      },
+      {
+        "key": "30d::ex:1993865426|format_consolidation|15,15",
+        "title28": "Le répertoire tient le même niveau",
+        "title29": "Le répertoire tient le même niveau",
+        "bodyChanged": true,
+        "kind": "disc_repertoire_stability"
+      },
+      {
+        "key": "30d::period:global|plan_data_insufficient|text:suivi de plan : preuve historique indisponible|aucun jour de cette fenêtre n’a de plan figé (snapshot) : un taux d’adhérence au programme prévu ne peut pas être calcul",
+        "title28": "Suivi de plan: preuve historique indisponible",
+        "title29": "Suivi de plan: preuve historique indisponible",
+        "bodyChanged": true,
+        "kind": "disc_plan_data_insufficient"
+      },
+      {
+        "key": "30d::ex:2001195533|emergence|text:élévations latérales : format repris, pas encore installé|élévations latérales apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponibl",
+        "title28": "Élévations latérales: format repris, pas encore installé",
+        "title29": "Élévations latérales: format repris, pas encore installé",
+        "bodyChanged": true,
+        "kind": "disc_emergence"
+      },
+      {
+        "key": "30d::ex:805924395|emergence|text:bent-arm lateral dumbbell raise : format repris, pas encore installé|bent-arm lateral dumbbell raise apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historiqu",
+        "title28": "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé",
+        "title29": "Bent-Arm Lateral Dumbbell Raise: format repris, pas encore installé",
+        "bodyChanged": true,
+        "kind": "disc_emergence"
+      },
+      {
+        "key": "30d::ex:2112290778|emergence|text:face pull : format repris, pas encore installé|face pull apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. c’est un",
+        "title28": "Face pull: format repris, pas encore installé",
+        "title29": "Face pull: format repris, pas encore installé",
+        "bodyChanged": true,
+        "kind": "disc_emergence"
+      },
+      {
+        "key": "30d::ex:1391226292|emergence|text:kickbacks triceps : format repris, pas encore installé|kickbacks triceps apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. ",
+        "title28": "Kickbacks triceps: format repris, pas encore installé",
+        "title29": "Kickbacks triceps: format repris, pas encore installé",
+        "bodyChanged": true,
+        "kind": "disc_emergence"
+      },
+      {
+        "key": "30d::ex:1835908397|emergence|text:développé arnold : format repris, pas encore installé|développé arnold apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’historique disponible. c",
+        "title28": "Développé Arnold: format repris, pas encore installé",
+        "title29": "Développé Arnold: format repris, pas encore installé",
+        "bodyChanged": true,
+        "kind": "disc_emergence"
+      },
+      {
+        "key": "30d::ex:37458154|emergence|text:extension triceps debout avec haltère : format repris, pas encore installé|extension triceps debout avec haltère apparaît sur 2 séances réparties sur 7 jours — première présence connue dans l’his",
+        "title28": "Extension triceps debout avec haltère: format repris, pas encore installé",
+        "title29": "Extension triceps debout avec haltère: format repris, pas encore installé",
+        "bodyChanged": true,
+        "kind": "disc_emergence"
+      }
+    ]
+  },
+  "uiHypothesis": {
+    "periodKeysPresent": [
+      "7d"
+    ],
+    "accessible7d": 58,
+    "priority7d": 11,
+    "complementary7d": 47,
+    "note": "Si UI affiche 47 analyses / 11 mises en avant : vérifier si 47=complémentaires seulement et 11=priorités, ou autre agrégat. Export JSON v29 pour 7d ci-dessus."
+  },
+  "allReval": [
+    {
+      "period": "3m",
+      "cardId": "disc_exercise_progress|ex:503|dates:2026-09-18,2026-09-25,2026-10-02,2026-10-16,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 480,
+          "mean": 48,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 384,
+          "absGap": 96
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 480,
+            "mean": 48,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:104|fact:emergence|104|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées reviennent et se réinstalle",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 718,
+          "mean": 39.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 319.2,
+          "absGap": 398.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 718,
+            "mean": 39.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: le total monte surtout parce que tu t’entraînes plus souvent",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1080,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 600
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1080,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:103|fact:emergence|103|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: le total monte surtout parce que tu t’entraînes plus souvent",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 959,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 593.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 959,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:102|fact:emergence|102|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise large pronation: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 818,
+          "mean": 43.1,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 344.8,
+          "absGap": 473.2
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 818,
+            "mean": 43.1,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:203|fact:emergence|203|same_sets_fewer_reps",
+      "kind": "disc_emergence",
+      "title": "Curl assis dos calé: le total monte surtout parce que tu t’entraînes plus souvent",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 622,
+          "mean": 34.6,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 276.8,
+          "absGap": 345.2
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 622,
+            "mean": 34.6,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:107|fact:emergence|107|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux aux parallèles: le total monte surtout parce que tu t’entraînes plus sou",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 520,
+          "mean": 40,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 320,
+          "absGap": 200
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 520,
+            "mean": 40,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:105|fact:emergence|105|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes inclinées: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 517,
+          "mean": 30.4,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 243.2,
+          "absGap": 273.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 517,
+            "mean": 30.4,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:201|fact:emergence|201|same_sets_fewer_reps",
+      "kind": "disc_emergence",
+      "title": "Pompes lestées: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 503,
+          "mean": 50.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 402.4,
+          "absGap": 100.60000000000002
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 503,
+            "mean": 50.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:202|fact:emergence|202|aspect:default",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 456,
+          "mean": 45.6,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 364.8,
+          "absGap": 91.19999999999999
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 456,
+            "mean": 45.6,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:604|fact:emergence|604|stable_format",
+      "kind": "disc_emergence",
+      "title": "Curl marteau: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 408,
+          "mean": 37.1,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 296.8,
+          "absGap": 111.19999999999999
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 408,
+            "mean": 37.1,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_emergence|ex:501|fact:emergence|501|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions pronation: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 403,
+          "mean": 19.2,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 153.6,
+          "absGap": 249.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 403,
+            "mean": 19.2,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_freq_progress_low|ex:306|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_freq_progress_low",
+      "title": "Face pull: le total monte surtout parce que tu t’entraînes plus souvent",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 721,
+          "mean": 48.1,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 384.8,
+          "absGap": 336.2
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 721,
+            "mean": 48.1,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_exercise_progress|ex:105|dates:2026-08-17,2026-08-31,2026-09-07,2026-10-19,2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes inclinées: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 517,
+          "mean": 30.4,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 243.2,
+          "absGap": 273.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 517,
+            "mean": 30.4,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_exercise_progress|ex:201|dates:2026-06-23,2026-07-07,2026-07-14,2026-07-28,2026-08-12,2026-08-18,2026-08-25,2026-09-15|same_sets_fewer_reps",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes lestées: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 503,
+          "mean": 50.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 402.4,
+          "absGap": 100.60000000000002
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 503,
+            "mean": 50.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_exercise_progress|ex:304|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Élévations latérales: le total monte surtout parce que tu t’entraînes plus souvent",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 720,
+          "mean": 48,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 384,
+          "absGap": 336
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 720,
+            "mean": 48,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_exercise_progress|ex:503|dates:2026-09-18,2026-09-25,2026-10-02,2026-10-16,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 959,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 593.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 959,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "6m",
+      "cardId": "disc_exercise_progress|ex:504|dates:2026-08-28,2026-09-11,2026-09-18,2026-10-02,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 773,
+          "mean": 45.5,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 364,
+          "absGap": 409
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 773,
+            "mean": 45.5,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1260,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 780
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1260,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:103|fact:emergence|103|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1103,
+          "mean": 46,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 368,
+          "absGap": 735
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1103,
+            "mean": 46,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:503|fact:emergence|503|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 991,
+          "mean": 45,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 360,
+          "absGap": 631
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 991,
+            "mean": 45,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:102|fact:emergence|102|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tenda",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 962,
+          "mean": 43.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 349.6,
+          "absGap": 612.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 962,
+            "mean": 43.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:505|fact:emergence|505|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 960,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 480
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 960,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:502|fact:emergence|502|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise pronation: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 954,
+          "mean": 45.4,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 363.2,
+          "absGap": 590.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 954,
+            "mean": 45.4,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:104|fact:emergence|104|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: une séance atypique, pas encore une tendance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 826,
+          "mean": 39.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 314.4,
+          "absGap": 511.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 826,
+            "mean": 39.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:504|fact:emergence|504|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 823,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 457.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 823,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:204|fact:emergence|204|stable_format",
+      "kind": "disc_emergence",
+      "title": "Curl marteau: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 684,
+          "mean": 36,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 288,
+          "absGap": 396
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 684,
+            "mean": 36,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:203|fact:emergence|203|same_sets_fewer_reps",
+      "kind": "disc_emergence",
+      "title": "Curl assis dos calé: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 658,
+          "mean": 34.6,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 276.8,
+          "absGap": 381.2
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 658,
+            "mean": 34.6,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_freq_progress_low|ex:306|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_freq_progress_low",
+      "title": "Face pull: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 766,
+          "mean": 47.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 383.2,
+          "absGap": 382.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 766,
+            "mean": 47.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:306|fact:emergence|306|stable_format",
+      "kind": "disc_emergence",
+      "title": "Face pull: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 766,
+          "mean": 47.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 383.2,
+          "absGap": 382.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 766,
+            "mean": 47.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:304|fact:emergence|304|same_sets_more_reps",
+      "kind": "disc_emergence",
+      "title": "Élévations latérales: un format plus volumineux se maintient",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 765,
+          "mean": 47.8,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 382.4,
+          "absGap": 382.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 765,
+            "mean": 47.8,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_emergence|ex:308|fact:emergence|308|aspect:default",
+      "kind": "disc_emergence",
+      "title": "Kickbacks triceps s'installe dans ton entraînement",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 672,
+          "mean": 51.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 413.6,
+          "absGap": 258.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 672,
+            "mean": 51.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_exercise_progress|ex:105|dates:2026-08-17,2026-08-31,2026-09-07,2026-10-19,2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes inclinées: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 589,
+          "mean": 29.5,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 236,
+          "absGap": 353
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 589,
+            "mean": 29.5,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_exercise_progress|ex:201|dates:2026-06-23,2026-07-07,2026-07-14,2026-07-28,2026-08-12,2026-08-18,2026-08-25,2026-09-15|same_sets_fewer_reps",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes lestées: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 503,
+          "mean": 50.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 402.4,
+          "absGap": 100.60000000000002
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 503,
+            "mean": 50.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_exercise_progress|ex:304|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Élévations latérales: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 765,
+          "mean": 47.8,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 382.4,
+          "absGap": 382.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 765,
+            "mean": 47.8,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_exercise_progress|ex:503|dates:2026-09-18,2026-09-25,2026-10-02,2026-10-16,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 991,
+          "mean": 45,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 360,
+          "absGap": 631
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 991,
+            "mean": 45,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "1y",
+      "cardId": "disc_exercise_progress|ex:504|dates:2026-08-28,2026-09-11,2026-09-18,2026-10-02,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 823,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 457.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 823,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1260,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 780
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1260,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:103|fact:emergence|103|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1103,
+          "mean": 46,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 368,
+          "absGap": 735
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1103,
+            "mean": 46,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:503|fact:emergence|503|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 991,
+          "mean": 45,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 360,
+          "absGap": 631
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 991,
+            "mean": 45,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:102|fact:emergence|102|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tenda",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 962,
+          "mean": 43.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 349.6,
+          "absGap": 612.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 962,
+            "mean": 43.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:505|fact:emergence|505|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 960,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 480
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 960,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:502|fact:emergence|502|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise pronation: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 954,
+          "mean": 45.4,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 363.2,
+          "absGap": 590.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 954,
+            "mean": 45.4,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:104|fact:emergence|104|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: une séance atypique, pas encore une tendance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 826,
+          "mean": 39.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 314.4,
+          "absGap": 511.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 826,
+            "mean": 39.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:504|fact:emergence|504|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 823,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 457.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 823,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:204|fact:emergence|204|stable_format",
+      "kind": "disc_emergence",
+      "title": "Curl marteau: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 684,
+          "mean": 36,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 288,
+          "absGap": 396
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 684,
+            "mean": 36,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:203|fact:emergence|203|same_sets_fewer_reps",
+      "kind": "disc_emergence",
+      "title": "Curl assis dos calé: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 658,
+          "mean": 34.6,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 276.8,
+          "absGap": 381.2
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 658,
+            "mean": 34.6,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_freq_progress_low|ex:306|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_freq_progress_low",
+      "title": "Face pull: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 766,
+          "mean": 47.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 383.2,
+          "absGap": 382.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 766,
+            "mean": 47.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:306|fact:emergence|306|stable_format",
+      "kind": "disc_emergence",
+      "title": "Face pull: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 766,
+          "mean": 47.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 383.2,
+          "absGap": 382.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 766,
+            "mean": 47.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:304|fact:emergence|304|same_sets_more_reps",
+      "kind": "disc_emergence",
+      "title": "Élévations latérales: un format plus volumineux se maintient",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 765,
+          "mean": 47.8,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 382.4,
+          "absGap": 382.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 765,
+            "mean": 47.8,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_emergence|ex:308|fact:emergence|308|aspect:default",
+      "kind": "disc_emergence",
+      "title": "Kickbacks triceps s'installe dans ton entraînement",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 672,
+          "mean": 51.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 413.6,
+          "absGap": 258.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 672,
+            "mean": 51.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_exercise_progress|ex:105|dates:2026-08-17,2026-08-31,2026-09-07,2026-10-19,2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes inclinées: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 589,
+          "mean": 29.5,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 236,
+          "absGap": 353
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 589,
+            "mean": 29.5,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_exercise_progress|ex:201|dates:2026-06-23,2026-07-07,2026-07-14,2026-07-28,2026-08-12,2026-08-18,2026-08-25,2026-09-15|same_sets_fewer_reps",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes lestées: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 503,
+          "mean": 50.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 402.4,
+          "absGap": 100.60000000000002
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 503,
+            "mean": 50.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_exercise_progress|ex:304|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Élévations latérales: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 765,
+          "mean": 47.8,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 382.4,
+          "absGap": 382.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 765,
+            "mean": 47.8,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_exercise_progress|ex:503|dates:2026-09-18,2026-09-25,2026-10-02,2026-10-16,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 991,
+          "mean": 45,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 360,
+          "absGap": 631
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 991,
+            "mean": 45,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "2y",
+      "cardId": "disc_exercise_progress|ex:504|dates:2026-08-28,2026-09-11,2026-09-18,2026-10-02,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 823,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 457.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 823,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1260,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 780
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1260,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:103|fact:emergence|103|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 1103,
+          "mean": 46,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 368,
+          "absGap": 735
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 1103,
+            "mean": 46,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:503|fact:emergence|503|stable_format",
+      "kind": "disc_emergence",
+      "title": "Dips: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 991,
+          "mean": 45,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 360,
+          "absGap": 631
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 991,
+            "mean": 45,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:102|fact:emergence|102|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise large pronation: une séance atypique, pas encore une tenda",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 962,
+          "mean": 43.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 349.6,
+          "absGap": 612.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 962,
+            "mean": 43.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:505|fact:emergence|505|stable_format",
+      "kind": "disc_emergence",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 960,
+          "mean": 60,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 480,
+          "absGap": 480
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 960,
+            "mean": 60,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:502|fact:emergence|502|stable_format",
+      "kind": "disc_emergence",
+      "title": "Tractions australiennes — prise pronation: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 954,
+          "mean": 45.4,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 363.2,
+          "absGap": 590.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 954,
+            "mean": 45.4,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:104|fact:emergence|104|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: une séance atypique, pas encore une tendance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 826,
+          "mean": 39.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 314.4,
+          "absGap": 511.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 826,
+            "mean": 39.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:504|fact:emergence|504|stable_format",
+      "kind": "disc_emergence",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 823,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 457.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 823,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:204|fact:emergence|204|stable_format",
+      "kind": "disc_emergence",
+      "title": "Curl marteau: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 684,
+          "mean": 36,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 288,
+          "absGap": 396
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 684,
+            "mean": 36,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:203|fact:emergence|203|same_sets_fewer_reps",
+      "kind": "disc_emergence",
+      "title": "Curl assis dos calé: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 658,
+          "mean": 34.6,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 276.8,
+          "absGap": 381.2
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 658,
+            "mean": 34.6,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_freq_progress_low|ex:306|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_freq_progress_low",
+      "title": "Face pull: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 766,
+          "mean": 47.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 383.2,
+          "absGap": 382.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 766,
+            "mean": 47.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:306|fact:emergence|306|stable_format",
+      "kind": "disc_emergence",
+      "title": "Face pull: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 766,
+          "mean": 47.9,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 383.2,
+          "absGap": 382.8
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 766,
+            "mean": 47.9,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:304|fact:emergence|304|same_sets_more_reps",
+      "kind": "disc_emergence",
+      "title": "Élévations latérales: un format plus volumineux se maintient",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 765,
+          "mean": 47.8,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 382.4,
+          "absGap": 382.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 765,
+            "mean": 47.8,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_emergence|ex:308|fact:emergence|308|aspect:default",
+      "kind": "disc_emergence",
+      "title": "Kickbacks triceps s'installe dans ton entraînement",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 672,
+          "mean": 51.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 413.6,
+          "absGap": 258.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 672,
+            "mean": 51.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_exercise_progress|ex:105|dates:2026-08-17,2026-08-31,2026-09-07,2026-10-19,2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes inclinées: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 589,
+          "mean": 29.5,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 236,
+          "absGap": 353
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 589,
+            "mean": 29.5,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_exercise_progress|ex:201|dates:2026-06-23,2026-07-07,2026-07-14,2026-07-28,2026-08-12,2026-08-18,2026-08-25,2026-09-15|same_sets_fewer_reps",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes lestées: moins de répétitions par séance",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 503,
+          "mean": 50.3,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 402.4,
+          "absGap": 100.60000000000002
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 503,
+            "mean": 50.3,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_exercise_progress|ex:304|dates:2026-07-22,2026-07-30,2026-08-20,2026-08-27,2026-09-30,2026-10-14,2026-11-11,2026-11-18|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Élévations latérales: volume par séance en hausse",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 765,
+          "mean": 47.8,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 382.4,
+          "absGap": 382.6
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 765,
+            "mean": 47.8,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_exercise_progress|ex:503|dates:2026-09-18,2026-09-25,2026-10-02,2026-10-16,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Dips: volume par séance stable",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 991,
+          "mean": 45,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 360,
+          "absGap": 631
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 991,
+            "mean": 45,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    },
+    {
+      "period": "all",
+      "cardId": "disc_exercise_progress|ex:504|dates:2026-08-28,2026-09-11,2026-09-18,2026-10-02,2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "kind": "disc_exercise_progress",
+      "title": "Pompes déclinées: recul confirmé sur plusieurs séances",
+      "oldConflict": {
+        "metric": "sum_mean_sample_consistency",
+        "card": {
+          "total": 823,
+          "mean": 45.7,
+          "sampleSize": 8,
+          "populationSource": "dates.fallback_possibly_arc"
+        },
+        "claim": {
+          "expectedProduct": 365.6,
+          "absGap": 457.4
+        },
+        "note": "same_population_required"
+      },
+      "classif": "noncomparable_explicit",
+      "ok": true,
+      "notes": [
+        {
+          "metric": "sum_mean_sample_noncomparable",
+          "severity": "info",
+          "card": {
+            "total": 823,
+            "mean": 45.7,
+            "arcDateCount": 8,
+            "populationSource": "dates.fallback_possibly_arc"
+          },
+          "note": "populations_not_bound_skip_triple"
+        }
+      ]
+    }
+  ]
+}

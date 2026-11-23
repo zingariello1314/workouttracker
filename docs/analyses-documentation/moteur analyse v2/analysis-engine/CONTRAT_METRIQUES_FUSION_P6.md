@@ -19,6 +19,14 @@ Toute mesure de **total de fenêtre** partage le même ensemble d’événements
 Invariant vérifiable : si total, mean et n portent le même référent,
 `|total − mean × n|` sous tolérance. Sinon : périmètres distincts explicites.
 
+### Mission 31 — comparabilité
+
+- `dates.length` / arc tronqué **n’est pas** un effectif de fenêtre.
+- Si l’effectif n’est pas lié (`comparableForSumMean=false`) : statut
+  `populations_not_bound` / note `sum_mean_sample_noncomparable` —
+  **ni faux FAIL d’intégrité, ni faux PASS**.
+- Une contradiction sur population **liée** reste un conflit dur.
+
 
 ## 1. Distinctions formelles (fusion)
 

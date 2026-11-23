@@ -1,0 +1,14 @@
+{
+  "schema": "momentum.m31.divergenceDiag.v1",
+  "divergenceCount": 0,
+  "byPeriod": {},
+  "byClass": {},
+  "samples": {
+    "dips": [],
+    "pompes": [],
+    "falseFail": [],
+    "trueMismatch": [],
+    "needsManual": []
+  },
+  "all": []
+}

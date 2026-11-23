@@ -44,7 +44,7 @@ function wrap(discovery, extras = {}) {
 
 describe('Mission 28 — édition', () => {
   it('bumpe parties métrique / hiérarchie / mémoire / sélection', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v2[789]/);
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v(2[789]|30)/);
     expect(ANALYSIS_EDITION_PARTS.composition).toMatch(/metric-(denom|population)/);
     expect(ANALYSIS_EDITION_PARTS.hierarchy).toBeTruthy();
     expect(ANALYSIS_EDITION_PARTS.memory).toBe('publication-registry-v1');

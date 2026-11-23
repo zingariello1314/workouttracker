@@ -132,7 +132,8 @@ function sessionFingerprint(row) {
   const consistency = validateSumMeanSampleConsistency({
     total: reps,
     mean: meanPerSession,
-    sampleSize: population.sessionCount
+    sampleSize: population.sessionCount,
+    comparable: population.comparableForSumMean !== false && population.sessionCount != null
   });
   return {
     dates,

@@ -198,13 +198,25 @@ export function resolvePrimaryWindowSessionPopulation(metrics = {}) {
       ? Math.round(Number(factSample))
       : null;
 
+  // Mission 31 — sessionCount porté par observedValues / proof avant tout fallback dates.
+  const ovSession = [...(Array.isArray(m.observedValues) ? m.observedValues : [])].find(
+    (v) =>
+      v?.id === 'sessionCount' ||
+      v?.id === 'windowSessionCount' ||
+      v?.id === 'metric:sessionCount' ||
+      v?.id === 'metric:windowSessionCount'
+  );
+  const ovCount = Number(ovSession?.value);
+  const hasOvCount = Number.isFinite(ovCount) && ovCount > 0 ? Math.round(ovCount) : null;
+
   if (windowSessionDates.length > 0) {
     return {
       dates: windowSessionDates,
       sessionCount: windowSessionDates.length,
       source: 'sessions.inSelectedWindow',
       referent: METRIC_REFERENT.PRIMARY_WINDOW,
-      distinctFromArc: true
+      distinctFromArc: true,
+      comparableForSumMean: true
     };
   }
   if (windowDatesFromScope.length > 0) {
@@ -213,7 +225,8 @@ export function resolvePrimaryWindowSessionPopulation(metrics = {}) {
       sessionCount: windowDatesFromScope.length,
       source: 'temporalScope.windowDates',
       referent: METRIC_REFERENT.PRIMARY_WINDOW,
-      distinctFromArc: true
+      distinctFromArc: true,
+      comparableForSumMean: true
     };
   }
   if (hasExplicit != null) {
@@ -222,7 +235,8 @@ export function resolvePrimaryWindowSessionPopulation(metrics = {}) {
       sessionCount: hasExplicit,
       source: 'metrics.sessionCount',
       referent: METRIC_REFERENT.PRIMARY_WINDOW,
-      distinctFromArc: true
+      distinctFromArc: true,
+      comparableForSumMean: true
     };
   }
   if (hasFactSample != null) {
@@ -231,11 +245,23 @@ export function resolvePrimaryWindowSessionPopulation(metrics = {}) {
       sessionCount: hasFactSample,
       source: 'metricFacts.sampleSize',
       referent: METRIC_REFERENT.PRIMARY_WINDOW,
-      distinctFromArc: true
+      distinctFromArc: true,
+      comparableForSumMean: true
+    };
+  }
+  if (hasOvCount != null) {
+    return {
+      dates: uniqSort(m.windowSessionDates || []),
+      sessionCount: hasOvCount,
+      source: 'observedValues.sessionCount',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      distinctFromArc: true,
+      comparableForSumMean: true
     };
   }
 
-  // Dernier recours : dates plates — peuvent être un arc ; marquées non distinctes.
+  // Dernier recours : dates plates = souvent un arc tronqué.
+  // Ne PAS promouvoir dates.length en effectif comparable (faux échecs M30/v29).
   const flatDates = uniqSort([
     ...(Array.isArray(m.dates) ? m.dates : []),
     ...(Array.isArray(m.sessionDates) ? m.sessionDates : []),
@@ -243,23 +269,41 @@ export function resolvePrimaryWindowSessionPopulation(metrics = {}) {
   ]);
   return {
     dates: flatDates,
-    sessionCount: flatDates.length > 0 ? flatDates.length : null,
+    sessionCount: null,
+    arcDateCount: flatDates.length > 0 ? flatDates.length : null,
     source: flatDates.length ? 'dates.fallback_possibly_arc' : 'absent',
     referent: METRIC_REFERENT.PRIMARY_WINDOW,
-    distinctFromArc: false
+    distinctFromArc: false,
+    comparableForSumMean: false
   };
 }
 
 /**
  * Identité algébrique sur un même ensemble : total ≈ mean × sampleSize.
  * Ne s’applique que lorsque les trois mesures déclarent le même référent / population.
+ *
+ * @param {object} opts
+ * @param {boolean} [opts.comparable=true] — si false (effectif non lié), non-comparabilité
+ *   explicite : pas de faux PASS ni de faux FAIL.
  */
 export function validateSumMeanSampleConsistency({
   total = null,
   mean = null,
   sampleSize = null,
-  tolerance = 0.51
+  tolerance = 0.51,
+  comparable = true
 } = {}) {
+  if (comparable === false) {
+    return {
+      ok: true,
+      applicable: false,
+      reason: 'populations_not_bound',
+      nonComparable: true,
+      total: Number.isFinite(Number(total)) ? Number(total) : null,
+      mean: Number.isFinite(Number(mean)) ? Number(mean) : null,
+      sampleSize: Number.isFinite(Number(sampleSize)) ? Number(sampleSize) : null
+    };
+  }
   const t = Number(total);
   const mu = Number(mean);
   const n = Number(sampleSize);

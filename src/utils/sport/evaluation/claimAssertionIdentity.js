@@ -166,8 +166,8 @@ export function validateCardClaimConsistency(card, claim) {
   }
   void claimPres;
 
-  // Mission 30 — vérité algébrique sur la même population fenêtre :
-  // total ≈ moyenne × effectif, lorsque les trois portent le même référent.
+  // Mission 30/31 — vérité algébrique seulement si l’effectif est lié à la même
+  // population que total/moyenne. Un fallback dates(arc) n’est pas un effectif.
   const population = resolvePrimaryWindowSessionPopulation(metrics);
   const total = numFromMetricsOrProof(metrics, claimVals, [
     'windowTotalReps',
@@ -175,21 +175,57 @@ export function validateCardClaimConsistency(card, claim) {
     'currentReps',
     'totalReps'
   ]);
-  const mean = numFromMetricsOrProof(metrics, claimVals, [
+  // meanReps peut être une moyenne de totaux (composition) — ne l’utiliser pour
+  // le triple que si windowMeanPerSession / meanPerSession est absent ET que
+  // la population est explicitement liée.
+  const meanPrimary = numFromMetricsOrProof(metrics, claimVals, [
     'windowMeanPerSession',
-    'meanPerSession',
-    'meanReps'
+    'meanPerSession'
   ]);
-  const sampleSize =
-    population.sessionCount ??
-    numFromMetricsOrProof(metrics, claimVals, ['sessionCount', 'windowSessionCount']);
-  const triple = validateSumMeanSampleConsistency({ total, mean, sampleSize });
+  const meanFallback = numFromMetricsOrProof(metrics, claimVals, ['meanReps']);
+  const mean = meanPrimary != null ? meanPrimary : meanFallback;
+  const sampleFromProof = numFromMetricsOrProof(metrics, claimVals, [
+    'sessionCount',
+    'windowSessionCount'
+  ]);
+  const sampleSize = population.sessionCount ?? sampleFromProof;
+  // Effectif lié = population résolue comparable, OU compteur explicite metrics/proof.
+  // dates.fallback seul ≠ effectif (Mission 31 — 75 faux échecs v29).
+  const comparable =
+    (population.comparableForSumMean === true && sampleSize != null) ||
+    (sampleFromProof != null && Number(sampleFromProof) > 0);
+  const triple = validateSumMeanSampleConsistency({
+    total,
+    mean,
+    sampleSize: comparable ? sampleSize : null,
+    comparable
+  });
+  const notes = [];
   if (triple.applicable && !triple.ok) {
     conflicts.push({
       metric: 'sum_mean_sample_consistency',
-      card: { total, mean, sampleSize, populationSource: population.source },
+      card: {
+        total,
+        mean,
+        sampleSize,
+        populationSource: population.source,
+        comparable
+      },
       claim: { expectedProduct: triple.expectedProduct, absGap: triple.absGap },
       note: 'same_population_required'
+    });
+  } else if (triple.nonComparable && total != null && mean != null) {
+    // Mission 31 — non-comparabilité explicite : ni faux FAIL ni faux PASS.
+    notes.push({
+      metric: 'sum_mean_sample_noncomparable',
+      severity: 'info',
+      card: {
+        total,
+        mean,
+        arcDateCount: population.arcDateCount ?? null,
+        populationSource: population.source
+      },
+      note: 'populations_not_bound_skip_triple'
     });
   }
 
@@ -216,6 +252,7 @@ export function validateCardClaimConsistency(card, claim) {
   return {
     ok: conflicts.length === 0,
     issue: conflicts.length ? 'card_claim_value_divergence' : null,
-    conflicts
+    conflicts,
+    notes
   };
 }
