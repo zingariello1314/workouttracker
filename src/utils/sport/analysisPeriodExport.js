@@ -57,6 +57,13 @@ export function serializeConclusion(card, role, { order = null, section = null }
     relations: inspection?.relations || card?.relations || null,
     horizon: card?.horizonFit || claim?.horizon || null,
     collapsedInto: card?.collapsedInto || inspection?.collapsedInto || null,
+    // Mission 24 — transporter la preuve hiérarchique (perdue depuis M23 à l’export)
+    hierarchyLink: card?.hierarchyLink || card?.metrics?.hierarchyLink || inspection?.hierarchyLink || null,
+    parentId: (() => {
+      const link = card?.hierarchyLink || card?.metrics?.hierarchyLink || null;
+      return link?.ok === true ? card?.parentId || card?.collapsedInto || null : null;
+    })(),
+    childIds: card?.childIds || card?.hierarchyChildren || null,
     selection: card?.lineage?.selection || inspection?.publication || null,
     coverage: card?.exploration?.coverage || inspection?.coverage || null,
     drafting: card?.drafting || inspection?.drafting || null,
@@ -197,34 +204,67 @@ export function buildPeriodAuditDossier({
   const raw = (discoveries.all || []).map((card, index) =>
     serializeConclusion(card, 'raw', { order: index + 1, section: 'registry' })
   );
-  const fusedTitles = new Set(fused.map((card) => card.title).filter(Boolean));
-  const accessibleClean = [...priority, ...reserve].filter((card) => !fusedTitles.has(card.title));
-  // Mission 13 : réconciliation finale contre le catalogue accessible exporté (pas seulement le registre pré-polish)
+  // Mission 26 — réconciliation par identités, pas par titre homonyme.
+  // Un titre partagé avec une source fused ne doit plus exclure une carte distincte.
+  const fusedIdSet = new Set(
+    fused.map((card) => card.id || card.publicationId).filter(Boolean)
+  );
+  const removedByIdentity = [];
+  const accessibleClean = [...priority, ...reserve].filter((card) => {
+    const id = card.id || card.publicationId;
+    if (id && fusedIdSet.has(id)) {
+      removedByIdentity.push({
+        id,
+        title: card.title || null,
+        reason: 'identity_in_fused_sources',
+        destination: card.collapsedInto || id
+      });
+      return false;
+    }
+    return true;
+  });
   const baseRecon = insights?.publicationReconciliation || null;
-  const finalAccessibleIds = accessibleClean.map((c) => c.id).filter(Boolean);
-  const registryIdsForFinal = (baseRecon?.missingFromAccessible
-    ? null
-    : null);
-  void registryIdsForFinal;
+  const publishedIds = new Set(
+    [
+      ...(insights?.shortTerm || []),
+      ...(insights?.mediumTerm || []),
+      ...(insights?.longTerm || []),
+      ...(insights?.accessibleReserve || [])
+    ]
+      .map((c) => c?.id || c?.publicationId)
+      .filter(Boolean)
+  );
+  const accessibleIds = new Set(accessibleClean.map((c) => c.id || c.publicationId).filter(Boolean));
+  const identityGap = [...publishedIds].filter((id) => !accessibleIds.has(id));
   const finalCountGap =
     baseRecon && Number.isFinite(baseRecon.publishedCount)
       ? Number(baseRecon.publishedCount) - accessibleClean.length
       : null;
+  const removedByFused = removedByIdentity.length;
+  const identityAligned =
+    identityGap.length === 0 && removedByFused === 0;
+  const finalStrict =
+    identityAligned &&
+    (finalCountGap === 0 || finalCountGap == null) &&
+    accessibleClean.length === (baseRecon?.finalAccessibleCount ?? accessibleClean.length);
   const finalCatalogReconciliation = {
-    schema: 'momentum.finalCatalogReconciliation.v1',
+    schema: 'momentum.finalCatalogReconciliation.v3',
+    method: 'identity_sets',
     publishedBeforeExportFilter: baseRecon?.publishedCount ?? null,
     accessibleExported: accessibleClean.length,
-    removedByFusedTitleFilter: [...priority, ...reserve].length - accessibleClean.length,
+    publishedIdentityCount: publishedIds.size,
+    accessibleIdentityCount: accessibleIds.size,
+    removedByFusedTitleFilter: removedByFused,
+    removedByIdentity,
+    identityGap: identityGap.slice(0, 40),
     countGapVsPublication: finalCountGap,
-    reconciledStrict:
-      baseRecon?.reconciledStrict === true &&
-      (finalCountGap === 0 || finalCountGap == null) &&
-      accessibleClean.length ===
-        (baseRecon?.finalAccessibleCount ?? accessibleClean.length),
+    baseReconciledStrict: baseRecon?.reconciledStrict ?? null,
+    reconciledStrict: finalStrict && baseRecon?.reconciledStrict !== false,
+    authoritative: true,
     note:
-      finalCountGap && finalCountGap !== 0
-        ? 'Écart entre publicationReconciliation et userAccessible.accessible — filtre titres fusionnés ou dédup export'
-        : 'Catalogue exporté aligné sur la publication post-polish'
+      !finalStrict
+        ? 'Écart publication ↔ accessible (identités) — statut strict unifié'
+        : 'Catalogue exporté aligné sur les identités publiées'
   };
   const window = {
     start: publication?.windowStart || requestedWindow?.start || null,
@@ -273,7 +313,11 @@ export function buildPeriodAuditDossier({
       window,
       bannerReps: banner?.totalReps ?? null,
       measureReps: measure?.totalReps ?? null,
-      snapshot: snapshotFingerprint(snapshot),
+      snapshot: snapshotFingerprint(snapshot, {
+        activeProgram: snapshot?.activeProgram || bundle?.activeProgram || null,
+        garminData: snapshot?.garminData || bundle?.garminData || null,
+        nameMap: bundle?.nameMap || snapshot?.nameMap || null
+      }),
       edition: bundle?.analysisEdition || analysisEditionKey(),
       renderedPeriod: dom.renderedPeriod || null,
       concordant: mismatches.length === 0,
@@ -300,16 +344,36 @@ export function buildPeriodAuditDossier({
       status: bundle?.analysisStatus || null,
       packRole: provenance === 'computed_not_rendered' ? 'computed_not_rendered' : bundle?.packRole || provenance,
       referenceDate: window.end || null,
-      dataFingerprint: snapshotFingerprint(snapshot)
+      dataFingerprint: snapshotFingerprint(snapshot, {
+        activeProgram: snapshot?.activeProgram || bundle?.activeProgram || null,
+        garminData: snapshot?.garminData || bundle?.garminData || null,
+        nameMap: bundle?.nameMap || snapshot?.nameMap || null
+      })
     },
     publicationAuthority: insights?.publicationAuthority || null,
+    publicationFallback:
+      insights?.publicationFallback === true || insights?.publicationAuthority === 'legacy_fallback',
+    publicationDegraded: insights?.degraded === true,
+    p6FailureReason: insights?.reason || null,
     userAccessible: {
-      priority,
-      reserve: reserve.filter((card) => !fusedTitles.has(card.title)),
+      priority: priority.filter((card) => {
+        const id = card.id || card.publicationId;
+        return !(id && fusedIdSet.has(id));
+      }),
+      reserve: reserve.filter((card) => {
+        const id = card.id || card.publicationId;
+        return !(id && fusedIdSet.has(id));
+      }),
       accessible: accessibleClean,
       counts: {
-        priority: priority.length,
-        reserve: reserve.filter((card) => !fusedTitles.has(card.title)).length,
+        priority: priority.filter((card) => {
+          const id = card.id || card.publicationId;
+          return !(id && fusedIdSet.has(id));
+        }).length,
+        reserve: reserve.filter((card) => {
+          const id = card.id || card.publicationId;
+          return !(id && fusedIdSet.has(id));
+        }).length,
         accessible: accessibleClean.length
       }
     },
@@ -356,7 +420,27 @@ export function buildPeriodAuditDossier({
           : null
     },
     horizons: priority.map((card) => card.horizon).filter(Boolean),
-    timings: timings || bundle?.workerTimings || null,
+    timings: (() => {
+      const base = timings || bundle?.workerTimings || null;
+      const steps =
+        bundle?.recapAssessment?.periodDiscoveries?.p6?.pipelineSteps ||
+        bundle?.recapAssessment?.periodDiscoveries?.debug?.pipelineSteps ||
+        base?.pipelineSteps ||
+        null;
+      if (!steps && !base) return null;
+      return {
+        ...(base && typeof base === 'object' ? base : {}),
+        pipelineSteps: steps || base?.pipelineSteps || null,
+        instrumented:
+          bundle?.recapAssessment?.periodDiscoveries?.p6?.instrumented === true ||
+          bundle?.recapAssessment?.periodDiscoveries?.debug?.instrumented === true ||
+          Boolean(steps?.length)
+      };
+    })(),
+    memorySnapshot:
+      bundle?.recapAssessment?.periodDiscoveries?.analyticalMemoryOut ||
+      bundle?.analyticalMemoryOut ||
+      null,
     dom,
     publicationTrace: Array.isArray(publicationTrace) ? publicationTrace.slice(-40) : null
   };

@@ -1,0 +1,6 @@
+﻿baseline_frozen_at=2026-11-22T15:11:35.6079037+01:00
+HEAD=4c15c2cc691ef76d9c8d2f399c3ccd7e821dbdd5
+editorial=p6-sovereign-v21
+observability=reasoning-trace-v1
+audit=normalized-export-v8
+note=Mission23 start — freeze before edits

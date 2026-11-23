@@ -28,6 +28,18 @@ export function detectorKind(row) {
 export function subjectKey(row) {
   const m = metricBag(row?.metrics || row?.discovery?.metrics);
   const claimSubject = row?.claim?.subject?.key || row?.discovery?.claim?.subject?.key;
+  // Mission 28 — autorité explicite (ex. parallel:ex:A+ex:B) avant le libellé homonyme
+  if (m.subjectKey && /^(ex:|parallel:|grp:|match:|pop:|period:)/i.test(String(m.subjectKey))) {
+    return String(m.subjectKey);
+  }
+  if (
+    claimSubject &&
+    claimSubject !== 'period_activity' &&
+    claimSubject !== 'period' &&
+    /^(ex:|parallel:|grp:|match:|pop:|period:)/i.test(String(claimSubject))
+  ) {
+    return String(claimSubject);
+  }
   if (m.exerciseId != null && m.exerciseId !== '') return `ex:${m.exerciseId}`;
   if (m.storageId != null && m.storageId !== '') return `ex:${m.storageId}`;
   if (m.matchKey) return `match:${m.matchKey}`;
@@ -35,8 +47,12 @@ export function subjectKey(row) {
   if (m.name) return `name:${String(m.name).toLowerCase().trim()}`;
   // Carte publiée sans metrics : récupérer le sujet depuis l’occurrence / titre
   const occ = String(row?.occurrenceId || row?.id || row?.phenomenonId || '');
-  const exFromOcc = occ.match(/ex:([^|]+)/);
-  if (exFromOcc) return `ex:${exFromOcc[1]}`;
+  if (/^parallel_traj\|/.test(occ) || /^parallel\|/.test(occ)) {
+    const pair = occ.match(/ex:[^|+]+(?:\+ex:[^|+]+)+/);
+    if (pair) return `parallel:${pair[0]}`;
+  }
+  const exFromOcc = occ.match(/ex:([^|+]+)/);
+  if (exFromOcc && !/\+/.test(occ.split('|')[1] || '')) return `ex:${exFromOcc[1]}`;
   const nameFromOcc = occ.match(/name:([^|]+)/);
   if (nameFromOcc) return `name:${nameFromOcc[1]}`;
   if (claimSubject && claimSubject !== 'period_activity' && claimSubject !== 'period') {
@@ -303,6 +319,7 @@ export function phenomenonIdOf(row) {
 function isConcreteSubject(sub) {
   return (
     sub.startsWith('ex:') ||
+    sub.startsWith('parallel:') ||
     sub.startsWith('name:') ||
     sub.startsWith('match:') ||
     sub.startsWith('grp:') ||
@@ -321,10 +338,42 @@ export function substantiveEquivalence(left, right) {
   const rightKind = detectorKind(right);
   const leftSub = subjectKey(left);
   const rightSub = subjectKey(right);
+  const leftMetrics = metricBag(left?.metrics || left?.discovery?.metrics);
+  const rightMetrics = metricBag(right?.metrics || right?.discovery?.metrics);
+
+  // Mission 28 — compositions parallèles à aspects/épisodes distincts ≠ fusion
+  const leftParallelAspect =
+    leftMetrics.analyticalAspect ||
+    (String(left?.phenomenonId || leftMetrics.phenomenonKey || '').startsWith('parallel|')
+      ? String(left?.phenomenonId || leftMetrics.phenomenonKey)
+      : null);
+  const rightParallelAspect =
+    rightMetrics.analyticalAspect ||
+    (String(right?.phenomenonId || rightMetrics.phenomenonKey || '').startsWith('parallel|')
+      ? String(right?.phenomenonId || rightMetrics.phenomenonKey)
+      : null);
+  if (
+    /composed_parallel|parallel_traj/i.test(`${leftKind} ${rightKind}`) &&
+    leftParallelAspect &&
+    rightParallelAspect &&
+    leftParallelAspect !== rightParallelAspect
+  ) {
+    return {
+      equivalent: false,
+      reason: 'distinct_parallel_aspect',
+      proof: { leftParallelAspect, rightParallelAspect, leftSub, rightSub }
+    };
+  }
 
   // Sujets concrets distincts → conclusions distinctes (homonymes / reprises parallèles)
   if (leftSub !== rightSub && isConcreteSubject(leftSub) && isConcreteSubject(rightSub)) {
     return { equivalent: false, reason: 'distinct_subjects', proof: { leftSub, rightSub } };
+  }
+  if (
+    leftSub !== rightSub &&
+    (String(leftSub).startsWith('parallel:') || String(rightSub).startsWith('parallel:'))
+  ) {
+    return { equivalent: false, reason: 'distinct_parallel_subjects', proof: { leftSub, rightSub } };
   }
 
   const leftSem = semanticPhenomenonKey(left);

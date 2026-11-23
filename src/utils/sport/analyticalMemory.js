@@ -15,6 +15,18 @@ export const RESERVE_DISPOSITION = Object.freeze({
 
 const MEMORY_KEY = 'momentum.analyticalMemory.v1';
 
+/**
+ * Mission 27 — clé de profil unique.
+ * Évite `u:u:{id}` quand l’appelant passe déjà `u:{id}` (bug v25 storePhenomena=0).
+ */
+export function resolveAnalyticalMemoryProfile(accountScopeOrUserId = null) {
+  const s = String(accountScopeOrUserId || '').trim();
+  if (!s || s === 'guest' || s === 'local') return 'local';
+  if (s.startsWith('u:')) return s;
+  if (s === 'auth') return 'u:auth';
+  return `u:${s}`;
+}
+
 export function emptyAnalyticalMemory() {
   return {
     version: 1,
@@ -55,16 +67,49 @@ export function loadAnalyticalMemory(profile = 'local') {
 export function saveAnalyticalMemory(memory) {
   const store = storage();
   if (!store || !memory?.profile) return false;
+  // Mission 24 — fusionner avec l’existant pour ne jamais écraser des phénomènes
+  // par une sauvegarde partielle (ex. noteExposure seule).
+  let previous = null;
+  try {
+    const raw = store.getItem(`${MEMORY_KEY}:${memory.profile}`);
+    if (raw) previous = JSON.parse(raw);
+  } catch {
+    previous = null;
+  }
   const compact = {
     version: 1,
     profile: memory.profile,
-    phenomena: memory.phenomena || {},
-    publications: (memory.publications || []).slice(-40),
-    exposures: (memory.exposures || []).slice(-80),
-    feedback: (memory.feedback || []).slice(-40)
+    phenomena: {
+      ...(previous?.phenomena || {}),
+      ...(memory.phenomena || {})
+    },
+    publications: (memory.publications || previous?.publications || []).slice(-40),
+    exposures: (memory.exposures || previous?.exposures || []).slice(-80),
+    feedback: (memory.feedback || previous?.feedback || []).slice(-40)
   };
+  // Si l’appelant omet phenomena mais previous en a, conserver previous
+  if (
+    (!memory.phenomena || !Object.keys(memory.phenomena).length) &&
+    previous?.phenomena &&
+    Object.keys(previous.phenomena).length
+  ) {
+    compact.phenomena = previous.phenomena;
+  }
   store.setItem(`${MEMORY_KEY}:${memory.profile}`, JSON.stringify(compact));
   return true;
+}
+
+/** Instantané figé pour une campagne multi-horizons (même état initial). */
+export function freezeAnalyticalMemorySnapshot(memory) {
+  if (!memory || typeof memory !== 'object') return emptyAnalyticalMemory();
+  return JSON.parse(JSON.stringify({
+    ...emptyAnalyticalMemory(),
+    ...memory,
+    phenomena: memory.phenomena || {},
+    publications: memory.publications || [],
+    exposures: memory.exposures || [],
+    feedback: memory.feedback || []
+  }));
 }
 
 export function upsertPhenomenon(memory, phenomenon) {
@@ -76,10 +121,18 @@ export function upsertPhenomenon(memory, phenomenon) {
     exerciseId: phenomenon.exerciseId || null,
     phenomenon: phenomenon.phenomenon || null,
     state: phenomenon.state || null,
+    previousState: phenomenon.previousState ?? prev?.state ?? null,
     proofIds: phenomenon.proofIds || prev?.proofIds || [],
     window: phenomenon.window || null,
     transition: phenomenon.transition || 'new',
-    updatedAt: phenomenon.updatedAt || null
+    updatedAt: phenomenon.updatedAt || null,
+    previousConclusion: phenomenon.previousConclusion ?? prev?.lastConclusion ?? null,
+    lastConclusion: phenomenon.lastConclusion ?? prev?.lastConclusion ?? null,
+    participantCount: phenomenon.participantCount ?? prev?.participantCount ?? null,
+    confirmedParticipants: phenomenon.confirmedParticipants || prev?.confirmedParticipants || [],
+    participantIds: phenomenon.participantIds || prev?.participantIds || [],
+    aliases: [...new Set([...(prev?.aliases || []), ...(phenomenon.aliases || [])])],
+    continuedFromPrior: phenomenon.continuedFromPrior ?? prev?.continuedFromPrior ?? false
   };
   return next;
 }
@@ -92,8 +145,20 @@ export function notePublication({ signature, ids = [], period = null, window = n
     windowStart: window?.start || null,
     windowEnd: window?.end || null,
     publishedIds: ids,
-    exposureCounted: false
+    exposureCounted: false,
+    at: new Date().toISOString()
   };
+}
+
+/** Mission 28 — enregistre une publication dans le registre mémoire (≠ exposition). */
+export function appendPublication(memory, entry = {}) {
+  const next = memory || emptyAnalyticalMemory();
+  const rec =
+    entry && entry.kind === 'publication'
+      ? entry
+      : notePublication(entry);
+  next.publications = [...(next.publications || []), rec].slice(-40);
+  return next;
 }
 
 export function noteExposure(memory, event) {
@@ -169,6 +234,153 @@ export function relateConclusions(current, other) {
     return { rel: 'related_to', from: current.id, target: other.id };
   }
   return null;
+}
+
+/**
+ * Mission 21 — évolution chronologique d’un épisode collectif.
+ * Respecte knowledgeCutoff : une confirmation future n’est jamais utilisée.
+ * Ne mémorise pas le texte comme vérité ; conserve états + faits.
+ */
+export function evolveCollectivePhenomenonMemory({
+  episodeId,
+  namedMoves = [],
+  returnDates = [],
+  confirmationDates = [],
+  readingMode = 'return',
+  knowledgeCutoff = null,
+  priorMemory = null,
+  conclusionText = null
+} = {}) {
+  const cutoff = knowledgeCutoff ? String(knowledgeCutoff).slice(0, 10) : null;
+  const visibleConfirmations = (confirmationDates || []).filter(
+    (d) => !cutoff || String(d).slice(0, 10) <= cutoff
+  );
+  const visibleReturns = (returnDates || []).filter(
+    (d) => !cutoff || String(d).slice(0, 10) <= cutoff
+  );
+  const returnDate = visibleReturns[0] || null;
+
+  let state = 'unknown';
+  if (!returnDate) state = 'absent_or_interrupted';
+  else if (visibleConfirmations.length === 0) state = 'return_observed';
+  else if (visibleConfirmations.length === 1) state = 'confirmed_once';
+  else state = 'reinstalling';
+
+  if (readingMode === 'confirmation' && visibleConfirmations.length) {
+    state = visibleConfirmations.length > 1 ? 'reinstalling' : 'confirmed_once';
+  }
+
+  const prior = priorMemory?.phenomena?.[episodeId] || null;
+  const previousState = prior?.state || null;
+  let transition = 'new';
+  let newFacts = true;
+  if (prior) {
+    if (previousState === state) {
+      transition = 'unchanged';
+      newFacts = false;
+    } else if (previousState === 'return_observed' && state === 'confirmed_once') {
+      transition = 'confirmed';
+      newFacts = true;
+    } else if (previousState === 'confirmed_once' && state === 'reinstalling') {
+      transition = 'refined';
+      newFacts = true;
+    } else if (state === 'absent_or_interrupted' && previousState && previousState !== state) {
+      transition = 'revised';
+      newFacts = true;
+    } else {
+      transition = 'revised';
+      newFacts = true;
+    }
+  }
+
+  const knownAt = cutoff || visibleConfirmations[visibleConfirmations.length - 1] || returnDate;
+
+  let nextMemory = upsertPhenomenon(priorMemory || emptyAnalyticalMemory(), {
+    id: episodeId,
+    phenomenon: 'collective_return',
+    state,
+    proofIds: [
+      ...(returnDate ? [`return:${returnDate}`] : []),
+      ...visibleConfirmations.map((d) => `confirm:${d}`),
+      ...namedMoves.map((m) => `ex:${m.exerciseId || m.name}`)
+    ],
+    window: returnDate ? { start: returnDate, end: cutoff || returnDate } : null,
+    transition,
+    updatedAt: knownAt,
+    previousState,
+    previousConclusion: prior?.lastConclusion || null,
+    lastConclusion: conclusionText || null,
+    participantCount: namedMoves.length,
+    confirmedParticipants: namedMoves
+      .filter((m) => (m.confirmationDates || []).some((d) => !cutoff || d <= cutoff))
+      .map((m) => m.exerciseId || m.name)
+  });
+  // Mission 28 — toute évolution mémorisée compte comme publication registre
+  nextMemory = appendPublication(nextMemory, {
+    signature: `phen:${episodeId}|${state}|${transition}`,
+    ids: [episodeId],
+    period: null,
+    window: returnDate ? { start: returnDate, end: cutoff || returnDate } : null
+  });
+
+  return {
+    episodeId,
+    state,
+    previousState,
+    transition,
+    newFacts,
+    knownAt,
+    knowledgeCutoff: cutoff,
+    previousConclusion: prior?.lastConclusion || null,
+    memory: nextMemory,
+    visibleConfirmations,
+    exposureCounted: false
+  };
+}
+
+/**
+ * Simulation chronologique : plusieurs cutoffs sans fuite du futur.
+ */
+export function simulateCollectiveMemoryTimeline({
+  episodeId,
+  namedMoves = [],
+  returnDates = [],
+  confirmationDates = [],
+  cutoffs = []
+} = {}) {
+  let memory = emptyAnalyticalMemory();
+  const steps = [];
+  for (const cutoff of cutoffs) {
+    const evolved = evolveCollectivePhenomenonMemory({
+      episodeId,
+      namedMoves,
+      returnDates,
+      confirmationDates,
+      knowledgeCutoff: cutoff,
+      priorMemory: memory,
+      readingMode:
+        (confirmationDates || []).some((d) => d <= cutoff) &&
+        (returnDates || [])[0] &&
+        (returnDates || [])[0] < cutoff
+          ? 'confirmation'
+          : 'return'
+    });
+    memory = evolved.memory;
+    // Persister lastConclusion factuelle (état), pas la prose
+    if (memory.phenomena[episodeId]) {
+      memory.phenomena[episodeId].lastConclusion = evolved.state;
+    }
+    steps.push({
+      cutoff,
+      state: evolved.state,
+      previousState: evolved.previousState,
+      transition: evolved.transition,
+      visibleConfirmations: evolved.visibleConfirmations,
+      // Preuve d’absence de fuite : aucune confirmation > cutoff
+      futureLeak: evolved.visibleConfirmations.some((d) => d > cutoff)
+    });
+  }
+  return { steps, memory };
 }
 
 const DEMOTION = new Set([

@@ -265,7 +265,7 @@ export function reconcilePopulationTable(snapshot, window, previousWindow = null
         catalogOnlyDays: current.detail.catalogOnlyDays
       },
       note:
-        'Population familles = catalogue lifetime hors complementary ; jours GTG-only restent inclus côté catalogue'
+        'Population familles = catalogue lifetime hors complementary et hors GTG syncé (classicExclusive à la source)'
     }
   ];
 

@@ -12,23 +12,27 @@ export const ANALYSIS_EDITION_PARTS = Object.freeze({
   program: 'structural-context-v4',
   identity: 'discovery-occurrence-v1',
   scope: 'short-window-anchor-v1',
-  editorial: 'p6-sovereign-v19',
+  editorial: 'p6-sovereign-v29',
   consolidation: 'narrative-coherence-v3',
   stimulus: 'challenge-unknown-v1',
   review: 'collective-pass4-v13',
-  claim: 'assertion-window-v2',
-  sleep: 'association-prose-v4',
-  audit: 'normalized-export-v5',
-  composition: 'phenomenon-compose-v7',
+  claim: 'assertion-population-v1',
+  sleep: 'association-prose-v5',
+  audit: 'normalized-export-v12',
+  observability: 'reasoning-trace-v3',
+  composition: 'metric-population-v1',
   coherence: 'inter-horizon-v4',
   classification: 'modality-authority-v1',
   matching: 'session-slot-v3',
-  hierarchy: 'verified-deepening-v1',
+  hierarchy: 'graph-before-publish-v1',
   programReasoning: 'variant-mix-direction-v3',
-  collectiveReturn: 'session-episode-ledger-v5',
+  collectiveReturn: 'session-episode-ledger-v7',
   narrativeAuthority: 'thesis-composition-v2',
-  populations: 'canonical-populations-v1',
-  fingerprint: 'exercise-weights-v3'
+  populations: 'canonical-populations-v2',
+  fingerprint: 'multi-source-v5',
+  facts: 'shared-facts-v2',
+  memory: 'publication-registry-v1',
+  selection: 'partial-redundancy-reserve-v1'
 });
 
 export function analysisEditionKey(parts = ANALYSIS_EDITION_PARTS) {
@@ -83,6 +87,9 @@ export function cacheReuseDecision({
     storedFingerprint === requestedFingerprint
   ) {
     return { reuse: true, reason: 'exact_edition' };
+  }
+  if (storedEdition && currentEdition && storedEdition === currentEdition) {
+    return { reuse: true, reason: 'same_edition_fingerprint_unchecked' };
   }
   return { reuse: false, reason: 'incomplete_key' };
 }

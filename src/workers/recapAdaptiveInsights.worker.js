@@ -93,6 +93,7 @@ self.onmessage = async (event) => {
           side.profileQuestionnaireRaw ?? data.profileQuestionnaireRaw ?? null,
         insightHistory: side.insightHistory ?? data.insightHistory ?? null,
         lastInsightSignature: side.lastInsightSignature ?? data.lastInsightSignature ?? null,
+        analyticalMemory: side.analyticalMemory ?? data.analyticalMemory ?? null,
         nameMap: side.nameMap ?? data.nameMap ?? {}
       };
       delete msg.snapshotJson;

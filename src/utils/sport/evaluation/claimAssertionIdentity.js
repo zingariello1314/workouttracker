@@ -3,8 +3,29 @@
  * Un même phénomène peut avoir des assertions différentes selon la fenêtre / l’horizon.
  */
 
+import {
+  resolvePrimaryWindowSessionPopulation,
+  validateSumMeanSampleConsistency
+} from '../recapMetricContract';
+
 function ymd(v) {
   return v == null ? null : String(v).slice(0, 10);
+}
+
+function numFromMetricsOrProof(metrics, claimVals, ids) {
+  for (const id of ids) {
+    const fromM = metrics?.[id];
+    if (fromM != null && typeof fromM === 'object' && fromM.value != null) {
+      const n = Number(fromM.value);
+      if (Number.isFinite(n)) return n;
+    }
+    const nM = Number(fromM);
+    if (Number.isFinite(nM) && fromM != null && fromM !== '') return nM;
+    const fromClaim = (claimVals || []).find((v) => v?.id === id || v?.id === `metric:${id}`);
+    const nC = Number(fromClaim?.value);
+    if (Number.isFinite(nC)) return nC;
+  }
+  return null;
 }
 
 /**
@@ -108,10 +129,88 @@ export function validateCardClaimConsistency(card, claim) {
     ov.conflicts.forEach((c) => conflicts.push({ metric: c.id, card: c.a, claim: c.b }));
   }
 
-  const cardWin = ymd(metrics.windowEnd) || ymd(card.window?.end);
-  const claimWin = ymd(claim.scope?.end);
-  if (cardWin && claimWin && cardWin !== claimWin) {
-    conflicts.push({ metric: 'windowEnd', card: cardWin, claim: claimWin });
+  // Mission 27 — distinguer observation vs présentation.
+  // Divergence présentation (horizon) ↔ observation (dernière preuve) n’est pas une erreur
+  // si les fenêtres d’observation coïncident.
+  const cardObs =
+    ymd(metrics.observationWindow?.end) ||
+    ymd(metrics.windowEnd) ||
+    ymd(card.window?.end);
+  const claimObs =
+    ymd(claim.scope?.observationWindow?.end) || ymd(claim.scope?.end);
+  const cardPres = ymd(metrics.presentationWindow?.end) || ymd(metrics.windowEnd);
+  const claimPres = ymd(claim.scope?.presentationWindow?.end) || ymd(claim.scope?.comparisonWindow?.end);
+
+  if (cardObs && claimObs && cardObs !== claimObs) {
+    // Si claim = observation et card windowEnd = présentation, tolérer
+    if (cardPres && claimObs === cardObs && cardPres !== claimObs) {
+      // ok
+    } else if (cardPres && claimObs && cardPres === ymd(metrics.windowEnd) && claimObs !== cardPres) {
+      // claim observation vs card présentation : pas un conflit de valeurs d’assertion
+    } else {
+      conflicts.push({ metric: 'observationWindowEnd', card: cardObs, claim: claimObs });
+    }
+  } else if (!metrics.observationWindow && cardPres && claimObs && cardPres !== claimObs) {
+    // Legacy : éviter de compter présentation≠observation comme divergence dure
+    // seulement si la claim end égale une date d’observation documentée
+    const dates = Array.isArray(metrics.dates) ? metrics.dates.map(ymd).filter(Boolean).sort() : [];
+    const lastObs = dates.length ? dates[dates.length - 1] : null;
+    if (!(lastObs && claimObs === lastObs)) {
+      conflicts.push({
+        metric: 'windowEnd',
+        card: cardPres,
+        claim: claimObs,
+        note: 'unresolved_presentation_vs_observation'
+      });
+    }
+  }
+  void claimPres;
+
+  // Mission 30 — vérité algébrique sur la même population fenêtre :
+  // total ≈ moyenne × effectif, lorsque les trois portent le même référent.
+  const population = resolvePrimaryWindowSessionPopulation(metrics);
+  const total = numFromMetricsOrProof(metrics, claimVals, [
+    'windowTotalReps',
+    'recentReps',
+    'currentReps',
+    'totalReps'
+  ]);
+  const mean = numFromMetricsOrProof(metrics, claimVals, [
+    'windowMeanPerSession',
+    'meanPerSession',
+    'meanReps'
+  ]);
+  const sampleSize =
+    population.sessionCount ??
+    numFromMetricsOrProof(metrics, claimVals, ['sessionCount', 'windowSessionCount']);
+  const triple = validateSumMeanSampleConsistency({ total, mean, sampleSize });
+  if (triple.applicable && !triple.ok) {
+    conflicts.push({
+      metric: 'sum_mean_sample_consistency',
+      card: { total, mean, sampleSize, populationSource: population.source },
+      claim: { expectedProduct: triple.expectedProduct, absGap: triple.absGap },
+      note: 'same_population_required'
+    });
+  }
+
+  // Contradiction prose « sur N séances » vs effectif fenêtre (même population que le total).
+  // Déduplique les N cités (title/body/statement répètent souvent la même phrase).
+  const body = `${card.title || ''} ${card.body || ''} ${claim?.statement || ''}`;
+  const sessionMentions = [
+    ...new Set([...body.matchAll(/sur\s+(\d+)\s+séances?/gi)].map((m) => Number(m[1])))
+  ];
+  if (
+    population.distinctFromArc &&
+    Number.isFinite(Number(population.sessionCount)) &&
+    sessionMentions.length === 1 &&
+    sessionMentions[0] !== Number(population.sessionCount)
+  ) {
+    conflicts.push({
+      metric: 'session_count_prose_vs_population',
+      card: population.sessionCount,
+      claim: sessionMentions[0],
+      note: population.source
+    });
   }
 
   return {

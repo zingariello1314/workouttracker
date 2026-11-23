@@ -1,0 +1,190 @@
+{
+  "schema": "momentum.m22AttributionParity.v1",
+  "generatedAt": "2026-11-22T13:18:24.396Z",
+  "anchorNote": "Backup 21 nov — comparer aussi ancre 22 nov si export utilisateur différent",
+  "runs": [
+    {
+      "label": "resolver_basic_journal_db",
+      "end": "2026-11-21",
+      "deltaVolume": 1922,
+      "recentVolume": 5803,
+      "previousVolume": 3881,
+      "attribution": {
+        "recentShare": 0.5147337584008271,
+        "previousShare": 0.3195052821437774,
+        "recognizedVolumeShareRecent": 0.5147337584008271,
+        "recognizedVolumeSharePrevious": 0.3195052821437774,
+        "recognizedSessionShareRecent": 0.4444444444444444,
+        "partitionCoverageShareRecent": 1,
+        "unattributedVolumeShareRecent": 0.48526624159917287,
+        "structurallyRecognizedSessionShareRecent": 0,
+        "probablyRelatedSessionShareRecent": 0.4444444444444444,
+        "historicallyDocumentedShareRecent": 0,
+        "recentLevelCounts": {
+          "structurally_recognized": 0,
+          "probably_related": 8,
+          "unattributable": 10
+        },
+        "previousLevelCounts": {
+          "structurally_recognized": 0,
+          "probably_related": 3,
+          "unattributable": 9
+        }
+      },
+      "reconciliationGap": 0,
+      "top": [
+        {
+          "familyId": "sessionFamily:1",
+          "familyName": "Street Workout + Endurance fondamentale / Street Workout + Cardio",
+          "volumeDelta": 1745,
+          "freqEffect": 1950,
+          "contentEffect": -204,
+          "levelHint": "frequency_up"
+        },
+        {
+          "familyId": "unattributed",
+          "familyName": "non attribué",
+          "volumeDelta": 175,
+          "freqEffect": 293,
+          "contentEffect": -110,
+          "levelHint": "frequency_up"
+        },
+        {
+          "familyId": "sessionFamily:3",
+          "familyName": "Pectoraux / Triceps / Épaules / Triceps- Épaules",
+          "volumeDelta": 2,
+          "freqEffect": 0,
+          "contentEffect": 2,
+          "levelHint": "stable"
+        }
+      ],
+      "levelCounts": {
+        "structurally_recognized": 0,
+        "probably_related": 8,
+        "unattributable": 10
+      }
+    },
+    {
+      "label": "resolver_enriched_identity",
+      "end": "2026-11-21",
+      "deltaVolume": 1922,
+      "recentVolume": 5803,
+      "previousVolume": 3881,
+      "attribution": {
+        "recentShare": 0.5147337584008271,
+        "previousShare": 0.3195052821437774,
+        "recognizedVolumeShareRecent": 0.5147337584008271,
+        "recognizedVolumeSharePrevious": 0.3195052821437774,
+        "recognizedSessionShareRecent": 0.4444444444444444,
+        "partitionCoverageShareRecent": 1,
+        "unattributedVolumeShareRecent": 0.48526624159917287,
+        "structurallyRecognizedSessionShareRecent": 0,
+        "probablyRelatedSessionShareRecent": 0.4444444444444444,
+        "historicallyDocumentedShareRecent": 0,
+        "recentLevelCounts": {
+          "structurally_recognized": 0,
+          "probably_related": 8,
+          "unattributable": 10
+        },
+        "previousLevelCounts": {
+          "structurally_recognized": 0,
+          "probably_related": 3,
+          "unattributable": 9
+        }
+      },
+      "reconciliationGap": 0,
+      "top": [
+        {
+          "familyId": "sessionFamily:1",
+          "familyName": "Street Workout + Endurance fondamentale / Street Workout + Cardio",
+          "volumeDelta": 1745,
+          "freqEffect": 1950,
+          "contentEffect": -204,
+          "levelHint": "frequency_up"
+        },
+        {
+          "familyId": "unattributed",
+          "familyName": "non attribué",
+          "volumeDelta": 175,
+          "freqEffect": 293,
+          "contentEffect": -110,
+          "levelHint": "frequency_up"
+        },
+        {
+          "familyId": "sessionFamily:3",
+          "familyName": "Pectoraux / Triceps / Épaules / Triceps- Épaules",
+          "volumeDelta": 2,
+          "freqEffect": 0,
+          "contentEffect": 2,
+          "levelHint": "stable"
+        }
+      ],
+      "levelCounts": {
+        "structurally_recognized": 0,
+        "probably_related": 8,
+        "unattributable": 10
+      }
+    },
+    {
+      "label": "resolver_enriched_identity_end22",
+      "end": "2026-11-22",
+      "deltaVolume": 1922,
+      "recentVolume": 5803,
+      "previousVolume": 3881,
+      "attribution": {
+        "recentShare": 0.5147337584008271,
+        "previousShare": 0.3195052821437774,
+        "recognizedVolumeShareRecent": 0.5147337584008271,
+        "recognizedVolumeSharePrevious": 0.3195052821437774,
+        "recognizedSessionShareRecent": 0.4444444444444444,
+        "partitionCoverageShareRecent": 1,
+        "unattributedVolumeShareRecent": 0.48526624159917287,
+        "structurallyRecognizedSessionShareRecent": 0,
+        "probablyRelatedSessionShareRecent": 0.4444444444444444,
+        "historicallyDocumentedShareRecent": 0,
+        "recentLevelCounts": {
+          "structurally_recognized": 0,
+          "probably_related": 8,
+          "unattributable": 10
+        },
+        "previousLevelCounts": {
+          "structurally_recognized": 0,
+          "probably_related": 3,
+          "unattributable": 9
+        }
+      },
+      "reconciliationGap": 0,
+      "top": [
+        {
+          "familyId": "sessionFamily:1",
+          "familyName": "Street Workout + Endurance fondamentale / Street Workout + Cardio",
+          "volumeDelta": 1745,
+          "freqEffect": 1950,
+          "contentEffect": -204,
+          "levelHint": "frequency_up"
+        },
+        {
+          "familyId": "unattributed",
+          "familyName": "non attribué",
+          "volumeDelta": 175,
+          "freqEffect": 293,
+          "contentEffect": -110,
+          "levelHint": "frequency_up"
+        },
+        {
+          "familyId": "sessionFamily:3",
+          "familyName": "Pectoraux / Triceps / Épaules / Triceps- Épaules",
+          "volumeDelta": 2,
+          "freqEffect": 0,
+          "contentEffect": 2,
+          "levelHint": "stable"
+        }
+      ],
+      "levelCounts": {
+        "structurally_recognized": 0,
+        "probably_related": 8,
+        "unattributable": 10
+      }
+    }
+  ]
+}

@@ -5,7 +5,7 @@
  */
 
 import { relateClaims, RELATION } from './narrativeCoherenceEngine';
-import { substantiveEquivalence } from './discoveryIdentity';
+import { substantiveEquivalence, stablePublicationId } from './discoveryIdentity';
 
 export const PRIORITY_COLUMN_BUDGET = 11;
 
@@ -118,20 +118,84 @@ export function acknowledgeIdenticalCoverage({
   };
 }
 
+/**
+ * Mission 29 — redondance partielle ≠ suppression du catalogue accessible.
+ * overlap 1 = suppression autorisée seulement si équivalence forte.
+ * partialOverlap = peut baisser la priorité / pousser en réserve, sans disparition.
+ */
 export function marginalValue(candidate, chosen) {
   const base = intrinsic(candidate);
-  const redundant = (chosen || []).some((other) => {
+  let destination = null;
+  let overlapReason = null;
+  let partialDestination = null;
+  let partialReason = null;
+  for (const other of chosen || []) {
     const left = candidate.discovery || candidate;
     const right = other.discovery || other;
     const substantive = substantiveEquivalence(left, right);
-    if (substantive.equivalent) return true;
+    // Aspects / phénomènes explicitement distincts : jamais redondants
+    if (
+      substantive?.reason === 'distinct_parallel_aspect' ||
+      substantive?.reason === 'distinct_parallel_subjects' ||
+      substantive?.reason === 'distinct_subjects' ||
+      substantive?.reason === 'distinct_parallel_phenomenon'
+    ) {
+      continue;
+    }
+    const leftAspect =
+      left?.metrics?.analyticalAspect || left?.discovery?.metrics?.analyticalAspect || null;
+    const rightAspect =
+      right?.metrics?.analyticalAspect || right?.discovery?.metrics?.analyticalAspect || null;
+    if (
+      leftAspect &&
+      rightAspect &&
+      leftAspect !== rightAspect &&
+      /composed_parallel|parallel_traj/i.test(
+        `${left?.kind || left?.discovery?.kind || ''} ${right?.kind || right?.discovery?.kind || ''}`
+      )
+    ) {
+      continue;
+    }
+    if (substantive.equivalent) {
+      const strong =
+        substantive.reason === 'same_text_and_proof' ||
+        substantive.reason === 'same_semantic_phenomenon' ||
+        substantive.reason === 'same_text_shared_population' ||
+        substantive.reason === 'same_peak_concentration_day' ||
+        substantive.reason === 'same_occurrence_id';
+      if (strong) {
+        destination = stablePublicationId(right);
+        overlapReason = substantive.reason || 'substantive_equivalent';
+        break;
+      }
+      partialDestination = stablePublicationId(right);
+      partialReason = substantive.reason || 'weak_substantive';
+      continue;
+    }
     const relation = relateClaims(candidate.claim, other.claim);
-    return relation === RELATION.EXACT_DUPLICATE || relation === RELATION.REFORMULATION;
-  });
+    if (relation === RELATION.EXACT_DUPLICATE) {
+      destination = stablePublicationId(right);
+      overlapReason = relation;
+      break;
+    }
+    // Reformulation / photo proche : redondance partielle → réserve, pas suppression
+    if (relation === RELATION.REFORMULATION || relation === RELATION.SAME_PHENOMENON_TWO_HORIZONS) {
+      if (!partialDestination) {
+        partialDestination = stablePublicationId(right);
+        partialReason = relation;
+      }
+    }
+  }
+  const redundant = Boolean(destination);
   return {
     intrinsic: base,
     overlap: redundant ? 1 : 0,
-    value: redundant ? 0 : base
+    partialOverlap: !redundant && Boolean(partialDestination) ? 1 : 0,
+    value: redundant ? 0 : partialDestination ? Math.max(0, base - 8) : base,
+    collapsedInto: destination,
+    overlapReason,
+    partialCollapsedInto: partialDestination,
+    partialReason
   };
 }
 
@@ -184,16 +248,42 @@ export function selectCollectively(
   ordered.forEach((row) => {
     const againstAccessible = marginalValue(row, [...priority, ...reserve]);
     if (againstAccessible.overlap === 1) {
+      const dest = againstAccessible.collapsedInto || null;
       suppressed.push({
         ...row,
         marginal: againstAccessible,
-        p6Disposition: 'exact_duplicate_suppressed'
+        p6Disposition: 'exact_duplicate_suppressed',
+        // Mission 28/29 — suppression seulement si équivalence forte + destination
+        collapsedInto: dest,
+        reviewReason: againstAccessible.overlapReason || 'marginal_overlap_1',
+        fusionLineage: dest
+          ? {
+              survivorId: dest,
+              sources: [
+                {
+                  occurrenceId: stablePublicationId(row.discovery || row),
+                  title: row.discovery?.title || row.title || null
+                }
+              ],
+              sourceCount: 1
+            }
+          : null
       });
       return;
     }
     const againstPriority = marginalValue(row, priority);
     const next = { ...row, marginal: againstPriority };
     const kind = String(row?.discovery?.kind || '');
+    // Mission 29 — reformulation : accessible en réserve, pas absorbée
+    if (againstAccessible.partialOverlap === 1 && row.p6Disposition !== 'deepening_of_collective') {
+      reserve.push({
+        ...next,
+        p6Disposition: 'demoted_partial_redundancy',
+        selectionReason: againstAccessible.partialReason || 'partial_redundancy',
+        nearEquivalentOf: againstAccessible.partialCollapsedInto || null
+      });
+      return;
+    }
     // Approfondissements et dispositions secondaires : jamais dans le remplissage prioritaire.
     if (row.p6Disposition === 'deepening_of_collective') {
       reserve.push({ ...next, p6Disposition: 'deepening_of_collective' });
@@ -202,6 +292,61 @@ export function selectCollectively(
     if (/^secondary/.test(String(row.p6Disposition || ''))) {
       reserve.push({ ...next, p6Disposition: row.p6Disposition });
       return;
+    }
+    // Mission 23 — souveraineté mémoire : publicationDecision gouverne la priorité.
+    // newPriorityCard=false → réserve, sauf forcePriority explicite (pertinence éditoriale).
+    const pubDecision =
+      row?.discovery?.metrics?.memory?.publicationDecision ||
+      row?.metrics?.memory?.publicationDecision ||
+      row?.discovery?.memory?.publicationDecision ||
+      null;
+    if (
+      pubDecision &&
+      pubDecision.newPriorityCard === false &&
+      pubDecision.forcePriority !== true
+    ) {
+      const demoted = {
+        ...next,
+        p6Disposition: 'demoted_memory_familiarity',
+        memoryPublicationDecision: pubDecision,
+        selectionReason: pubDecision.reason || 'memory_no_new_priority'
+      };
+      if (demoted.discovery) {
+        demoted.discovery = {
+          ...demoted.discovery,
+          p6Disposition: 'demoted_memory_familiarity',
+          selectionReason: demoted.selectionReason,
+          metrics: {
+            ...(demoted.discovery.metrics || {}),
+            memory: {
+              ...(demoted.discovery.metrics?.memory || {}),
+              publicationDecision: pubDecision,
+              selectionApplied: 'demoted_to_reserve'
+            }
+          }
+        };
+      }
+      reserve.push(demoted);
+      return;
+    }
+    if (pubDecision?.forcePriority === true) {
+      next.selectionReason =
+        pubDecision.forceReason || 'forced_priority_despite_familiarity';
+      next.memoryPublicationDecision = pubDecision;
+      if (next.discovery) {
+        next.discovery = {
+          ...next.discovery,
+          selectionReason: next.selectionReason,
+          metrics: {
+            ...(next.discovery.metrics || {}),
+            memory: {
+              ...(next.discovery.metrics?.memory || {}),
+              publicationDecision: pubDecision,
+              selectionApplied: 'forced_priority'
+            }
+          }
+        };
+      }
     }
     const isMajor =
       STRUCTURAL_MAJOR_RE.test(kind) ||

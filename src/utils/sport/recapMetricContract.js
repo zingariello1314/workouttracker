@@ -158,3 +158,125 @@ export function detectSilentReferentMix({ arcEarlyLate = null, windowMeans = nul
   }
   return { mixed: false };
 }
+
+/**
+ * Mission 30 — population de séances liée aux totaux de fenêtre primaire.
+ * Ne confond jamais l’arc historique (dates / sessions hors fenêtre) avec
+ * l’effectif qui porte windowTotal / meanPerSession.
+ *
+ * @returns {{
+ *   dates: string[],
+ *   sessionCount: number|null,
+ *   source: string,
+ *   referent: string,
+ *   distinctFromArc: boolean
+ * }}
+ */
+export function resolvePrimaryWindowSessionPopulation(metrics = {}) {
+  const m = metrics || {};
+  const ymd = (x) => String(x || '').slice(0, 10);
+  const uniqSort = (arr) =>
+    [...new Set((arr || []).map(ymd).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort();
+
+  const windowDatesFromScope = uniqSort(m.temporalScope?.windowDates || m.windowDates || []);
+  const sessions = Array.isArray(m.sessions) ? m.sessions : [];
+  const inWindowSessions = sessions.filter((s) => s?.inSelectedWindow === true);
+  const hasWindowFlags = sessions.some((s) => s?.inSelectedWindow === true || s?.inSelectedWindow === false);
+  const windowSessionDates = hasWindowFlags
+    ? uniqSort(inWindowSessions.map((s) => s?.date))
+    : [];
+
+  const factSample =
+    m.metricFacts?.windowTotalReps?.sampleSize ??
+    m.metricFacts?.windowMeanPerSession?.sampleSize ??
+    null;
+  const explicitCount = Number(m.sessionCount);
+  const hasExplicit =
+    Number.isFinite(explicitCount) && explicitCount > 0 ? Math.round(explicitCount) : null;
+  const hasFactSample =
+    Number.isFinite(Number(factSample)) && Number(factSample) > 0
+      ? Math.round(Number(factSample))
+      : null;
+
+  if (windowSessionDates.length > 0) {
+    return {
+      dates: windowSessionDates,
+      sessionCount: windowSessionDates.length,
+      source: 'sessions.inSelectedWindow',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      distinctFromArc: true
+    };
+  }
+  if (windowDatesFromScope.length > 0) {
+    return {
+      dates: windowDatesFromScope,
+      sessionCount: windowDatesFromScope.length,
+      source: 'temporalScope.windowDates',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      distinctFromArc: true
+    };
+  }
+  if (hasExplicit != null) {
+    return {
+      dates: uniqSort(m.windowSessionDates || []),
+      sessionCount: hasExplicit,
+      source: 'metrics.sessionCount',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      distinctFromArc: true
+    };
+  }
+  if (hasFactSample != null) {
+    return {
+      dates: uniqSort(m.windowSessionDates || []),
+      sessionCount: hasFactSample,
+      source: 'metricFacts.sampleSize',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      distinctFromArc: true
+    };
+  }
+
+  // Dernier recours : dates plates — peuvent être un arc ; marquées non distinctes.
+  const flatDates = uniqSort([
+    ...(Array.isArray(m.dates) ? m.dates : []),
+    ...(Array.isArray(m.sessionDates) ? m.sessionDates : []),
+    m.date
+  ]);
+  return {
+    dates: flatDates,
+    sessionCount: flatDates.length > 0 ? flatDates.length : null,
+    source: flatDates.length ? 'dates.fallback_possibly_arc' : 'absent',
+    referent: METRIC_REFERENT.PRIMARY_WINDOW,
+    distinctFromArc: false
+  };
+}
+
+/**
+ * Identité algébrique sur un même ensemble : total ≈ mean × sampleSize.
+ * Ne s’applique que lorsque les trois mesures déclarent le même référent / population.
+ */
+export function validateSumMeanSampleConsistency({
+  total = null,
+  mean = null,
+  sampleSize = null,
+  tolerance = 0.51
+} = {}) {
+  const t = Number(total);
+  const mu = Number(mean);
+  const n = Number(sampleSize);
+  if (![t, mu, n].every((x) => Number.isFinite(x) && x > 0)) {
+    return { ok: true, applicable: false, reason: 'insufficient_triple' };
+  }
+  const expected = mu * n;
+  const absGap = Math.abs(t - expected);
+  const ok = absGap <= Math.max(tolerance, Math.abs(mu) * 0.02 * n);
+  return {
+    ok,
+    applicable: true,
+    reason: ok ? 'consistent' : 'sum_mean_sample_mismatch',
+    total: t,
+    mean: mu,
+    sampleSize: n,
+    expectedProduct: expected,
+    absGap
+  };
+}

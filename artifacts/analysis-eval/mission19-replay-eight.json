@@ -1,27 +1,46 @@
 {
-  "schema": "momentum.m19ReplayEight.v1",
-  "generatedAt": "2026-11-21T23:29:27.730Z",
-  "mission": "Mission 20",
-  "edition": "p6-sovereign-v19",
-  "editionKey": "audit=normalized-export-v5;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v5;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v19;fingerprint=exercise-weights-v3;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v1;identity=discovery-occurrence-v1;matching=session-slot-v3;narrativeAuthority=thesis-composition-v2;populations=canonical-populations-v1;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;sleep=association-prose-v4;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "schema": "momentum.m21ReplayEight.v1",
+  "generatedAt": "2026-11-22T13:22:15.179Z",
+  "mission": "Mission 22",
+  "edition": "p6-sovereign-v21",
+  "editionKey": "audit=normalized-export-v7;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v21;facts=shared-facts-v2;fingerprint=multi-source-v4;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v1;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v2;narrativeAuthority=thesis-composition-v2;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;sleep=association-prose-v4;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
   "backupPath": "C:\\Users\\zinga\\Desktop\\momentum\\artifacts\\analysis-eval\\snapshots\\momentum-sport-backup-2026-11-21.json",
   "end": "2026-11-21",
   "firstDate": "2026-01-05",
   "fingerprint": {
-    "version": 3,
+    "version": 4,
     "repKeys": 795,
     "checkedKeys": 801,
     "weightKeys": 573,
     "setLogKeys": 594,
     "durationKeys": 0,
+    "gtgSyncDays": 6,
+    "challengeKeys": 1,
+    "programId": "default-program",
+    "garminSleepDays": 398,
     "totalReps": 33647,
-    "digest": "86e56d2a",
+    "digest": "4195b361",
     "firstRepKey": "2026-01-05_101",
     "lastRepKey": "2026-11-20_981046524",
     "sources": {
       "weightsField": "exerciseWeights",
-      "setLogsField": "exerciseSetLogs"
+      "setLogsField": "exerciseSetLogs",
+      "gtgField": "enduranceData.gtg",
+      "programField": "activeProgram|programs[0]"
     }
+  },
+  "environment": {
+    "exerciseBank": {
+      "source": "src/data/exerciseDatabase.js",
+      "keyCount": 1374,
+      "digest": "fee896a6"
+    },
+    "nameResolver": "journal+program+exerciseDatabase",
+    "matching": "session-slot-v3",
+    "populations": "canonical-populations-v2",
+    "facts": "shared-facts-v2",
+    "memory": "persistent-vertical-v2",
+    "gtg": "classic-exclusive-v1"
   },
   "sources": {
     "hasReps": true,
@@ -132,8 +151,8 @@
         },
         {
           "id": "classic_session_catalog",
-          "value": 3966,
-          "days": 16,
+          "value": 3881,
+          "days": 12,
           "definition": "Renforcement classique (hors complémentaire)"
         },
         {
@@ -185,12 +204,7 @@
         "complementary": 200,
         "enduranceUnsynced": 200,
         "gtgDeducted": 85,
-        "catalogOnlyDays": [
-          "2026-10-01",
-          "2026-10-03",
-          "2026-10-06",
-          "2026-10-15"
-        ],
+        "catalogOnlyDays": [],
         "strengthOnlyDays": []
       }
     },
@@ -230,7 +244,7 @@
           "gtgStillInRawPath": 0,
           "catalogOnlyDays": []
         },
-        "note": "Population familles = catalogue lifetime hors complementary ; jours GTG-only restent inclus côté catalogue"
+        "note": "Population familles = catalogue lifetime hors complementary et hors GTG syncé (classicExclusive à la source)"
       }
     ],
     "identityCheck": {
@@ -250,7 +264,7 @@
         "start": "2026-11-21",
         "end": "2026-11-21"
       },
-      "ms": 3405,
+      "ms": 5654,
       "counts": {
         "all": 8,
         "selected": 5,
@@ -275,12 +289,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|pending_session|text:la séance d'aujourd'hui n'est pas encore commencée|aujourd'hui, tu n'as encore rien coché (0 répétition). ce n'est pas un jour vide d'analyse : c'est une séance en attente",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -292,6 +312,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|peak_concentration|2026-11-20",
           "confirmationDates": null,
           "dates": [
             "20 novembre 2026"
@@ -300,6 +321,17 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 3,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "sharePct",
+              "value": 19.6,
+              "unit": "percent"
+            }
+          ],
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -311,12 +343,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -328,6 +366,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 50,0 % de tes jambes, contre 96 reps ",
           "confirmationDates": null,
           "dates": [
             "2026-10-30",
@@ -339,6 +378,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -350,12 +394,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|pending_context|text:en attendant la séance, ta semaine récente a déjà une forme|les 7 derniers jours représentent 4 séances, 1 340 répétitions et 9 min chronométrées sur les défis (durée hors course p",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         }
@@ -366,28 +416,29 @@
         "start": "2026-11-15",
         "end": "2026-11-21"
       },
-      "ms": 2989,
+      "ms": 5254,
       "counts": {
-        "all": 62,
+        "all": 63,
         "selected": 11,
-        "accessible": 62,
+        "accessible": 63,
         "collective": 1,
         "monthlyFamily": 1,
         "variantMix": 0
       },
       "reconciliationDelta": {
-        "selectedMinusAccessible": -51,
-        "allMinusSelected": 51
+        "selectedMinusAccessible": -52,
+        "allMinusSelected": 52
       },
       "collectives": [
         {
           "kind": "disc_collective_return",
           "title": "La reprise collective se confirme cette semaine",
-          "body": "La reprise de cette composante de tes séances, commencée le 11 novembre 2026 après environ 4 semaines d’interruption, se confirme le 18 novembre 2026 : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice.",
+          "body": "La reprise de cette composante de tes séances, commencée le 11 novembre 2026 après environ 4 semaines d’interruption, se confirme le 18 novembre 2026 : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice.",
           "readingMode": "confirmation",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -428,7 +479,24 @@
             "unevaluable": []
           },
           "compositionSlice": "La reprise de cette composante de tes séances, commencée le 2026-11-11 après environ 4 semaines d’interruption, se confirme le 2026-11-18 : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes ps",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -437,17 +505,69 @@
         {
           "kind": "disc_program_family_volume_decomposition",
           "title": "La baisse de volume se lit dans la composition des familles de séances",
-          "body": "Le volume classique passe de 1996 à 1240 répétitions. Les journées de renforcement classique passent de 6 à 4. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio : Δ -682 reps (effet fréquence -682, effet contenu +0). Résidu non attribué (période récente) : 814 reps.",
+          "body": "Le volume classique passe de 1996 à 1240 répétitions. Les journées de renforcement classique passent de 6 à 4. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio : Δ -682 reps (effet fréquence -682, effet contenu +0). Autres familles (hors top) : -74 reps (exact). Résidu non attribué (période récente) : 814 reps (66 % du volume).",
           "readingMode": null,
           "thesis": "program_family_volume_decomposition",
           "narrativeAuthority": "composition",
           "episodeId": null,
+          "phenomenonId": "program_family_volume|classic_session_catalog|2026-11-15|2026-11-21",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "Le volume classique passe de 1996 à 1240 répétitions. Les journées de renforcement classique passent de 6 à 4. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio : Δ -682 reps (effet fréquence -682,",
-          "observedCount": 6,
+          "observedCount": 14,
+          "sharedFactCount": 8,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "recognizedVolumeShareRecent",
+              "value": 34,
+              "unit": "pct"
+            },
+            {
+              "id": "recognizedSessionShareRecent",
+              "value": 25,
+              "unit": "pct"
+            },
+            {
+              "id": "unattributedVolumeShareRecent",
+              "value": 66,
+              "unit": "pct"
+            },
+            {
+              "id": "partitionCoverageShareRecent",
+              "value": 100,
+              "unit": "pct"
+            },
+            {
+              "id": "structurallyRecognizedSessionShareRecent",
+              "value": 0,
+              "unit": "pct"
+            },
+            {
+              "id": "probablyRelatedSessionShareRecent",
+              "value": 25,
+              "unit": "pct"
+            },
+            {
+              "id": "historicallyDocumentedShareRecent",
+              "value": 0,
+              "unit": "pct"
+            },
+            {
+              "id": "contributionReconciliationGap",
+              "value": 0,
+              "unit": "reps"
+            },
+            {
+              "id": "proseRemainderExact",
+              "value": -74,
+              "unit": "reps"
+            }
+          ],
+          "contributionCount": 3,
+          "conclusionScope": "full_training",
           "informativeValue": 90,
           "p6Disposition": null
         }
@@ -457,11 +577,12 @@
         {
           "kind": "disc_collective_return",
           "title": "La reprise collective se confirme cette semaine",
-          "body": "La reprise de cette composante de tes séances, commencée le 2026-11-11 après environ 4 semaines d’interruption, se confirme le 2026-11-18 : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice.",
+          "body": "La reprise de cette composante de tes séances, commencée le 2026-11-11 après environ 4 semaines d’interruption, se confirme le 2026-11-18 : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice.",
           "readingMode": "confirmation",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -502,7 +623,24 @@
             "unevaluable": []
           },
           "compositionSlice": "La reprise de cette composante de tes séances, commencée le 2026-11-11 après environ 4 semaines d’interruption, se confirme le 2026-11-18 : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes ps",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -514,12 +652,34 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:nested_window_same_exercises|composed_relative_concentration|1340",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 9,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "sharePct:Élévations latérales",
+              "value": 50,
+              "unit": "percent"
+            },
+            {
+              "id": "sharePct:Face pull",
+              "value": 50,
+              "unit": "percent"
+            },
+            {
+              "id": "sharePct:Bent-Arm Lateral Dumbbell Raise",
+              "value": 50,
+              "unit": "percent"
+            }
+          ],
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -531,12 +691,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -548,12 +714,24 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_variant|text:deux séances apparentées redistribuent un socle commun|les créneaux « street workout + endurance fondamentale » et « street workout + cardio » sont apparentées : elles partage",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "sharedMoves",
+              "value": 8,
+              "unit": "count"
+            }
+          ],
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -565,6 +743,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|peak_concentration|2026-11-18",
           "confirmationDates": null,
           "dates": [
             "18 novembre 2026"
@@ -573,6 +752,17 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 3,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "sharePct",
+              "value": 31.8,
+              "unit": "percent"
+            }
+          ],
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -584,6 +774,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-11-16,2026-11-17,2026-11-18|volume_shape|1340",
           "confirmationDates": null,
           "dates": [
             "2026-11-16",
@@ -595,6 +786,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -606,6 +802,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:mollets debout|family_fade|text:mollets debout s'efface de tes jambes|mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. aucune",
           "confirmationDates": null,
           "dates": [
             "2026-09-29",
@@ -615,6 +812,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -626,6 +828,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|peak_concentration|2026-11-16",
           "confirmationDates": null,
           "dates": [
             "2026-11-16",
@@ -637,6 +840,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -648,12 +856,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|stimulus_mix|text:la structure du travail de ces 7 jours se lit dans les parts classifiables|ces 7 jours répartissent 1 340 reps identifiées ainsi : 60,4 % de mouvements polyarticulaires contre 39,6 % d'isolation,",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -665,12 +879,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|rhythm_streak|text:3 jours de renforcement consécutifs|sur la période, la plus longue série de journées avec répétitions de renforcement atteint 3 jours calendaires d’affilée ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -682,12 +902,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|exercise_base|text:le socle hebdomadaire n’est pas le même que ce qui structure une séance|les mouvements les plus répétés ces 7 jours (pompes (endurance) 100, relevés de genoux à la barre 60, élévations latéral",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         }
@@ -698,28 +924,29 @@
         "start": "2026-10-23",
         "end": "2026-11-21"
       },
-      "ms": 3537,
+      "ms": 7296,
       "counts": {
-        "all": 88,
+        "all": 89,
         "selected": 11,
-        "accessible": 88,
+        "accessible": 89,
         "collective": 1,
         "monthlyFamily": 1,
         "variantMix": 0
       },
       "reconciliationDelta": {
-        "selectedMinusAccessible": -77,
-        "allMinusSelected": 77
+        "selectedMinusAccessible": -78,
+        "allMinusSelected": 78
       },
       "collectives": [
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -760,7 +987,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -769,17 +1013,69 @@
         {
           "kind": "disc_program_family_volume_decomposition",
           "title": "La hausse de volume se lit dans la composition des familles de séances",
-          "body": "Le volume classique passe de 3966 à 5803 répétitions. Les journées de renforcement classique passent de 16 à 18. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 reps ; effet fréquence +1950, effet contenu -204) ; Pectoraux / Triceps / Épaules / Triceps- Épaules est plus fréquente (1→2 j, Δ 428 reps ; effet fréquence +424, effet contenu +4) ; non attribué est moins fréquente (14→10 j, Δ -336 reps ; effet fréquence -900, effet contenu +570). Résidu non attribué (période récente) : 2816 reps.",
+          "body": "Le volume classique passe de 3881 à 5803 répétitions. Les journées de renforcement classique passent de 12 à 18. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 reps ; effet fréquence +1950, effet contenu -204). Autres familles (hors top) : +177 reps (exact). Résidu non attribué (période récente) : 2816 reps (49 % du volume).",
           "readingMode": null,
           "thesis": "program_family_volume_decomposition",
           "narrativeAuthority": "composition",
           "episodeId": null,
+          "phenomenonId": "program_family_volume|classic_session_catalog|2026-10-23|2026-11-21",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
-          "compositionSlice": "Le volume classique passe de 3966 à 5803 répétitions. Les journées de renforcement classique passent de 16 à 18. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 ",
-          "observedCount": 6,
+          "compositionSlice": "Le volume classique passe de 3881 à 5803 répétitions. Les journées de renforcement classique passent de 12 à 18. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 ",
+          "observedCount": 14,
+          "sharedFactCount": 8,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "recognizedVolumeShareRecent",
+              "value": 51,
+              "unit": "pct"
+            },
+            {
+              "id": "recognizedSessionShareRecent",
+              "value": 44,
+              "unit": "pct"
+            },
+            {
+              "id": "unattributedVolumeShareRecent",
+              "value": 49,
+              "unit": "pct"
+            },
+            {
+              "id": "partitionCoverageShareRecent",
+              "value": 100,
+              "unit": "pct"
+            },
+            {
+              "id": "structurallyRecognizedSessionShareRecent",
+              "value": 0,
+              "unit": "pct"
+            },
+            {
+              "id": "probablyRelatedSessionShareRecent",
+              "value": 44,
+              "unit": "pct"
+            },
+            {
+              "id": "historicallyDocumentedShareRecent",
+              "value": 0,
+              "unit": "pct"
+            },
+            {
+              "id": "contributionReconciliationGap",
+              "value": 0,
+              "unit": "reps"
+            },
+            {
+              "id": "proseRemainderExact",
+              "value": 177,
+              "unit": "reps"
+            }
+          ],
+          "contributionCount": 3,
+          "conclusionScope": "full_training",
           "informativeValue": 90,
           "p6Disposition": null
         }
@@ -789,11 +1085,12 @@
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -834,7 +1131,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -846,12 +1160,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -863,12 +1183,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:strength_positive_reps_days|composed_volume_decomp|text:le volume suit surtout ta fréquence|les 30 jours d'avant : 4 281 répétitions en 12 journées de renforcement (≈357 / journée). ces 30 jours : 6 403 répétitio",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "les 30 jours d'avant : 4 281 répétitions en 12 journées de renforcement (≈357 / journée). ces 30 jours : 6 403 répétitions en 18 journées de renforcement (≈356 / journée). Écart total +49.6 % — contribution fréquence +2 137, contenu −15. La",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 88,
           "p6Disposition": "autonomous"
         },
@@ -880,29 +1206,93 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_variant|text:deux séances apparentées redistribuent un socle commun|les créneaux « street workout + endurance fondamentale » et « street workout + cardio » sont apparentées : elles partage",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "sharedMoves",
+              "value": 8,
+              "unit": "count"
+            }
+          ],
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
         {
           "kind": "disc_program_family_volume_decomposition",
           "title": "La hausse de volume se lit dans la composition des familles de séances",
-          "body": "Le volume classique passe de 3966 à 5803 répétitions. Les journées de renforcement classique passent de 16 à 18. Principaux contributeurs: street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 reps; effet fréquence +1950, effet contenu -204); pectoraux / Triceps / Épaules / Triceps- Épaules est plus fréquente (1→2 j, Δ 428 reps; effet fréquence +424, effet contenu +4); non attribué est moins fréquente (14→10 j, Δ -336 reps; effet fréquence -900, effet contenu +570). Résidu non attribué (période récente): 2816 reps.",
+          "body": "Le volume classique passe de 3881 à 5803 répétitions. Les journées de renforcement classique passent de 12 à 18. Principaux contributeurs: street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 reps; effet fréquence +1950, effet contenu -204). Autres familles (hors top): +177 reps (exact). Résidu non attribué (période récente): 2816 reps (49 % du volume).",
           "readingMode": null,
           "thesis": "program_family_volume_decomposition",
           "narrativeAuthority": "composition",
           "episodeId": null,
+          "phenomenonId": "program_family_volume|classic_session_catalog|2026-10-23|2026-11-21",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
-          "compositionSlice": "Le volume classique passe de 3966 à 5803 répétitions. Les journées de renforcement classique passent de 16 à 18. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 ",
-          "observedCount": 6,
+          "compositionSlice": "Le volume classique passe de 3881 à 5803 répétitions. Les journées de renforcement classique passent de 12 à 18. Principaux contributeurs : Street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (1→6 j, Δ 1745 ",
+          "observedCount": 14,
+          "sharedFactCount": 8,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "recognizedVolumeShareRecent",
+              "value": 51,
+              "unit": "pct"
+            },
+            {
+              "id": "recognizedSessionShareRecent",
+              "value": 44,
+              "unit": "pct"
+            },
+            {
+              "id": "unattributedVolumeShareRecent",
+              "value": 49,
+              "unit": "pct"
+            },
+            {
+              "id": "partitionCoverageShareRecent",
+              "value": 100,
+              "unit": "pct"
+            },
+            {
+              "id": "structurallyRecognizedSessionShareRecent",
+              "value": 0,
+              "unit": "pct"
+            },
+            {
+              "id": "probablyRelatedSessionShareRecent",
+              "value": 44,
+              "unit": "pct"
+            },
+            {
+              "id": "historicallyDocumentedShareRecent",
+              "value": 0,
+              "unit": "pct"
+            },
+            {
+              "id": "contributionReconciliationGap",
+              "value": 0,
+              "unit": "reps"
+            },
+            {
+              "id": "proseRemainderExact",
+              "value": 177,
+              "unit": "reps"
+            }
+          ],
+          "contributionCount": 3,
+          "conclusionScope": "full_training",
           "informativeValue": 90,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -914,12 +1304,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:mollets debout|th_repertoire|0,200,200",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -931,12 +1327,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|gtg_unplanned_role|0",
           "confirmationDates": null,
           "dates": [],
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -948,12 +1350,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "grp:biceps|muscle_exposure_shift|text:biceps : davantage de jours d’exposition qu’en période précédente|sur deux fenêtres comparables de 18+ jours d’activité (23 septembre 2026→22 octobre 2026 puis 23 octobre 2026→21 novembr",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 5,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -965,12 +1373,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|repertoire|6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -982,6 +1396,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-24,2026-10-26,2026-10-27|volume_shape|6403",
           "confirmationDates": null,
           "dates": [
             "2026-10-24",
@@ -1007,6 +1422,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -1018,12 +1438,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|ratio_structure|text:la structure du mois se lit dans les ratios, pas seulement dans le total|ces 30 jours : poussée/tirage 58,7 % / 18,9 %, bas du corps 8,3 % du volume identifié, densité non calculable (durée sur",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         }
@@ -1034,7 +1460,7 @@
         "start": "2026-08-22",
         "end": "2026-11-21"
       },
-      "ms": 5093,
+      "ms": 8966,
       "counts": {
         "all": 102,
         "selected": 11,
@@ -1051,11 +1477,12 @@
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -1096,7 +1523,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -1112,12 +1556,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1129,23 +1579,30 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_arc|6403,3625,6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -1186,7 +1643,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1198,12 +1672,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "grp:chest|muscle_exposure_shift|text:pectoraux : moins de jours d’exposition qu’en période précédente|sur deux fenêtres comparables de 47+ jours d’activité (22 mai 2026→21 août 2026 puis 22 août 2026→21 novembre 2026), les",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 5,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1215,12 +1695,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|th_pushPull|4709,1794",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 3,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1232,12 +1718,24 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|th_continuity|44.7,6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 3,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": [
+            {
+              "id": "sharePct",
+              "value": 44.7,
+              "unit": "percent"
+            }
+          ],
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1249,6 +1747,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "ex:2001195533|ms_first_exercise|text:première apparition : exercice #2001195533|première apparition de exercice #2001195533 dans ton historique. ils représentent déjà 14 % de ton volume de séance ce j",
           "confirmationDates": null,
           "dates": [
             "2026-11-01"
@@ -1257,6 +1756,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1268,12 +1772,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|ratio_structure|text:la structure de la période se lit dans les ratios, pas seulement dans le total|cette période : poussée/tirage 59,6 % / 22,7 %, bas du corps 5,8 % du volume identifié, densité non calculable (durée su",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1285,6 +1795,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-01,2026-10-01,2026-10-01|gtg_unplanned_role|4",
           "confirmationDates": null,
           "dates": [
             "2026-10-01",
@@ -1304,25 +1815,36 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
         {
           "kind": "disc_ms_sessions",
           "title": "100e séance enregistrée",
-          "body": "Le 9 novembre 2026, la 100e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 29 300 répétitions ont été accumulées pour y parvenir, soit environ 293 répétitions par séance. La date est celle du franchissement, dans la fenêtre affichée.",
+          "body": "Le 10 novembre 2026, la 100e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 29 490 répétitions ont été accumulées pour y parvenir, soit environ 295 répétitions par séance. La date est celle du franchissement, dans la fenêtre affichée.",
           "readingMode": null,
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:100e séance enregistrée|ms_sessions|text:100e séance enregistrée|le 10 novembre 2026, la 100e séance enregistrée est franchie. le jalon n'est pas un compteur isolé : 29 490 répétitions ",
           "confirmationDates": null,
           "dates": [
-            "2026-11-09"
+            "2026-11-10"
           ],
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -1334,12 +1856,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:strength_positive_reps_days|composed_volume_decomp|text:volume en baisse, journées actives plus chargées|la période précédente de même durée : 18 472 répétitions en 61 journées de renforcement (≈303 / journée). cette période ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "la période précédente de même durée : 18 472 répétitions en 61 journées de renforcement (≈303 / journée). cette période : 14 309 répétitions en 42 journées de renforcement (≈341 / journée). Écart total -22.5 % — contribution fréquence −6 11",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 88,
           "p6Disposition": "promoted_over_cap"
         }
@@ -1350,7 +1878,7 @@
         "start": "2026-05-23",
         "end": "2026-11-21"
       },
-      "ms": 5394,
+      "ms": 10800,
       "counts": {
         "all": 119,
         "selected": 11,
@@ -1367,11 +1895,12 @@
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -1412,7 +1941,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -1428,12 +1974,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|monthly_volume_arc|text:octobre 2026 interrompt la baisse depuis juin 2026 ; novembre 2026 confirme|juin 2026 : 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1445,12 +1997,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|th_rhythm|text:les deux moitiés de ces six mois n'ont pas le même volume|le bloc mai 2026 – août 2026 compte 18 250 répétitions en 60 jours, et le bloc août 2026 – novembre 2026 en compte 14 30",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 4,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1462,12 +2020,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1479,23 +2043,30 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_arc|6403,3625,6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -1536,7 +2107,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1548,12 +2136,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|th_pushPull|12510,4965",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 3,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1565,6 +2159,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "ex:2001195533|ms_first_exercise|text:première apparition : exercice #2001195533|première apparition de exercice #2001195533 dans ton historique. ils représentent déjà 14 % de ton volume de séance ce j",
           "confirmationDates": null,
           "dates": [
             "2026-11-01"
@@ -1573,6 +2168,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1584,6 +2184,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-01,2026-10-01,2026-10-01|gtg_unplanned_role|4",
           "confirmationDates": null,
           "dates": [
             "2026-10-01",
@@ -1603,6 +2204,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1614,6 +2220,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:50e séance enregistrée|ms_sessions|text:50e séance enregistrée|le 27 juillet 2026, la 50e séance enregistrée est franchie. le jalon n'est pas un compteur isolé : 14 259 répétitions on",
           "confirmationDates": null,
           "dates": [
             "2026-07-27"
@@ -1622,6 +2229,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -1633,12 +2245,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|composed_load_phase|text:phase collective d’augmentation de charge|5 hausses de charge sur 4 exercices distincts (changements observés 28 juillet 2026–1 août 2026) : curl marteau (7 → 8 k",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "5 hausses de charge sur 4 exercices distincts (Changements observés 2026-07-28–2026-08-01) : Curl marteau (7 → 8 kg, 2 hausses), Curl Zottman (5 → 6 kg), Développé militaire unilatéral (7 → 8 kg), Oiseaux (3 → 4 kg). Pour la majorité, le fo",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 90,
           "p6Disposition": "promoted_over_cap"
         },
@@ -1650,12 +2268,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:strength_positive_reps_days|composed_volume_decomp|text:le volume suit surtout ta fréquence|la période précédente de même durée : 1 480 répétitions en 6 journées de renforcement (≈247 / journée). ces derniers moi",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "la période précédente de même durée : 1 480 répétitions en 6 journées de renforcement (≈247 / journée). ces derniers mois : 32 559 répétitions en 102 journées de renforcement (≈319 / journée). Écart total +2099.9 % — contribution fréquence ",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 88,
           "p6Disposition": "promoted_over_cap"
         }
@@ -1666,7 +2290,7 @@
         "start": "2025-11-22",
         "end": "2026-11-21"
       },
-      "ms": 6141,
+      "ms": 11110,
       "counts": {
         "all": 113,
         "selected": 11,
@@ -1683,11 +2307,12 @@
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -1728,7 +2353,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -1744,12 +2386,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|monthly_volume_arc|text:octobre 2026 interrompt la baisse depuis juin 2026 ; novembre 2026 confirme|juin 2026 : 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1761,12 +2409,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1778,23 +2432,30 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_arc|6403,3625,6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -1835,7 +2496,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1847,12 +2525,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:activity|th_pushPull|13215,5288",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 3,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1864,6 +2548,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "ex:2001195533|ms_first_exercise|text:première apparition : exercice #2001195533|première apparition de exercice #2001195533 dans ton historique. ils représentent déjà 14 % de ton volume de séance ce j",
           "confirmationDates": null,
           "dates": [
             "2026-11-01"
@@ -1872,6 +2557,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1883,12 +2573,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|ratio_structure|text:la structure de l'année se lit dans les ratios, pas seulement dans le total|cette année : poussée/tirage 58,8 % / 23,5 %, bas du corps 5,6 % du volume identifié, densité non calculable (durée surt",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1900,6 +2596,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-01,2026-10-01,2026-10-01|gtg_unplanned_role|4",
           "confirmationDates": null,
           "dates": [
             "2026-10-01",
@@ -1919,6 +2616,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -1930,6 +2632,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:50e séance enregistrée|ms_sessions|text:50e séance enregistrée|le 27 juillet 2026, la 50e séance enregistrée est franchie. le jalon n'est pas un compteur isolé : 14 259 répétitions on",
           "confirmationDates": null,
           "dates": [
             "2026-07-27"
@@ -1938,6 +2641,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -1949,6 +2657,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:le mix d'entraînement a changé de profil|ms_mix_shift|text:le mix d'entraînement a changé de profil|sur l'année, la poussée est passée de 35 % à 18 % du volume, au profit du tirage (22 % → 12 %). ce n'est plus une semain",
           "confirmationDates": null,
           "dates": [
             "2026-11-21"
@@ -1957,6 +2666,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -1968,12 +2682,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|composed_load_phase|text:phase collective d’augmentation de charge|5 hausses de charge sur 4 exercices distincts (changements observés 28 juillet 2026–1 août 2026) : curl marteau (7 → 8 k",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "5 hausses de charge sur 4 exercices distincts (Changements observés 2026-07-28–2026-08-01) : Curl marteau (7 → 8 kg, 2 hausses), Curl Zottman (5 → 6 kg), Développé militaire unilatéral (7 → 8 kg), Oiseaux (3 → 4 kg). Pour la majorité, le fo",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 90,
           "p6Disposition": "promoted_over_cap"
         }
@@ -1984,7 +2704,7 @@
         "start": "2024-11-22",
         "end": "2026-11-21"
       },
-      "ms": 7078,
+      "ms": 12259,
       "counts": {
         "all": 108,
         "selected": 11,
@@ -2001,11 +2721,12 @@
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -2046,7 +2767,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -2062,12 +2800,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|monthly_volume_arc|text:octobre 2026 interrompt la baisse depuis juin 2026 ; novembre 2026 confirme|juin 2026 : 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2079,12 +2823,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2096,23 +2846,30 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_arc|6403,3625,6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -2153,7 +2910,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2165,6 +2939,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "ex:2001195533|ms_first_exercise|text:première apparition : exercice #2001195533|première apparition de exercice #2001195533 dans ton historique. ils représentent déjà 14 % de ton volume de séance ce j",
           "confirmationDates": null,
           "dates": [
             "2026-11-01"
@@ -2173,6 +2948,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2184,12 +2964,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|ratio_structure|text:la structure de ces deux années se lit dans les ratios, pas seulement dans le total|ces deux années : poussée/tirage 58,8 % / 23,5 %, bas du corps 5,6 % du volume identifié, densité non calculable (durée ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2201,12 +2987,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_profile|text:ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil|sur le trimestre, tu as réalisé 14 309 répétitions, dont environ 2 047 pectoraux, environ 1 259 épaules, environ 1 403 t",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2218,6 +3010,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-01,2026-10-01,2026-10-01|gtg_unplanned_role|4",
           "confirmationDates": null,
           "dates": [
             "2026-10-01",
@@ -2237,6 +3030,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2248,6 +3046,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:50e séance enregistrée|ms_sessions|text:50e séance enregistrée|le 27 juillet 2026, la 50e séance enregistrée est franchie. le jalon n'est pas un compteur isolé : 14 259 répétitions on",
           "confirmationDates": null,
           "dates": [
             "2026-07-27"
@@ -2256,6 +3055,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -2267,6 +3071,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-01,2026-10-01,2026-10-01|gtg_unplanned|text:certains jours, le grease the groove ne tient que par un passage hors planning|12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. cela fait environ 6 reps par série. les 1",
           "confirmationDates": null,
           "dates": [
             "2026-10-01",
@@ -2286,6 +3091,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -2297,12 +3107,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|composed_load_phase|text:phase collective d’augmentation de charge|5 hausses de charge sur 4 exercices distincts (changements observés 28 juillet 2026–1 août 2026) : curl marteau (7 → 8 k",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "5 hausses de charge sur 4 exercices distincts (Changements observés 2026-07-28–2026-08-01) : Curl marteau (7 → 8 kg, 2 hausses), Curl Zottman (5 → 6 kg), Développé militaire unilatéral (7 → 8 kg), Oiseaux (3 → 4 kg). Pour la majorité, le fo",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 90,
           "p6Disposition": "promoted_over_cap"
         }
@@ -2313,7 +3129,7 @@
         "start": "2026-01-05",
         "end": "2026-11-21"
       },
-      "ms": 5516,
+      "ms": 11477,
       "counts": {
         "all": 109,
         "selected": 11,
@@ -2330,11 +3146,12 @@
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 11 novembre 2026, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (18 novembre 2026) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -2375,7 +3192,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": null
         }
@@ -2391,12 +3225,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|monthly_volume_arc|text:octobre 2026 interrompt la baisse depuis juin 2026 ; novembre 2026 confirme|juin 2026 : 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026 : 3 704 reps en 12 jours (≈309 / jour ",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2408,12 +3248,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "pop:programmed_structure|session_family_structure|text:ton programme s'organise en 3 familles de séances apparentées|le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait appara",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 2,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2425,23 +3271,30 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_arc|6403,3625,6403",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 6,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
         {
           "kind": "disc_collective_return",
           "title": "Une composante de ton entraînement se réinstalle",
-          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : shoulders, back, triceps, chest, core — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
+          "body": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #1250363242, Exercice #1599606959, Exercice #1735485569, Exercice #369862756. Les groupes musculaires documentés pour ces mouvements : épaules, dos, triceps, pectoraux, gainage — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 28 à 28 jours. 9 mouvements retrouvent un volume proche de leur niveau antérieur (Élévations latérales, Face pull, Extension triceps debout avec haltère…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Les séances ultérieures (2026-11-18) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.",
           "readingMode": "return",
           "thesis": "collective_return",
           "narrativeAuthority": "composition",
-          "episodeId": "return_episode|2026-11-11",
+          "episodeId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+          "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
           "confirmationDates": [
             "2026-11-18"
           ],
@@ -2482,7 +3335,24 @@
             "unevaluable": []
           },
           "compositionSlice": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-planche, Exercice #125",
-          "observedCount": 36,
+          "observedCount": 66,
+          "sharedFactCount": 21,
+          "memory": {
+            "state": "confirmed_once",
+            "previousState": null,
+            "transition": "new",
+            "knownAt": "2026-11-21",
+            "knowledgeCutoff": "2026-11-21",
+            "publicationDecision": {
+              "transition": "new",
+              "newPriorityCard": true,
+              "reason": "transformation"
+            },
+            "exposureCounted": false
+          },
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 96,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2494,6 +3364,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "ex:2001195533|ms_first_exercise|text:première apparition : exercice #2001195533|première apparition de exercice #2001195533 dans ton historique. ils représentent déjà 14 % de ton volume de séance ce j",
           "confirmationDates": null,
           "dates": [
             "2026-11-01"
@@ -2502,6 +3373,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2513,12 +3389,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|ratio_structure|text:la structure du parcours se lit dans les ratios, pas seulement dans le total|l’ensemble du suivi : poussée/tirage 58,8 % / 23,5 %, bas du corps 5,6 % du volume identifié, densité non calculable (du",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2530,12 +3412,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|quarter_profile|text:ton entraînement actuel n'est pas seulement plus ou moins volumineux : il devient identifiable par son profil|sur le trimestre, tu as réalisé 14 309 répétitions, dont environ 2 047 pectoraux, environ 1 259 épaules, environ 1 403 t",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2547,6 +3435,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "dates:2026-10-01,2026-10-01,2026-10-01|gtg_unplanned_role|4",
           "confirmationDates": null,
           "dates": [
             "2026-10-01",
@@ -2566,6 +3455,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "promoted_over_legacy"
         },
@@ -2577,6 +3471,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:50e séance enregistrée|ms_sessions|text:50e séance enregistrée|le 27 juillet 2026, la 50e séance enregistrée est franchie. le jalon n'est pas un compteur isolé : 14 259 répétitions on",
           "confirmationDates": null,
           "dates": [
             "2026-07-27"
@@ -2585,6 +3480,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -2596,6 +3496,7 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "name:le mix d'entraînement a changé de profil|ms_mix_shift|text:le mix d'entraînement a changé de profil|sur l'année, la poussée est passée de 35 % à 18 % du volume, au profit du tirage (22 % → 12 %). ce n'est plus une semain",
           "confirmationDates": null,
           "dates": [
             "2026-11-21"
@@ -2604,6 +3505,11 @@
           "episodeQual": null,
           "compositionSlice": null,
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": null,
           "p6Disposition": "autonomous"
         },
@@ -2615,12 +3521,18 @@
           "thesis": null,
           "narrativeAuthority": "claim",
           "episodeId": null,
+          "phenomenonId": "period:global|composed_load_phase|text:phase collective d’augmentation de charge|5 hausses de charge sur 4 exercices distincts (changements observés 28 juillet 2026–1 août 2026) : curl marteau (7 → 8 k",
           "confirmationDates": null,
           "dates": null,
           "namedCount": 0,
           "episodeQual": null,
           "compositionSlice": "5 hausses de charge sur 4 exercices distincts (Changements observés 2026-07-28–2026-08-01) : Curl marteau (7 → 8 kg, 2 hausses), Curl Zottman (5 → 6 kg), Développé militaire unilatéral (7 → 8 kg), Oiseaux (3 → 4 kg). Pour la majorité, le fo",
           "observedCount": 0,
+          "sharedFactCount": 0,
+          "memory": null,
+          "attributionObserved": null,
+          "contributionCount": null,
+          "conclusionScope": null,
           "informativeValue": 90,
           "p6Disposition": "promoted_over_cap"
         }

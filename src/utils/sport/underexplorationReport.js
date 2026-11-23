@@ -251,8 +251,24 @@ export function buildUnderexplorationReport({
     reviewDecisions
   });
 
+  const lifecycleLanes = {
+    data_unavailable: impossible.filter((x) => x.reason === 'no_data').length,
+    relation_not_applicable: abstentions.length,
+    applicable_never_executed: coverageMatrix.summary.neverTested,
+    explored_no_conclusion:
+      coverageMatrix.summary.testedNonConclusive + coverageMatrix.summary.dataPresentNotElevated,
+    hypothesis_rejected_insufficient_proof: impossible.filter(
+      (x) => x.reason === 'method_unavailable'
+    ).length,
+    conclusion_produced: coverageMatrix.summary.testedWithCandidate,
+    validated_not_selected: coverageMatrix.rows.filter(
+      (r) => r.status === 'candidate_kind_present_not_elevated'
+    ).length,
+    published: coverageMatrix.rows.reduce((n, r) => n + (r.conclusions?.length || 0), 0)
+  };
+
   return {
-    schema: 'momentum.underexplorationReport.v2',
+    schema: 'momentum.underexplorationReport.v3',
     voiceKey,
     underExplored,
     impossible,
@@ -260,15 +276,23 @@ export function buildUnderexplorationReport({
     abstentions,
     pass4Decisions: pass4,
     coverageMatrix,
+    /** Distingue absence de candidat ≠ relation correctement explorée */
+    lifecycleLanes,
+    potentialCrossings: COVERAGE_RELATIONS.map((rel) => ({
+      id: rel.id,
+      question: rel.question,
+      note: 'Croisement potentiel — ne pas inférer exécution sans methodExecuted'
+    })),
     summary: {
       opportunityUnused: underExplored.length,
       indemonstrable: impossible.length,
       relationsNotElevated: unusedRelations.length,
       reexploreActions: pass4.length,
       coverageNeverTested: coverageMatrix.summary.neverTested,
-      coverageTested: coverageMatrix.summary.testedWithCandidate
+      coverageTested: coverageMatrix.summary.testedWithCandidate,
+      lifecycle: lifecycleLanes
     },
     limit:
-      'Une occasion non exploitée ≠ une hypothèse fausse. Une hypothèse indemonstrable ≠ une omission de qualité. tested_non_conclusive ≠ never_tested.'
+      'Une occasion non exploitée ≠ une hypothèse fausse. Une hypothèse indemonstrable ≠ une omission de qualité. tested_non_conclusive ≠ never_tested. Absence de candidat ≠ relation correctement explorée.'
   };
 }

@@ -58,7 +58,7 @@ function abcProgram() {
 
 describe('Mission 7 — structure programme et adhérence', () => {
   it('édition ≥ v7 raisonnement structurel', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|1[0-9])/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|[1-9]\d*)/);
     expect(analysisEditionKey()).toMatch(/program=structural-(?:reasoning|execution|context)-v\d+/);
     expect(analysisEditionKey()).toMatch(/review=collective-pass4-v\d+/);
   });

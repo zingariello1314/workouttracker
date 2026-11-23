@@ -77,6 +77,9 @@ function firstLastDates(snapshot) {
 }
 
 function slim(d) {
+  const attrIds = (d.metrics?.observedValues || [])
+    .filter((o) => /Share|Remainder|Reconciliation|recognized|unattributed|partition/i.test(o.id || ''))
+    .map((o) => ({ id: o.id, value: o.value, unit: o.unit }));
   return {
     kind: d.kind,
     title: d.title,
@@ -85,14 +88,48 @@ function slim(d) {
     thesis: d.metrics?.thesis || null,
     narrativeAuthority: d.metrics?.narrativeAuthority || d.drafting?.authority || null,
     episodeId: d.metrics?.episodeId || null,
+    phenomenonId: d.metrics?.phenomenonId || d.phenomenonId || null,
     confirmationDates: d.metrics?.confirmationDates || null,
     dates: d.metrics?.dates || d.metrics?.returnDates || null,
     namedCount: (d.metrics?.namedMoves || []).length,
     episodeQual: d.metrics?.episodeQual || null,
     compositionSlice: (d.metrics?.composition?.conclusion || '').slice(0, 240) || null,
     observedCount: (d.metrics?.observedValues || []).length,
+    sharedFactCount: (d.metrics?.sharedFacts || []).length,
+    memory: d.metrics?.memory
+      ? {
+          state: d.metrics.memory.state,
+          previousState: d.metrics.memory.previousState,
+          transition: d.metrics.memory.transition,
+          knownAt: d.metrics.memory.knownAt,
+          knowledgeCutoff: d.metrics.memory.knowledgeCutoff,
+          publicationDecision: d.metrics.memory.publicationDecision || null,
+          exposureCounted: d.metrics.memory.exposureCounted === true
+        }
+      : null,
+    attributionObserved: attrIds.length ? attrIds : null,
+    contributionCount: (d.metrics?.contributionRegistry || []).length || null,
+    conclusionScope: d.metrics?.conclusionScope || null,
     informativeValue: d.informativeValue ?? d.metrics?.informativeValue ?? null,
     p6Disposition: d.p6Disposition || null
+  };
+}
+
+function bankFingerprint(db) {
+  const keys = Object.keys(db || {}).sort();
+  let h = 2166136261;
+  for (const k of keys) {
+    const name = String(db[k]?.name || '');
+    const s = `${k}:${name}`;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+  }
+  return {
+    source: 'src/data/exerciseDatabase.js',
+    keyCount: keys.length,
+    digest: (h >>> 0).toString(16)
   };
 }
 
@@ -115,7 +152,7 @@ const program =
   null;
 
 const report = {
-  schema: 'momentum.m19ReplayEight.v1',
+  schema: 'momentum.m21ReplayEight.v1',
   generatedAt: new Date().toISOString(),
   mission: analysisMissionLabel(),
   edition: ANALYSIS_EDITION_PARTS.editorial,
@@ -124,6 +161,15 @@ const report = {
   end,
   firstDate: first,
   fingerprint: snapshotFingerprint(snapshot),
+  environment: {
+    exerciseBank: bankFingerprint(exerciseDatabase),
+    nameResolver: 'journal+program+exerciseDatabase',
+    matching: ANALYSIS_EDITION_PARTS.matching,
+    populations: ANALYSIS_EDITION_PARTS.populations,
+    facts: ANALYSIS_EDITION_PARTS.facts,
+    memory: ANALYSIS_EDITION_PARTS.memory,
+    gtg: ANALYSIS_EDITION_PARTS.gtg
+  },
   sources: {
     hasReps: Boolean(snapshot?.reps),
     hasChecked: Boolean(snapshot?.checkedExercises),
@@ -214,7 +260,10 @@ for (const period of PERIODS) {
 
 const outDir = path.join(root, 'artifacts/analysis-eval');
 fs.mkdirSync(outDir, { recursive: true });
-const outPath = path.join(outDir, 'mission19-replay-eight.json');
+const outPath = path.join(outDir, 'mission22-replay-eight.json');
 fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8');
+// Alias de continuité
+fs.writeFileSync(path.join(outDir, 'mission21-replay-eight.json'), JSON.stringify(report, null, 2), 'utf8');
+fs.writeFileSync(path.join(outDir, 'mission19-replay-eight.json'), JSON.stringify(report, null, 2), 'utf8');
 console.log('Wrote', outPath);
-console.log(report.edition, report.mission, 'fp', report.fingerprint);
+console.log(report.edition, report.mission, 'fp', report.fingerprint?.digest || report.fingerprint);

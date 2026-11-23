@@ -1,0 +1,7 @@
+{
+  "schema": "momentum.evalBlind.labels.v1",
+  "note": "Les versions moteur ne sont pas nommées ici. L’évaluateur reçoit seulement Label A / Label B.",
+  "pairs": [
+    { "pairId": "p1", "labelA": "export-X", "labelB": "export-Y", "versionMapSealed": true }
+  ]
+}

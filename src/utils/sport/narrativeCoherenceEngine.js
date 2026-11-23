@@ -70,6 +70,11 @@ export function relateClaims(left, right) {
     return RELATION.INDEPENDENT;
   }
   if (sameSubject && sameMetric && a.windowId && b.windowId && a.windowId !== b.windowId) {
+    // Mission 28 — sujets parallèles / multi-trajectoires : fenêtres d’observation distinctes
+    // ne sont pas des reformulations (sinon parent recent30 absorbé par quarter).
+    if (/^parallel:/i.test(leftSub) || /^parallel:/i.test(rightSub)) {
+      return RELATION.INDEPENDENT;
+    }
     // Photo actuelle répétée sur un horizon « journey » sans preuve d’évolution
     if (sameProof || (a.value === b.value && a.referenceValue === b.referenceValue)) {
       return RELATION.REFORMULATION;
@@ -93,6 +98,17 @@ export function relateClaims(left, right) {
     return RELATION.CONTRADICTION;
   }
   const sameNumbers = a.value === b.value && a.referenceValue === b.referenceValue && a.operator === b.operator;
+  // Mission 29 — phénomènes parallèles aspectés distincts (portée dans proof / population)
+  const leftAspect = left?.proof?.analyticalAspect || left?.analyticalAspect || null;
+  const rightAspect = right?.proof?.analyticalAspect || right?.analyticalAspect || null;
+  if (
+    leftAspect &&
+    rightAspect &&
+    leftAspect !== rightAspect &&
+    (/^parallel:/i.test(leftSub) || /^parallel:/i.test(rightSub))
+  ) {
+    return RELATION.INDEPENDENT;
+  }
   if (sameNumbers && sameStatement) return RELATION.EXACT_DUPLICATE;
   if (sameNumbers && a.value != null) return RELATION.REFORMULATION;
   if (sameProof && sameSubject) return RELATION.REFORMULATION;

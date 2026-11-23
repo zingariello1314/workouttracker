@@ -1,0 +1,1207 @@
+{
+  "schema": "momentum.mission30.abundance.v1",
+  "scenarios": [
+    {
+      "label": "48_candidates_8_distinct",
+      "candidates": 48,
+      "distinctIndependent": 8,
+      "admissible": 8,
+      "priorities": 8,
+      "complementaryAccessible": 0,
+      "lostDistinctPhenomena": 0,
+      "lostPhenomenaSample": [],
+      "fusionSample": [
+        {
+          "id": "disc_traj|ex:shared|aspect:0|0",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:0",
+          "occurrenceId": "disc_traj|ex:shared|aspect:0|0",
+          "title": "Lecture 0",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:0|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:0|40",
+                "publicationId": "disc_traj|ex:shared|aspect:0|40",
+                "phenomenonId": "phen|ex:shared|aspect:0",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 0"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:1|1",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:1",
+          "occurrenceId": "disc_traj|ex:shared|aspect:1|1",
+          "title": "Lecture 1",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:1|1",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:1|41",
+                "publicationId": "disc_traj|ex:shared|aspect:1|41",
+                "phenomenonId": "phen|ex:shared|aspect:1",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 1"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:2|2",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:2",
+          "occurrenceId": "disc_traj|ex:shared|aspect:2|2",
+          "title": "Lecture 2",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:2|2",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:2|42",
+                "publicationId": "disc_traj|ex:shared|aspect:2|42",
+                "phenomenonId": "phen|ex:shared|aspect:2",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 2"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:3|3",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:3",
+          "occurrenceId": "disc_traj|ex:shared|aspect:3|3",
+          "title": "Lecture 3",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:3|3",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:3|43",
+                "publicationId": "disc_traj|ex:shared|aspect:3|43",
+                "phenomenonId": "phen|ex:shared|aspect:3",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 3"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:4|4",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:4",
+          "occurrenceId": "disc_traj|ex:shared|aspect:4|4",
+          "title": "Lecture 4",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:4|4",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:4|44",
+                "publicationId": "disc_traj|ex:shared|aspect:4|44",
+                "phenomenonId": "phen|ex:shared|aspect:4",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 4"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:5|5",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:5",
+          "occurrenceId": "disc_traj|ex:shared|aspect:5|5",
+          "title": "Lecture 5",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:5|5",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:5|45",
+                "publicationId": "disc_traj|ex:shared|aspect:5|45",
+                "phenomenonId": "phen|ex:shared|aspect:5",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 5"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:6|6",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:6",
+          "occurrenceId": "disc_traj|ex:shared|aspect:6|6",
+          "title": "Lecture 6",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:6|6",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:6|46",
+                "publicationId": "disc_traj|ex:shared|aspect:6|46",
+                "phenomenonId": "phen|ex:shared|aspect:6",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 6"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:7|7",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:7",
+          "occurrenceId": "disc_traj|ex:shared|aspect:7|7",
+          "title": "Lecture 7",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:7|7",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:7|47",
+                "publicationId": "disc_traj|ex:shared|aspect:7|47",
+                "phenomenonId": "phen|ex:shared|aspect:7",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 7"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:0|8",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:0",
+          "occurrenceId": "disc_traj|ex:shared|aspect:0|8",
+          "title": "Lecture 0",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:shared|aspect:0|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:0|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:0|8",
+                "publicationId": "disc_traj|ex:shared|aspect:0|8",
+                "phenomenonId": "phen|ex:shared|aspect:0",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 0"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:0|16",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:0",
+          "occurrenceId": "disc_traj|ex:shared|aspect:0|16",
+          "title": "Lecture 0",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:shared|aspect:0|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:0|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:0|16",
+                "publicationId": "disc_traj|ex:shared|aspect:0|16",
+                "phenomenonId": "phen|ex:shared|aspect:0",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 0"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:0|24",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:0",
+          "occurrenceId": "disc_traj|ex:shared|aspect:0|24",
+          "title": "Lecture 0",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:shared|aspect:0|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:0|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:0|24",
+                "publicationId": "disc_traj|ex:shared|aspect:0|24",
+                "phenomenonId": "phen|ex:shared|aspect:0",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 0"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:shared|aspect:0|32",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:shared|aspect:0",
+          "occurrenceId": "disc_traj|ex:shared|aspect:0|32",
+          "title": "Lecture 0",
+          "kind": "disc_traj",
+          "subjectKey": "ex:shared",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:shared|aspect:0|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:shared|aspect:0|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:shared|aspect:0|32",
+                "publicationId": "disc_traj|ex:shared|aspect:0|32",
+                "phenomenonId": "phen|ex:shared|aspect:0",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:shared",
+                "title": "Lecture 0"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        }
+      ],
+      "reconciliation": {
+        "registryCount": 8,
+        "publishedCount": 8,
+        "countGap": 0,
+        "missingFromAccessible": [],
+        "gapAudit": [],
+        "unexplainedCountGaps": [],
+        "lostSilent": [],
+        "unexpected": [],
+        "duplicatesInPublished": 0,
+        "reconciled": true,
+        "countsReconciled": true,
+        "reconciledStrict": true,
+        "finalCatalogAfterPolish": true,
+        "finalAccessibleCount": 8
+      }
+    },
+    {
+      "label": "48_distinct_admissible",
+      "candidates": 48,
+      "distinctIndependent": 48,
+      "admissible": 48,
+      "priorities": 11,
+      "complementaryAccessible": 37,
+      "lostDistinctPhenomena": 0,
+      "lostPhenomenaSample": [],
+      "fusionSample": [
+        {
+          "id": "disc_traj|ex:1019|default:19|19",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1019|default:19",
+          "occurrenceId": "disc_traj|ex:1019|default:19|19",
+          "title": "Phénomène 19",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1019",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1039|default:39|39",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1039|default:39",
+          "occurrenceId": "disc_traj|ex:1039|default:39|39",
+          "title": "Phénomène 39",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1039",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1018|default:18|18",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1018|default:18",
+          "occurrenceId": "disc_traj|ex:1018|default:18|18",
+          "title": "Phénomène 18",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1018",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1038|default:38|38",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1038|default:38",
+          "occurrenceId": "disc_traj|ex:1038|default:38|38",
+          "title": "Phénomène 38",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1038",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1017|default:17|17",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1017|default:17",
+          "occurrenceId": "disc_traj|ex:1017|default:17|17",
+          "title": "Phénomène 17",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1017",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1037|default:37|37",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1037|default:37",
+          "occurrenceId": "disc_traj|ex:1037|default:37|37",
+          "title": "Phénomène 37",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1037",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1016|default:16|16",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1016|default:16",
+          "occurrenceId": "disc_traj|ex:1016|default:16|16",
+          "title": "Phénomène 16",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1016",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1036|default:36|36",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1036|default:36",
+          "occurrenceId": "disc_traj|ex:1036|default:36|36",
+          "title": "Phénomène 36",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1036",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1011|default:11|11",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1011|default:11",
+          "occurrenceId": "disc_traj|ex:1011|default:11|11",
+          "title": "Phénomène 11",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1011",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1015|default:15|15",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1015|default:15",
+          "occurrenceId": "disc_traj|ex:1015|default:15|15",
+          "title": "Phénomène 15",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1015",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1035|default:35|35",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1035|default:35",
+          "occurrenceId": "disc_traj|ex:1035|default:35|35",
+          "title": "Phénomène 35",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1035",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:1010|default:10|10",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:1010|default:10",
+          "occurrenceId": "disc_traj|ex:1010|default:10|10",
+          "title": "Phénomène 10",
+          "kind": "disc_traj",
+          "subjectKey": "ex:1010",
+          "disposition": "published",
+          "reason": "demoted_priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        }
+      ],
+      "reconciliation": {
+        "registryCount": 48,
+        "publishedCount": 48,
+        "countGap": 0,
+        "missingFromAccessible": [],
+        "gapAudit": [],
+        "unexplainedCountGaps": [],
+        "lostSilent": [],
+        "unexpected": [],
+        "duplicatesInPublished": 0,
+        "reconciled": true,
+        "countsReconciled": true,
+        "reconciledStrict": true,
+        "finalCatalogAfterPolish": true,
+        "finalAccessibleCount": 48
+      }
+    },
+    {
+      "label": "31st_good_discovery_accessible",
+      "candidates": 31,
+      "distinctIndependent": 31,
+      "admissible": 31,
+      "priorities": 11,
+      "complementaryAccessible": 20,
+      "lostDistinctPhenomena": 0,
+      "lostPhenomenaSample": [],
+      "fusionSample": [
+        {
+          "id": "disc_traj|ex:2000|default|0",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2000|default",
+          "occurrenceId": "disc_traj|ex:2000|default|0",
+          "title": "Prioritaire 0",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2000",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2005|default|5",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2005|default",
+          "occurrenceId": "disc_traj|ex:2005|default|5",
+          "title": "Prioritaire 5",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2005",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2010|default|10",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2010|default",
+          "occurrenceId": "disc_traj|ex:2010|default|10",
+          "title": "Prioritaire 10",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2010",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2001|default|1",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2001|default",
+          "occurrenceId": "disc_traj|ex:2001|default|1",
+          "title": "Prioritaire 1",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2001",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2006|default|6",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2006|default",
+          "occurrenceId": "disc_traj|ex:2006|default|6",
+          "title": "Prioritaire 6",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2006",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2011|default|11",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2011|default",
+          "occurrenceId": "disc_traj|ex:2011|default|11",
+          "title": "Prioritaire 11",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2011",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2002|default|2",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2002|default",
+          "occurrenceId": "disc_traj|ex:2002|default|2",
+          "title": "Prioritaire 2",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2002",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2007|default|7",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2007|default",
+          "occurrenceId": "disc_traj|ex:2007|default|7",
+          "title": "Prioritaire 7",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2007",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2003|default|3",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2003|default",
+          "occurrenceId": "disc_traj|ex:2003|default|3",
+          "title": "Prioritaire 3",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2003",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2008|default|8",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2008|default",
+          "occurrenceId": "disc_traj|ex:2008|default|8",
+          "title": "Prioritaire 8",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2008",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2004|default|4",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2004|default",
+          "occurrenceId": "disc_traj|ex:2004|default|4",
+          "title": "Prioritaire 4",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2004",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:2009|default|9",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:2009|default",
+          "occurrenceId": "disc_traj|ex:2009|default|9",
+          "title": "Prioritaire 9",
+          "kind": "disc_traj",
+          "subjectKey": "ex:2009",
+          "disposition": "published",
+          "reason": "demoted_priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        }
+      ],
+      "reconciliation": {
+        "registryCount": 31,
+        "publishedCount": 31,
+        "countGap": 0,
+        "missingFromAccessible": [],
+        "gapAudit": [],
+        "unexplainedCountGaps": [],
+        "lostSilent": [],
+        "unexpected": [],
+        "duplicatesInPublished": 0,
+        "reconciled": true,
+        "countsReconciled": true,
+        "reconciledStrict": true,
+        "finalCatalogAfterPolish": true,
+        "finalAccessibleCount": 31
+      }
+    },
+    {
+      "label": "partial_reformulations",
+      "candidates": 12,
+      "distinctIndependent": 1,
+      "admissible": 1,
+      "priorities": 1,
+      "complementaryAccessible": 0,
+      "lostDistinctPhenomena": 0,
+      "lostPhenomenaSample": [],
+      "fusionSample": [
+        {
+          "id": "disc_traj|ex:3001|default|0",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|0",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|11",
+                "publicationId": "disc_traj|ex:3001|default|11",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|1",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|1",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|1",
+                "publicationId": "disc_traj|ex:3001|default|1",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|2",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|2",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|2",
+                "publicationId": "disc_traj|ex:3001|default|2",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|3",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|3",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|3",
+                "publicationId": "disc_traj|ex:3001|default|3",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|4",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|4",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|4",
+                "publicationId": "disc_traj|ex:3001|default|4",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|5",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|5",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|5",
+                "publicationId": "disc_traj|ex:3001|default|5",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|6",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|6",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|6",
+                "publicationId": "disc_traj|ex:3001|default|6",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|7",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|7",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|7",
+                "publicationId": "disc_traj|ex:3001|default|7",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|8",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|8",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|8",
+                "publicationId": "disc_traj|ex:3001|default|8",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|9",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|9",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|9",
+                "publicationId": "disc_traj|ex:3001|default|9",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|10",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|10",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|10",
+                "publicationId": "disc_traj|ex:3001|default|10",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        },
+        {
+          "id": "disc_traj|ex:3001|default|11",
+          "detectorKind": "disc_traj",
+          "phenomenonId": "phen|ex:3001|default",
+          "occurrenceId": "disc_traj|ex:3001|default|11",
+          "title": "Même photo volume",
+          "kind": "disc_traj",
+          "subjectKey": "ex:3001",
+          "disposition": "source_retained",
+          "reason": "exact_duplicate_suppressed",
+          "collapsedInto": "disc_traj|ex:3001|default|0",
+          "equivalence": null,
+          "fusionLineage": {
+            "survivorId": "disc_traj|ex:3001|default|0",
+            "sources": [
+              {
+                "occurrenceId": "disc_traj|ex:3001|default|11",
+                "publicationId": "disc_traj|ex:3001|default|11",
+                "phenomenonId": "phen|ex:3001|default",
+                "detectorKind": "disc_traj",
+                "subjectKey": "ex:3001",
+                "title": "Même photo volume"
+              }
+            ],
+            "sourceCount": 1
+          },
+          "lineage": null
+        }
+      ],
+      "reconciliation": {
+        "registryCount": 1,
+        "publishedCount": 1,
+        "countGap": 0,
+        "missingFromAccessible": [],
+        "gapAudit": [],
+        "unexplainedCountGaps": [],
+        "lostSilent": [],
+        "unexpected": [],
+        "duplicatesInPublished": 0,
+        "reconciled": true,
+        "countsReconciled": true,
+        "reconciledStrict": true,
+        "finalCatalogAfterPolish": true,
+        "finalAccessibleCount": 1
+      }
+    },
+    {
+      "label": "parents_children_different_columns",
+      "candidates": 2,
+      "distinctIndependent": 2,
+      "admissible": 2,
+      "priorities": 2,
+      "complementaryAccessible": 0,
+      "lostDistinctPhenomena": 0,
+      "lostPhenomenaSample": [],
+      "fusionSample": [
+        {
+          "id": "disc_composed_parallel_trajectories|parallel:ex:1+ex:2|span:recent30|0",
+          "detectorKind": "disc_composed_parallel_trajectories",
+          "phenomenonId": "phen|parallel:ex:1+ex:2|span:recent30",
+          "occurrenceId": "disc_composed_parallel_trajectories|parallel:ex:1+ex:2|span:recent30|0",
+          "title": "Parent parallèle",
+          "kind": "disc_composed_parallel_trajectories",
+          "subjectKey": "parallel:ex:1+ex:2",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        },
+        {
+          "id": "disc_structural_memory|ex:1|default|1",
+          "detectorKind": "disc_structural_memory",
+          "phenomenonId": "phen|ex:1|default",
+          "occurrenceId": "disc_structural_memory|ex:1|default|1",
+          "title": "Enfant preuve",
+          "kind": "disc_structural_memory",
+          "subjectKey": "ex:1",
+          "disposition": "published",
+          "reason": "priority",
+          "collapsedInto": null,
+          "equivalence": null,
+          "fusionLineage": null,
+          "lineage": null
+        }
+      ],
+      "reconciliation": {
+        "registryCount": 2,
+        "publishedCount": 2,
+        "countGap": 0,
+        "missingFromAccessible": [],
+        "gapAudit": [],
+        "unexplainedCountGaps": [],
+        "lostSilent": [],
+        "unexpected": [],
+        "duplicatesInPublished": 0,
+        "reconciled": true,
+        "countsReconciled": true,
+        "reconciledStrict": true,
+        "finalCatalogAfterPolish": true,
+        "finalAccessibleCount": 2
+      }
+    }
+  ]
+}

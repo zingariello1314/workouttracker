@@ -114,7 +114,13 @@ function fnv1a(text) {
  * Empreinte analytique : détecte aussi les changements de charge, durée, date.
  * Ne se limite plus au nombre de clés et au total de répétitions.
  */
-export function snapshotFingerprint(snapshot) {
+/**
+ * Empreinte des données réellement consommées par le moteur.
+ * Mission 23 — accepte un contexte (garminData, activeProgram, nameMap) car
+ * programme / sommeil / noms vivent souvent hors du snapshot plat.
+ */
+export function snapshotFingerprint(snapshot, context = null) {
+  const ctx = context && typeof context === 'object' ? context : {};
   const reps = snapshot?.reps && typeof snapshot.reps === 'object' ? snapshot.reps : {};
   const checked =
     snapshot?.checkedExercises && typeof snapshot.checkedExercises === 'object'
@@ -146,6 +152,43 @@ export function snapshotFingerprint(snapshot) {
   const weightKeys = Object.keys(weights).sort();
   const setLogKeys = Object.keys(setLogs).sort();
   const durationKeys = Object.keys(durations).sort();
+  // Mission 22 — sources influençant conclusions (GTG, défis, programme) entrent dans le digest.
+  const gtgSync = snapshot?.enduranceData?.gtg?.workoutSync || {};
+  const gtgDays = Object.keys(gtgSync).sort();
+  const challenges =
+    snapshot?.enduranceData?.challenges ||
+    snapshot?.enduranceData?.activeChallenges ||
+    snapshot?.challenges ||
+    {};
+  const challengeKeys = Object.keys(challenges).sort();
+  const program =
+    ctx.activeProgram ||
+    snapshot?.activeProgram ||
+    (Array.isArray(ctx.programs)
+      ? ctx.programs.find((p) => p?.active) || ctx.programs[0]
+      : null) ||
+    (Array.isArray(snapshot?.programs)
+      ? snapshot.programs.find((p) => p?.active) || snapshot.programs[0]
+      : null);
+  const programPayload = program
+    ? `${program.id || ''}|${program.updatedAt || ''}|${JSON.stringify(program.schedule || {}).slice(0, 4000)}`
+    : '';
+  const garmin =
+    ctx.garminData ||
+    snapshot?.garminData ||
+    null;
+  const sleepMap =
+    garmin?.sleep ||
+    garmin?.dailyMetrics ||
+    snapshot?.manualSleepByDate ||
+    ctx.manualSleepByDate ||
+    {};
+  const garminSleepDays = Object.keys(sleepMap).sort();
+  const nameMap = ctx.nameMap && typeof ctx.nameMap === 'object' ? ctx.nameMap : null;
+  const nameMapKeys = nameMap ? Object.keys(nameMap).sort() : [];
+  const nameMapDigest = nameMap
+    ? fnv1a(nameMapKeys.slice(0, 800).map((k) => `${k}=${nameMap[k]}`).join('|'))
+    : null;
   const payload = [
     repKeys.map((k) => `${k}=${reps[k]}`).join('|'),
     Object.keys(checked)
@@ -154,22 +197,51 @@ export function snapshotFingerprint(snapshot) {
       .join('|'),
     weightKeys.map((k) => `${k}=${weights[k]}`).join('|'),
     setLogKeys.map((k) => `${k}=${JSON.stringify(setLogs[k])}`).join('|'),
-    durationKeys.map((k) => `${k}=${durations[k]}`).join('|')
+    durationKeys.map((k) => `${k}=${durations[k]}`).join('|'),
+    gtgDays.map((d) => `${d}=${JSON.stringify(gtgSync[d])}`).join('|'),
+    challengeKeys.map((k) => `${k}=${JSON.stringify(challenges[k])}`).join('|'),
+    programPayload,
+    garminSleepDays.slice(0, 400).join('|'),
+    nameMapDigest ? `nameMap:${nameMapDigest}` : 'nameMap:absent'
   ].join('||');
   return {
-    version: 3,
+    version: 5,
     repKeys: repKeys.length,
     checkedKeys: Object.keys(checked).length,
     weightKeys: weightKeys.length,
     setLogKeys: setLogKeys.length,
     durationKeys: durationKeys.length,
+    gtgSyncDays: gtgDays.length,
+    challengeKeys: challengeKeys.length,
+    programId: program?.id || null,
+    garminSleepDays: garminSleepDays.length,
+    nameMapSize: nameMapKeys.length,
+    nameMapDigest,
     totalReps,
     digest: fnv1a(payload),
     firstRepKey: repKeys[0] || null,
     lastRepKey: repKeys[repKeys.length - 1] || null,
     sources: {
       weightsField: snapshot?.exerciseWeights ? 'exerciseWeights' : snapshot?.weights ? 'weights' : 'none',
-      setLogsField: snapshot?.exerciseSetLogs ? 'exerciseSetLogs' : 'none'
+      setLogsField: snapshot?.exerciseSetLogs ? 'exerciseSetLogs' : 'none',
+      gtgField: snapshot?.enduranceData?.gtg ? 'enduranceData.gtg' : 'none',
+      programField: program
+        ? ctx.activeProgram
+          ? 'context.activeProgram'
+          : snapshot?.activeProgram
+            ? 'snapshot.activeProgram'
+            : 'programs[0]'
+        : 'none',
+      garminField: garmin
+        ? garmin.sleep
+          ? 'garmin.sleep'
+          : garmin.dailyMetrics
+            ? 'garmin.dailyMetrics'
+            : 'garmin'
+        : snapshot?.manualSleepByDate
+          ? 'manualSleepByDate'
+          : 'none',
+      nameMapField: nameMap ? 'context.nameMap' : 'absent'
     }
   };
 }

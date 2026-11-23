@@ -3,25 +3,25 @@
   "note": "Clés synthétiques date_index, pas un historique personnel. Le totalXP n’est pas une valeur utilisateur.",
   "S": {
     "runs": 5,
-    "medianMs": 10.85,
-    "minMs": 8.34,
-    "maxMs": 25.35,
+    "medianMs": 26,
+    "minMs": 15.13,
+    "maxMs": 60.59,
     "totalXP": 6192,
     "checkedKeys": 240
   },
   "M": {
     "runs": 3,
-    "medianMs": 781.61,
-    "minMs": 756.87,
-    "maxMs": 783.76,
+    "medianMs": 222.95,
+    "minMs": 216.76,
+    "maxMs": 309.45,
     "totalXP": 123840,
     "checkedKeys": 4800
   },
   "L": {
     "runs": 1,
-    "medianMs": 24636.03,
-    "minMs": 24636.03,
-    "maxMs": 24636.03,
+    "medianMs": 1172.44,
+    "minMs": 1172.44,
+    "maxMs": 1172.44,
     "totalXP": 619200,
     "checkedKeys": 24000
   }

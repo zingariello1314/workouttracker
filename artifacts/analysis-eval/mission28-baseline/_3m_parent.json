@@ -1,0 +1,664 @@
+{
+  "parallelDisps": [
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "detectorKind": "disc_composed_parallel_trajectories",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq",
+      "occurrenceId": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "title": "Hyperextension : 2 trajectoires parallèles (~8 séances)",
+      "kind": "disc_composed_parallel_trajectories",
+      "subjectKey": null,
+      "disposition": "published",
+      "reason": "priority",
+      "collapsedInto": null,
+      "equivalence": null,
+      "fusionLineage": null,
+      "lineage": null
+    },
+    {
+      "id": "disc_structural_memory|ex:505|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "detectorKind": "disc_structural_memory",
+      "phenomenonId": "ex:505|structural_memory|text:relevés de genoux à la barre : 4 séances sur ces 30 jours|relevés de genoux à la barre totalisent 240 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), so",
+      "occurrenceId": "disc_structural_memory|ex:505|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "title": "Relevés de genoux à la barre: 4 séances sur ces 30 jours",
+      "kind": "disc_structural_memory",
+      "subjectKey": "ex:505",
+      "disposition": "published",
+      "reason": "demoted_priority",
+      "collapsedInto": null,
+      "equivalence": null,
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "4 séances · plateau · 0 %",
+        "sourceExerciseId": "505",
+        "sourceDates": [
+          "2026-10-30",
+          "2026-11-06",
+          "2026-11-13",
+          "2026-11-20"
+        ]
+      }
+    },
+    {
+      "id": "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+      "detectorKind": "disc_emergence",
+      "phenomenonId": "ex:703294235|emergence|text:hyperextension : volume par séance stable|hyperextension apparaît sur 7 séances réparties sur 49 jours — première présence connue dans l’historique disponible. le",
+      "occurrenceId": "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+      "title": "Hyperextension: volume par séance stable",
+      "kind": "disc_emergence",
+      "subjectKey": "ex:703294235",
+      "disposition": "published",
+      "reason": "deepening_of_collective",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "equivalence": null,
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "7 séances · plateau · 0 %",
+        "sourceExerciseId": "703294235",
+        "sourceDates": [
+          "2026-09-28",
+          "2026-10-12",
+          "2026-10-19",
+          "2026-10-26",
+          "2026-11-02",
+          "2026-11-09",
+          "2026-11-16"
+        ]
+      }
+    },
+    {
+      "id": "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+      "detectorKind": "disc_emergence",
+      "phenomenonId": "ex:703294235|emergence|text:hyperextension : volume par séance stable|hyperextension apparaît sur 7 séances réparties sur 49 jours — première présence connue dans l’historique disponible. le",
+      "occurrenceId": "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+      "title": "Hyperextension: volume par séance stable",
+      "kind": "disc_emergence",
+      "subjectKey": "ex:703294235",
+      "disposition": "deepening_accessible",
+      "reason": "verified_parent_child",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "equivalence": {
+        "ok": true,
+        "relation": "parallel_trajectory_deepening",
+        "reason": "verified_parallel_storage_trajectories",
+        "proof": {
+          "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+          "childSubject": "ex:703294235",
+          "parallelSubjects": [
+            "ex:703294235",
+            "ex:1979012181"
+          ],
+          "sharedTitle": "hyperextension: volume par séance stable",
+          "observationWindow": {
+            "start": "2026-09-28",
+            "end": "2026-11-20",
+            "spanDays": 53
+          },
+          "note": "Identités de stockage distinctes, contenu analytique comparable"
+        }
+      },
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "7 séances · plateau · 0 %",
+        "sourceExerciseId": "703294235",
+        "sourceDates": [
+          "2026-09-28",
+          "2026-10-12",
+          "2026-10-19",
+          "2026-10-26",
+          "2026-11-02",
+          "2026-11-09",
+          "2026-11-16"
+        ]
+      }
+    },
+    {
+      "id": "disc_emergence|ex:1979012181|fact:emergence|1979012181|aspect:default",
+      "detectorKind": "disc_emergence",
+      "phenomenonId": "ex:1979012181|emergence|text:hyperextension : volume par séance stable|hyperextension apparaît sur 6 séances réparties sur 49 jours — première présence connue dans l’historique disponible. le",
+      "occurrenceId": "disc_emergence|ex:1979012181|fact:emergence|1979012181|aspect:default",
+      "title": "Hyperextension: volume par séance stable",
+      "kind": "disc_emergence",
+      "subjectKey": "ex:1979012181",
+      "disposition": "published",
+      "reason": "deepening_of_collective",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "equivalence": null,
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "6 séances · plateau · 0 %",
+        "sourceExerciseId": "1979012181",
+        "sourceDates": [
+          "2026-10-02",
+          "2026-10-16",
+          "2026-10-30",
+          "2026-11-06",
+          "2026-11-13",
+          "2026-11-20"
+        ]
+      }
+    },
+    {
+      "id": "disc_emergence|ex:1979012181|fact:emergence|1979012181|aspect:default",
+      "detectorKind": "disc_emergence",
+      "phenomenonId": "ex:1979012181|emergence|text:hyperextension : volume par séance stable|hyperextension apparaît sur 6 séances réparties sur 49 jours — première présence connue dans l’historique disponible. le",
+      "occurrenceId": "disc_emergence|ex:1979012181|fact:emergence|1979012181|aspect:default",
+      "title": "Hyperextension: volume par séance stable",
+      "kind": "disc_emergence",
+      "subjectKey": "ex:1979012181",
+      "disposition": "deepening_accessible",
+      "reason": "verified_parent_child",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "equivalence": {
+        "ok": true,
+        "relation": "parallel_trajectory_deepening",
+        "reason": "verified_parallel_storage_trajectories",
+        "proof": {
+          "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+          "childSubject": "ex:1979012181",
+          "parallelSubjects": [
+            "ex:703294235",
+            "ex:1979012181"
+          ],
+          "sharedTitle": "hyperextension: volume par séance stable",
+          "observationWindow": {
+            "start": "2026-09-28",
+            "end": "2026-11-20",
+            "spanDays": 53
+          },
+          "note": "Identités de stockage distinctes, contenu analytique comparable"
+        }
+      },
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "6 séances · plateau · 0 %",
+        "sourceExerciseId": "1979012181",
+        "sourceDates": [
+          "2026-10-02",
+          "2026-10-16",
+          "2026-10-30",
+          "2026-11-06",
+          "2026-11-13",
+          "2026-11-20"
+        ]
+      }
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "detectorKind": "disc_structural_memory",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), soit 50,0 % de t",
+      "occurrenceId": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "kind": "disc_structural_memory",
+      "subjectKey": "ex:1979012181",
+      "disposition": "published",
+      "reason": "deepening_of_collective",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "equivalence": null,
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "4 séances · plateau · 0 %",
+        "sourceExerciseId": "1979012181",
+        "sourceDates": [
+          "2026-10-30",
+          "2026-11-06",
+          "2026-11-13",
+          "2026-11-20"
+        ]
+      }
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "detectorKind": "disc_structural_memory",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), soit 50,0 % de t",
+      "occurrenceId": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "kind": "disc_structural_memory",
+      "subjectKey": "ex:1979012181",
+      "disposition": "deepening_accessible",
+      "reason": "verified_parent_child",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "equivalence": {
+        "ok": true,
+        "relation": "parallel_trajectory_deepening",
+        "reason": "verified_parallel_storage_trajectories",
+        "proof": {
+          "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+          "childSubject": "ex:1979012181",
+          "parallelSubjects": [
+            "ex:1979012181",
+            "ex:703294235"
+          ],
+          "sharedTitle": "hyperextension: 4 séances sur ces 30 jours",
+          "observationWindow": {
+            "start": "2026-10-26",
+            "end": "2026-11-20",
+            "spanDays": 25
+          },
+          "note": "Identités de stockage distinctes, contenu analytique comparable"
+        }
+      },
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "4 séances · plateau · 0 %",
+        "sourceExerciseId": "1979012181",
+        "sourceDates": [
+          "2026-10-30",
+          "2026-11-06",
+          "2026-11-13",
+          "2026-11-20"
+        ]
+      }
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "detectorKind": "disc_structural_memory",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), soit 50,0 % de t",
+      "occurrenceId": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "kind": "disc_structural_memory",
+      "subjectKey": "ex:703294235",
+      "disposition": "published",
+      "reason": "deepening_of_collective",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "equivalence": null,
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "4 séances · plateau · 0 %",
+        "sourceExerciseId": "703294235",
+        "sourceDates": [
+          "2026-10-26",
+          "2026-11-02",
+          "2026-11-09",
+          "2026-11-16"
+        ]
+      }
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "detectorKind": "disc_structural_memory",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), soit 50,0 % de t",
+      "occurrenceId": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "kind": "disc_structural_memory",
+      "subjectKey": "ex:703294235",
+      "disposition": "deepening_accessible",
+      "reason": "verified_parent_child",
+      "collapsedInto": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "equivalence": {
+        "ok": true,
+        "relation": "parallel_trajectory_deepening",
+        "reason": "verified_parallel_storage_trajectories",
+        "proof": {
+          "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+          "childSubject": "ex:703294235",
+          "parallelSubjects": [
+            "ex:1979012181",
+            "ex:703294235"
+          ],
+          "sharedTitle": "hyperextension: 4 séances sur ces 30 jours",
+          "observationWindow": {
+            "start": "2026-10-26",
+            "end": "2026-11-20",
+            "spanDays": 25
+          },
+          "note": "Identités de stockage distinctes, contenu analytique comparable"
+        }
+      },
+      "fusionLineage": null,
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "4 séances · plateau · 0 %",
+        "sourceExerciseId": "703294235",
+        "sourceDates": [
+          "2026-10-26",
+          "2026-11-02",
+          "2026-11-09",
+          "2026-11-16"
+        ]
+      }
+    },
+    {
+      "id": "disc_format_consolidation|ex:703294235|gap:2026-11-16|null|historical_maintenance",
+      "detectorKind": "disc_format_consolidation",
+      "phenomenonId": "ex:703294235|format_consolidation|48,48",
+      "occurrenceId": "disc_format_consolidation|ex:703294235|gap:2026-11-16|null|historical_maintenance",
+      "title": "Hyperextension (ligne vue jusqu’au 16 novembre 2026): le niveau historique se maintient",
+      "kind": "disc_format_consolidation",
+      "subjectKey": "ex:703294235",
+      "disposition": "source_retained",
+      "reason": "source_retained",
+      "collapsedInto": "disc_format_consolidation|ex:1993865426|2026-11-16",
+      "equivalence": null,
+      "fusionLineage": {
+        "survivorId": "disc_format_consolidation|ex:1993865426|2026-11-16",
+        "sources": [
+          {
+            "occurrenceId": "disc_format_consolidation|ex:703294235|gap:2026-11-16|null|historical_maintenance",
+            "publicationId": "disc_format_consolidation|ex:703294235|gap:2026-11-16|null|historical_maintenance",
+            "phenomenonId": "ex:703294235|format_consolidation|48,48",
+            "detectorKind": "disc_format_consolidation",
+            "subjectKey": "ex:703294235",
+            "title": "Hyperextension (ligne vue jusqu’au 16 novembre 2026): le niveau historique se maintient"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "2026-10-26 · 2026-11-02 · 2026-11-09 · 2026-11-16",
+        "sourceExerciseId": "703294235",
+        "sourceDates": [
+          "2026-10-26",
+          "2026-11-02",
+          "2026-11-09",
+          "2026-11-16"
+        ]
+      }
+    },
+    {
+      "id": "disc_format_consolidation|ex:1979012181|gap:2026-11-20|null|historical_maintenance",
+      "detectorKind": "disc_format_consolidation",
+      "phenomenonId": "ex:1979012181|format_consolidation|48,48",
+      "occurrenceId": "disc_format_consolidation|ex:1979012181|gap:2026-11-20|null|historical_maintenance",
+      "title": "Hyperextension (ligne vue jusqu’au 20 novembre 2026): le niveau historique se maintient",
+      "kind": "disc_format_consolidation",
+      "subjectKey": "ex:1979012181",
+      "disposition": "source_retained",
+      "reason": "source_retained",
+      "collapsedInto": "disc_format_consolidation|ex:1993865426|2026-11-16",
+      "equivalence": null,
+      "fusionLineage": {
+        "survivorId": "disc_format_consolidation|ex:1993865426|2026-11-16",
+        "sources": [
+          {
+            "occurrenceId": "disc_format_consolidation|ex:1979012181|gap:2026-11-20|null|historical_maintenance",
+            "publicationId": "disc_format_consolidation|ex:1979012181|gap:2026-11-20|null|historical_maintenance",
+            "phenomenonId": "ex:1979012181|format_consolidation|48,48",
+            "detectorKind": "disc_format_consolidation",
+            "subjectKey": "ex:1979012181",
+            "title": "Hyperextension (ligne vue jusqu’au 20 novembre 2026): le niveau historique se maintient"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "lineage": {
+        "producer": "recapPeriodDetectDiscoveries",
+        "evidence": "2026-11-06 · 2026-11-13 · 2026-11-20",
+        "sourceExerciseId": "1979012181",
+        "sourceDates": [
+          "2026-11-06",
+          "2026-11-13",
+          "2026-11-20"
+        ]
+      }
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "detectorKind": "disc_composed_parallel_trajectories",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "occurrenceId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "kind": "disc_composed_parallel_trajectories",
+      "subjectKey": null,
+      "disposition": "source_retained",
+      "reason": "exact_duplicate_suppressed",
+      "collapsedInto": null,
+      "equivalence": null,
+      "fusionLineage": {
+        "survivorId": "unknown|period:global|ep:na|aspect:default|t:|e:",
+        "sources": [
+          {
+            "occurrenceId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+            "publicationId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+            "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+            "detectorKind": "disc_composed_parallel_trajectories",
+            "subjectKey": "name:hyperextension",
+            "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "lineage": null
+    }
+  ],
+  "parentMetrics": [
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "role": "priority",
+      "body": "Les 2 trajectoires de Hyperextension convergent vers environ 48 répétitions chacune sur la fenêtre d’observation (2026-09-28 → 2026-11-20). première trajectoire : 48 répétitions récentes (réf. antérieure 48, Δ0) sur 8 séances ; seconde trajectoire : 48 répétitions récentes (réf. antérieure 48, Δ0) s"
+    }
+  ],
+  "childClaims": [
+    {
+      "id": "today|ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 50,0 % de tes jambes, contre 96 reps |win:2026-11-22:2026-11-22|pop:recorded_activity",
+      "observedValues": [
+        {
+          "id": "windowMeanPerSession",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-30",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-06",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-13",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-20",
+          "value": 48,
+          "unit": "reps"
+        }
+      ],
+      "metrics": [
+        "windowMeanPerSession",
+        "arcEarlyMean",
+        "arcLateMean",
+        "sessionReps:2026-10-30",
+        "sessionReps:2026-11-06",
+        "sessionReps:2026-11-13",
+        "sessionReps:2026-11-20"
+      ]
+    },
+    {
+      "id": "7d|parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|win:2026-10-26:2026-11-20|pop:2 trajectoires Hyperextension",
+      "observedValues": [
+        {
+          "id": "parallelCount",
+          "value": 2,
+          "unit": "trajectories"
+        },
+        {
+          "id": "meanSessions",
+          "value": 4,
+          "unit": "count"
+        },
+        {
+          "id": "meanReps",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "recentReps:ex:1979012181",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "recentReps:ex:703294235",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "prevReps:ex:1979012181",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "prevReps:ex:703294235",
+          "value": 48,
+          "unit": "reps"
+        }
+      ],
+      "metrics": [
+        "parallelCount",
+        "meanSessions",
+        "meanReps",
+        "recentReps:ex:1979012181",
+        "recentReps:ex:703294235",
+        "prevReps:ex:1979012181",
+        "prevReps:ex:703294235"
+      ]
+    },
+    {
+      "id": "7d|ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension compte 48 répétitions dans ces 7 jours. le contexte des 30 jours place cette part à 50,0 % de tes jambes,|win:2026-11-16:2026-11-22|pop:recorded_activity",
+      "observedValues": [
+        {
+          "id": "windowMeanPerSession",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-30",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-06",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-13",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-20",
+          "value": 48,
+          "unit": "reps"
+        }
+      ],
+      "metrics": [
+        "windowMeanPerSession",
+        "arcEarlyMean",
+        "arcLateMean",
+        "sessionReps:2026-10-30",
+        "sessionReps:2026-11-06",
+        "sessionReps:2026-11-13",
+        "sessionReps:2026-11-20"
+      ]
+    },
+    {
+      "id": "7d|ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension compte 48 répétitions dans ces 7 jours. le contexte des 30 jours place cette part à 50,0 % de tes jambes,|win:2026-11-16:2026-11-22|pop:recorded_activity",
+      "observedValues": [
+        {
+          "id": "windowMeanPerSession",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-26",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-02",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-09",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-16",
+          "value": 48,
+          "unit": "reps"
+        }
+      ],
+      "metrics": [
+        "windowMeanPerSession",
+        "arcEarlyMean",
+        "arcLateMean",
+        "sessionReps:2026-10-26",
+        "sessionReps:2026-11-02",
+        "sessionReps:2026-11-09",
+        "sessionReps:2026-11-16"
+      ]
+    }
+  ],
+  "memoryEvidenceKeys": [
+    "status",
+    "profile",
+    "phenomenonCount",
+    "publicationCount",
+    "exposureCount",
+    "feedbackCount",
+    "phenomenonIds",
+    "sourcesCompared"
+  ],
+  "memoryEvidence": {
+    "status": "loaded_from_pack",
+    "profile": "u:87d06f9f5405a80352af928b7414a1e6",
+    "phenomenonCount": 1,
+    "publicationCount": 0,
+    "exposureCount": 64,
+    "feedbackCount": 0,
+    "phenomenonIds": [
+      "return_episode|2026-11-11|p:9a959cbd|n:9"
+    ],
+    "sourcesCompared": {
+      "packPhenomena": 1,
+      "storePhenomena": 1,
+      "storeExposures": 64
+    }
+  }
+}

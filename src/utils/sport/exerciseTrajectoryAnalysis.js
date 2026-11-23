@@ -1536,6 +1536,34 @@ export function trajectoryToMetrics(trajectory) {
   const vol = trajectory.volume || {};
   const shape = trajectory.shape || {};
   const metricFacts = {
+    windowTotalReps: buildMetricFact({
+      value: vol.windowTotal,
+      exerciseId: trajectory.identity?.id,
+      subjectKey: trajectory.identity?.id ? `ex:${trajectory.identity.id}` : null,
+      granularity: METRIC_GRANULARITY.TOTAL,
+      unit: METRIC_UNIT.REPS,
+      denominator: 'window',
+      referent: METRIC_REFERENT.PRIMARY_WINDOW,
+      aggregation: 'sum',
+      sampleSize: vol.windowSessionCount,
+      source: 'exerciseTrajectory.volume',
+      reliability: 'high',
+      labelFr: 'reps totales (fenêtre sélectionnée)'
+    }),
+    prevWindowTotalReps: buildMetricFact({
+      value: vol.prevComparable,
+      exerciseId: trajectory.identity?.id,
+      subjectKey: trajectory.identity?.id ? `ex:${trajectory.identity.id}` : null,
+      granularity: METRIC_GRANULARITY.TOTAL,
+      unit: METRIC_UNIT.REPS,
+      denominator: 'window',
+      referent: METRIC_REFERENT.PREVIOUS_EQUAL_WINDOW,
+      aggregation: 'sum',
+      sampleSize: vol.prevSessionCount,
+      source: 'exerciseTrajectory.volume',
+      reliability: 'high',
+      labelFr: 'reps totales (fenêtre précédente comparable)'
+    }),
     windowMeanPerSession: buildMetricFact({
       value: vol.meanPerSession,
       exerciseId: trajectory.identity?.id,
@@ -1577,6 +1605,11 @@ export function trajectoryToMetrics(trajectory) {
   };
   return {
     trajectoryOk: true,
+    // Mission 29 — champs plats totaux (composition / claims), distincts des moyennes
+    recentReps: Number.isFinite(Number(vol.windowTotal)) ? Number(vol.windowTotal) : null,
+    prevReps: Number.isFinite(Number(vol.prevComparable)) ? Number(vol.prevComparable) : null,
+    windowTotalReps: Number.isFinite(Number(vol.windowTotal)) ? Number(vol.windowTotal) : null,
+    sessionCount: vol.windowSessionCount ?? null,
     metricFacts,
     trajectoryMode: trajectory.mode,
     trajectoryInstallation: trajectory.installation?.kind || null,
@@ -1599,7 +1632,18 @@ export function trajectoryToMetrics(trajectory) {
       text: p.text
     })),
     temporalScope: trajectory.temporalScope || null,
-    dates: (trajectory.sessions?.trace || []).map((s) => s.date),
+    // Mission 30 — dates = population fenêtre primaire (porte les totaux) ;
+    // arcDates = trace historique complète (ne doit pas gonfler sessionCount).
+    dates: (() => {
+      const windowSet = new Set(trajectory.temporalScope?.windowDates || []);
+      const trace = trajectory.sessions?.trace || [];
+      if (windowSet.size > 0) {
+        return trace.filter((s) => windowSet.has(s.date)).map((s) => s.date);
+      }
+      return trace.map((s) => s.date);
+    })(),
+    arcDates: (trajectory.sessions?.trace || []).map((s) => s.date),
+    windowDates: trajectory.temporalScope?.windowDates || null,
     sessions: (trajectory.sessions?.trace || []).map((s) => ({
       date: s.date,
       reps: s.totalReps,

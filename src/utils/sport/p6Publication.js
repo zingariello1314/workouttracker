@@ -14,6 +14,7 @@ import {
   phenomenonIdOf as phenId,
   stablePublicationId as occurrencePublicationId,
   stampDiscoveryIdentity,
+  subjectKey as resolveSubjectKey,
   substantiveEquivalence
 } from './discoveryIdentity';
 import { polishCardProse, polishPublishedInsights } from './editorialProseGuard';
@@ -51,6 +52,9 @@ export function publishableP6Card(row, { column = null, disposition = 'priority'
     body: stamped.body || '',
     evidence: typeof stamped.evidence === 'string' ? stamped.evidence : ''
   });
+  const hierarchyLink = stamped.hierarchyLink || stamped.metrics?.hierarchyLink || null;
+  const collapsedInto = stamped.collapsedInto || null;
+  const hierarchyOk = hierarchyLink?.ok === true;
   return {
     id,
     detectorKind: detectorKind(stamped),
@@ -76,8 +80,20 @@ export function publishableP6Card(row, { column = null, disposition = 'priority'
     horizonFit: stamped.horizonFit || gate.claim.horizon || null,
     exploration: stamped.exploration || null,
     editorialGuard: polished.editorialGuard || null,
+    // Mission 23 — ne jamais exporter un parentId « verified » sans preuve
+    hierarchyLink: hierarchyOk ? hierarchyLink : hierarchyLink || null,
+    collapsedInto: hierarchyOk ? collapsedInto : disposition === 'deepening_of_collective' ? null : collapsedInto,
+    parentId: hierarchyOk ? collapsedInto : null,
+    childIds: stamped.childIds || stamped.hierarchyChildren || null,
     disposition,
-    reason: disposition === 'priority' ? 'p6_priority' : 'p6_reserve'
+    reason:
+      disposition === 'priority'
+        ? stamped.selectionReason || 'p6_priority'
+        : disposition === 'deepening_of_collective'
+          ? hierarchyOk
+            ? 'verified_hierarchy_deepening'
+            : 'deepening_without_verified_link'
+          : stamped.selectionReason || 'p6_reserve'
   };
 }
 
@@ -95,12 +111,11 @@ function dispositionRecord(
     occurrenceId: stamped.occurrenceId || stablePublicationId(stamped),
     title: stamped?.title || null,
     kind: stamped?.kind || null,
-    subjectKey: stamped?.metrics?.exerciseId
-      ? `ex:${stamped.metrics.exerciseId}`
-      : null,
+    subjectKey: resolveSubjectKey(stamped),
     disposition,
     reason,
-    collapsedInto: collapsedInto || stamped?.collapsedInto || null,
+    // null explicite doit gagner (Mission 29) — ne pas retomber sur collapsedInto hérité
+    collapsedInto: collapsedInto !== undefined ? collapsedInto : stamped?.collapsedInto || null,
     equivalence: equivalence || null,
     fusionLineage: fusionLineage || stamped?.fusionLineage || null,
     lineage: stamped?.lineage || null
@@ -368,24 +383,55 @@ export function insightsFromP6(p6, { period = null } = {}) {
       row?.p6Disposition === 'deepening_accessible';
     if (isDeepening) {
       const stampedDeep = stampDiscoveryIdentity(row);
-      const card = publishRow(stampedDeep, {
-        column: NATURE_COLUMN[row.nature] || null,
-        dispositionLabel: 'deepening_of_collective'
-      });
+      const link = row.hierarchyLink || row.metrics?.hierarchyLink || stampedDeep.hierarchyLink || null;
+      const linkOk = link?.ok === true;
+      // Mission 23 — sans justification, le rattachement n’est pas « verified »
+      if (!linkOk) {
+        dispositions.push(
+          dispositionRecord(stampedDeep, 'keep_independent', 'deepening_rejected:missing_or_invalid_link', {
+            collapsedInto: null,
+            equivalence: link || null
+          })
+        );
+        // Republier comme réserve autonome (pas d’absorption ni parentId)
+        const card = publishRow(
+          { ...stampedDeep, p6Disposition: 'secondary_autonomous', collapsedInto: null, hierarchyLink: null },
+          { column: NATURE_COLUMN[row.nature] || null, dispositionLabel: 'reserve' }
+        );
+        if (card) {
+          accessibleReserve.push({
+            ...card,
+            period: period || card.period || null,
+            disposition: 'reserve',
+            reason: 'unverified_deepening_kept_independent',
+            parentId: null,
+            hierarchyLink: null,
+            collapsedInto: null
+          });
+        }
+        return;
+      }
+      const card = publishRow(
+        { ...stampedDeep, hierarchyLink: link, collapsedInto: row.collapsedInto || null },
+        {
+          column: NATURE_COLUMN[row.nature] || null,
+          dispositionLabel: 'deepening_of_collective'
+        }
+      );
       if (card) {
         accessibleReserve.push({
           ...card,
           period: period || card.period || null,
           disposition: 'deepening_of_collective',
           reason: 'verified_hierarchy_deepening',
-          parentId: row.collapsedInto || row.hierarchyLink?.proof?.parentId || null,
-          hierarchyLink: row.hierarchyLink || row.metrics?.hierarchyLink || null,
+          parentId: row.collapsedInto || link?.proof?.parentId || null,
+          hierarchyLink: link,
           collapsedInto: row.collapsedInto || null
         });
         dispositions.push(
           dispositionRecord(stampedDeep, 'deepening_accessible', 'verified_parent_child', {
             collapsedInto: row.collapsedInto,
-            equivalence: row.hierarchyLink || null
+            equivalence: link
           })
         );
       }
@@ -477,11 +523,156 @@ export function insightsFromP6(p6, { period = null } = {}) {
     accessibleReserve
   });
 
-  const published = [
+  // Mission 29 — vérification du graphe final sur le catalogue COMPLET
+  // (plus de réparation par colonne isolée : le parent priorité doit être visible).
+  const catalogBeforeReconcile = [
     ...(polished.shortTerm || []),
     ...(polished.mediumTerm || []),
     ...(polished.longTerm || []),
     ...(polished.accessibleReserve || [])
+  ];
+  const suppressedDestById = new Map();
+  dispositions.forEach((d) => {
+    if (
+      (d.disposition === 'exact_duplicate_suppressed' ||
+        d.disposition === 'semantic_equivalent_suppressed' ||
+        d.disposition === 'source_retained') &&
+      d.collapsedInto
+    ) {
+      suppressedDestById.set(d.id, d.collapsedInto);
+    }
+  });
+  (p6.sources || []).forEach((row) => {
+    const id = stablePublicationId(stampDiscoveryIdentity(row));
+    const dest = row.collapsedInto || null;
+    if (dest) suppressedDestById.set(id, dest);
+  });
+
+  const reconcileOrphanParents = (cards, catalog) => {
+    const byId = new Map((catalog || []).map((c) => [c.id, c]));
+    return (cards || []).map((card) => {
+      if (!card?.parentId || card.hierarchyLink?.ok !== true) return card;
+      if (byId.has(card.parentId)) return card;
+      // Destination de fusion du parent manquant
+      const fusedDest = suppressedDestById.get(card.parentId);
+      if (fusedDest && byId.has(fusedDest)) {
+        dispositions.push(
+          dispositionRecord(card, 'parent_redirected', 'orphan_parent_follow_fusion', {
+            collapsedInto: fusedDest,
+            equivalence: {
+              equivalent: false,
+              reason: 'orphan_parent_follow_fusion',
+              proof: { from: card.parentId, to: fusedDest }
+            }
+          })
+        );
+        return {
+          ...card,
+          parentId: fusedDest,
+          collapsedInto: fusedDest,
+          hierarchyLink: {
+            ...(card.hierarchyLink || {}),
+            ok: true,
+            reason: 'redirected_following_parent_fusion',
+            proof: {
+              ...(card.hierarchyLink?.proof || {}),
+              redirectedFrom: card.parentId,
+              redirectedTo: fusedDest
+            }
+          }
+        };
+      }
+      // Parent parallèle publié partageant les sujets
+      const childSubs = new Set(
+        [
+          ...(card.metrics?.parallelSubjects || []),
+          card.metrics?.exerciseId != null ? `ex:${card.metrics.exerciseId}` : null,
+          card.metrics?.subjectKey || null
+        ].filter(Boolean)
+      );
+      const alt = [...byId.values()].find((p) => {
+        if (!/composed_parallel|parallel_traj/i.test(String(p.kind || p.detectorKind || ''))) {
+          return false;
+        }
+        const pSubs = new Set(
+          [
+            ...(p.metrics?.parallelSubjects || []),
+            ...(String(p.metrics?.subjectKey || '').startsWith('parallel:')
+              ? String(p.metrics.subjectKey)
+                  .replace(/^parallel:/, '')
+                  .split('+')
+              : [])
+          ].filter(Boolean)
+        );
+        if (!childSubs.size || !pSubs.size) return false;
+        for (const s of childSubs) {
+          if (pSubs.has(s) || [...pSubs].some((ps) => String(ps).includes(String(s).replace(/^ex:/, '')))) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (alt) {
+        dispositions.push(
+          dispositionRecord(card, 'parent_redirected', 'orphan_parent_retarget', {
+            collapsedInto: alt.id,
+            equivalence: {
+              equivalent: false,
+              reason: 'orphan_parent_retarget',
+              proof: { from: card.parentId, to: alt.id }
+            }
+          })
+        );
+        return {
+          ...card,
+          parentId: alt.id,
+          collapsedInto: alt.id,
+          hierarchyLink: {
+            ...(card.hierarchyLink || {}),
+            ok: true,
+            reason: 'redirected_to_published_parallel_parent',
+            proof: {
+              ...(card.hierarchyLink?.proof || {}),
+              redirectedFrom: card.parentId,
+              redirectedTo: alt.id
+            }
+          }
+        };
+      }
+      dispositions.push(
+        dispositionRecord(card, 'parent_detached', 'orphan_parent_cleared', {
+          collapsedInto: null,
+          equivalence: {
+            equivalent: false,
+            reason: 'orphan_parent_cleared',
+            proof: { missingParentId: card.parentId }
+          }
+        })
+      );
+      return {
+        ...card,
+        parentId: null,
+        collapsedInto: null,
+        hierarchyLink: null,
+        disposition: card.disposition === 'deepening_of_collective' ? 'demoted_priority' : card.disposition,
+        reason: 'orphan_parent_cleared_kept_independent'
+      };
+    });
+  };
+
+  const shortReconciled = reconcileOrphanParents(polished.shortTerm || [], catalogBeforeReconcile);
+  const mediumReconciled = reconcileOrphanParents(polished.mediumTerm || [], catalogBeforeReconcile);
+  const longReconciled = reconcileOrphanParents(polished.longTerm || [], catalogBeforeReconcile);
+  const reserveReconciled = reconcileOrphanParents(
+    polished.accessibleReserve || [],
+    catalogBeforeReconcile
+  );
+
+  const published = [
+    ...shortReconciled,
+    ...mediumReconciled,
+    ...longReconciled,
+    ...reserveReconciled
   ];
   const publicationReconciliation = reconcilePublicationIds({
     registryIds,
@@ -529,10 +720,10 @@ export function insightsFromP6(p6, { period = null } = {}) {
 
   return {
     ...empty,
-    shortTerm: polished.shortTerm,
-    mediumTerm: polished.mediumTerm,
-    longTerm: polished.longTerm,
-    accessibleReserve: polished.accessibleReserve,
+    shortTerm: shortReconciled,
+    mediumTerm: mediumReconciled,
+    longTerm: longReconciled,
+    accessibleReserve: reserveReconciled,
     publicationAuthority: authority,
     fusedSourcesExcluded: (p6.sources || []).length,
     blockedExcluded: (p6.blocked || []).length,

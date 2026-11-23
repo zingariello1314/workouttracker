@@ -187,6 +187,36 @@ export default function RecapAnalyseExportBar({
             </button>
             <button
               type="button"
+              className="rounded-md border border-amber-700/50 px-2 py-1 text-[11px] font-medium text-amber-100 hover:bg-amber-950/50 disabled:opacity-40"
+              disabled={busy}
+              title="Trace de raisonnement 8 horizons (serializeConclusion + modules + sous-exploration) — distinct de ANALYTICAL_AUDIT"
+              onClick={() =>
+                run(
+                  'momentumExportReasoningTrace',
+                  {},
+                  'Préparation de ANALYTICAL_REASONING_TRACE.json…'
+                )
+              }
+            >
+              Exporter la trace de raisonnement
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-amber-800/40 px-2 py-1 text-[11px] text-amber-100/80 hover:bg-amber-950/40 disabled:opacity-40"
+              disabled={busy}
+              title="Index bulk de toutes les inspections (sans ouvrir carte par carte)"
+              onClick={() =>
+                run(
+                  'momentumExportReasoningTrace',
+                  {},
+                  'Export des inspections (index bulk via trace)…'
+                )
+              }
+            >
+              Exporter toutes les inspections
+            </button>
+            <button
+              type="button"
               className="rounded-md border border-rose-700/40 px-2 py-1 text-[11px] text-rose-100/90 hover:bg-rose-950/40 disabled:opacity-40"
               disabled={busy}
               title="ZIP d’audit complet"

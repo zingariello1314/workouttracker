@@ -88,8 +88,14 @@ export function buildAuditIaMarkdown({
   Object.entries(periods).forEach(([period, dossier]) => {
     const counts = dossier?.userAccessible?.counts || {};
     const recon = dossier?.registry?.publicationReconciliation || {};
+    const finalRecon = dossier?.registry?.finalCatalogReconciliation || {};
+    // Mission 23 — une seule autorité : finalCatalog prioritaire sur le sous-statut legacy
+    const reconciledStrict =
+      finalRecon.reconciledStrict != null
+        ? finalRecon.reconciledStrict
+        : recon.reconciledStrict ?? recon.countsReconciled ?? null;
     lines.push(
-      `- **${period}** · prio ${counts.priority ?? '—'} · réserve ${counts.reserve ?? '—'} · accessible ${counts.accessible ?? '—'} · registre ${recon.registryCount ?? '—'} · publié ${recon.publishedCount ?? '—'} · countGap ${recon.countGap ?? '—'} · countsReconciled ${recon.countsReconciled ?? '—'} · provenance ${dossier?.provenance || '—'}`
+      `- **${period}** · prio ${counts.priority ?? '—'} · réserve ${counts.reserve ?? '—'} · accessible ${counts.accessible ?? '—'} · registre ${recon.registryCount ?? '—'} · publié ${recon.publishedCount ?? '—'} · countGap ${finalRecon.countGapVsPublication ?? recon.countGap ?? '—'} · reconciledStrict ${reconciledStrict} · provenance ${dossier?.provenance || '—'}`
     );
   });
   if (!Object.keys(periods).length) {

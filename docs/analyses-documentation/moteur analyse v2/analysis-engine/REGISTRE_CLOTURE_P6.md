@@ -1,34 +1,59 @@
-# REGISTRE DE CLÔTURE P6 — mis à jour Mission 20
+# REGISTRE DE CLÔTURE P6 — Mission 30
 
-Édition courante : `p6-sovereign-v19`. **P6 non clôturée. NO-GO P7.**
+Édition code : `p6-sovereign-v29`.  
+Baseline observée gelée : v28 (`mission30-baseline`).
 
-Légende états : NC = non commencée · IMP = implémentée · UT = test unitaire · PIPE = pipeline · PUB = publiée rejeu · DOM = observée UI · QUAL = validation qualitative.
+**P6 non clôturée. NO-GO P7.**
 
-| Exigence ASPECT | État | Détail / preuve manquante |
+| Exigence ASPECT | État | Détail |
 |---|---|---|
-| Collectif de reprise | PIPE+PUB | 9 mouvements, confirm 18 nov, muscles multi-groupes ; rejet sélection `raw_exercise_id` parfois bruyant |
-| Niveaux A/B/C/D collectifs | Partiel | A/B OK ; C/D incomplets |
-| Thèse = texte | PIPE+PUB | Direction familles corrigée ; authority composition préservée |
-| Pic unique / redondances | IMP+UT | Inchangé |
-| Composition mensuelle familles | PIPE+PUB | Attribution ~51 % ; contributions freq+contenu ; population CLASSIC |
-| Variantes non circulaires | UT+IMP | 0 carte sur backup ; pack positif dayKey OK |
-| Hiérarchie utilisateur | Faible | hierarchyLink toujours absent export |
-| Mémoire chronologique | NC produit | Identités épisode anticipées (`return_episode\|…`) |
-| Différenciation horizons longs | Partiel | Même épisode répété (identité stable = voulu) |
-| Sommeil contextualisé | Partiel | Inchangé |
-| Généralisation programmes | Partiel | Matching id+nom ; packs A–F incomplets |
-| Faits atomiques | Partiel | Populations/familles/épisode ; compteur global encore pauvre |
-| Catalogue / réconciliation | Expliqué | Populations canoniques ; all/selected/accessible documentés rejeu |
-| Fingerprint multi-sources | IMP | v3 : weightKeys=573, setLogKeys=594 |
-| DOM | NC | NON_OBSERVÉ |
-| Vitest globale | Partiel | Suites M17–M20 OK |
-| Aveugle humain | NC | — |
-| Jeux A/B/C | Partiel | Variantes A/B en UT ; non branchés exhaustivement sur rejeu |
-| Exploration couverture honnête | Ouvert | Statut « applicable non exécutée » encore incomplet |
+| Collectif de reprise | PIPE+UT | Conservé v28 |
+| Niveaux A/B/C/D | Partiel | Jeux B/C préparés |
+| Thèse = texte | PIPE+PUB | OK structure |
+| Composition mensuelle | PIPE+UT | OK |
+| Variantes non circulaires | UT+IMP | M16 |
+| Hiérarchie | CODE+UT+PUB v28 | Rejeu v29 |
+| Mémoire | PIPE+UT | 40 pubs ; 1 phen |
+| Différenciation horizons | Partiel | — |
+| Sommeil | Partiel | G4 |
+| Généralisation | Partiel | G1–G6 |
+| Faits / métriques | CODE+UT | **Effectifs=population M30** |
+| Réconciliation / fusion | CODE+UT+PUB | Partial : reformulations encore absorbées |
+| Identités | CODE+UT | — |
+| Fingerprint | PIPE | nameMap=0 |
+| Observabilité | Partiel | evaluations/DOM |
+| Intégrité publication | PUB v28 | — |
+| DOM | NC | NON_OBSERVÉ ≠ PASS |
+| Aveugle | Préparé | PENDING exécution |
+| Jeux A/B/C | A amorcé ; B/C préparés | V1/V2 non clos |
 
-## Prochaine livraison recommandée
+## Historique
 
-1. Faits partagés élargis + dayKey sur trajectoires (variantes non circulaires quand prouvables).  
-2. Observation DOM.  
-3. Mémoire chronologique sur identités d’épisode déjà stables.  
-4. Puis évaluation ASPECT formelle avant toute clôture P6.
+| Mission | Édition | Focus |
+|---|---|---|
+| 27 | v26 | Autorités d’identité |
+| 28 | v27 | Convergence ; plan fini |
+| 29 | v28 | Fusion ; totaux |
+| 30 | v29 | Population effectifs ; Jeu A ; abondance ; repro |
+
+## Signaux résiduels (qualification)
+
+| Signal | Nature |
+|---|---|
+| Parent séances arc (pré-v29) | Défaut démontré (corrigé code) |
+| evaluations=null | Observabilité |
+| DOM / proseAudit=0 | Observabilité (≠ PASS) |
+| 28/80 exploration | Généralisation manquante |
+| 258 memoryAbsent | Limitation + observabilité |
+| 1 phénomène mémoire | Limitation données / scope |
+| nameMapSize=0 | Limitation export |
+| period_activity générique | Rédaction (G6) |
+
+## Prochaine
+
+1. Rejeu **v29** produit.  
+2. V1 élargi + V2 reformulations en réserve.  
+3. Exécuter B/C.  
+4. P2.
+
+**Toujours NO-GO P7.**

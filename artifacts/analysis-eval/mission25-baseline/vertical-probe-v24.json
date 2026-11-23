@@ -1,0 +1,52 @@
+{
+  "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "rootCause": "parallel.composedCount not in produced → counters.reconciled=false → legacy_fallback sans claims",
+  "fix": "produced += composedParallel; claim on parallel parent discovery; integrity validation",
+  "pipeline": {
+    "reconciled": true,
+    "composedParallel": 1,
+    "authority": "p6",
+    "steps": [
+      "validation",
+      "composition",
+      "hierarchy",
+      "parallel_trajectories",
+      "select",
+      "memory",
+      "publication"
+    ]
+  },
+  "published": {
+    "priorityCount": 2,
+    "reserveCount": 2,
+    "claimsInAudit": 4,
+    "cardsInAudit": 4,
+    "publishedWithoutClaim": 0,
+    "parallelCard": {
+      "title": "Hyperextension : 2 créneaux parallèles (~6 séances)",
+      "hasClaim": true,
+      "disposition": "consolidated",
+      "childIds": [
+        "disc_traj_parallel_probe|ex:slotA|dates:2026-11-01,2026-11-04,2026-11-08|aspect:default",
+        "disc_traj_parallel_probe|ex:slotB|dates:2026-11-02,2026-11-05,2026-11-09|aspect:default"
+      ]
+    }
+  },
+  "validation": {
+    "ok": true,
+    "schemaOk": true,
+    "integrityOk": true,
+    "errors": []
+  },
+  "comparisonNarrative": {
+    "v22": {
+      "note": "P6 authority, claims per horizon, large reserve"
+    },
+    "v23": {
+      "note": "parallel broke counters → legacy_fallback → claims only today, priorities up, cardRegistry down"
+    },
+    "v24": {
+      "note": "P6 authority restored with composedParallel accounting; parallel claims present"
+    }
+  }
+}

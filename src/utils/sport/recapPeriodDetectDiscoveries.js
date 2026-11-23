@@ -20,7 +20,6 @@ import {
   trajectoryToMetrics
 } from './exerciseTrajectoryAnalysis';
 import { runExerciseFormatConsolidationShadow } from './exerciseFormatConsolidation';
-import { decideInformativePriority } from './analyticalMemory';
 import { muscleWindowRelation } from './muscleExposureLedger';
 import { buildSessionWorkProfiles } from './sessionWorkProfile';
 import {
@@ -52,12 +51,23 @@ import {
   buildOccurrenceLedgerFromCatalog,
   buildReturnEventsFromLedger,
   clusterLedgerReturnEpisodes,
-  qualifyEpisodeLevels
+  qualifyEpisodeLevels,
+  stableReturnEpisodeId,
+  resolveContinuousEpisodeId
 } from './sessionEpisodeLedger';
 import {
   decomposeMonthlyProgramChange,
   discoveryFromMonthlyComposition
 } from './monthlyProgramComposition';
+import {
+  buildMigratedAnalyticalFacts,
+  factsToObservedValues
+} from './analyticalFacts';
+import { measurePopulationWindow, POPULATION_ID } from './canonicalAnalyticalPopulations';
+import {
+  decideInformativePriority,
+  evolveCollectivePhenomenonMemory
+} from './analyticalMemory';
 import { inferMuscleLoadRolesForExercise, inferMuscleGroupsForExercise } from './recapMuscleInference';
 import {
   detectFamilyFades,
@@ -1719,6 +1729,40 @@ export function detectDiscoveries(cmp, extras = {}) {
   const rpeSleep = sleepCands.find((c) => c.type === 'sleep_rpe');
 
   if (vol75 && (isToday || isWeek)) {
+    const sparseArm = Math.min(Number(vol75.highN) || 0, Number(vol75.lowN) || 0);
+    const imbalance =
+      Math.max(Number(vol75.highN) || 0, Number(vol75.lowN) || 0) /
+      Math.max(1, sparseArm);
+    // Mission 24 — 17 vs 4 (ou bras < 6) : abstention sur 7j, pas un seuil « de la semaine »
+    const abstainSparseWeek =
+      isWeek && (sparseArm < 6 || imbalance >= 3);
+    if (abstainSparseWeek) {
+      out.push(
+        discovery({
+          kind: 'disc_sleep_volume_abstain',
+          nature: 'trajectory',
+          family: 'sleep_volume',
+          title: 'Sommeil et volume : données historiques insuffisantes pour conclure sur 7 jours',
+          body: `L’association ≥ 7 h 30 repose sur un échantillon historique apparié (${vol75.highN} vs ${vol75.lowN} séances), distinct de la fenêtre 7 jours affichée. Un bras trop mince ou asymétrique n’établit ni relation spécifique à cette semaine, ni seuil personnel fiable. Abstention jusqu’à des populations mieux équilibrées.`,
+          evidence: `nHigh=${vol75.highN} · nLow=${vol75.lowN} · sample=${vol75.sample || 'all'}`,
+          weights: { importance: 0.4, reliability: 0.9, novelty: 0.2, fit: 0.5 },
+          metrics: {
+            ...vol75,
+            associationOnly: true,
+            abstained: true,
+            abstentionReason: 'sparse_or_imbalanced_paired_sleep_sample',
+            displayWindow: p.window || null,
+            pairingWindow: 'historical_paired_sessions',
+            populationLabel: 'échantillon historique — pas la semaine affichée',
+            informativeValue: 12,
+            observedValues: [
+              { id: 'highN', value: vol75.highN, unit: 'sessions' },
+              { id: 'lowN', value: vol75.lowN, unit: 'sessions' }
+            ]
+          }
+        })
+      );
+    } else {
     const nLabel = vol75.sample === 'recent14' ? 'les 14 dernières séances' : 'les séances observées';
     const todayPlace =
       isToday && sleepCtx?.hours != null && p.totalReps >= 80
@@ -1757,6 +1801,8 @@ export function detectDiscoveries(cmp, extras = {}) {
         metrics: {
           ...vol75,
           associationOnly: true,
+          displayWindow: p.window || null,
+          pairingWindow: 'historical_paired_sessions',
           populationLabel:
             vol75.sample === 'all'
               ? 'historique des séances appariées à une nuit (échantillon global)'
@@ -1773,6 +1819,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         }
       })
     );
+    }
   }
 
   if (vol75 && isMonth) {
@@ -2471,7 +2518,34 @@ export function detectDiscoveries(cmp, extras = {}) {
           draftBody: legacyBody,
           legacyTitle,
           legacyBody,
-          ...trajectoryToMetrics(traj)
+          ...trajectoryToMetrics(traj),
+          // Mission 29 — autorité population structurale (d30/prev30), après traj
+          recentReps: Number.isFinite(Number(structLead.nowReps)) ? Number(structLead.nowReps) : null,
+          prevReps: Number.isFinite(Number(structLead.thenReps)) ? Number(structLead.thenReps) : null,
+          windowTotalReps: Number.isFinite(Number(structLead.nowReps))
+            ? Number(structLead.nowReps)
+            : null,
+          sessionCount: Number.isFinite(Number(structLead.nowDays)) ? Number(structLead.nowDays) : null,
+          prevSessionCount: Number.isFinite(Number(structLead.thenDays))
+            ? Number(structLead.thenDays)
+            : null,
+          observedValues: [
+            ...(Number.isFinite(Number(structLead.nowReps))
+              ? [{ id: 'recentReps', value: Number(structLead.nowReps), unit: 'reps' }]
+              : []),
+            ...(Number.isFinite(Number(structLead.thenReps))
+              ? [{ id: 'prevReps', value: Number(structLead.thenReps), unit: 'reps' }]
+              : []),
+            ...(Number.isFinite(Number(structLead.nowDays))
+              ? [{ id: 'sessionCount', value: Number(structLead.nowDays), unit: 'sessions' }]
+              : []),
+            ...(Number.isFinite(Number(structLead.nowShare))
+              ? [{ id: 'nowShare', value: Number(structLead.nowShare), unit: 'ratio' }]
+              : []),
+            ...(Number.isFinite(Number(structLead.thenShare))
+              ? [{ id: 'thenShare', value: Number(structLead.thenShare), unit: 'ratio' }]
+              : [])
+          ]
         }
       })
     );
@@ -3148,8 +3222,13 @@ export function detectDiscoveries(cmp, extras = {}) {
           const hit =
             eventByKey.get(String(m.exerciseId || '')) ||
             eventByKey.get(String(m.name || '').toLowerCase());
+          const resolvedName =
+            resolveExName(m.exerciseId, m.name) ||
+            resolveExName(hit?.exerciseId, hit?.name) ||
+            m.name;
           return {
             ...m,
+            name: resolvedName,
             prevReps: hit?.prevReps ?? m.prevReps,
             currentReps: hit?.currentReps ?? m.currentReps,
             gapDays: hit?.gapDays ?? m.gapDays,
@@ -3174,25 +3253,90 @@ export function detectDiscoveries(cmp, extras = {}) {
         : isMonth
           ? 'La reprise collective se confirme sur ces 30 jours'
           : 'La reprise collective se confirme sur cette période';
+      const episodeParticipants = collective.namedMoves || returnEvents;
+      const continuity = resolveContinuousEpisodeId(
+        episodeParticipants,
+        (collective.dates || [])[0] || null,
+        extras?.analyticalMemory?.phenomena || null
+      );
+      const episodeId = continuity.episodeId || stableReturnEpisodeId(
+        episodeParticipants,
+        (collective.dates || [])[0] || null
+      );
+      const knowledgeCutoff = p?.window?.end || extras?.refYmd || null;
+      const memoryEvolve = evolveCollectivePhenomenonMemory({
+        episodeId,
+        namedMoves: collective.namedMoves || [],
+        returnDates: collective.dates || [],
+        confirmationDates: collective.confirmationDates || [],
+        readingMode,
+        knowledgeCutoff,
+        priorMemory: extras?.analyticalMemory || null
+      });
+      if (memoryEvolve?.memory?.phenomena?.[episodeId]) {
+        const phen = memoryEvolve.memory.phenomena[episodeId];
+        phen.participantIds = [
+          ...new Set(
+            (episodeParticipants || [])
+              .map((m) => String(m.exerciseId || m.name || '').trim())
+              .filter(Boolean)
+          )
+        ];
+        phen.aliases = [
+          ...new Set([...(phen.aliases || []), ...(continuity.aliases || [])])
+        ];
+        phen.continuedFromPrior = continuity.continued === true;
+      }
+      if (!extras._memoryUpdates) extras._memoryUpdates = [];
+      extras._memoryUpdates.push({
+        episodeId,
+        state: memoryEvolve.state,
+        transition: memoryEvolve.transition,
+        memory: memoryEvolve.memory
+      });
+      const factPack = buildMigratedAnalyticalFacts({
+        window: p?.window || null,
+        collective: {
+          ...collective,
+          episodeId,
+          namedMoves: collective.namedMoves || [],
+          dates: collective.dates || [],
+          confirmationDates: collective.confirmationDates || []
+        }
+      });
+      const memPriority = decideInformativePriority({
+        transition: memoryEvolve.transition,
+        supportCount: (collective.namedMoves || []).length,
+        newFacts: memoryEvolve.newFacts,
+        quietDays: 0,
+        horizonDays: isWeek ? 7 : isMonth ? 30 : 90
+      });
       out.push(
         discovery({
           kind: 'disc_collective_return',
           nature: 'trajectory',
           family: 'repertoire',
+          phenomenonId: episodeId,
           title:
             readingMode === 'confirmation'
               ? confirmationTitle
               : composed.coverage === 'concluded'
-                ? 'Une composante de ton entraînement se réinstalle'
+                ? memoryEvolve.state === 'reinstalling'
+                  ? 'La réinstallation collective se poursuit'
+                  : 'Une composante de ton entraînement se réinstalle'
                 : 'Un retour collectif restructure une partie du répertoire',
           body: composed.conclusion || collective.conclusion,
           evidence: (collective.namedMoves || [])
-            .map((m) => `${m.name}@${m.date || '?'}`)
+            .map((m) => {
+              const label = String(m.name || '').trim();
+              const safe = label && !/^\d+$/.test(label) ? label : 'mouvement';
+              return `${safe}@${m.date || '?'}`;
+            })
             .join(' · '),
           weights: {
             importance: 0.98,
             reliability: 0.9,
-            novelty: 0.96,
+            novelty: memPriority.newPriorityCard ? 0.96 : 0.55,
             fit: isMonth || isWeek ? 1 : 0.85
           },
           drafting: { authority: 'composition' },
@@ -3208,8 +3352,21 @@ export function detectDiscoveries(cmp, extras = {}) {
             composition: composed,
             narrativeAuthority: 'composition',
             thesis: 'collective_return',
-            episodeId: `return_episode|${(collective.dates || []).join(',')}`,
-            episodeQual: qualifyEpisodeLevels(collective.namedMoves || returnEvents),
+            episodeId,
+            phenomenonId: episodeId,
+            episodeQual: qualifyEpisodeLevels(episodeParticipants),
+            memory: {
+              state: memoryEvolve.state,
+              previousState: memoryEvolve.previousState,
+              transition: memoryEvolve.transition,
+              knownAt: memoryEvolve.knownAt,
+              knowledgeCutoff,
+              previousConclusion: memoryEvolve.previousConclusion,
+              publicationDecision: memPriority,
+              exposureCounted: false
+            },
+            sharedFacts: factPack.facts.map((f) => f.id),
+            factRegistry: factPack,
             ledgerEpisodeRank: ledgerEpisodes[0]
               ? {
                   episodeId: ledgerEpisodes[0].episodeId,
@@ -3218,21 +3375,31 @@ export function detectDiscoveries(cmp, extras = {}) {
                 }
               : null,
             window: p?.window || null,
-            observedValues: (collective.namedMoves || []).flatMap((m) => [
-              { id: `return:${m.exerciseId || m.name}`, value: m.date, unit: 'date' },
-              ...(m.gapDays != null
-                ? [{ id: `gap:${m.exerciseId || m.name}`, value: m.gapDays, unit: 'days' }]
-                : []),
-              ...(m.prevReps != null
-                ? [{ id: `prevReps:${m.exerciseId || m.name}`, value: m.prevReps, unit: 'reps' }]
-                : []),
-              ...(m.currentReps != null
-                ? [{ id: `currentReps:${m.exerciseId || m.name}`, value: m.currentReps, unit: 'reps' }]
-                : [])
-            ]),
-            conclusionKey: `collective_return|${readingMode}|${(collective.dates || []).join(',')}`,
+            observedValues: [
+              ...factsToObservedValues(factPack),
+              ...(collective.namedMoves || []).flatMap((m) => [
+                { id: `return:${m.exerciseId || m.name}`, value: m.date, unit: 'date' },
+                ...(m.gapDays != null
+                  ? [{ id: `gap:${m.exerciseId || m.name}`, value: m.gapDays, unit: 'days' }]
+                  : []),
+                ...(m.prevReps != null
+                  ? [{ id: `prevReps:${m.exerciseId || m.name}`, value: m.prevReps, unit: 'reps' }]
+                  : []),
+                ...(m.currentReps != null
+                  ? [{ id: `currentReps:${m.exerciseId || m.name}`, value: m.currentReps, unit: 'reps' }]
+                  : []),
+                ...((m.confirmationDates || []).length
+                  ? (m.confirmationDates || []).map((d) => ({
+                      id: `confirmed:${m.exerciseId || m.name}`,
+                      value: d,
+                      unit: 'date'
+                    }))
+                  : [])
+              ])
+            ],
+            conclusionKey: `collective_return|${episodeId}|${readingMode}`,
             producer: 'sessionEpisodeLedger+exploreCollectiveReturn+composeCollectiveReturnReading',
-            informativeValue: 96
+            informativeValue: memPriority.newPriorityCard ? 96 : 72
           }
         })
       );
@@ -3248,8 +3415,18 @@ export function detectDiscoveries(cmp, extras = {}) {
           activeProgram: extras?.activeProgram || null,
           getExerciseNameById: extras?.getExerciseNameById || null
         });
+        const monthlyFacts = buildMigratedAnalyticalFacts({
+          window: p?.window || null,
+          previousWindow: decomp?.previousWindow || null,
+          classicVolume: decomp?.recent?.volume ?? null,
+          previousClassicVolume: decomp?.previous?.volume ?? null,
+          classicDays: decomp?.recent?.trainingDays ?? null,
+          previousClassicDays: decomp?.previous?.trainingDays ?? null,
+          decomp
+        });
         const monthlyCard = discoveryFromMonthlyComposition(decomp, {
-          voiceKey: v?.key || 'month'
+          voiceKey: v?.key || 'month',
+          sharedFacts: monthlyFacts
         });
         if (monthlyCard && decomp.deltaVolume !== 0) {
           // Sur 7j : seulement si l’angle famille apporte une info absente du volume brut

@@ -1,0 +1,111 @@
+{
+  "schema": "momentum.m21ChronoMemory.v1",
+  "generatedAt": "2026-11-22T12:44:58.547Z",
+  "mission": "Mission 21",
+  "edition": "p6-sovereign-v20",
+  "episodeId": "return_episode|2026-11-11|p:6294d8f0|n:9",
+  "namedMoveCount": 9,
+  "noFutureLeak": true,
+  "steps": [
+    {
+      "cutoff": "2026-10-14",
+      "state": "absent_or_interrupted",
+      "previousState": null,
+      "transition": "new",
+      "visibleConfirmations": [],
+      "futureLeak": false
+    },
+    {
+      "cutoff": "2026-11-01",
+      "state": "absent_or_interrupted",
+      "previousState": "absent_or_interrupted",
+      "transition": "unchanged",
+      "visibleConfirmations": [],
+      "futureLeak": false
+    },
+    {
+      "cutoff": "2026-11-10",
+      "state": "absent_or_interrupted",
+      "previousState": "absent_or_interrupted",
+      "transition": "unchanged",
+      "visibleConfirmations": [],
+      "futureLeak": false
+    },
+    {
+      "cutoff": "2026-11-11",
+      "state": "return_observed",
+      "previousState": "absent_or_interrupted",
+      "transition": "revised",
+      "visibleConfirmations": [],
+      "futureLeak": false
+    },
+    {
+      "cutoff": "2026-11-17",
+      "state": "return_observed",
+      "previousState": "return_observed",
+      "transition": "unchanged",
+      "visibleConfirmations": [],
+      "futureLeak": false
+    },
+    {
+      "cutoff": "2026-11-18",
+      "state": "confirmed_once",
+      "previousState": "return_observed",
+      "transition": "confirmed",
+      "visibleConfirmations": [
+        "2026-11-18"
+      ],
+      "futureLeak": false
+    },
+    {
+      "cutoff": "2026-11-21",
+      "state": "confirmed_once",
+      "previousState": "confirmed_once",
+      "transition": "unchanged",
+      "visibleConfirmations": [
+        "2026-11-18"
+      ],
+      "futureLeak": false
+    }
+  ],
+  "finalPhenomenon": {
+    "id": "return_episode|2026-11-11|p:6294d8f0|n:9",
+    "exerciseId": null,
+    "phenomenon": "collective_return",
+    "state": "confirmed_once",
+    "previousState": "confirmed_once",
+    "proofIds": [
+      "return:2026-11-11",
+      "confirm:2026-11-18",
+      "ex:302",
+      "ex:304",
+      "ex:306",
+      "ex:307",
+      "ex:308",
+      "ex:309",
+      "ex:310",
+      "ex:311",
+      "ex:312"
+    ],
+    "window": {
+      "start": "2026-11-11",
+      "end": "2026-11-21"
+    },
+    "transition": "unchanged",
+    "updatedAt": "2026-11-21",
+    "previousConclusion": "confirmed_once",
+    "lastConclusion": "confirmed_once",
+    "participantCount": 9,
+    "confirmedParticipants": [
+      "302",
+      "304",
+      "306",
+      "307",
+      "308",
+      "309",
+      "310",
+      "311",
+      "312"
+    ]
+  }
+}

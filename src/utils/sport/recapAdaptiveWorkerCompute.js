@@ -43,6 +43,7 @@ export async function computeAdaptiveInsightsPayload(msg, coop = {}) {
     activeProgram: msg.activeProgram || null,
     programs: Array.isArray(msg.programs) ? msg.programs : [],
     insightHistory: msg.insightHistory || null,
+    analyticalMemory: msg.analyticalMemory || null,
     recapState: msg.recapState || null,
     coop: {
       shouldAbort,

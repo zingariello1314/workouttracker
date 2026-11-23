@@ -17,6 +17,7 @@ import {
   resolveExerciseNameForRecap,
   userFacingExerciseLabel
 } from './recapStrengthPeriodStats';
+import { classicExclusiveRepsForDay } from './recapP35DayModel';
 
 function median(nums) {
   const v = (nums || []).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
@@ -43,6 +44,8 @@ function exerciseName(id, getExerciseNameById) {
 
 /**
  * Historique complet jusqu'à `endYmd` (inclus), toutes dates antérieures gardées.
+ * Population CLASSIC_SESSION : hors complementary, hors volume GTG synchronisé
+ * (Mission 21 — une journée exclusivement GTG n’est pas une séance classique).
  */
 export function collectLifetimeRepHistory(snapshot, endYmd = null) {
   const reps = snapshot?.reps || {};
@@ -68,10 +71,38 @@ export function collectLifetimeRepHistory(snapshot, endYmd = null) {
     dates.set(dateStr, prev == null ? val : Math.max(prev, val));
   }
 
-  /** @type {Map<string, { date: string, reps: number }[]>} */
+  // Déduction GTG à la source : exclusiveReps par (date, storageId).
+  const touchedDates = new Set();
+  byExDates.forEach((dates) => {
+    dates.forEach((_, dateStr) => touchedDates.add(dateStr));
+  });
+  touchedDates.forEach((dateStr) => {
+    const pack = classicExclusiveRepsForDay(snapshot, dateStr);
+    if (!(pack?.gtgSyncedReps > 0) && !(pack?.classicTotalReps > 0)) return;
+    const byStorage = new Map(
+      (pack?.syncDeduction?.perKey || []).map((row) => [String(row.storageId), row])
+    );
+    byExDates.forEach((dates, exId) => {
+      if (!dates.has(dateStr)) return;
+      const row = byStorage.get(String(exId));
+      if (!row) return;
+      const exclusive = Math.max(0, Math.floor(Number(row.exclusiveReps) || 0));
+      if (exclusive <= 0) dates.delete(dateStr);
+      else dates.set(dateStr, exclusive);
+    });
+  });
+
+  /** @type {Map<string, { date: string, reps: number, activityType?: string }[]>} */
   const byEx = new Map();
   for (const [exId, dates] of byExDates.entries()) {
-    const list = [...dates.entries()].map(([date, repsVal]) => ({ date, reps: repsVal }));
+    const list = [...dates.entries()]
+      .filter(([, repsVal]) => repsVal > 0)
+      .map(([date, repsVal]) => ({
+        date,
+        reps: repsVal,
+        activityType: 'classic_strength'
+      }));
+    if (!list.length) continue;
     list.sort((a, b) => a.date.localeCompare(b.date));
     byEx.set(exId, list);
   }

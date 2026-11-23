@@ -1,0 +1,39 @@
+{
+  "schema": "momentum.replayPack.v1",
+  "mission": 30,
+  "purpose": "Campagne reproductible unique — entrées sources ≠ résultats observés",
+  "frozenBaselineEdition": "p6-sovereign-v28",
+  "codeEditionAfterFix": "p6-sovereign-v29",
+  "timezone": "Europe/Paris",
+  "anchorDate": "2026-11-21",
+  "inputs": {
+    "sportBackup": "artifacts/analysis-eval/snapshots/momentum-sport-backup-2026-11-21.json",
+    "note": "Backup ≠ contexte live garanti. Contient reps, checkedExercises, charges/setLogs, programme, Garmin dailyMetrics. nameMap souvent absent (nameMapSize=0).",
+    "identityResolver": "exerciseDatabase + snapshot name fields (pas de nameMap exporté)",
+    "memoryInitial": "vide ou pack mémoire exporté séparément si présent dans AUDIT",
+    "selectionParams": "ANALYSIS_EDITION_PARTS + voiceKey par horizon",
+    "fingerprintContract": "multi-source-v5"
+  },
+  "observedResultsFrozen": {
+    "auditV28": "artifacts/analysis-eval/mission30-baseline/momentum-ANALYTICAL_AUDIT-p6-sovereign-v28-2026-11-22T17-47-02-151Z.json",
+    "traceV28": "artifacts/analysis-eval/mission30-baseline/"
+  },
+  "independentOracle": {
+    "gameACorpus": "artifacts/analysis-eval/mission30-gameA/independentCorpus.json",
+    "results": "artifacts/analysis-eval/mission30-results/"
+  },
+  "commands": {
+    "metricUnitTests": "npx vitest run src/utils/sport/__tests__/mission30MetricPopulation.test.js",
+    "gameAAbundance": "npx vite-node artifacts/analysis-eval/_m30_run_gameA_abundance.mjs",
+    "regressionM28M29": "npx vitest run src/utils/sport/__tests__/mission28ConvergenceIntegrity.test.js src/utils/sport/__tests__/mission29ContractAuthority.test.js",
+    "periodReplay": "P4_REPLAY=1 npx vitest run src/utils/sport/__tests__/p6Mission5BisReplay.test.js (si activé) ; sinon incrementalP6Replay sur le backup"
+  },
+  "gapsVsLiveApp": [
+    "nameMapSize=0 dans fingerprint exporté",
+    "Pas de DOM dans les exports (proseAudit.cardCount=0)",
+    "evaluations=null dans AUDIT_IA",
+    "Mémoire : un seul phénomène pack/store dans v28",
+    "Backup du 21/11 peut différer des reps réellement consommées le jour du run v28"
+  ],
+  "credentials": "aucun"
+}

@@ -1,13 +1,13 @@
 {
   "schema": "momentum.evalGamesBundle.v1",
-  "executedAt": "2026-11-21T18:20:58.915Z",
-  "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "executedAt": "2026-11-22T15:17:33.936Z",
+  "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
   "games": {
     "A": {
       "schema": "momentum.evalGameReport.v1",
       "game": "A",
-      "executedAt": "2026-11-21T18:20:58.914Z",
-      "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "executedAt": "2026-11-22T15:17:33.936Z",
+      "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
       "pass": true,
       "counters": {
         "missingClaims": 0,
@@ -31,7 +31,7 @@
           "status": "pass",
           "justification": "aucune violation détectée sur le paquet fourni",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         }
@@ -44,8 +44,8 @@
     "B": {
       "schema": "momentum.evalGameReport.v1",
       "game": "B",
-      "executedAt": "2026-11-21T18:20:58.915Z",
-      "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "executedAt": "2026-11-22T15:17:33.936Z",
+      "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
       "pass": true,
       "counters": {
         "referenceHits": 7,
@@ -84,7 +84,7 @@
           "status": "pass",
           "justification": "référence synthétique satisfaite",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -118,7 +118,7 @@
           "status": "pass",
           "justification": "référence synthétique satisfaite",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -152,7 +152,7 @@
           "status": "pass",
           "justification": "référence synthétique satisfaite",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -184,7 +184,7 @@
           "status": "pass",
           "justification": "référence synthétique satisfaite",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -231,7 +231,7 @@
           "status": "pass",
           "justification": "référence synthétique satisfaite",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -272,7 +272,7 @@
           "status": "pass",
           "justification": "référence synthétique satisfaite",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -310,7 +310,7 @@
           "status": "pass",
           "justification": "abstention correcte (référence négative satisfaite)",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -332,7 +332,7 @@
           "status": "not_applicable",
           "justification": "aucune séance chronométrée de défi dans ce paquet — le détecteur n’est ni validé ni contredit",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         },
@@ -359,7 +359,7 @@
           "status": "partial",
           "justification": "dimensions de qualité scorées (informatif, hors PASS/FAIL binaire)",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         }
@@ -377,8 +377,8 @@
     "C": {
       "schema": "momentum.evalGameReport.v1",
       "game": "C",
-      "executedAt": "2026-11-21T18:20:58.915Z",
-      "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "executedAt": "2026-11-22T15:17:33.936Z",
+      "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
       "pass": true,
       "counters": {
         "exactDuplicatesAccessible": 0,
@@ -428,7 +428,7 @@
           "status": "pass",
           "justification": "qualité collective du paquet accessible",
           "delta": null,
-          "edition": "audit=normalized-export-v1;claim=proof-pipeline-v3;coherence=inter-horizon-v1;composition=phenomenon-compose-v1;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v11;gtg=classic-exclusive-v1;identity=discovery-occurrence-v1;program=structural-context-v3;review=collective-pass4-v8;scope=short-window-anchor-v1;sleep=association-prose-v3;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+          "edition": "audit=normalized-export-v11;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v24;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v3;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v4;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=parallel-trajectories-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
           "humanBlindPerformed": false,
           "referenceKind": "synthetic"
         }

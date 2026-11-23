@@ -1,0 +1,4 @@
+﻿baseline_audit=AUDIT-v24.json
+baseline_trace=docs/.../momentum-ANALYTICAL_REASONING_TRACE-p6-sovereign-v24-2026-11-22T15-28-10-920Z.json
+note=User-provided v24 exports frozen for M26 non-regression
+false_parallel_3m=Pompes declinées ex:504 · ex:504

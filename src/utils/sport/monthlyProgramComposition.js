@@ -161,13 +161,15 @@ function summarizeWindow(sessions, activeProgram, familyIndex, getExerciseNameBy
       days: new Set(),
       volume: 0,
       levels: {},
-      variants: new Map()
+      variants: new Map(),
+      occurrenceDates: []
     };
     row.sessions += 1;
     row.days.add(date);
     row.volume += reps;
     row.confidenceMean += fam.confidence;
     row.levels[fam.level] = (row.levels[fam.level] || 0) + 1;
+    row.occurrenceDates.push(date);
     const variantKey = fam.variantName || fam.variantDayKey || 'unknown';
     if (variantKey) row.variants.set(variantKey, (row.variants.get(variantKey) || 0) + 1);
     byFamily.set(fam.familyId, row);
@@ -182,20 +184,49 @@ function summarizeWindow(sessions, activeProgram, familyIndex, getExerciseNameBy
     meanContent: r.sessions ? Math.round(r.volume / r.sessions) : 0,
     confidence: r.sessions ? Math.round((r.confidenceMean / r.sessions) * 100) / 100 : 0,
     levels: r.levels,
+    occurrenceDates: [...new Set(r.occurrenceDates || [])].sort(),
     topVariants: [...r.variants.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
       .map(([k, n]) => ({ composition: k, sessions: n }))
   }));
 
+  const sessionCount = (sessions || []).length;
+  const recognizedSessions =
+    (levelCounts.structurally_recognized || 0) + (levelCounts.probably_related || 0);
+  const structurallyVolume = families
+    .filter((f) => f.familyId !== 'unattributed')
+    .reduce((sum, f) => {
+      const struct = f.levels?.structurally_recognized || 0;
+      const totalLevel =
+        (f.levels?.structurally_recognized || 0) +
+        (f.levels?.probably_related || 0) +
+        (f.levels?.unattributable || 0);
+      if (!totalLevel) return sum;
+      return sum + (f.volume * struct) / Math.max(1, f.sessions);
+    }, 0);
+
   return {
     trainingDays: days.size,
-    sessions: (sessions || []).length,
+    sessions: sessionCount,
     volume: totalReps,
     meanPerDay: days.size ? Math.round(totalReps / days.size) : 0,
     attributedVolume,
     unattributedVolume,
+    /** @deprecated alias → recognizedVolumeShare (ne compte pas le résidu) */
     attributionShare: totalReps > 0 ? attributedVolume / totalReps : 0,
+    /** Couverture du partitionnement (familles + résidu) — toujours ≈ 1 si chaque séance est classée. */
+    partitionCoverageShare: sessionCount > 0 ? 1 : 0,
+    /** Part du volume relié à une vraie famille (hors « non attribué »). */
+    recognizedVolumeShare: totalReps > 0 ? attributedVolume / totalReps : 0,
+    recognizedSessionShare: sessionCount > 0 ? recognizedSessions / sessionCount : 0,
+    unattributedVolumeShare: totalReps > 0 ? unattributedVolume / totalReps : 0,
+    structurallyRecognizedSessionShare:
+      sessionCount > 0 ? (levelCounts.structurally_recognized || 0) / sessionCount : 0,
+    probablyRelatedSessionShare:
+      sessionCount > 0 ? (levelCounts.probably_related || 0) / sessionCount : 0,
+    historicallyDocumentedShare: 0, // aucune preuve historique datée dans ce socle
+    structurallyRecognizedVolumeApprox: Math.round(structurallyVolume),
     levelCounts,
     families: families.sort((a, b) => b.volume - a.volume),
     populationId: POPULATION_ID.CLASSIC_SESSION,
@@ -304,11 +335,28 @@ export function decomposeMonthlyProgramChange({
   const drivers = contributions.filter(
     (c) => Math.abs(c.volumeDelta) >= Math.max(40, Math.abs(deltaVolume) * 0.12)
   );
+  const driversVolumeSum = drivers.reduce((s, c) => s + c.volumeDelta, 0);
+  const proseRemainder = Math.round(deltaVolume - driversVolumeSum);
+
+  const coverageRecent = recent.recognizedVolumeShare || 0;
+  const coveragePrevious = previous.recognizedVolumeShare || 0;
+  const coverageDelta = coverageRecent - coveragePrevious;
+  /** Hausse de couverture pouvant être confondue avec une hausse de fréquence familiale. */
+  const coverageComparability = {
+    recent: coverageRecent,
+    previous: coveragePrevious,
+    delta: coverageDelta,
+    caution:
+      coverageDelta >= 0.2 &&
+      Math.abs(deltaVolume) >= 100 &&
+      (recent.unattributedVolumeShare || 0) < (previous.unattributedVolumeShare || 0) - 0.15
+  };
 
   const direction =
     deltaVolume > 30 ? 'up' : deltaVolume < -30 ? 'down' : 'stable';
 
   let conclusion = null;
+  let conclusionScope = 'full_training';
   if (Math.abs(deltaVolume) < 30 && Math.abs(deltaDays) <= 1) {
     conclusion = null;
   } else if (drivers.length) {
@@ -337,12 +385,23 @@ export function decomposeMonthlyProgramChange({
     const verb =
       direction === 'up' ? 'passe de' : direction === 'down' ? 'passe de' : 'reste proche entre';
     conclusion = `Le volume classique ${verb} ${previous.volume} à ${recent.volume} répétitions. ${dayBit} Principaux contributeurs : ${bits.join(' ; ')}.`;
+    if (proseRemainder !== 0) {
+      conclusion += ` Autres familles (hors top) : ${proseRemainder >= 0 ? '+' : ''}${proseRemainder} reps (exact).`;
+    }
     const unAttr = recent.unattributedVolume || 0;
     if (unAttr > 0) {
-      conclusion += ` Résidu non attribué (période récente) : ${unAttr} reps.`;
+      conclusion += ` Résidu non attribué (période récente) : ${unAttr} reps (${Math.round(
+        (recent.unattributedVolumeShare || 0) * 100
+      )} % du volume).`;
     }
-    if (Math.abs(reconciliationGap) > 20) {
-      conclusion += ` Écart de réconciliation résiduel : ${reconciliationGap}.`;
+    if (coverageComparability.caution) {
+      conclusionScope = 'recognized_sessions_only';
+      conclusion += ` Attention : la couverture d’attribution s’améliore (${Math.round(
+        coveragePrevious * 100
+      )} % → ${Math.round(coverageRecent * 100)} %) — une part de la hausse familiale peut refléter une meilleure reconnaissance plutôt qu’une évolution sportive seule.`;
+    }
+    if (Math.abs(reconciliationGap) > 0) {
+      conclusion += ` Écart de réconciliation des contributions : ${reconciliationGap}.`;
     }
   }
 
@@ -356,17 +415,59 @@ export function decomposeMonthlyProgramChange({
     deltaDays,
     direction,
     contributions,
+    contributionRegistry: contributions.map((c) => {
+      const rFam = recent.families.find((f) => f.familyId === c.familyId);
+      const pFam = previous.families.find((f) => f.familyId === c.familyId);
+      return {
+        familyId: c.familyId,
+        familyName: c.familyName,
+        stableIdentity: c.familyId,
+        window,
+        previousWindow: prevWin,
+        previousVolume: c.previousVolume,
+        recentVolume: c.recentVolume,
+        previousDays: c.previousDays,
+        recentDays: c.recentDays,
+        volumeDelta: c.volumeDelta,
+        freqEffect: c.freqEffect,
+        contentEffect: c.contentEffect,
+        residual: c.residual,
+        confidence: c.confidence,
+        coverage: {
+          recognizedVolumeShareRecent: recent.recognizedVolumeShare,
+          recognizedSessionShareRecent: recent.recognizedSessionShare
+        },
+        evolution: c.evolution,
+        occurrenceDatesRecent: rFam?.occurrenceDates || [],
+        occurrenceDatesPrevious: pFam?.occurrenceDates || [],
+        topVariantsRecent: c.topVariantsRecent,
+        topVariantsPrevious: c.topVariantsPrevious
+      };
+    }),
     drivers,
+    driversVolumeSum,
+    proseRemainder,
     reconciliationGap,
     conclusion,
+    conclusionScope,
+    coverageComparability,
     templatesUsed: familyIndex.templates.length,
     familyClusters: familyIndex.families.length,
     evidenceLevel: familyIndex.templates.length ? 'program_templates_structural' : 'unattributed_only',
     populationId: POPULATION_ID.CLASSIC_SESSION,
     populationLabel: POPULATION_LABEL[POPULATION_ID.CLASSIC_SESSION],
     attribution: {
-      recentShare: recent.attributionShare,
-      previousShare: previous.attributionShare,
+      /** @deprecated use recognizedVolumeShareRecent */
+      recentShare: recent.recognizedVolumeShare,
+      previousShare: previous.recognizedVolumeShare,
+      recognizedVolumeShareRecent: recent.recognizedVolumeShare,
+      recognizedVolumeSharePrevious: previous.recognizedVolumeShare,
+      recognizedSessionShareRecent: recent.recognizedSessionShare,
+      partitionCoverageShareRecent: recent.partitionCoverageShare,
+      unattributedVolumeShareRecent: recent.unattributedVolumeShare,
+      structurallyRecognizedSessionShareRecent: recent.structurallyRecognizedSessionShare,
+      probablyRelatedSessionShareRecent: recent.probablyRelatedSessionShare,
+      historicallyDocumentedShareRecent: recent.historicallyDocumentedShare,
       recentLevelCounts: recent.levelCounts,
       previousLevelCounts: previous.levelCounts
     }
@@ -384,9 +485,12 @@ export function titleForFamilyVolumeDecomposition(decomp) {
   return 'La hausse de volume se lit dans la composition des familles de séances';
 }
 
-export function discoveryFromMonthlyComposition(decomp, { voiceKey = 'month' } = {}) {
+export function discoveryFromMonthlyComposition(decomp, { voiceKey = 'month', sharedFacts = null } = {}) {
   if (!decomp?.ok || !decomp.conclusion) return null;
   const title = titleForFamilyVolumeDecomposition(decomp);
+  const pct = (v) => Math.round((Number(v) || 0) * 100);
+  const attr = decomp.attribution || {};
+  const factIds = (sharedFacts?.facts || sharedFacts || []).map((f) => f.id || f).filter(Boolean);
   return {
     kind: 'disc_program_family_volume_decomposition',
     nature: 'trajectory',
@@ -413,10 +517,36 @@ export function discoveryFromMonthlyComposition(decomp, { voiceKey = 'month' } =
         { id: 'deltaVolume', value: decomp.deltaVolume, unit: 'reps' },
         { id: 'daysRecent', value: decomp.recent.trainingDays, unit: 'days' },
         { id: 'daysPrevious', value: decomp.previous.trainingDays, unit: 'days' },
-        { id: 'attributionShareRecent', value: Math.round((decomp.attribution?.recentShare || 0) * 100), unit: 'pct' }
+        { id: 'recognizedVolumeShareRecent', value: pct(attr.recognizedVolumeShareRecent), unit: 'pct' },
+        { id: 'recognizedSessionShareRecent', value: pct(attr.recognizedSessionShareRecent), unit: 'pct' },
+        { id: 'unattributedVolumeShareRecent', value: pct(attr.unattributedVolumeShareRecent), unit: 'pct' },
+        { id: 'partitionCoverageShareRecent', value: pct(attr.partitionCoverageShareRecent), unit: 'pct' },
+        {
+          id: 'structurallyRecognizedSessionShareRecent',
+          value: pct(attr.structurallyRecognizedSessionShareRecent),
+          unit: 'pct'
+        },
+        {
+          id: 'probablyRelatedSessionShareRecent',
+          value: pct(attr.probablyRelatedSessionShareRecent),
+          unit: 'pct'
+        },
+        {
+          id: 'historicallyDocumentedShareRecent',
+          value: pct(attr.historicallyDocumentedShareRecent),
+          unit: 'pct'
+        },
+        { id: 'contributionReconciliationGap', value: decomp.reconciliationGap || 0, unit: 'reps' },
+        { id: 'proseRemainderExact', value: decomp.proseRemainder || 0, unit: 'reps' }
       ],
+      contributionRegistry: decomp.contributionRegistry || decomp.contributions || [],
+      coverageComparability: decomp.coverageComparability || null,
+      conclusionScope: decomp.conclusionScope || 'full_training',
+      sharedFacts: factIds,
+      factRegistry: sharedFacts || null,
       informativeValue: 90,
-      producer: 'decomposeMonthlyProgramChange'
+      producer: 'decomposeMonthlyProgramChange',
+      phenomenonId: `program_family_volume|${decomp.populationId}|${decomp.window?.start}|${decomp.window?.end}`
     }
   };
 }

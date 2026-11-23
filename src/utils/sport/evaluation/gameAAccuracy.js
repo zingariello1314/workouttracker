@@ -143,6 +143,58 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
     phen.set(id, card.id);
   });
 
+  // Mission 30 — totaux / effectifs / moyennes sur la même population déclarée
+  (facts.expectedMetricTriples || []).forEach((exp) => {
+    const card = accessible.find((c) => c.id === exp.cardId || c.title === exp.title);
+    const body = `${card?.title || ''} ${card?.body || ''}`;
+    const gotSessions = (() => {
+      if (exp.subjectKey && Array.isArray(card?.metrics?.trajectories)) {
+        const t = card.metrics.trajectories.find((x) => x.subject === exp.subjectKey);
+        return t?.sessions ?? null;
+      }
+      const m = body.match(new RegExp(exp.prosePattern || 'sur\\s+(\\d+)\\s+séances?', 'i'));
+      return m ? Number(m[1]) : card?.metrics?.sessionCount ?? null;
+    })();
+    const gotTotal =
+      exp.subjectKey && Array.isArray(card?.metrics?.trajectories)
+        ? card.metrics.trajectories.find((x) => x.subject === exp.subjectKey)?.recentReps
+        : card?.metrics?.recentReps ?? card?.metrics?.windowTotalReps;
+    if (exp.sessionCount != null && Number(gotSessions) !== Number(exp.sessionCount)) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: card?.id || exp.cardId,
+        issue: 'independent_session_count_mismatch',
+        expected: exp.sessionCount,
+        obtained: gotSessions,
+        failureFamily: 'wrong_population_or_denominator'
+      });
+    }
+    if (exp.total != null && Number(gotTotal) !== Number(exp.total)) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: card?.id || exp.cardId,
+        issue: 'independent_total_mismatch',
+        expected: exp.total,
+        obtained: gotTotal,
+        failureFamily: 'wrong_aggregation'
+      });
+    }
+    if (
+      exp.total != null &&
+      exp.mean != null &&
+      exp.sessionCount != null &&
+      Math.abs(Number(exp.total) - Number(exp.mean) * Number(exp.sessionCount)) > 0.51
+    ) {
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: 'oracle',
+        issue: 'independent_oracle_inconsistent',
+        expected: exp,
+        failureFamily: 'oracle_definition_error'
+      });
+    }
+  });
+
   // Contrôle indépendant : preuve présente mais incorrecte / population / fenêtre
   (facts.expectedProofs || []).forEach((exp) => {
     const card = accessible.find((c) => c.id === exp.cardId || c.title === exp.title);

@@ -1,0 +1,5 @@
+﻿mission27_freeze=2026-11-22T16:58:00+01:00
+editorial_start=p6-sovereign-v25
+note=User confirmed v25 exports: 715 cards, integrityValidation.ok=false, Hyperextension parallel collision 3m, memory still pack=1 store=0
+exports_in_repo=not_yet_copied_ask_if_needed
+contract_opinion=agree_subject_ne_phenomenon_ne_assertion_ne_presentation

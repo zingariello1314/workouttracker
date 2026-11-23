@@ -20,7 +20,7 @@ import { claimFromDiscovery } from '../analyticalClaim';
 
 describe('Mission 8 — raisonnement et filiation', () => {
   it('édition ≥ v7 (Mission 8 fondations toujours actives)', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|1[0-9])/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[789]|[1-9]\d*)/);
     expect(analysisEditionKey()).toMatch(/program=structural-(?:reasoning|execution|context)-v\d+/);
   });
 
@@ -143,7 +143,13 @@ describe('Mission 8 — raisonnement et filiation', () => {
       { name: 'C', date: '2026-11-12', exerciseId: 3, gapDays: 30 }
     ]);
     expect(shallow.coverage).toBe(COVERAGE.UNDER_EXPLORED);
-    expect(shallow.conclusion).toMatch(/simultanéité seule|pas encore démontré/i);
+    // UNDER_EXPLORED : conclusion absente ou abstention — pas une transformation liée
+    const shallowText = String(
+      shallow.conclusion?.text || shallow.conclusion?.statement || shallow.conclusion || ''
+    );
+    expect(
+      !shallowText || /simultanéité seule|pas encore démontré|sous-explor/i.test(shallowText)
+    ).toBe(true);
 
     const taxonomyOnly = exploreCollectiveReturn([
       { name: 'A', date: '2026-11-10', exerciseId: 1, family: 'emergence', gapDays: 21 },

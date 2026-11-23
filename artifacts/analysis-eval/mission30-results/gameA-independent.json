@@ -1,0 +1,222 @@
+{
+  "schema": "momentum.mission30.gameA.v1",
+  "mission": "Mission 30",
+  "edition": "p6-sovereign-v29",
+  "proofKind": "independent_corpus_pipeline",
+  "distinctFromUserReplay": true,
+  "cases": [
+    {
+      "id": "ga-tractions-window-vs-arc",
+      "independentExpected": {
+        "A": {
+          "total": 288,
+          "sessions": 6,
+          "mean": 48
+        },
+        "B": {
+          "total": 336,
+          "sessions": 7,
+          "mean": 48
+        }
+      },
+      "oracleRecompute": {
+        "A": {
+          "total": 288,
+          "sessions": 6,
+          "mean": 48,
+          "dates": [
+            "2026-10-02",
+            "2026-10-16",
+            "2026-10-30",
+            "2026-11-06",
+            "2026-11-13",
+            "2026-11-20"
+          ]
+        },
+        "B": {
+          "total": 336,
+          "sessions": 7,
+          "mean": 48,
+          "dates": [
+            "2026-09-28",
+            "2026-10-12",
+            "2026-10-19",
+            "2026-10-26",
+            "2026-11-02",
+            "2026-11-09",
+            "2026-11-16"
+          ]
+        }
+      },
+      "engineCalculated": {
+        "A": {
+          "total": 288,
+          "sessions": 6
+        },
+        "B": {
+          "total": 336,
+          "sessions": 7
+        }
+      },
+      "published": {
+        "body": "2 trajectoires distinctes de Tractions présentent des trajectoires de rythme comparable. première trajectoire : 288 répétitions (total fenêtre) sur 6 séances ; seconde trajectoire : 336 répétitions (total fenêtre) sur 7 séances. Volume typique ≈312 répétitions (total fenêtre) par trajectoire. Les enregistrements restent distincts ; la lecture utile est structurelle, pas deux priorités redondantes. Preuves individuelles conservées en approfondissement.",
+        "A": {
+          "subject": "ex:exA",
+          "name": "Tractions",
+          "recentReps": 288,
+          "prevReps": null,
+          "meanPerSession": 48,
+          "prevMeanPerSession": null,
+          "volumeKind": "window_total",
+          "sessions": 6,
+          "dates": [
+            "2026-10-02",
+            "2026-10-16",
+            "2026-10-30",
+            "2026-11-06",
+            "2026-11-13",
+            "2026-11-20"
+          ],
+          "family": "repertoire",
+          "producer": "disc_structural_memory",
+          "delta": null,
+          "deltaKind": null
+        },
+        "B": {
+          "subject": "ex:exB",
+          "name": "Tractions",
+          "recentReps": 336,
+          "prevReps": null,
+          "meanPerSession": 48,
+          "prevMeanPerSession": null,
+          "volumeKind": "window_total",
+          "sessions": 7,
+          "dates": [
+            "2026-09-28",
+            "2026-10-12",
+            "2026-10-19",
+            "2026-10-26",
+            "2026-11-02",
+            "2026-11-09",
+            "2026-11-16"
+          ],
+          "family": "repertoire",
+          "producer": "disc_structural_memory",
+          "delta": null,
+          "deltaKind": null
+        }
+      },
+      "firstDivergence": null,
+      "failureFamily": null,
+      "pass": true
+    },
+    {
+      "id": "ga-contradiction-proof-vs-prose",
+      "independentExpected": {
+        "total": 336,
+        "sessions": 7,
+        "mean": 48,
+        "falseProseSessions": 8,
+        "mustFailValidation": true
+      },
+      "engineCalculated": {
+        "validationOk": false,
+        "conflicts": [
+          {
+            "metric": "session_count_prose_vs_population",
+            "card": 7,
+            "claim": 8,
+            "note": "sessions.inSelectedWindow"
+          }
+        ]
+      },
+      "published": {
+        "body": "336 répétitions sur 8 séances"
+      },
+      "firstDivergence": null,
+      "failureFamily": null,
+      "pass": true
+    },
+    {
+      "id": "ga-rowing-freq-change-mean-stable",
+      "family": "frequency_without_mean_change",
+      "independentExpected": {
+        "total": 160,
+        "sessions": 4,
+        "mean": 40,
+        "prevTotal": 80,
+        "prevSessions": 2,
+        "prevMean": 40,
+        "freqChanged": true,
+        "meanChanged": false
+      },
+      "engineCalculated": {
+        "total": 160,
+        "sessions": 4,
+        "mean": 40,
+        "prevTotal": 80,
+        "prevSessions": 2,
+        "prevMean": 40,
+        "triple": {
+          "ok": true,
+          "applicable": true,
+          "reason": "consistent",
+          "total": 160,
+          "mean": 40,
+          "sampleSize": 4,
+          "expectedProduct": 160,
+          "absGap": 0
+        }
+      },
+      "published": null,
+      "note": "Oracle indépendant (pas de publication moteur sur ce mini-cas)",
+      "firstDivergence": null,
+      "failureFamily": null,
+      "pass": true
+    },
+    {
+      "id": "ga-military-mean-change-freq-stable",
+      "family": "mean_without_frequency_change",
+      "independentExpected": {
+        "total": 150,
+        "sessions": 3,
+        "mean": 50,
+        "prevTotal": 90,
+        "prevSessions": 3,
+        "prevMean": 30,
+        "freqChanged": false,
+        "meanChanged": true
+      },
+      "engineCalculated": {
+        "total": 150,
+        "sessions": 3,
+        "mean": 50,
+        "prevTotal": 90,
+        "prevSessions": 3,
+        "prevMean": 30,
+        "triple": {
+          "ok": true,
+          "applicable": true,
+          "reason": "consistent",
+          "total": 150,
+          "mean": 50,
+          "sampleSize": 3,
+          "expectedProduct": 150,
+          "absGap": 0
+        }
+      },
+      "published": null,
+      "note": "Oracle indépendant (pas de publication moteur sur ce mini-cas)",
+      "firstDivergence": null,
+      "failureFamily": null,
+      "pass": true
+    }
+  ],
+  "runGameAAccuracy": {
+    "pass": true,
+    "factualConflicts": 0,
+    "cases": []
+  },
+  "parentCardId": "parallel_traj|ex:exA+ex:exB|span:quarter|sess:7|cal:1hkicic|2",
+  "pass": true
+}

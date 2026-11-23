@@ -1,0 +1,8 @@
+{
+  "schema": "momentum.evalBlind.design.v1",
+  "cases": [
+    { "id": "d-freq-stable-mean", "theme": "fréquence vs moyenne", "usedInRuleDesign": true },
+    { "id": "d-parallel-window-arc", "theme": "effectif fenêtre ≠ arc", "usedInRuleDesign": true },
+    { "id": "d-homonym-dips", "theme": "homonymes", "usedInRuleDesign": true }
+  ]
+}

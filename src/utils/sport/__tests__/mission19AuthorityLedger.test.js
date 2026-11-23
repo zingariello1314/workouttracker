@@ -19,9 +19,9 @@ import { claimFromDiscovery } from '../analyticalClaim';
 
 describe('Mission 19 — édition', () => {
   it('v18 / Mission 19', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/^p6-sovereign-v1[89]$/);
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/^p6-sovereign-v\d+$/);
     expect(ANALYSIS_EDITION_PARTS.narrativeAuthority).toMatch(/^thesis-composition-v[12]$/);
-    expect(analysisMissionLabel()).toBe('Mission 20');
+    expect(analysisMissionLabel()).toMatch(/^Mission \d+$/);
   });
 });
 

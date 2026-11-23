@@ -1,0 +1,126 @@
+{
+  "populationsPrev30": {
+    "classic": 3881,
+    "gtgDeduction": 85,
+    "inclusive": 4281,
+    "classicOk": true
+  },
+  "attribution": {
+    "recentShare": 0.24952610718593832,
+    "previousShare": 0.1004895645452203,
+    "recognizedVolumeShareRecent": 0.24952610718593832,
+    "recognizedVolumeSharePrevious": 0.1004895645452203,
+    "recognizedSessionShareRecent": 0.2222222222222222,
+    "partitionCoverageShareRecent": 1,
+    "unattributedVolumeShareRecent": 0.7504738928140617,
+    "structurallyRecognizedSessionShareRecent": 0,
+    "probablyRelatedSessionShareRecent": 0.2222222222222222,
+    "historicallyDocumentedShareRecent": 0,
+    "recentLevelCounts": {
+      "structurally_recognized": 0,
+      "probably_related": 4,
+      "unattributable": 14
+    },
+    "previousLevelCounts": {
+      "structurally_recognized": 0,
+      "probably_related": 1,
+      "unattributable": 11
+    }
+  },
+  "deltaVolume": 1922,
+  "reconciliationGap": 0,
+  "sumContributionRegistry": 1922,
+  "reconciled": true,
+  "proseRemainder": 0,
+  "driversVolumeSum": 1922,
+  "coverageComparability": {
+    "recent": 0.24952610718593832,
+    "previous": 0.1004895645452203,
+    "delta": 0.14903654264071803,
+    "caution": false
+  },
+  "conclusionScope": "full_training",
+  "contributionCount": 2,
+  "topContributions": [
+    {
+      "familyId": "sessionFamily:1",
+      "familyName": "Street Workout + Endurance fondamentale / Street Workout + Cardio",
+      "volumeDelta": 1058,
+      "freqEffect": 1170,
+      "contentEffect": -112,
+      "residual": 0,
+      "recentDays": 4,
+      "previousDays": 1
+    },
+    {
+      "familyId": "unattributed",
+      "familyName": "non attribué",
+      "volumeDelta": 864,
+      "freqEffect": 951,
+      "contentEffect": -84,
+      "residual": -3,
+      "recentDays": 14,
+      "previousDays": 11
+    }
+  ],
+  "cardObserved": [
+    {
+      "id": "volumeRecent",
+      "value": 5803
+    },
+    {
+      "id": "volumePrevious",
+      "value": 3881
+    },
+    {
+      "id": "deltaVolume",
+      "value": 1922
+    },
+    {
+      "id": "daysRecent",
+      "value": 18
+    },
+    {
+      "id": "daysPrevious",
+      "value": 12
+    },
+    {
+      "id": "recognizedVolumeShareRecent",
+      "value": 25
+    },
+    {
+      "id": "recognizedSessionShareRecent",
+      "value": 22
+    },
+    {
+      "id": "unattributedVolumeShareRecent",
+      "value": 75
+    },
+    {
+      "id": "partitionCoverageShareRecent",
+      "value": 100
+    },
+    {
+      "id": "structurallyRecognizedSessionShareRecent",
+      "value": 0
+    },
+    {
+      "id": "probablyRelatedSessionShareRecent",
+      "value": 22
+    },
+    {
+      "id": "historicallyDocumentedShareRecent",
+      "value": 0
+    },
+    {
+      "id": "contributionReconciliationGap",
+      "value": 0
+    },
+    {
+      "id": "proseRemainderExact",
+      "value": 0
+    }
+  ],
+  "sharedFactCount": 7,
+  "phenomenonId": "program_family_volume|classic_session_catalog|2026-10-23|2026-11-21"
+}

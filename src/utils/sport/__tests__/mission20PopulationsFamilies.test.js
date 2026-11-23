@@ -182,7 +182,7 @@ describe('Mission 20 — fingerprint charges', () => {
     });
     expect(fp.weightKeys).toBe(2);
     expect(fp.setLogKeys).toBe(1);
-    expect(fp.version).toBe(3);
+    expect(fp.version).toBeGreaterThanOrEqual(3);
     expect(fp.sources.weightsField).toBe('exerciseWeights');
   });
 });

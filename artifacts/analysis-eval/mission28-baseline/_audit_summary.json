@@ -1,0 +1,266 @@
+{
+  "topKeys": [
+    "schema",
+    "schemaDictionary",
+    "manifest",
+    "snapshots",
+    "sourceCoverage",
+    "metricDefinitions",
+    "identityRegistry",
+    "programRegistry",
+    "sourceEvents",
+    "factRegistry",
+    "claimRegistry",
+    "cardRegistry",
+    "candidateRegistry",
+    "relations",
+    "dispositionsByPeriod",
+    "explorationRuns",
+    "selectionRuns",
+    "publicationRuns",
+    "periods",
+    "evaluations",
+    "comparisons",
+    "domEvidence",
+    "memoryEvidence",
+    "diagnostics"
+  ],
+  "integrityValidation": null,
+  "schemaValidation": null,
+  "integrityShape": {
+    "keys": null,
+    "issueCount": 0
+  },
+  "orphanHits": [],
+  "fusionHitsSample": [],
+  "parallelParentCards": [
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:quarter|sess:8|cal:1aie1tq",
+      "title": "Hyperextension : 2 trajectoires parallèles (~8 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+        "disc_emergence|ex:1979012181|fact:emergence|1979012181|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "consolidated",
+      "kind": "disc_composed_parallel_trajectories",
+      "windowMeanPerSession": null,
+      "children": [
+        "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+        "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default"
+      ]
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "source_retained"
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "occurrenceId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "published",
+      "kind": "disc_composed_parallel_trajectories"
+    },
+    {
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "occurrenceId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "phenomenonId": "parallel|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "disposition": "published",
+      "kind": "disc_composed_parallel_trajectories"
+    }
+  ],
+  "childCards": [
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 50,0 % de tes jambes, contre 96 reps ",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "promoted_over_legacy",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension compte 48 répétitions dans ces 7 jours. le contexte des 30 jours place cette part à 50,0 % de tes jambes,",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension compte 48 répétitions dans ces 7 jours. le contexte des 30 jours place cette part à 50,0 % de tes jambes,",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 50,0 % de tes jambes, contre 96 reps ",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 50,0 % de tes jambes, contre 144 reps",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), soit 50,0 % de t",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette période), soit 50,0 % de t",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de ces derniers mois), soit 50,0 % ",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de ces derniers mois), soit 50,0 % ",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette année), soit 50,0 % de tes",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:703294235|dates:2026-10-26,2026-11-02,2026-11-09,2026-11-16|aspect:default",
+      "phenomenonId": "ex:703294235|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de cette année), soit 50,0 % de tes",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    },
+    {
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "phenomenonId": "ex:1979012181|structural_memory|text:hyperextension : 4 séances sur ces 30 jours|hyperextension totalisent 192 reps sur 4 séances des 30 derniers jours (sous-fenêtre de ces deux années), soit 50,0 % de",
+      "parentId": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "disposition": "deepening_of_collective",
+      "prevReps": null,
+      "windowMeanPerSession": null,
+      "totalReps": null
+    }
+  ],
+  "memoryKeys": null,
+  "memorySummary": null
+}

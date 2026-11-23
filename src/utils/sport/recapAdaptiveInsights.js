@@ -1713,7 +1713,15 @@ export function buildAdaptiveRecapInsights(opts = {}) {
   // Publication souveraine : colonnes et réserve issues de P6 uniquement.
   // Les sources fusionnées restent dans periodDiscoveries.p6.sources, hors catalogue utilisateur.
   // Si P6 n'est pas réconcilié, le secours legacy est explicite — jamais présenté comme P6.
+  // Mission 25 : un fallback dégradé conserve la cause P6 et ne peut pas servir de preuve de réussite.
   const p6Insights = insightsFromP6(composed.periodDiscoveries?.p6 || null, { period });
+  const p6DegradedReason =
+    p6Insights?.reason ||
+    (!composed.periodDiscoveries?.p6
+      ? 'p6_missing'
+      : !composed.periodDiscoveries?.p6?.counters?.reconciled
+        ? 'p6_counters_not_reconciled'
+        : 'p6_unavailable');
   const legacyInsights = {
     shortTerm: pickedShort.map(publishableCard).filter(Boolean),
     mediumTerm: pickedMedium.map(publishableCard).filter(Boolean),
@@ -1728,7 +1736,10 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     ],
     publicationAuthority: 'legacy_fallback',
     publicationFallback: true,
-    reason: p6Insights?.reason || 'p6_unavailable'
+    degraded: true,
+    p6FailureStep: composed.periodDiscoveries?.p6?.counters?.reconciled === false ? 'reconcile' : 'publication',
+    reason: p6DegradedReason,
+    p6PipelineSteps: composed.periodDiscoveries?.p6?.pipelineSteps || null
   };
   const publishedInsights =
     p6Insights &&
@@ -1760,6 +1771,13 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     athleteJourney: composed.athleteJourney,
     phenomena: composed.phenomena,
     periodDiscoveries: composed.periodDiscoveries,
+    /** Mission 22 — mémoire à persister côté UI (Worker n’écrit pas localStorage). */
+    memoryUpdate: composed.periodDiscoveries?.analyticalMemoryOut
+      ? {
+          memory: composed.periodDiscoveries.analyticalMemoryOut,
+          updates: composed.periodDiscoveries.memoryUpdates || []
+        }
+      : null,
     temporalPlans: (() => {
       const sessionDates =
         composed.periodDiscoveries?.debug?.sessionDates ||

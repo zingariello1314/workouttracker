@@ -10,7 +10,7 @@ describe('Mission 15 — intégrité claims et export', () => {
   it('édition ≥ v14 assertion-window + audit normalisé', () => {
     const key = analysisEditionKey();
     expect(key).toMatch(/editorial=p6-sovereign-v\d+/);
-    expect(key).toMatch(/claim=assertion-window-v1/);
+    expect(key).toMatch(/claim=assertion-window-v\d+/);
     expect(key).toMatch(/audit=normalized-export-v\d+/);
   });
 

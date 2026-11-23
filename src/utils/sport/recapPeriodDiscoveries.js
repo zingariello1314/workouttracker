@@ -195,7 +195,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
           opts.window,
           opts.todayYmd || parisTodayYmd()
         )
-      )
+      ),
+      analyticalMemory: opts.analyticalMemory || null
     }));
   const sleepRaw =
     pre?.sleepRaw ||
@@ -557,6 +558,12 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       abstentions: p36Pack.abstentions || []
     },
     extras,
+    memoryUpdates: extras?._memoryUpdates || [],
+    analyticalMemoryOut: (() => {
+      const updates = extras?._memoryUpdates || [];
+      if (!updates.length) return opts.analyticalMemory || null;
+      return updates[updates.length - 1]?.memory || opts.analyticalMemory || null;
+    })(),
     question: comparisons.question,
     preferPeriodNow,
     debug: {
@@ -569,6 +576,8 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       sleepSelected,
       milestonesDetected,
       milestonesSelected,
+      pipelineSteps: p6.pipelineSteps || [],
+      instrumented: p6.instrumented === true,
       displaceLog: traced.displaceLog || [],
       compositionStoryKinds: traced.compositionStoryKinds || COMPOSITION_STORY_KINDS,
       p32bMuscleStoryKinds: P32B_MUSCLE_STORY_KINDS,
@@ -728,7 +737,8 @@ export async function buildPeriodDiscoveryBundleAsync(opts = {}) {
         opts.window,
         opts.todayYmd || parisTodayYmd()
       )
-    )
+    ),
+    analyticalMemory: opts.analyticalMemory || null
   }));
 
   await coopGate(coop);

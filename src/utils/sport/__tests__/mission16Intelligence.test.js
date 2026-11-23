@@ -31,8 +31,8 @@ const pushProgram = {
 
 describe('Mission 16 — Livraison 1 : programme explique les trajectoires', () => {
   it('édition ≥ v15 avec raisonnement programme', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v1[5-9]/);
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v1[5-9]/);
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v(?:1[5-9]|2\d)/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:1[5-9]|2\d)/);
     expect(analysisEditionKey()).toMatch(/programReasoning=variant-mix/);
   });
 

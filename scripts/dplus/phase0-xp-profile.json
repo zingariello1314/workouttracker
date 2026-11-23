@@ -10,13 +10,13 @@
       "keyInspectionsIfFullScanPerDay": 21600,
       "engineMs": {
         "runs": 3,
-        "medianMs": 22.69,
-        "minMs": 21.74,
-        "maxMs": 40.47,
+        "medianMs": 35.45,
+        "minMs": 33.14,
+        "maxMs": 84.9,
         "samplesMs": [
-          21.74,
-          22.69,
-          40.47
+          33.14,
+          35.45,
+          84.9
         ],
         "stoppedEarly": false
       },
@@ -24,50 +24,50 @@
       "engineTotalXp": 9288,
       "bonusMs": {
         "runs": 1,
-        "medianMs": 8.98,
-        "minMs": 8.98,
-        "maxMs": 8.98,
+        "medianMs": 11.22,
+        "minMs": 11.22,
+        "maxMs": 11.22,
         "samplesMs": [
-          8.98
+          11.22
         ],
         "stoppedEarly": false
       },
       "bonusXp": 0,
       "minutesMs": {
         "runs": 1,
-        "medianMs": 0.36,
-        "minMs": 0.36,
-        "maxMs": 0.36,
+        "medianMs": 0.34,
+        "minMs": 0.34,
+        "maxMs": 0.34,
         "samplesMs": [
-          0.36
+          0.34
         ],
         "stoppedEarly": false
       },
       "dedupMs": {
         "runs": 1,
-        "medianMs": 0.32,
-        "minMs": 0.32,
-        "maxMs": 0.32,
+        "medianMs": 0.37,
+        "minMs": 0.37,
+        "maxMs": 0.37,
         "samplesMs": [
-          0.32
+          0.37
         ],
         "stoppedEarly": false
       },
       "dedupGroups": 360,
       "slicedBonusMs": {
         "runs": 1,
-        "medianMs": 3.83,
-        "minMs": 3.83,
-        "maxMs": 3.83,
+        "medianMs": 15.87,
+        "minMs": 15.87,
+        "maxMs": 15.87,
         "samplesMs": [
-          3.83
+          15.87
         ],
         "stoppedEarly": false
       },
       "slicedBonusXp": 0,
       "bonusEqualsSliced": true,
       "engineBonusEqualsOfficial": true,
-      "heapDeltaBytes": -11309872
+      "heapDeltaBytes": 26289000
     },
     "D100": {
       "days": 100,
@@ -76,13 +76,13 @@
       "keyInspectionsIfFullScanPerDay": 240000,
       "engineMs": {
         "runs": 3,
-        "medianMs": 64.07,
-        "minMs": 59.5,
-        "maxMs": 94.84,
+        "medianMs": 66.75,
+        "minMs": 52.08,
+        "maxMs": 73.58,
         "samplesMs": [
-          59.5,
-          64.07,
-          94.84
+          52.08,
+          66.75,
+          73.58
         ],
         "stoppedEarly": false
       },
@@ -90,50 +90,50 @@
       "engineTotalXp": 30960,
       "bonusMs": {
         "runs": 1,
-        "medianMs": 49.43,
-        "minMs": 49.43,
-        "maxMs": 49.43,
+        "medianMs": 87.52,
+        "minMs": 87.52,
+        "maxMs": 87.52,
         "samplesMs": [
-          49.43
+          87.52
         ],
         "stoppedEarly": false
       },
       "bonusXp": 0,
       "minutesMs": {
         "runs": 1,
-        "medianMs": 0.65,
-        "minMs": 0.65,
-        "maxMs": 0.65,
+        "medianMs": 0.79,
+        "minMs": 0.79,
+        "maxMs": 0.79,
         "samplesMs": [
-          0.65
+          0.79
         ],
         "stoppedEarly": false
       },
       "dedupMs": {
         "runs": 1,
-        "medianMs": 0.95,
-        "minMs": 0.95,
-        "maxMs": 0.95,
+        "medianMs": 1.34,
+        "minMs": 1.34,
+        "maxMs": 1.34,
         "samplesMs": [
-          0.95
+          1.34
         ],
         "stoppedEarly": false
       },
       "dedupGroups": 1200,
       "slicedBonusMs": {
         "runs": 1,
-        "medianMs": 9.3,
-        "minMs": 9.3,
-        "maxMs": 9.3,
+        "medianMs": 14.56,
+        "minMs": 14.56,
+        "maxMs": 14.56,
         "samplesMs": [
-          9.3
+          14.56
         ],
         "stoppedEarly": false
       },
       "slicedBonusXp": 0,
       "bonusEqualsSliced": true,
       "engineBonusEqualsOfficial": true,
-      "heapDeltaBytes": 42646392
+      "heapDeltaBytes": 32078136
     },
     "D200": {
       "days": 200,
@@ -142,12 +142,12 @@
       "keyInspectionsIfFullScanPerDay": 960000,
       "engineMs": {
         "runs": 2,
-        "medianMs": 264.31,
-        "minMs": 218.98,
-        "maxMs": 264.31,
+        "medianMs": 118.53,
+        "minMs": 116.64,
+        "maxMs": 118.53,
         "samplesMs": [
-          218.98,
-          264.31
+          116.64,
+          118.53
         ],
         "stoppedEarly": false
       },
@@ -155,50 +155,50 @@
       "engineTotalXp": 61920,
       "bonusMs": {
         "runs": 1,
-        "medianMs": 183.67,
-        "minMs": 183.67,
-        "maxMs": 183.67,
+        "medianMs": 336.41,
+        "minMs": 336.41,
+        "maxMs": 336.41,
         "samplesMs": [
-          183.67
+          336.41
         ],
         "stoppedEarly": false
       },
       "bonusXp": 0,
       "minutesMs": {
         "runs": 1,
-        "medianMs": 0.48,
-        "minMs": 0.48,
-        "maxMs": 0.48,
+        "medianMs": 0.94,
+        "minMs": 0.94,
+        "maxMs": 0.94,
         "samplesMs": [
-          0.48
+          0.94
         ],
         "stoppedEarly": false
       },
       "dedupMs": {
         "runs": 1,
-        "medianMs": 0.97,
-        "minMs": 0.97,
-        "maxMs": 0.97,
+        "medianMs": 2.29,
+        "minMs": 2.29,
+        "maxMs": 2.29,
         "samplesMs": [
-          0.97
+          2.29
         ],
         "stoppedEarly": false
       },
       "dedupGroups": 2400,
       "slicedBonusMs": {
         "runs": 1,
-        "medianMs": 18.14,
-        "minMs": 18.14,
-        "maxMs": 18.14,
+        "medianMs": 25.12,
+        "minMs": 25.12,
+        "maxMs": 25.12,
         "samplesMs": [
-          18.14
+          25.12
         ],
         "stoppedEarly": false
       },
       "slicedBonusXp": 0,
       "bonusEqualsSliced": true,
       "engineBonusEqualsOfficial": true,
-      "heapDeltaBytes": -18104096
+      "heapDeltaBytes": 38086160
     },
     "M": {
       "days": 400,
@@ -207,12 +207,12 @@
       "keyInspectionsIfFullScanPerDay": 3840000,
       "engineMs": {
         "runs": 2,
-        "medianMs": 921.81,
-        "minMs": 900.16,
-        "maxMs": 921.81,
+        "medianMs": 246.54,
+        "minMs": 204.65,
+        "maxMs": 246.54,
         "samplesMs": [
-          900.16,
-          921.81
+          204.65,
+          246.54
         ],
         "stoppedEarly": false
       },
@@ -220,50 +220,50 @@
       "engineTotalXp": 123840,
       "bonusMs": {
         "runs": 1,
-        "medianMs": 949.83,
-        "minMs": 949.83,
-        "maxMs": 949.83,
+        "medianMs": 1386.68,
+        "minMs": 1386.68,
+        "maxMs": 1386.68,
         "samplesMs": [
-          949.83
+          1386.68
         ],
         "stoppedEarly": false
       },
       "bonusXp": 0,
       "minutesMs": {
         "runs": 1,
-        "medianMs": 1.08,
-        "minMs": 1.08,
-        "maxMs": 1.08,
+        "medianMs": 2.04,
+        "minMs": 2.04,
+        "maxMs": 2.04,
         "samplesMs": [
-          1.08
+          2.04
         ],
         "stoppedEarly": false
       },
       "dedupMs": {
         "runs": 1,
-        "medianMs": 3.26,
-        "minMs": 3.26,
-        "maxMs": 3.26,
+        "medianMs": 10.17,
+        "minMs": 10.17,
+        "maxMs": 10.17,
         "samplesMs": [
-          3.26
+          10.17
         ],
         "stoppedEarly": false
       },
       "dedupGroups": 4800,
       "slicedBonusMs": {
         "runs": 1,
-        "medianMs": 36.97,
-        "minMs": 36.97,
-        "maxMs": 36.97,
+        "medianMs": 54.24,
+        "minMs": 54.24,
+        "maxMs": 54.24,
         "samplesMs": [
-          36.97
+          54.24
         ],
         "stoppedEarly": false
       },
       "slicedBonusXp": 0,
       "bonusEqualsSliced": true,
       "engineBonusEqualsOfficial": true,
-      "heapDeltaBytes": 26465920
+      "heapDeltaBytes": 279192
     },
     "D800": {
       "days": 800,
@@ -272,12 +272,12 @@
       "keyInspectionsIfFullScanPerDay": 15360000,
       "engineMs": {
         "runs": 2,
-        "medianMs": 4088.96,
-        "minMs": 3945.9,
-        "maxMs": 4088.96,
+        "medianMs": 491.15,
+        "minMs": 455.58,
+        "maxMs": 491.15,
         "samplesMs": [
-          3945.9,
-          4088.96
+          455.58,
+          491.15
         ],
         "stoppedEarly": false
       },
@@ -285,50 +285,50 @@
       "engineTotalXp": 247680,
       "bonusMs": {
         "runs": 1,
-        "medianMs": 3822.85,
-        "minMs": 3822.85,
-        "maxMs": 3822.85,
+        "medianMs": 6677.71,
+        "minMs": 6677.71,
+        "maxMs": 6677.71,
         "samplesMs": [
-          3822.85
+          6677.71
         ],
         "stoppedEarly": false
       },
       "bonusXp": 0,
       "minutesMs": {
         "runs": 1,
-        "medianMs": 3.04,
-        "minMs": 3.04,
-        "maxMs": 3.04,
+        "medianMs": 6.23,
+        "minMs": 6.23,
+        "maxMs": 6.23,
         "samplesMs": [
-          3.04
+          6.23
         ],
         "stoppedEarly": false
       },
       "dedupMs": {
         "runs": 1,
-        "medianMs": 4.72,
-        "minMs": 4.72,
-        "maxMs": 4.72,
+        "medianMs": 11.68,
+        "minMs": 11.68,
+        "maxMs": 11.68,
         "samplesMs": [
-          4.72
+          11.68
         ],
         "stoppedEarly": false
       },
       "dedupGroups": 9600,
       "slicedBonusMs": {
         "runs": 1,
-        "medianMs": 46.75,
-        "minMs": 46.75,
-        "maxMs": 46.75,
+        "medianMs": 104.87,
+        "minMs": 104.87,
+        "maxMs": 104.87,
         "samplesMs": [
-          46.75
+          104.87
         ],
         "stoppedEarly": false
       },
       "slicedBonusXp": 0,
       "bonusEqualsSliced": true,
       "engineBonusEqualsOfficial": true,
-      "heapDeltaBytes": 25960336
+      "heapDeltaBytes": -8878408
     },
     "L": {
       "days": 2000,
@@ -337,12 +337,12 @@
       "keyInspectionsIfFullScanPerDay": 96000000,
       "engineMs": {
         "runs": 2,
-        "medianMs": 28853.22,
-        "minMs": 28688.92,
-        "maxMs": 28853.22,
+        "medianMs": 1220.84,
+        "minMs": 1109.99,
+        "maxMs": 1220.84,
         "samplesMs": [
-          28688.92,
-          28853.22
+          1109.99,
+          1220.84
         ],
         "stoppedEarly": false
       },
@@ -350,50 +350,50 @@
       "engineTotalXp": 619200,
       "bonusMs": {
         "runs": 1,
-        "medianMs": 28295.8,
-        "minMs": 28295.8,
-        "maxMs": 28295.8,
+        "medianMs": 63573.28,
+        "minMs": 63573.28,
+        "maxMs": 63573.28,
         "samplesMs": [
-          28295.8
+          63573.28
         ],
         "stoppedEarly": false
       },
       "bonusXp": 0,
       "minutesMs": {
         "runs": 1,
-        "medianMs": 7.28,
-        "minMs": 7.28,
-        "maxMs": 7.28,
+        "medianMs": 12.82,
+        "minMs": 12.82,
+        "maxMs": 12.82,
         "samplesMs": [
-          7.28
+          12.82
         ],
         "stoppedEarly": false
       },
       "dedupMs": {
         "runs": 1,
-        "medianMs": 18.73,
-        "minMs": 18.73,
-        "maxMs": 18.73,
+        "medianMs": 42.48,
+        "minMs": 42.48,
+        "maxMs": 42.48,
         "samplesMs": [
-          18.73
+          42.48
         ],
         "stoppedEarly": false
       },
       "dedupGroups": 24000,
       "slicedBonusMs": {
         "runs": 1,
-        "medianMs": 260.35,
-        "minMs": 260.35,
-        "maxMs": 260.35,
+        "medianMs": 324.48,
+        "minMs": 324.48,
+        "maxMs": 324.48,
         "samplesMs": [
-          260.35
+          324.48
         ],
         "stoppedEarly": false
       },
       "slicedBonusXp": 0,
       "bonusEqualsSliced": true,
       "engineBonusEqualsOfficial": true,
-      "heapDeltaBytes": 82597080
+      "heapDeltaBytes": 59045016
     }
   },
   "stretchFixture": {

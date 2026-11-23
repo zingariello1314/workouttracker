@@ -33,14 +33,19 @@ describe('Mission 11 — analytical audit + underexploration', () => {
           id: 'occ:reserve1',
           kind: 'disc_volume_trend',
           title: 'Volume en baisse',
-          body: 'Fréquence et contenu à distinguer.'
+          body: 'Fréquence et contenu à distinguer.',
+          claim: {
+            id: 'claim:reserve1',
+            statement: 'Volume en baisse',
+            proof: { observedValues: { sessions: 4, reps: 800 } }
+          }
         }
       ]
     };
     const doc = buildAnalyticalAudit({
       insights,
       p6: {
-        underexploration: { schema: 'momentum.underexplorationReport.v2', summary: {} },
+        underexploration: { schema: 'momentum.underexplorationReport.v3', summary: {} },
         priority: insights.shortTerm,
         reserve: insights.accessibleReserve
       }
@@ -49,6 +54,8 @@ describe('Mission 11 — analytical audit + underexploration', () => {
     expect(doc.manifest.cardCount).toBeGreaterThanOrEqual(2);
     expect(Object.keys(doc.claimRegistry).length).toBeGreaterThanOrEqual(1);
     const v = validateAnalyticalAudit(doc);
+    expect(v.schemaValidation.ok).toBe(true);
+    expect(v.integrityValidation.ok).toBe(true);
     expect(v.ok).toBe(true);
     expect(v.counts.cards).toBe(doc.manifest.cardCount);
   });
@@ -73,14 +80,16 @@ describe('Mission 11 — analytical audit + underexploration', () => {
     expect(matrix.summary.neverTested).toBeGreaterThanOrEqual(0);
   });
 
-  it('underexplorationReport v2 embarque la matrice', () => {
+  it('underexplorationReport v3 embarque la matrice et les lanes', () => {
     const report = buildUnderexplorationReport({
       discoveries: [{ kind: 'disc_volume_trajectory', exploration: { coverage: 'under_explored' } }],
       graph: { available: false }
     });
-    expect(report.schema).toBe('momentum.underexplorationReport.v2');
+    expect(report.schema).toBe('momentum.underexplorationReport.v3');
     expect(report.coverageMatrix?.rows?.length).toBeGreaterThan(5);
     expect(report.summary.opportunityUnused).toBe(1);
+    expect(report.lifecycleLanes).toBeTruthy();
+    expect(report.lifecycleLanes.applicable_never_executed).toBeGreaterThanOrEqual(0);
   });
 
   it('ZIP d’audit inclut ANALYTICAL_AUDIT enrichi et sa validation', async () => {
@@ -97,6 +106,7 @@ describe('Mission 11 — analytical audit + underexploration', () => {
     });
     expect(result.zipFilesPreview).toContain('ANALYTICAL_AUDIT.json');
     expect(result.zipFilesPreview).toContain('ANALYTICAL_AUDIT.validation.json');
+    expect(result.zipFilesPreview).toContain('ANALYTICAL_REASONING_TRACE.json');
     const auditFile = result.zipFiles.find((f) => f.name === 'ANALYTICAL_AUDIT.json');
     const parsed = JSON.parse(auditFile.data);
     expect(parsed.schema).toMatch(/momentum\.analyticalAudit\.v[12]/);

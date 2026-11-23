@@ -1175,6 +1175,10 @@ export default function AnalysisEngineConsole() {
   const [exportNotice, setExportNotice] = useState('');
   const [exportProgress, setExportProgress] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
+  /** observe_last_run = pack produit ; diagnostic_replay = recalcul console */
+  const [consoleMode, setConsoleMode] = useState('diagnostic_replay');
+  const [productObservation, setProductObservation] = useState(null);
+  const [anomalyFilter, setAnomalyFilter] = useState('all');
 
   const periodWindow = useMemo(() => getRecapDateWindow(period, new Date()), [period]);
   const garminRange = useMemo(() => {
@@ -1877,6 +1881,50 @@ export default function AnalysisEngineConsole() {
                 ))}
               </div>
             ) : null}
+            <div className="aec-view-modes" role="group" aria-label="Mode console">
+              <button
+                type="button"
+                className={`aec-btn aec-btn-ghost${consoleMode === 'observe_last_run' ? ' is-on' : ''}`}
+                onClick={() => {
+                  setConsoleMode('observe_last_run');
+                  setProductObservation(
+                    typeof window !== 'undefined' ? window.__momentumLastProductObservation || null : null
+                  );
+                  setPublishedPacks(
+                    readPublishedInsightPacks({
+                      period,
+                      windowStart: periodWindow?.start || null,
+                      windowEnd: periodWindow?.end || null
+                    })
+                  );
+                }}
+                title="Observe le dernier run produit (Récap → Analyse). Aucun recalcul."
+              >
+                Dernier run produit
+              </button>
+              <button
+                type="button"
+                className={`aec-btn aec-btn-ghost${consoleMode === 'diagnostic_replay' ? ' is-on' : ''}`}
+                onClick={() => setConsoleMode('diagnostic_replay')}
+                title="Rejeu diagnostique indépendant du pack affiché."
+              >
+                Rejeu diagnostique
+              </button>
+            </div>
+            <label className="aec-btn aec-btn-ghost" title="Filtre d’anomalies observabilité">
+              Filtre
+              <select
+                className="ml-1 bg-transparent"
+                value={anomalyFilter}
+                onChange={(e) => setAnomalyFilter(e.target.value)}
+              >
+                <option value="all">Tous</option>
+                <option value="no_proof">Sans preuves</option>
+                <option value="never_explored">Non explorés</option>
+                <option value="memory_gap">Mémoire absente</option>
+                <option value="module_missing">Modules non exécutés</option>
+              </select>
+            </label>
             <button
               type="button"
               className="aec-btn aec-btn-ghost"
@@ -2055,9 +2103,30 @@ export default function AnalysisEngineConsole() {
                 </details>
               ) : null}
               <div className="aec-banner aec-banner-empty">
-                Le diagnostic lancé ici est un calcul indépendant. Il n’est pas le pack affiché dans Analyse.
-                Les lignes non sélectionnées restent admissibles, fusionnées ou écartées selon leur statut.
+                {consoleMode === 'observe_last_run'
+                  ? 'Mode observation : lecture du dernier run produit (Récap → Analyse) et du cache publié. Aucun recalcul — comparabilité directe avec les cartes affichées.'
+                  : 'Mode rejeu diagnostique : calcul indépendant du pack affiché dans Analyse. Avantage : expérimenter sans polluer la mémoire ni le pack. Risque : divergences d’entrée, fingerprint, mémoire ou ordre si les sources diffèrent.'}
               </div>
+              {consoleMode === 'observe_last_run' && productObservation ? (
+                <div className="aec-banner aec-banner-empty">
+                  Dernier run produit · {productObservation.bundle?.analysisPeriod || '—'} ·{' '}
+                  {productObservation.bundle?.analysisEdition || 'édition ?'} ·{' '}
+                  {productObservation.bundle?.cardCount ?? '—'} cartes · empreinte{' '}
+                  {productObservation.bundle?.dataFingerprint || '—'} · mémoire intacte
+                </div>
+              ) : null}
+              {consoleMode === 'observe_last_run' && !productObservation ? (
+                <div className="aec-banner aec-banner-empty">
+                  Aucune observation produit en mémoire — ouvrez Récap → Analyse (statut ready) puis
+                  réactivez « Dernier run produit ».
+                </div>
+              ) : null}
+              {anomalyFilter !== 'all' ? (
+                <div className="aec-banner aec-banner-empty">
+                  Filtre anomalies : {anomalyFilter}. Pour le détail exhaustif, exportez
+                  ANALYTICAL_REASONING_TRACE depuis Récap → Analyse.
+                </div>
+              ) : null}
               {shadowReplay ? (
                 <div className="aec-banner aec-banner-empty">
                   Expérimental — non publié. {shadowReplay.phenomena.length} lectures,{' '}

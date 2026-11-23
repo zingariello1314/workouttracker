@@ -43,7 +43,7 @@ function firstDateOf(snapshot) {
 
 describe.skipIf(!ENABLED)('Mission 5 bis — rejeu incrémental p6-sovereign-v10', () => {
   it('édition courante v10', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v1[0-9]/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[1-9]\d*)/);
     expect(analysisEditionKey()).toMatch(/program=structural-context-v[23]/);
     expect(analysisEditionKey()).toMatch(/review=collective-pass4-v[78]/);
     expect(analysisEditionKey()).toMatch(/claim=proof-pipeline-v3/);

@@ -32,7 +32,12 @@ import {
 import { computeRecapPeriodWorkerBundle } from '../../utils/sport/recapPeriodWorkerCompute';
 import { RECAP_ADAPTIVE_WORKER_CONTRACT } from '../../utils/sport/recapAdaptiveWorkerContract';
 import { tracePublication } from '../../utils/sport/publicationLifecycleTrace';
-import { loadAnalyticalMemory, noteExposure, saveAnalyticalMemory } from '../../utils/sport/analyticalMemory';
+import {
+  loadAnalyticalMemory,
+  noteExposure,
+  saveAnalyticalMemory,
+  resolveAnalyticalMemoryProfile
+} from '../../utils/sport/analyticalMemory';
 import {
   buildGarminCardioById,
   computeRunningVolumeTotals,
@@ -334,7 +339,7 @@ const RecapTab = ({ isActive = true }) => {
       reason: 'react_commit_not_dom_proof'
     });
     if (activeView !== RECAP_VIEW_IDS.ANALYSE) return;
-    const profile = currentUser?.id ? `u:${currentUser.id}` : 'local';
+    const profile = resolveAnalyticalMemoryProfile(currentUser?.id);
     const memory = loadAnalyticalMemory(profile);
     const noted = noteExposure(memory, {
       kind: 'presented',
@@ -418,8 +423,40 @@ const RecapTab = ({ isActive = true }) => {
       analysisPeriod,
       analysisEdition: analysisEditionKey(),
       packRole: 'published',
-      recapAssessment
+      recapAssessment,
+      dataFingerprint:
+        recapAssessment?.insightsPublication?.dataFingerprint ||
+        recapAssessment?.dataFingerprint ||
+        null
     };
+
+    // Observation produit pour la console (sans recalcul) — n’écrit pas la mémoire.
+    if (analysisStatus === 'ready' && recapAssessment?.insights) {
+      window.__momentumLastProductObservation = {
+        capturedAt: new Date().toISOString(),
+        mode: 'product_last_run',
+        bundle: {
+          analysisStatus,
+          analysisPeriod,
+          analysisEdition: liveBundle.analysisEdition,
+          packRole: 'published',
+          dataFingerprint: liveBundle.dataFingerprint,
+          insightsPublication: recapAssessment.insightsPublication || null,
+          cardCount: ['shortTerm', 'mediumTerm', 'longTerm'].reduce(
+            (n, col) => n + (recapAssessment.insights?.[col]?.length || 0),
+            0
+          ),
+          reserveCount: recapAssessment.insights?.accessibleReserve?.length || 0,
+          p6Counters: recapAssessment.periodDiscoveries?.p6?.counters || null,
+          underexploration: recapAssessment.periodDiscoveries?.p6?.underexploration || null,
+          pipelineSteps:
+            recapAssessment.periodDiscoveries?.debug?.pipelineSteps ||
+            recapAssessment.selectionDiagnostics?.pipelineSteps ||
+            null
+        },
+        memoryUntouched: true
+      };
+    }
 
     const dossierFor = async (periodId, windowForPeriod, domCapture) => {
       const cached = readPublishedBundle({
@@ -478,6 +515,32 @@ const RecapTab = ({ isActive = true }) => {
 
     window.momentumExportEightPeriods = async (opts = {}) => {
       const dossierMod = await import('../../utils/sport/analysisEnvironmentDossier');
+      const { buildAnalysisRunEnvelope } = await import('../../utils/sport/analysisRunEnvelope');
+      const { freezeAnalyticalMemorySnapshot, loadAnalyticalMemory } = await import(
+        '../../utils/sport/analyticalMemory'
+      );
+      const memProfile = resolveAnalyticalMemoryProfile(currentUser?.id);
+      // Nouvelle campagne : figer mémoire + enveloppe de run (fingerprint unique)
+      delete window.__momentumEightPeriodMemoryFreeze;
+      window.__momentumEightPeriodMemoryFreeze = freezeAnalyticalMemorySnapshot(
+        loadAnalyticalMemory(memProfile)
+      );
+      const nameMapForEnvelope = {};
+      Object.keys(snapshotForRecap?.reps || {}).forEach((key) => {
+        const id = key.slice(11);
+        if (!id || nameMapForEnvelope[id]) return;
+        nameMapForEnvelope[id] = getExerciseNameById?.(id) || '';
+      });
+      const runEnvelope = buildAnalysisRunEnvelope({
+        snapshot: snapshotForRecap,
+        activeProgram: activeProgram || null,
+        garminData: garminBundle || null,
+        garminPartial: garminPartialForRecap || null,
+        nameMap: nameMapForEnvelope,
+        analyticalMemory: window.__momentumEightPeriodMemoryFreeze,
+        executionMode: 'export',
+        analysisRunId: opts.analysisRunId || null
+      });
       const exportFile = await buildEightPeriodAudit({
         periods: EIGHT_PERIODS,
         domCapture: opts.domCapture || null,
@@ -500,12 +563,22 @@ const RecapTab = ({ isActive = true }) => {
           if (source.refused) return null;
           const metrics = await metricsFor(periodId, source.bundle?.recapAssessment?.insightsPublication || windowForPeriod);
           return {
-            bundle: source.bundle,
+            bundle: {
+              ...source.bundle,
+              nameMap: nameMapForEnvelope,
+              activeProgram: activeProgram || null,
+              garminData: garminBundle || null
+            },
             provenance: source.provenance,
             window: windowForPeriod,
             banner: metrics.banner,
             measure: metrics.measured,
-            snapshot: snapshotForRecap
+            snapshot: {
+              ...(snapshotForRecap || {}),
+              activeProgram: activeProgram || snapshotForRecap?.activeProgram || null,
+              garminData: garminBundle || snapshotForRecap?.garminData || null,
+              nameMap: nameMapForEnvelope
+            }
           };
         },
         computeMissing: async (periodId) => {
@@ -516,6 +589,16 @@ const RecapTab = ({ isActive = true }) => {
             if (!id || nameMap[id]) return;
             nameMap[id] = getExerciseNameById?.(id) || '';
           });
+          // Mission 24 — même mémoire initiale figée pour toute la campagne 8 horizons
+          const memProfile = resolveAnalyticalMemoryProfile(currentUser?.id);
+          const { freezeAnalyticalMemorySnapshot, loadAnalyticalMemory } = await import(
+            '../../utils/sport/analyticalMemory'
+          );
+          if (!window.__momentumEightPeriodMemoryFreeze) {
+            window.__momentumEightPeriodMemoryFreeze = freezeAnalyticalMemorySnapshot(
+              loadAnalyticalMemory(memProfile)
+            );
+          }
           const result = await withTimeout(
             computeRecapPeriodWorkerBundle(
               {
@@ -529,6 +612,7 @@ const RecapTab = ({ isActive = true }) => {
                 activeProgram: activeProgram || null,
                 programs: programs || [],
                 profileQuestionnaireRaw: currentUser?.profileQuestionnaire || null,
+                analyticalMemory: window.__momentumEightPeriodMemoryFreeze,
                 isAuthenticated: Boolean(currentUser),
                 isAdmin: isAdminUser(currentUser)
               },
@@ -560,15 +644,77 @@ const RecapTab = ({ isActive = true }) => {
           };
           const metrics = await metricsFor(periodId, publicationWindow);
           return {
-            bundle,
+            bundle: {
+              ...bundle,
+              nameMap: nameMapForEnvelope,
+              activeProgram: activeProgram || null,
+              garminData: garminBundle || null,
+              analyticalMemoryOut: result.adaptive?.memoryUpdate?.memory || null
+            },
             window: publicationWindow,
             banner: metrics.banner,
             measure: metrics.measured,
-            snapshot: snapshotForRecap,
+            snapshot: {
+              ...(snapshotForRecap || {}),
+              activeProgram: activeProgram || snapshotForRecap?.activeProgram || null,
+              garminData: garminBundle || snapshotForRecap?.garminData || null,
+              nameMap: nameMapForEnvelope
+            },
             timings: result.workerTimings || null
           };
         }
       });
+      exportFile.analysisRunId = runEnvelope.analysisRunId;
+      exportFile.runEnvelope = runEnvelope;
+      exportFile.analyticalMemorySnapshot = window.__momentumEightPeriodMemoryFreeze;
+      exportFile.fingerprint = runEnvelope.fingerprint;
+      // Mission 26 — persister la mémoire campagne dans le store profil (merge, pas purge).
+      // Sans ceci : packPhenomena>0 et storePhenomena=0 → previousState=null au prochain run.
+      try {
+        const memProfile = resolveAnalyticalMemoryProfile(currentUser?.id);
+        // Mission 27 — le dossier expose `memorySnapshot` (pas bundle.analyticalMemoryOut).
+        const periodMemories = Object.values(exportFile.periods || {})
+          .map(
+            (d) =>
+              d?.memorySnapshot ||
+              d?.bundle?.analyticalMemoryOut ||
+              d?.analyticalMemoryOut ||
+              null
+          )
+          .filter(Boolean);
+        const { loadAnalyticalMemory, saveAnalyticalMemory, freezeAnalyticalMemorySnapshot } =
+          await import('../../utils/sport/analyticalMemory');
+        let merged = freezeAnalyticalMemorySnapshot(
+          window.__momentumEightPeriodMemoryFreeze || loadAnalyticalMemory(memProfile)
+        );
+        merged.profile = memProfile;
+        periodMemories.forEach((mem) => {
+          merged = {
+            ...merged,
+            profile: memProfile,
+            phenomena: { ...(merged.phenomena || {}), ...(mem.phenomena || {}) },
+            publications: [...(merged.publications || []), ...(mem.publications || [])].slice(-40),
+            exposures: merged.exposures || mem.exposures || []
+          };
+        });
+        const written = saveAnalyticalMemory(merged);
+        const reread = loadAnalyticalMemory(memProfile);
+        exportFile.analyticalMemoryPersisted = {
+          profile: memProfile,
+          phenomenonCount: Object.keys(merged.phenomena || {}).length,
+          storePhenomenaAfterWrite: Object.keys(reread.phenomena || {}).length,
+          periodMemorySnapshots: periodMemories.length,
+          written: written === true,
+          status: written ? 'saved_to_store' : 'save_returned_false'
+        };
+        window.__momentumEightPeriodMemoryFreeze = freezeAnalyticalMemorySnapshot(merged);
+        exportFile.analyticalMemorySnapshot = window.__momentumEightPeriodMemoryFreeze;
+      } catch (memErr) {
+        exportFile.analyticalMemoryPersisted = {
+          status: 'save_failed',
+          error: String(memErr?.message || memErr)
+        };
+      }
       if (opts.download !== false) {
         const downloaded = dossierMod.downloadAnalysisDossier(exportFile, {
           filename: `momentum-analysis-eight-periods-${exportFile.capturedAt.replace(/[:.]/g, '-')}`
@@ -646,7 +792,13 @@ const RecapTab = ({ isActive = true }) => {
           download: false
         });
       }
-      const fp = snapshotForRecap ? snapshotFingerprint(snapshotForRecap) : null;
+      const fp = snapshotForRecap
+        ? snapshotFingerprint(snapshotForRecap, {
+            activeProgram: activeProgram || null,
+            garminData: garminBundle || garminPartialForRecap || null,
+            manualSleepByDate: snapshotForRecap?.manualSleepByDate || null
+          })
+        : null;
       const mdOpts = {
         insights,
         p6,
@@ -704,23 +856,67 @@ const RecapTab = ({ isActive = true }) => {
       const runId =
         eightPeriodExport?.analysisRunId ||
         `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      const memProfile = resolveAnalyticalMemoryProfile(currentUser?.id);
+      const mem = loadAnalyticalMemory(memProfile);
+      const packMem =
+        eightPeriodExport?.analyticalMemorySnapshot ||
+        eightPeriodExport?.runEnvelope?.memorySnapshot ||
+        null;
+      const phenFromPack = Object.keys(packMem?.phenomena || {}).length;
+      const phenFromStore = Object.keys(mem?.phenomena || {}).length;
       const doc = buildAnalyticalAudit({
         eightPeriodExport,
         insights: eightPeriodExport?.periods ? null : insights,
         p6: eightPeriodExport?.periods ? null : p6,
-        snapshot: snapshotForRecap,
+        snapshot: {
+          ...(snapshotForRecap || {}),
+          activeProgram: activeProgram || null,
+          garminData: garminBundle || null,
+          nameMap: (() => {
+            const map = {};
+            Object.keys(snapshotForRecap?.reps || {}).forEach((key) => {
+              const id = key.slice(11);
+              if (id && !map[id]) map[id] = getExerciseNameById?.(id) || '';
+            });
+            return map;
+          })()
+        },
         activeProgram,
         gamesByPeriod: opts.gamesByPeriod || null,
         domVerify: opts.domVerify || window.__momentumLastDomVerify || null,
         underexploration: p6?.underexploration || null,
         currentPeriod: deferredPeriod || analysisPeriod || null,
-        analysisRunId: runId,
-        computedAt: eightPeriodExport?.capturedAt || new Date().toISOString()
+        analysisRunId: eightPeriodExport?.analysisRunId || runId,
+        computedAt: eightPeriodExport?.capturedAt || new Date().toISOString(),
+        memorySummary: {
+          status:
+            phenFromPack || phenFromStore || (mem?.publications || []).length
+              ? phenFromPack
+                ? 'loaded_from_pack'
+                : 'loaded'
+              : 'empty_profile',
+          profile: memProfile,
+          phenomenonCount: phenFromPack || phenFromStore,
+          publicationCount: (packMem?.publications || mem?.publications || []).length,
+          exposureCount: (mem?.exposures || []).length,
+          feedbackCount: (mem?.feedback || []).length,
+          phenomenonIds: Object.keys(
+            packMem?.phenomena || mem?.phenomena || {}
+          ).slice(0, 40),
+          sourcesCompared: {
+            packPhenomena: phenFromPack,
+            storePhenomena: phenFromStore,
+            storeExposures: (mem?.exposures || []).length
+          }
+        }
       });
       const validation = validateAnalyticalAudit(doc);
       doc.diagnostics = {
         ...(doc.diagnostics || {}),
-        schemaValidation: validation
+        // Mission 25 — ne pas confondre validité JSON et intégrité analytique
+        schemaValidation: validation.schemaValidation || { ok: validation.ok, errors: validation.errors },
+        integrityValidation: validation.integrityValidation || null,
+        validation
       };
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `momentum-ANALYTICAL_AUDIT-${editorialSlug}-${stamp}.json`;
@@ -734,6 +930,68 @@ const RecapTab = ({ isActive = true }) => {
         validation,
         schema: doc.schema,
         analysisRunId: runId,
+        edition
+      };
+    };
+
+    window.momentumExportReasoningTrace = async (opts = {}) => {
+      const { buildAnalyticalReasoningTrace, buildBulkInspectionIndex } = await import(
+        '../../utils/sport/evaluation/buildAnalyticalReasoningTrace'
+      );
+      const { downloadAnalysisJson } = await import('../../utils/sport/analysisExportDownload');
+      const { analysisEditionKey: editionKey } = await import('../../utils/sport/analysisEdition');
+      let eightPeriodExport = opts.eightPeriodExport || null;
+      let analyticalAudit = opts.analyticalAudit || null;
+      if (opts.includeEightPeriods !== false && typeof window.momentumExportEightPeriods === 'function') {
+        window.dispatchEvent(
+          new CustomEvent('momentum:analysis-export-progress', {
+            detail: { period: 'reasoning', phase: 'eight_periods', index: 1, total: 2 }
+          })
+        );
+        eightPeriodExport = await window.momentumExportEightPeriods({
+          ...opts,
+          download: false
+        });
+      }
+      if (!analyticalAudit && typeof window.momentumExportAnalyticalAudit === 'function') {
+        const auditResult = await window.momentumExportAnalyticalAudit({
+          ...opts,
+          eightPeriodExport,
+          includeEightPeriods: false,
+          download: false
+        });
+        analyticalAudit = auditResult?.document || null;
+      }
+      const runId =
+        eightPeriodExport?.analysisRunId ||
+        analyticalAudit?.manifest?.analysisRunId ||
+        `trace-${Date.now().toString(36)}`;
+      if (eightPeriodExport && !eightPeriodExport.analysisRunId) {
+        eightPeriodExport = { ...eightPeriodExport, analysisRunId: runId };
+      }
+      const doc = buildAnalyticalReasoningTrace({
+        eightPeriodExport,
+        analyticalAudit,
+        liveBundle,
+        detailed: opts.detailed !== false,
+        instrumentedRun: opts.instrumentedRun === true
+      });
+      doc.bulkInspectionIndex = buildBulkInspectionIndex(doc);
+      const edition = editionKey();
+      const editorialSlug =
+        edition.match(/editorial=([^;]+)/)?.[1]?.replace(/[^a-z0-9.-]+/gi, '-') || 'edition';
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `momentum-ANALYTICAL_REASONING_TRACE-${editorialSlug}-${stamp}.json`;
+      if (opts.download === false) {
+        return { ok: true, document: doc, filename, analysisRunId: runId };
+      }
+      const dl = downloadAnalysisJson(doc, { filename });
+      return {
+        ok: dl?.ok !== false,
+        download: { ...dl, filename },
+        schema: doc.schema,
+        analysisRunId: runId,
+        sizeHints: doc.sizeHints,
         edition
       };
     };
@@ -781,6 +1039,7 @@ const RecapTab = ({ isActive = true }) => {
       delete window.momentumExportAuditIa;
       delete window.momentumCopyAuditIa;
       delete window.momentumExportAnalyticalAudit;
+      delete window.momentumExportReasoningTrace;
       delete window.momentumVerifyEightPeriodsDom;
       delete window.momentumInjectEvalArchive;
       delete window.momentumAnalysisExportState;

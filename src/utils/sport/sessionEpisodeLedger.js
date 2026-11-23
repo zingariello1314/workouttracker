@@ -15,6 +15,89 @@ function ymd(d) {
 }
 
 /**
+ * Digest court des participants — stable, discriminant, sans IDs bruts 9+ chiffres
+ * (évite le rejet editorial raw_exercise_id sur les clés d’épisode).
+ */
+function participantDigest(ids = []) {
+  const payload = ids.join('+') || 'empty';
+  let h = 2166136261;
+  for (let i = 0; i < payload.length; i++) {
+    h ^= payload.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16);
+}
+
+/**
+ * Identité d’épisode stable : date de reprise + digest des participants.
+ * Indépendante de la prose ; discrimine deux reprises le même jour.
+ * Les IDs bruts restent dans metrics.namedMoves / proofIds, pas dans l’identité publique.
+ */
+export function stableReturnEpisodeId(events = [], returnDate = null) {
+  const date = ymd(returnDate || events[0]?.returnDate || events[0]?.date);
+  const ids = [
+    ...new Set(
+      (events || [])
+        .map((e) => String(e.exerciseId || e.name || '').trim())
+        .filter(Boolean)
+    )
+  ].sort();
+  return `return_episode|${date || 'na'}|p:${participantDigest(ids)}|n:${ids.length}`;
+}
+
+/**
+ * Continuité d’épisode : un enrichissement tardif de participants ne doit pas
+ * inventer un phénomène disjoint si le chevauchement est majoritaire.
+ */
+export function resolveContinuousEpisodeId(
+  events = [],
+  returnDate = null,
+  priorPhenomena = null
+) {
+  const freshId = stableReturnEpisodeId(events, returnDate);
+  const date = ymd(returnDate || events[0]?.returnDate || events[0]?.date);
+  const ids = [
+    ...new Set(
+      (events || [])
+        .map((e) => String(e.exerciseId || e.name || '').trim())
+        .filter(Boolean)
+    )
+  ].sort();
+  if (!date || !ids.length || !priorPhenomena || typeof priorPhenomena !== 'object') {
+    return { episodeId: freshId, continued: false, aliases: [], overlapRatio: 1 };
+  }
+  let best = null;
+  Object.entries(priorPhenomena).forEach(([id, phen]) => {
+    if (!String(id).startsWith(`return_episode|${date}|`)) return;
+    const priorIds = [
+      ...new Set(
+        [
+          ...(phen.participantIds || []),
+          ...(phen.confirmedParticipants || []),
+          ...((phen.proofIds || [])
+            .map((p) => String(p).replace(/^ex:/, ''))
+            .filter((p) => p && !p.startsWith('return:') && !p.startsWith('confirm:')))
+        ].map(String)
+      )
+    ];
+    if (!priorIds.length) return;
+    const priorSet = new Set(priorIds);
+    const inter = ids.filter((x) => priorSet.has(x)).length;
+    const union = new Set([...ids, ...priorIds]).size;
+    const ratio = union ? inter / union : 0;
+    if (ratio < 0.5) return;
+    if (!best || ratio > best.overlapRatio) {
+      best = { episodeId: id, continued: true, aliases: [freshId], overlapRatio: ratio };
+    }
+  });
+  if (!best) return { episodeId: freshId, continued: false, aliases: [], overlapRatio: 1 };
+  if (best.episodeId !== freshId) {
+    best.aliases = [...new Set([...(best.aliases || []), freshId])];
+  }
+  return best;
+}
+
+/**
  * Occurrences exercice×date dérivées du catalogue de séances.
  * Un jour = une entrée catalogue ; plusieurs exercices y coexistent (même séance calendaire).
  * @returns {Array<{
@@ -138,7 +221,7 @@ export function clusterLedgerReturnEpisodes(returnEvents = [], { window = null }
   });
   return [...byDate.entries()]
     .map(([date, rows]) => ({
-      episodeId: `return_episode:${date}`,
+      episodeId: stableReturnEpisodeId(rows, date),
       date,
       size: rows.length,
       events: rows,

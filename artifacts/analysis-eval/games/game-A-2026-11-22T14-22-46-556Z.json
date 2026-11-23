@@ -1,0 +1,38 @@
+{
+  "schema": "momentum.evalGameReport.v1",
+  "game": "A",
+  "executedAt": "2026-11-22T14:22:46.556Z",
+  "edition": "audit=normalized-export-v9;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v22;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v2;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v3;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v2;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;sleep=association-prose-v4;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "pass": true,
+  "counters": {
+    "missingClaims": 0,
+    "fusedSourcesRepublished": 0,
+    "unpairedDensities": 0,
+    "inventedCauses": 0,
+    "factualConflicts": 0,
+    "identityMerges": 0
+  },
+  "cases": [
+    {
+      "id": "A-all-clear",
+      "game": "A",
+      "referenceData": null,
+      "expected": {
+        "pass": true
+      },
+      "obtained": {
+        "pass": true
+      },
+      "status": "pass",
+      "justification": "aucune violation détectée sur le paquet fourni",
+      "delta": null,
+      "edition": "audit=normalized-export-v9;claim=assertion-window-v2;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v6;composition=phenomenon-compose-v7;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v22;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=verified-deepening-v2;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=persistent-vertical-v3;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v2;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;sleep=association-prose-v4;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+      "humanBlindPerformed": false,
+      "referenceKind": "synthetic"
+    }
+  ],
+  "humanBlindComparison": {
+    "performed": false,
+    "reason": "not_requested"
+  }
+}

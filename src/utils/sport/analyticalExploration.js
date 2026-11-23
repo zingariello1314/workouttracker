@@ -489,6 +489,9 @@ function exploreCollectiveReturnFlat(rows, context = {}, sourceEvents = null) {
     habitualCadenceDays: r.habitualCadenceDays || null,
     prevReps: r.prevReps ?? null,
     currentReps: r.currentReps ?? null,
+    // Mission 26 — référentiels concurrent : last-before-gap vs habituel
+    referenceKind: 'last_before_gap',
+    habitualReps: r.habitualReps ?? r.habitualMedian ?? r.habitual?.median ?? null,
     mechanism: r.mechanism || null,
     gapVsCadence:
       r.habitualCadenceDays && Number(r.gapDays) > 0
@@ -577,14 +580,34 @@ function exploreCollectiveReturnFlat(rows, context = {}, sourceEvents = null) {
         const partial = withLevels.filter((m) => Number(m.currentReps) < Number(m.prevReps) * 0.9);
         const formatBits = [
           full.length
-            ? `${full.length} retrouvent un volume proche de leur niveau antérieur.`
+            ? `${full.length} retrouvent un volume proche de leur dernière séance avant interruption.`
             : null,
           partial.length
-            ? `${partial.length} restent en retrait (${partial
+            ? `${partial.length} restent en retrait face à cette référence de reprise (${partial
                 .slice(0, 3)
                 .map((m) => `${m.name} : ${Math.round(m.currentReps)} vs ${Math.round(m.prevReps)}`)
                 .join(' ; ')}).`
             : null,
+          (() => {
+            const shortHab = namedMoves.filter((m) => {
+              const hab = Number(m.habitualReps);
+              return (
+                Number.isFinite(hab) &&
+                hab > 0 &&
+                Number.isFinite(Number(m.currentReps)) &&
+                Number(m.currentReps) < hab * 0.9
+              );
+            });
+            return shortHab.length
+              ? `${shortHab.length} restent sous leur niveau habituel documenté (${shortHab
+                  .slice(0, 3)
+                  .map(
+                    (m) =>
+                      `${m.name} : ${Math.round(m.currentReps)} vs habituel ${Math.round(m.habitualReps)}`
+                  )
+                  .join(' ; ')}) — distinct de la dernière séance avant interruption.`
+              : null;
+          })(),
           'Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur chaque exercice isolé.'
         ]
           .filter(Boolean)

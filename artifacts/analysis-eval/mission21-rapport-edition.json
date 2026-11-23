@@ -1,0 +1,496 @@
+{
+  "schema": "momentum.m21EditionReport.v1",
+  "generatedAt": "2026-11-22T12:45:33.905Z",
+  "mission": "Mission 21",
+  "edition": "p6-sovereign-v20",
+  "fingerprint": {
+    "version": 3,
+    "repKeys": 795,
+    "checkedKeys": 801,
+    "weightKeys": 573,
+    "setLogKeys": 594,
+    "durationKeys": 0,
+    "totalReps": 33647,
+    "digest": "86e56d2a",
+    "firstRepKey": "2026-01-05_101",
+    "lastRepKey": "2026-11-20_981046524",
+    "sources": {
+      "weightsField": "exerciseWeights",
+      "setLogsField": "exerciseSetLogs"
+    }
+  },
+  "environment": {
+    "exerciseBank": {
+      "source": "src/data/exerciseDatabase.js",
+      "keyCount": 1374,
+      "digest": "fee896a6"
+    },
+    "nameResolver": "journal+program+exerciseDatabase",
+    "matching": "session-slot-v3",
+    "populations": "canonical-populations-v2",
+    "facts": "shared-facts-v1",
+    "memory": "collective-vertical-v1",
+    "gtg": "classic-exclusive-v1"
+  },
+  "gateA": {
+    "classic3881": {
+      "classic": 3881,
+      "gtgDeduction": 85,
+      "inclusive": 4281,
+      "classicOk": true
+    },
+    "attributionHonest": {
+      "recentShare": 0.24952610718593832,
+      "previousShare": 0.1004895645452203,
+      "recognizedVolumeShareRecent": 0.24952610718593832,
+      "recognizedVolumeSharePrevious": 0.1004895645452203,
+      "recognizedSessionShareRecent": 0.2222222222222222,
+      "partitionCoverageShareRecent": 1,
+      "unattributedVolumeShareRecent": 0.7504738928140617,
+      "structurallyRecognizedSessionShareRecent": 0,
+      "probablyRelatedSessionShareRecent": 0.2222222222222222,
+      "historicallyDocumentedShareRecent": 0,
+      "recentLevelCounts": {
+        "structurally_recognized": 0,
+        "probably_related": 4,
+        "unattributable": 14
+      },
+      "previousLevelCounts": {
+        "structurally_recognized": 0,
+        "probably_related": 1,
+        "unattributable": 11
+      }
+    },
+    "contributionsReconciled": true,
+    "reconciliationGap": 0
+  },
+  "memoryChrono": {
+    "episodeId": "return_episode|2026-11-11|p:6294d8f0|n:9",
+    "noFutureLeak": true,
+    "states": [
+      {
+        "cutoff": "2026-10-14",
+        "state": "absent_or_interrupted",
+        "transition": "new"
+      },
+      {
+        "cutoff": "2026-11-01",
+        "state": "absent_or_interrupted",
+        "transition": "unchanged"
+      },
+      {
+        "cutoff": "2026-11-10",
+        "state": "absent_or_interrupted",
+        "transition": "unchanged"
+      },
+      {
+        "cutoff": "2026-11-11",
+        "state": "return_observed",
+        "transition": "revised"
+      },
+      {
+        "cutoff": "2026-11-17",
+        "state": "return_observed",
+        "transition": "unchanged"
+      },
+      {
+        "cutoff": "2026-11-18",
+        "state": "confirmed_once",
+        "transition": "confirmed"
+      },
+      {
+        "cutoff": "2026-11-21",
+        "state": "confirmed_once",
+        "transition": "unchanged"
+      }
+    ]
+  },
+  "periods": {
+    "today": {
+      "counts": {
+        "all": 8,
+        "selected": 5,
+        "accessible": 8,
+        "collective": 0,
+        "monthlyFamily": 0,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -3,
+        "allMinusSelected": 3
+      },
+      "collective": null,
+      "monthly": null
+    },
+    "7d": {
+      "counts": {
+        "all": 63,
+        "selected": 11,
+        "accessible": 63,
+        "collective": 1,
+        "monthlyFamily": 1,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -52,
+        "allMinusSelected": 52
+      },
+      "collective": {
+        "title": "La reprise collective se confirme cette semaine",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": {
+        "title": "La baisse de volume se lit dans la composition des familles de séances",
+        "attributionObserved": [
+          {
+            "id": "recognizedVolumeShareRecent",
+            "value": 34,
+            "unit": "pct"
+          },
+          {
+            "id": "recognizedSessionShareRecent",
+            "value": 25,
+            "unit": "pct"
+          },
+          {
+            "id": "unattributedVolumeShareRecent",
+            "value": 66,
+            "unit": "pct"
+          },
+          {
+            "id": "partitionCoverageShareRecent",
+            "value": 100,
+            "unit": "pct"
+          },
+          {
+            "id": "structurallyRecognizedSessionShareRecent",
+            "value": 0,
+            "unit": "pct"
+          },
+          {
+            "id": "probablyRelatedSessionShareRecent",
+            "value": 25,
+            "unit": "pct"
+          },
+          {
+            "id": "historicallyDocumentedShareRecent",
+            "value": 0,
+            "unit": "pct"
+          },
+          {
+            "id": "contributionReconciliationGap",
+            "value": 0,
+            "unit": "reps"
+          },
+          {
+            "id": "proseRemainderExact",
+            "value": -74,
+            "unit": "reps"
+          }
+        ],
+        "contributionCount": 3,
+        "sharedFactCount": 8,
+        "conclusionScope": "full_training"
+      }
+    },
+    "30d": {
+      "counts": {
+        "all": 89,
+        "selected": 11,
+        "accessible": 89,
+        "collective": 1,
+        "monthlyFamily": 1,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -78,
+        "allMinusSelected": 78
+      },
+      "collective": {
+        "title": "Une composante de ton entraînement se réinstalle",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": {
+        "title": "La hausse de volume se lit dans la composition des familles de séances",
+        "attributionObserved": [
+          {
+            "id": "recognizedVolumeShareRecent",
+            "value": 51,
+            "unit": "pct"
+          },
+          {
+            "id": "recognizedSessionShareRecent",
+            "value": 44,
+            "unit": "pct"
+          },
+          {
+            "id": "unattributedVolumeShareRecent",
+            "value": 49,
+            "unit": "pct"
+          },
+          {
+            "id": "partitionCoverageShareRecent",
+            "value": 100,
+            "unit": "pct"
+          },
+          {
+            "id": "structurallyRecognizedSessionShareRecent",
+            "value": 0,
+            "unit": "pct"
+          },
+          {
+            "id": "probablyRelatedSessionShareRecent",
+            "value": 44,
+            "unit": "pct"
+          },
+          {
+            "id": "historicallyDocumentedShareRecent",
+            "value": 0,
+            "unit": "pct"
+          },
+          {
+            "id": "contributionReconciliationGap",
+            "value": 0,
+            "unit": "reps"
+          },
+          {
+            "id": "proseRemainderExact",
+            "value": 177,
+            "unit": "reps"
+          }
+        ],
+        "contributionCount": 3,
+        "sharedFactCount": 8,
+        "conclusionScope": "full_training"
+      }
+    },
+    "3m": {
+      "counts": {
+        "all": 102,
+        "selected": 11,
+        "accessible": 102,
+        "collective": 1,
+        "monthlyFamily": 0,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -91,
+        "allMinusSelected": 91
+      },
+      "collective": {
+        "title": "Une composante de ton entraînement se réinstalle",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": null
+    },
+    "6m": {
+      "counts": {
+        "all": 119,
+        "selected": 11,
+        "accessible": 119,
+        "collective": 1,
+        "monthlyFamily": 0,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -108,
+        "allMinusSelected": 108
+      },
+      "collective": {
+        "title": "Une composante de ton entraînement se réinstalle",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": null
+    },
+    "1y": {
+      "counts": {
+        "all": 113,
+        "selected": 11,
+        "accessible": 113,
+        "collective": 1,
+        "monthlyFamily": 0,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -102,
+        "allMinusSelected": 102
+      },
+      "collective": {
+        "title": "Une composante de ton entraînement se réinstalle",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": null
+    },
+    "2y": {
+      "counts": {
+        "all": 108,
+        "selected": 11,
+        "accessible": 108,
+        "collective": 1,
+        "monthlyFamily": 0,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -97,
+        "allMinusSelected": 97
+      },
+      "collective": {
+        "title": "Une composante de ton entraînement se réinstalle",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": null
+    },
+    "all": {
+      "counts": {
+        "all": 109,
+        "selected": 11,
+        "accessible": 109,
+        "collective": 1,
+        "monthlyFamily": 0,
+        "variantMix": 0
+      },
+      "reconciliationDelta": {
+        "selectedMinusAccessible": -98,
+        "allMinusSelected": 98
+      },
+      "collective": {
+        "title": "Une composante de ton entraînement se réinstalle",
+        "phenomenonId": "return_episode|2026-11-11|p:9a959cbd|n:9",
+        "memory": {
+          "state": "confirmed_once",
+          "previousState": null,
+          "transition": "new",
+          "knownAt": "2026-11-21",
+          "knowledgeCutoff": "2026-11-21",
+          "publicationDecision": {
+            "transition": "new",
+            "newPriorityCard": true,
+            "reason": "transformation"
+          },
+          "exposureCounted": false
+        },
+        "sharedFactCount": 21,
+        "confirmationDates": [
+          "2026-11-18"
+        ],
+        "namedCount": 9
+      },
+      "monthly": null
+    }
+  },
+  "limits": [
+    "DOM_NON_OBSERVE",
+    "VITEST_GLOBALE_OUVERTE",
+    "JEUX_ABC_PARTIELS",
+    "P6_NON_CLOTUREE",
+    "NO_GO_P7"
+  ]
+}

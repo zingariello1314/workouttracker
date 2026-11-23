@@ -1,0 +1,133 @@
+{
+  "schema": "momentum.gameA.independentCorpus.v1",
+  "mission": 30,
+  "note": "Valeurs attendues calculées hors moteur (sommes / effectifs manuels). Ne pas utiliser un export moteur comme oracle.",
+  "anchorDate": "2026-11-21",
+  "timezone": "Europe/Paris",
+  "cases": [
+    {
+      "id": "ga-tractions-window-vs-arc",
+      "family": "composition_parent_child",
+      "exerciseFamily": "pull",
+      "designSet": true,
+      "eventsA": [
+        { "date": "2026-09-04", "reps": 48, "inWindow": false },
+        { "date": "2026-09-18", "reps": 48, "inWindow": false },
+        { "date": "2026-10-02", "reps": 48, "inWindow": true },
+        { "date": "2026-10-16", "reps": 48, "inWindow": true },
+        { "date": "2026-10-30", "reps": 48, "inWindow": true },
+        { "date": "2026-11-06", "reps": 48, "inWindow": true },
+        { "date": "2026-11-13", "reps": 48, "inWindow": true },
+        { "date": "2026-11-20", "reps": 48, "inWindow": true }
+      ],
+      "eventsB": [
+        { "date": "2026-09-14", "reps": 48, "inWindow": false },
+        { "date": "2026-09-28", "reps": 48, "inWindow": true },
+        { "date": "2026-10-12", "reps": 48, "inWindow": true },
+        { "date": "2026-10-19", "reps": 48, "inWindow": true },
+        { "date": "2026-10-26", "reps": 48, "inWindow": true },
+        { "date": "2026-11-02", "reps": 48, "inWindow": true },
+        { "date": "2026-11-09", "reps": 48, "inWindow": true },
+        { "date": "2026-11-16", "reps": 48, "inWindow": true }
+      ],
+      "independentExpected": {
+        "A": { "total": 288, "sessions": 6, "mean": 48 },
+        "B": { "total": 336, "sessions": 7, "mean": 48 }
+      }
+    },
+    {
+      "id": "ga-rowing-freq-change-mean-stable",
+      "family": "frequency_without_mean_change",
+      "exerciseFamily": "pull",
+      "designSet": true,
+      "events": [
+        { "date": "2026-10-01", "reps": 40, "inWindow": true },
+        { "date": "2026-10-08", "reps": 40, "inWindow": true },
+        { "date": "2026-10-15", "reps": 40, "inWindow": true },
+        { "date": "2026-10-22", "reps": 40, "inWindow": true }
+      ],
+      "prevEvents": [
+        { "date": "2026-09-03", "reps": 40, "inWindow": true },
+        { "date": "2026-09-17", "reps": 40, "inWindow": true }
+      ],
+      "independentExpected": {
+        "total": 160,
+        "sessions": 4,
+        "mean": 40,
+        "prevTotal": 80,
+        "prevSessions": 2,
+        "prevMean": 40,
+        "freqChanged": true,
+        "meanChanged": false
+      }
+    },
+    {
+      "id": "ga-military-mean-change-freq-stable",
+      "family": "mean_without_frequency_change",
+      "exerciseFamily": "push",
+      "designSet": false,
+      "events": [
+        { "date": "2026-10-05", "reps": 50, "inWindow": true },
+        { "date": "2026-10-12", "reps": 50, "inWindow": true },
+        { "date": "2026-10-19", "reps": 50, "inWindow": true }
+      ],
+      "prevEvents": [
+        { "date": "2026-09-07", "reps": 30, "inWindow": true },
+        { "date": "2026-09-14", "reps": 30, "inWindow": true },
+        { "date": "2026-09-21", "reps": 30, "inWindow": true }
+      ],
+      "independentExpected": {
+        "total": 150,
+        "sessions": 3,
+        "mean": 50,
+        "prevTotal": 90,
+        "prevSessions": 3,
+        "prevMean": 30,
+        "freqChanged": false,
+        "meanChanged": true
+      }
+    },
+    {
+      "id": "ga-dips-homonyms-distinct-ids",
+      "family": "homonym_identity",
+      "exerciseFamily": "push",
+      "designSet": false,
+      "subjects": [
+        { "id": "dips-a", "name": "Dips", "total": 120, "sessions": 3 },
+        { "id": "dips-b", "name": "Dips", "total": 90, "sessions": 3 }
+      ],
+      "independentExpected": {
+        "sameName": true,
+        "distinctSubjects": true,
+        "mustNotMergeTotals": true
+      }
+    },
+    {
+      "id": "ga-curl-insufficient-comparator",
+      "family": "insufficient_comparator",
+      "exerciseFamily": "pull",
+      "designSet": false,
+      "events": [{ "date": "2026-11-18", "reps": 40, "inWindow": true }],
+      "prevEvents": [],
+      "independentExpected": {
+        "total": 40,
+        "sessions": 1,
+        "mean": 40,
+        "deltaAllowed": false
+      }
+    },
+    {
+      "id": "ga-contradiction-proof-vs-prose",
+      "family": "numeric_contradiction",
+      "exerciseFamily": "legs",
+      "designSet": true,
+      "independentExpected": {
+        "total": 336,
+        "sessions": 7,
+        "mean": 48,
+        "falseProseSessions": 8,
+        "mustFailValidation": true
+      }
+    }
+  ]
+}

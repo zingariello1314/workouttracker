@@ -27,6 +27,11 @@ import {
   loadLastInsightSignature,
   saveLastInsightSignature
 } from '../utils/sport/insightNoveltyStore';
+import {
+  loadAnalyticalMemory,
+  saveAnalyticalMemory,
+  resolveAnalyticalMemoryProfile
+} from '../utils/sport/analyticalMemory';
 
 const HEAVY_PERIODS = new Set(['6m', '1y', '2y', 'all']);
 
@@ -1270,6 +1275,9 @@ export function useRecapTabMetrics({
               profileQuestionnaireRaw: profileQuestionnaireRaw || null,
               insightHistory: loadInsightHistory(),
               lastInsightSignature: loadLastInsightSignature(),
+              analyticalMemory: loadAnalyticalMemory(
+                resolveAnalyticalMemoryProfile(accountScope)
+              ),
               nameMap
             });
           } catch {
@@ -1281,6 +1289,9 @@ export function useRecapTabMetrics({
                 activeProgram,
                 programs: programsForWorker,
                 profileQuestionnaireRaw,
+                analyticalMemory: loadAnalyticalMemory(
+                  resolveAnalyticalMemoryProfile(accountScope)
+                ),
                 nameMap
               })
             );
@@ -1377,6 +1388,16 @@ export function useRecapTabMetrics({
           if (adaptive.historyUpdate?.nextHistory && adaptive.historyUpdate?.signature) {
             saveInsightHistory(adaptive.historyUpdate.nextHistory);
             saveLastInsightSignature(adaptive.historyUpdate.signature);
+          }
+          if (adaptive.memoryUpdate?.memory) {
+            // Mission 27 — même clé que RecapTab / audit (`u:{id}`), jamais `u:u:{id}`.
+            const profile = resolveAnalyticalMemoryProfile(accountScope);
+            saveAnalyticalMemory({
+              ...adaptive.memoryUpdate.memory,
+              profile: resolveAnalyticalMemoryProfile(
+                adaptive.memoryUpdate.memory.profile || profile
+              )
+            });
           }
 
           recapState = pack.recapState;

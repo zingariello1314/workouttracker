@@ -36,7 +36,7 @@ const pushPairVariant = [
 
 describe('Mission 11 — banque et structure', () => {
   it('édition ≥ v10', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v1[0-9]/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[1-9]\d*)/);
     expect(analysisEditionKey()).toMatch(/program=structural-context-v[234]/);
   });
 

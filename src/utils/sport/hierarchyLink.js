@@ -15,24 +15,50 @@ function normName(v) {
     .trim();
 }
 
+/**
+ * Sujets pour justification hiérarchique.
+ * Mission 23 — pour un collectif, n’utiliser que les participants documentés
+ * (namedMoves / composition), pas tout le nuage d’events (sinon rattachements parasites).
+ */
 function subjectIdsOf(row) {
   const d = row?.discovery || row;
   const m = d?.metrics || {};
   const ids = new Set();
+  const kind = String(d?.kind || '');
+  const isCollectiveParent = /collective_return|composed_load_phase|load_phase/i.test(kind);
+
+  const pushMove = (n) => {
+    if (!n) return;
+    if (n.exerciseId != null && n.exerciseId !== '') ids.add(String(n.exerciseId));
+    if (n.storageId != null && n.storageId !== '') ids.add(String(n.storageId));
+    if (n.name) ids.add(`name:${normName(n.name)}`);
+  };
+
   if (m.exerciseId != null && m.exerciseId !== '') ids.add(String(m.exerciseId));
   if (m.storageId != null && m.storageId !== '') ids.add(String(m.storageId));
   if (m.name) ids.add(`name:${normName(m.name)}`);
-  (m.namedMoves || m.composition?.namedMoves || []).forEach((n) => {
-    if (n?.exerciseId != null) ids.add(String(n.exerciseId));
-    if (n?.name) ids.add(`name:${normName(n.name)}`);
-  });
-  (m.events || []).forEach((e) => {
-    if (e?.exerciseId != null) ids.add(String(e.exerciseId));
-    if (e?.name) ids.add(`name:${normName(e.name)}`);
-  });
+
+  const documented =
+    m.namedMoves ||
+    m.composition?.namedMoves ||
+    m.confirmedParticipants ||
+    [];
+  (Array.isArray(documented) ? documented : []).forEach((n) =>
+    typeof n === 'string' || typeof n === 'number' ? ids.add(String(n)) : pushMove(n)
+  );
+
+  // Enfant individuel / non-collectif : events OK. Parent collectif : events exclus.
+  if (!isCollectiveParent) {
+    (m.events || []).forEach((e) => pushMove(e));
+  }
   return ids;
 }
 
+/**
+ * Ancres d’épisode — pas le nuage complet de metrics.dates (trajectoire historique).
+ * Mission 26 : un enfant avec dates 1/8 nov ne doit pas se rattacher à un épisode
+ * du 11 nov via minGap=1 sur le calendrier de séances.
+ */
 function episodeDatesOf(row) {
   const d = row?.discovery || row;
   const m = d?.metrics || {};
@@ -41,13 +67,29 @@ function episodeDatesOf(row) {
     const y = ymd(v);
     if (y) dates.add(y);
   };
+  const kind = String(d?.kind || '');
+  const isCollective = /collective_return|composed_parallel|composed_load/i.test(kind);
+  const dimHint = analyticalDimension(row);
+
+  push(m.returnDate);
   push(m.date);
   push(m.eventDate);
-  push(m.returnDate);
-  push(m.peakDate);
-  (Array.isArray(m.dates) ? m.dates : []).forEach(push);
-  (m.namedMoves || []).forEach((n) => push(n?.date));
-  (m.events || []).forEach((e) => push(e?.date));
+  (m.namedMoves || []).forEach((n) => push(n?.returnDate || n?.date));
+  (Array.isArray(m.confirmationDates) ? m.confirmationDates : []).forEach(push);
+
+  // Parent collectif : uniquement ancres d’épisode (namedMoves / return), pas events nuage
+  if (!isCollective) {
+    push(m.peakDate);
+    (m.events || []).forEach((e) => push(e?.returnDate || e?.date));
+  }
+
+  // Nuage metrics.dates : uniquement si aucune ancre, et jamais pour return/format
+  // (sinon toute trajectoire historique « touche » l’épisode parent).
+  if (!dates.size && dimHint !== 'return_or_format' && !isCollective) {
+    const arr = Array.isArray(m.dates) ? m.dates : [];
+    if (arr.length) push(arr[arr.length - 1]);
+  }
+
   (d?.claim?.proof?.sourceEvents || []).forEach((e) => {
     if (e?.id && /^\d{4}-\d{2}-\d{2}/.test(String(e.id))) push(String(e.id).slice(0, 10));
   });
@@ -173,6 +215,29 @@ export function justifyParentChildLink(parent, child, { maxEpisodeGapDays = 45 }
         maxEpisodeGapDays
       }
     };
+  }
+
+  // Mission 27 — un épisode antérieur du même exercice n’est pas un approfondissement
+  // du collectif courant (ex. dates 1/8 nov vs reprise du 11).
+  const parentKind = String((parent?.discovery || parent)?.kind || '');
+  if (/collective_return/i.test(parentKind) && parentDates.size && childDates.size) {
+    const pMin = [...parentDates].sort()[0];
+    const cMax = [...childDates].sort().at(-1);
+    const lead = daysBetween(cMax, pMin);
+    if (lead != null && lead > 3) {
+      return {
+        ok: false,
+        relation: 'prior_context',
+        reason: 'prior_episode_not_deepening',
+        proof: {
+          sharedSubjects,
+          parentDates: [...parentDates].slice(0, 6),
+          childDates: [...childDates].slice(0, 6),
+          minGap,
+          note: 'Ancre enfant antérieure à l’épisode parent — contexte, pas deepening'
+        }
+      };
+    }
   }
 
   return {

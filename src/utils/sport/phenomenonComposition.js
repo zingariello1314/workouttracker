@@ -5,6 +5,24 @@
 
 import { symmetricDecomposition, formatRepDelta } from './volumeChangeDecomposition';
 
+const MUSCLE_LABEL_FR = Object.freeze({
+  shoulders: 'épaules',
+  back: 'dos',
+  triceps: 'triceps',
+  chest: 'pectoraux',
+  core: 'gainage',
+  biceps: 'biceps',
+  legs: 'jambes',
+  glutes: 'fessiers',
+  full_body: 'corps entier'
+});
+
+function muscleLabelFr(key) {
+  const k = String(key || '').trim();
+  if (!k) return '';
+  return MUSCLE_LABEL_FR[k.toLowerCase()] || k;
+}
+
 function fmtInt(n) {
   return Math.round(Number(n) || 0).toLocaleString('fr-FR');
 }
@@ -19,6 +37,13 @@ function fmtPct(n) {
  * Enrichit un retour collectif avec rythme de réinstallation des formats
  * lorsque les volumes antérieurs / courants sont documentés.
  */
+/** Libellé utilisateur : jamais d’identifiant numérique brut dans la prose. */
+function moveDisplayName(m) {
+  const raw = String(m?.name || '').trim();
+  if (raw && !/^\d+$/.test(raw) && !/^Exercice\s+\d+/i.test(raw)) return raw;
+  return null;
+}
+
 export function composeCollectiveReturnReading({
   namedMoves = [],
   dates = [],
@@ -29,7 +54,7 @@ export function composeCollectiveReturnReading({
   readingMode = 'return',
   baseConclusion = null
 } = {}) {
-  const moves = (namedMoves || []).filter((m) => m?.name);
+  const moves = (namedMoves || []).filter((m) => m?.name || m?.exerciseId);
   // Mission 14 : 2 mouvements suffisent si lien de séance/famille documenté ; sinon ≥ 3
   const linked = Boolean(sessionFamilyLinked) || (families || []).filter(Boolean).length >= 1;
   if (moves.length < 2 || (moves.length < 3 && !linked)) {
@@ -40,14 +65,30 @@ export function composeCollectiveReturnReading({
     };
   }
 
+  const labeled = moves
+    .map((m) => ({ ...m, displayName: moveDisplayName(m) }))
+    .filter((m) => m.displayName);
+  const proseMoves = labeled.length >= 2 ? labeled : moves.map((m) => ({ ...m, displayName: 'mouvement' }));
+
   const withLevels = moves.filter(
     (m) =>
       Number.isFinite(Number(m.prevReps)) &&
       Number.isFinite(Number(m.currentReps)) &&
       Number(m.prevReps) > 0
   );
+  // Mission 26 — référentiel explicite : prevReps = dernière séance avant interruption (ledger),
+  // distinct du niveau habituel éventuel (habitualReps / habitualMedian).
   const full = withLevels.filter((m) => Number(m.currentReps) >= Number(m.prevReps) * 0.9);
   const partial = withLevels.filter((m) => Number(m.currentReps) < Number(m.prevReps) * 0.9);
+  const vsHabitual = moves.filter((m) => {
+    const hab = Number(m.habitualReps ?? m.habitualMedian ?? m.habitualPrevReps);
+    return (
+      Number.isFinite(hab) &&
+      hab > 0 &&
+      Number.isFinite(Number(m.currentReps)) &&
+      Number(m.currentReps) < hab * 0.9
+    );
+  });
 
   const returnDate = dates.length ? dates[0] : null;
   const confDates = (confirmationDates || []).filter(Boolean);
@@ -68,6 +109,8 @@ export function composeCollectiveReturnReading({
       [...(families || []), ...fromMoves]
         .map(String)
         .filter((g) => g && !/^full[_ ]?body$/i.test(g))
+        .map(muscleLabelFr)
+        .filter(Boolean)
     )
   ];
   const familyBit =
@@ -83,16 +126,28 @@ export function composeCollectiveReturnReading({
     withLevels.length >= 2
       ? [
           full.length
-            ? `${full.length} mouvement${full.length > 1 ? 's' : ''} retrouvent un volume proche de leur niveau antérieur (${full
+            ? `${full.length} mouvement${full.length > 1 ? 's' : ''} retrouvent un volume proche de leur dernière séance avant interruption (${full
                 .slice(0, 3)
-                .map((m) => m.name)
+                .map((m) => moveDisplayName(m) || 'mouvement')
                 .join(', ')}${full.length > 3 ? '…' : ''}).`
             : null,
           partial.length
-            ? `${partial.length} restent encore en retrait (${partial
+            ? `${partial.length} restent encore en retrait face à cette même référence de reprise (${partial
                 .slice(0, 3)
-                .map((m) => `${m.name} : ${fmtInt(m.currentReps)} vs ${fmtInt(m.prevReps)}`)
+                .map(
+                  (m) =>
+                    `${moveDisplayName(m) || 'mouvement'} : ${fmtInt(m.currentReps)} vs ${fmtInt(m.prevReps)}`
+                )
                 .join(' ; ')}).`
+            : null,
+          vsHabitual.length
+            ? `Attention : ${vsHabitual.length} restent sous leur niveau habituel documenté (${vsHabitual
+                .slice(0, 3)
+                .map((m) => {
+                  const hab = Number(m.habitualReps ?? m.habitualMedian ?? m.habitualPrevReps);
+                  return `${moveDisplayName(m) || 'mouvement'} : ${fmtInt(m.currentReps)} vs habituel ${fmtInt(hab)}`;
+                })
+                .join(' ; ')}) — distinct de la dernière séance avant l’interruption.`
             : null,
           'Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice.'
         ]
@@ -107,9 +162,9 @@ export function composeCollectiveReturnReading({
     ? `Les interruptions documentées vont de ${Math.min(...gaps)} à ${Math.max(...gaps)} jours.`
     : null;
 
-  const moveList = `${moves
+  const moveList = `${proseMoves
     .slice(0, 9)
-    .map((m) => m.name)
+    .map((m) => m.displayName)
     .join(', ')}${moves.length > 9 ? `… (${moves.length} au total)` : ''}`;
 
   let lead = null;
@@ -148,6 +203,8 @@ export function composeCollectiveReturnReading({
       confirmationDates: confDates,
       fullRecoveryCount: full.length,
       partialRecoveryCount: partial.length,
+      habitualShortfallCount: vsHabitual.length,
+      referenceKind: 'last_before_gap',
       levelsDocumented: withLevels.length,
       gapMin: gaps.length ? Math.min(...gaps) : null,
       gapMax: gaps.length ? Math.max(...gaps) : null

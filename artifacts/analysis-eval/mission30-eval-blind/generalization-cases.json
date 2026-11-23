@@ -1,0 +1,8 @@
+{
+  "schema": "momentum.evalBlind.generalization.v1",
+  "cases": [
+    { "id": "g-military-press-mean", "theme": "moyenne change, fréquence stable", "usedInRuleDesign": false },
+    { "id": "g-curl-single-session", "theme": "comparateur insuffisant", "usedInRuleDesign": false },
+    { "id": "g-legs-prose-contradiction", "theme": "prose vs population", "usedInRuleDesign": false }
+  ]
+}

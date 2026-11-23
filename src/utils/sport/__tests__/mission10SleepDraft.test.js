@@ -8,8 +8,8 @@ import { analysisEditionKey } from '../analysisEdition';
 
 describe('Mission 10 — sommeil et rédaction', () => {
   it('édition ≥ v9 (sommeil prose)', () => {
-    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:9|10|11|12)/);
-    expect(analysisEditionKey()).toMatch(/sleep=association-prose-v[1234]/);
+    expect(analysisEditionKey()).toMatch(/editorial=p6-sovereign-v(?:[9]|[1-9]\d*)/);
+    expect(analysisEditionKey()).toMatch(/sleep=association-prose-v[1-5]/);
   });
 
   it('ne publie jamais association_not_causation comme corps seul', () => {

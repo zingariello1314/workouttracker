@@ -20,6 +20,7 @@ import {
 import { runStructuredEvalSuite } from './structuredEvalReports';
 import { buildAuditIaMarkdown, buildAuditIaConcise } from './auditIaReport';
 import { buildAnalyticalAudit, validateAnalyticalAudit } from './buildAnalyticalAudit';
+import { loadAnalyticalMemory } from '../analyticalMemory';
 
 function fpKey(fp) {
   if (!fp) return null;
@@ -89,7 +90,13 @@ export async function assembleCompleteAuditDossier({
 } = {}) {
   const assembledAt = new Date().toISOString();
   const edition = analysisEditionKey();
-  const liveFingerprint = snapshot ? snapshotFingerprint(snapshot) : null;
+  const liveFingerprint = snapshot
+    ? snapshotFingerprint(snapshot, {
+        activeProgram: snapshot?.activeProgram || null,
+        garminData: snapshot?.garminData || null,
+        nameMap: snapshot?.nameMap || null
+      })
+    : null;
   const archive = loadEvalArchiveFromStorage() || emptyEvalArchive();
   const publicArtifacts = await fetchPublicEvalArtifacts();
 
@@ -155,26 +162,84 @@ export async function assembleCompleteAuditDossier({
     activeProgram: snapshot?.activeProgram || null,
     gamesByPeriod,
     domVerify,
-    memorySummary: {
-      note: 'historyCount nul = souvent historique non passé à l’export, pas mémoire vide'
-    },
+    memorySummary: (() => {
+      // Mission 23 — ne pas confondre profil local vide avec la mémoire du run
+      const fromPack =
+        eightPeriodExport?.analyticalMemorySnapshot ||
+        eightPeriodExport?.periods?.['7d']?.memorySnapshot ||
+        null;
+      const memLocal = loadAnalyticalMemory('local');
+      const mem = fromPack || memLocal;
+      const phenCount = Object.keys(mem?.phenomena || {}).length;
+      const cardDerived = phenCount === 0;
+      return {
+        status:
+          phenCount > 0 || (mem?.publications || []).length
+            ? fromPack
+              ? 'loaded_from_pack'
+              : 'loaded'
+            : 'empty_profile',
+        profile: mem?.profile || 'local',
+        phenomenonCount: phenCount,
+        publicationCount: (mem?.publications || []).length,
+        exposureCount: (mem?.exposures || []).length,
+        feedbackCount: (mem?.feedback || []).length,
+        phenomenonIds: Object.keys(mem?.phenomena || {}).slice(0, 40),
+        sourcesCompared: {
+          packPhenomena: Object.keys(fromPack?.phenomena || {}).length,
+          localPhenomena: Object.keys(memLocal?.phenomena || {}).length,
+          localExposures: (memLocal?.exposures || []).length
+        },
+        note: cardDerived
+          ? 'Profil stocké sans phénomènes — voir memoryEvidence dérivé des cartes / analyticalMemoryOut du run'
+          : 'Mémoire persistante chargée (pack prioritaire si présent)'
+      };
+    })(),
     underexploration: p6?.underexploration || null
   });
   const auditValidation = validateAnalyticalAudit(analyticalAudit);
-  if (!auditValidation.ok) {
+  if (!auditValidation.schemaValidation?.ok) {
+    warnings.push(`ANALYTICAL_AUDIT schema: ${(auditValidation.schemaValidation?.errors || []).join(', ')}`);
+  }
+  if (!auditValidation.integrityValidation?.ok) {
+    warnings.push(
+      `ANALYTICAL_AUDIT integrity: ${(auditValidation.integrityValidation?.errors || auditValidation.errors || [])
+        .slice(0, 12)
+        .join(', ')}`
+    );
+  } else if (!auditValidation.ok) {
     warnings.push(`ANALYTICAL_AUDIT validation: ${auditValidation.errors.join(', ')}`);
   }
   push('ANALYTICAL_AUDIT.json', analyticalAudit, {
     source: 'assembled',
     executedAt: assembledAt,
     fingerprint: fpKey(liveFingerprint),
-    note: `schema v1 · cards=${auditValidation.counts.cards} · claims=${auditValidation.counts.claims} · candidates=${auditValidation.counts.candidates}`
+    note: `schema+integrity · cards=${auditValidation.counts.cards} · claims=${auditValidation.counts.claims} · candidates=${auditValidation.counts.candidates} · schemaOk=${auditValidation.schemaValidation?.ok} · integrityOk=${auditValidation.integrityValidation?.ok}`
   });
   push(
     'ANALYTICAL_AUDIT.validation.json',
     { ...auditValidation, assembledAt, edition },
     { source: 'assembled', executedAt: assembledAt }
   );
+
+  // 0b) Trace de raisonnement (observabilité) — distincte de l’audit normalisé
+  try {
+    const { buildAnalyticalReasoningTrace } = await import('./buildAnalyticalReasoningTrace.js');
+    const reasoningTrace = buildAnalyticalReasoningTrace({
+      eightPeriodExport,
+      analyticalAudit,
+      detailed: true,
+      instrumentedRun: false
+    });
+    push('ANALYTICAL_REASONING_TRACE.json', reasoningTrace, {
+      source: 'assembled',
+      executedAt: assembledAt,
+      fingerprint: fpKey(liveFingerprint),
+      note: `schema ${reasoningTrace.schema} · conclusions=${reasoningTrace.sizeHints?.conclusionCount ?? 0}`
+    });
+  } catch (err) {
+    warnings.push(`ANALYTICAL_REASONING_TRACE: ${String(err?.message || err)}`);
+  }
 
   // 1) Export 8 périodes + markdown + comparaisons
   if (eightPeriodExport && !eightPeriodExport.refused) {

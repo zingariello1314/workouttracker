@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Copy } from 'lucide-react';
 import { safeJsonStringify, downloadTextFile } from '../../../utils/sport/analysisExportDownload';
+import { serializeConclusion } from '../../../utils/sport/analysisPeriodExport';
 
 function Section({ title, children }) {
   return (
@@ -36,27 +37,32 @@ export default function RecapCardInspectorModal({
 }) {
   const payload = useMemo(() => {
     if (!card) return null;
+    // Parité export / inspecteur : même sérialiseur que les dossiers 8 périodes
+    const serialized = serializeConclusion(card, card?.disposition === 'reserve' ? 'reserve' : 'priority');
     return {
-      id: card.id || null,
-      phenomenonId: card.phenomenonId || null,
-      publicationId: card.publicationId || null,
-      title: card.title || null,
-      body: card.body || card.text || null,
-      evidence: card.evidence || null,
-      kind: card.kind || null,
-      category: card.analyticalCategory || card.category || null,
-      disposition: card.disposition || card.p6Disposition || null,
-      reason: card.reason || null,
-      claim: card.claim || null,
-      metrics: card.metrics || null,
-      inspection: card.inspection || null,
-      exploration: card.exploration || null,
-      marginal: card.marginal || null,
-      horizon: card.horizonFit || null,
-      drafting: card.drafting || null,
+      ...serialized,
+      id: serialized.id || card.id || null,
+      phenomenonId: serialized.phenomenonId || card.phenomenonId || null,
+      publicationId: serialized.publicationId || card.publicationId || null,
+      title: serialized.title || card.title || null,
+      body: serialized.body || card.body || card.text || null,
+      evidence: serialized.evidence || card.evidence || null,
+      kind: serialized.kind || card.kind || null,
+      category: serialized.category || card.analyticalCategory || card.category || null,
+      disposition: serialized.disposition || card.disposition || card.p6Disposition || null,
+      reason: serialized.reason || card.reason || null,
+      claim: serialized.claim || card.claim || null,
+      metrics: serialized.metrics || card.metrics || null,
+      inspection: card.inspection || serialized.inspector?.inspection || null,
+      exploration: serialized.exploration || card.exploration || null,
+      marginal: serialized.marginal || card.marginal || null,
+      horizon: serialized.horizon || card.horizonFit || null,
+      drafting: serialized.drafting || card.drafting || null,
       edition,
       fingerprint,
-      packId
+      packId,
+      serializer: 'serializeConclusion',
+      note: 'Identique à ANALYTICAL_REASONING_TRACE / dossiers 8 périodes pour le même run'
     };
   }, [card, edition, fingerprint, packId]);
 
@@ -184,6 +190,10 @@ export default function RecapCardInspectorModal({
             <Line label="Édition" value={edition} />
             <Line label="Fingerprint" value={fingerprint} />
             <Line label="Paquet" value={packId} />
+            <Line label="Sérialiseur" value={payload.serializer} />
+            <p className="text-[11px] text-slate-500">
+              Pour la trace complète (8 horizons) : Récap → Analyse → « Exporter la trace de raisonnement ».
+            </p>
             <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-black/50 p-2 text-[10px] text-slate-400">
               {safeJsonStringify(payload, 2)}
             </pre>

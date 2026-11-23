@@ -20,7 +20,7 @@ describe('Mission 14 — hiérarchie et raisonnement', () => {
   it('édition v13 hierarchy verified-deepening', () => {
     const key = analysisEditionKey();
     expect(key).toMatch(/editorial=p6-sovereign-v\d+/);
-    expect(key).toMatch(/hierarchy=verified-deepening-v1/);
+    expect(key).toMatch(/hierarchy=verified-deepening-v\d+/);
     expect(key).toMatch(/composition=phenomenon-compose-v\d+/);
   });
 

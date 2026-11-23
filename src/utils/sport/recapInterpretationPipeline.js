@@ -112,6 +112,7 @@ function buildComposedInterpretationPipelineSync(opts = {}) {
       features: trainingState?.features || null,
       profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
       activeProgram: opts.activeProgram || null,
+      analyticalMemory: opts.analyticalMemory || null,
       computeScope,
       perfTimer: perf
     })
@@ -264,6 +265,7 @@ async function buildComposedInterpretationPipelineCoop(opts = {}) {
     profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
     activeProgram: opts.activeProgram || null,
     liveActiveProgram: opts.liveActiveProgram || null,
+    analyticalMemory: opts.analyticalMemory || null,
     computeScope,
     perfTimer: perf,
     shouldAbort: coop.shouldAbort,

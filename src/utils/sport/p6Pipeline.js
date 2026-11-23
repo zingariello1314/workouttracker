@@ -10,9 +10,10 @@ import { consolidateConclusions } from './narrativeCoherenceEngine';
 import { explainPriorityCounts, reconcileCounters, selectCollectively } from './collectiveSelection';
 import { reviewCollectively } from './collectiveReview';
 import { analyticalCategory, horizonFit } from './horizonPublicationPolicy';
-import { stampDiscoveryIdentity } from './discoveryIdentity';
+import { stampDiscoveryIdentity, stablePublicationId } from './discoveryIdentity';
 import { buildConclusionHierarchyView, p7ActionabilityPrepFields } from './conclusionHierarchyContract';
 import { buildUnderexplorationReport } from './underexplorationReport';
+import { applyParallelTrajectoryComposition } from './parallelTrajectoryComposition';
 
 export function inspectConclusion(row) {
   return {
@@ -29,6 +30,7 @@ export function inspectConclusion(row) {
     relations: row?.relations || [],
     coverage: row?.exploration?.coverage || null,
     collapsedInto: row?.collapsedInto || null,
+    hierarchyLink: row?.hierarchyLink || row?.discovery?.hierarchyLink || null,
     drafting: row?.discovery?.drafting || null,
     reviewReason: row?.reviewReason || null
   };
@@ -59,9 +61,27 @@ function wrap(discovery, window, voiceKey) {
 }
 
 export function applyP6({ all = [], selected = [], window = null, voiceKey = 'week' } = {}) {
+  const now =
+    typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
+  const pipelineSteps = [];
+  const markStep = (id, t0, extra = {}) => {
+    pipelineSteps.push({
+      id,
+      executed: true,
+      ms: Math.round((now() - t0) * 100) / 100,
+      ...extra
+    });
+  };
+
+  const tWrap = now();
   const wrapped = all.map((row) => wrap(row, window, voiceKey)).filter((row) => row.claim);
   const observations = wrapped.filter((row) => !isAutonomousConclusion(row.claim));
   const conclusions = wrapped.filter((row) => isAutonomousConclusion(row.claim));
+  markStep('validation', tWrap, {
+    inCount: all.length,
+    outCount: conclusions.length,
+    functionalLabel: 'Wrap + filtre conclusions autonomes'
+  });
   const rowKey = (row) =>
     [
       row?.kind,
@@ -76,10 +96,22 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
   });
 
   // Passes 2–3 : exploration déjà dans wrap ; consolidation narrative
+  const tConsol = now();
   const consolidated = consolidateConclusions(conclusions);
+  markStep('composition', tConsol, {
+    inCount: conclusions.length,
+    outCount: consolidated.survivors.length,
+    functionalLabel: 'Consolidation narrative'
+  });
 
   // Passe 4 : examen collectif (contradictions, redondances, monopoles, preuves)
+  const tReview = now();
   const reviewed = reviewCollectively(consolidated.survivors, { voiceKey });
+  markStep('hierarchy', tReview, {
+    inCount: consolidated.survivors.length,
+    outCount: reviewed.survivors.length,
+    functionalLabel: 'Revue collective + deepenings justifiés'
+  });
   // Appliquer les conclusions de réexploration aux textes publiables
   const afterReview = reviewed.survivors.map((row) => {
     if (!row.reexploredFor || !row.exploration?.conclusion) return row;
@@ -112,13 +144,99 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
     };
   });
 
-  const collective = selectCollectively(afterReview, { voiceKey });
+  // Mission 24/26 — trajectoires parallèles (ids de stockage distincts uniquement)
+  const tParallel = now();
+  const parallel = applyParallelTrajectoryComposition(afterReview, { voiceKey, window });
+  markStep('parallel_trajectories', tParallel, {
+    inCount: afterReview.length,
+    outCount: parallel.rows.length,
+    produced: parallel.composedCount,
+    rejectedSameSubject: (parallel.rejectedSameSubject || []).length,
+    functionalLabel: 'Composition trajectoires parallèles'
+  });
+
+  const tSelect = now();
+  const collective = selectCollectively(parallel.rows, { voiceKey });
+  // Mission 29 — graphe cohérent AVANT publication : si un parent est supprimé vers
+  // une destination, rediriger les enfants ; sinon les détacher (restent accessibles).
+  const suppressedById = new Map(
+    (collective.suppressed || []).map((row) => [
+      stablePublicationId(row.discovery || row),
+      row
+    ])
+  );
+  const redirectDeepenings = (rows) =>
+    (rows || []).map((row) => {
+      if (row?.p6Disposition !== 'deepening_of_collective') return row;
+      const parentId = row.collapsedInto || row.discovery?.collapsedInto || null;
+      if (!parentId || !suppressedById.has(parentId)) return row;
+      const suppressedParent = suppressedById.get(parentId);
+      const dest =
+        suppressedParent?.collapsedInto ||
+        suppressedParent?.discovery?.collapsedInto ||
+        null;
+      if (dest && dest !== parentId) {
+        const link = {
+          ...(row.hierarchyLink || row.discovery?.hierarchyLink || {}),
+          ok: true,
+          reason: 'redirected_after_parent_suppression',
+          proof: {
+            ...(row.hierarchyLink?.proof || row.discovery?.hierarchyLink?.proof || {}),
+            redirectedFrom: parentId,
+            redirectedTo: dest
+          }
+        };
+        return {
+          ...row,
+          collapsedInto: dest,
+          hierarchyLink: link,
+          discovery: {
+            ...(row.discovery || {}),
+            collapsedInto: dest,
+            hierarchyLink: link
+          }
+        };
+      }
+      return {
+        ...row,
+        collapsedInto: null,
+        hierarchyLink: null,
+        p6Disposition: 'secondary_autonomous',
+        discovery: {
+          ...(row.discovery || {}),
+          collapsedInto: null,
+          hierarchyLink: null,
+          p6Disposition: 'secondary_autonomous'
+        }
+      };
+    });
+  collective.priority = redirectDeepenings(collective.priority);
+  collective.reserve = redirectDeepenings(collective.reserve);
+  markStep('select', tSelect, {
+    inCount: parallel.rows.length,
+    outCount: collective.priority.length,
+    functionalLabel: 'Sélection collective (mémoire souveraine)'
+  });
+  markStep('memory', tSelect, {
+    inCount: afterReview.filter((r) => r?.discovery?.metrics?.memory?.publicationDecision).length,
+    outCount: collective.reserve.filter((r) => r.p6Disposition === 'demoted_memory_familiarity')
+      .length,
+    functionalLabel: 'Décisions mémoire appliquées à la sélection'
+  });
+  markStep('publication', tSelect, {
+    inCount: collective.priority.length + collective.reserve.length,
+    outCount: collective.priority.length,
+    functionalLabel: 'Prêt publication P6'
+  });
   const rejected = observations.length;
   const fusedTotal =
     consolidated.fused.length + reviewed.fused.length + (collective.suppressed || []).length;
   const blockedTotal = consolidated.blocked.length + reviewed.abstained.length;
+  // Mission 25 — les parents composés après wrap entrent dans le pool admissible.
+  // Sans ce compte, reconcileCounters casse → insightsFromP6 refuse → fallback legacy silencieux.
+  const composedParallel = parallel.composedCount || 0;
   const counters = reconcileCounters({
-    produced: wrapped.length,
+    produced: wrapped.length + composedParallel,
     rejected,
     fused: consolidated.fused.length + reviewed.fused.length,
     priority: collective.priority.length,
@@ -130,46 +248,62 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
   counters.inputRows = selected.length;
   counters.reviewDecisions = reviewed.decisions.length;
   counters.reexplored = reviewed.reexplored;
+  counters.composedParallel = composedParallel;
 
-  const priorityDiscoveries = collective.priority.map((row) => ({
-    ...row.discovery,
-    p6Disposition: row.p6Disposition,
-    marginal: row.marginal,
-    inspection: inspectConclusion(row)
-  }));
-  const reserveDiscoveries = [
-    ...collective.reserve.map((row) => ({
-      ...row.discovery,
+  const publishDiscovery = (row, extra = {}) => {
+    const discovery = row?.discovery || {};
+    const claim = discovery.claim || row?.claim || null;
+    return {
+      ...discovery,
+      claim,
+      ...extra,
+      hierarchyLink: extra.hierarchyLink ?? row?.hierarchyLink ?? discovery.hierarchyLink ?? null,
+      collapsedInto: extra.collapsedInto ?? row?.collapsedInto ?? discovery.collapsedInto ?? null,
+      inspection: inspectConclusion({ ...row, claim, discovery: { ...discovery, claim } })
+    };
+  };
+
+  const priorityDiscoveries = collective.priority.map((row) =>
+    publishDiscovery(row, {
       p6Disposition: row.p6Disposition,
-      marginal: row.marginal,
-      inspection: inspectConclusion(row)
-    })),
-    ...reviewed.demoted.map((row) => ({
-      ...row.discovery,
-      p6Disposition: row.p6Disposition || 'demoted_by_review',
-      reviewReason: row.reviewReason,
-      inspection: inspectConclusion(row)
-    }))
+      selectionReason: row.selectionReason || row.discovery?.selectionReason || null,
+      marginal: row.marginal
+    })
+  );
+  const reserveDiscoveries = [
+    ...collective.reserve.map((row) =>
+      publishDiscovery(row, {
+        p6Disposition: row.p6Disposition,
+        selectionReason: row.selectionReason || row.discovery?.selectionReason || null,
+        marginal: row.marginal
+      })
+    ),
+    ...reviewed.demoted.map((row) =>
+      publishDiscovery(row, {
+        p6Disposition: row.p6Disposition || 'demoted_by_review',
+        reviewReason: row.reviewReason
+      })
+    )
   ];
   const sourceDiscoveries = [
-    ...consolidated.fused.map((row) => ({
-      ...row.discovery,
-      p6Disposition: 'source_retained',
-      collapsedInto: row.collapsedInto,
-      inspection: inspectConclusion(row)
-    })),
-    ...reviewed.fused.map((row) => ({
-      ...row.discovery,
-      p6Disposition: 'exact_duplicate_suppressed',
-      collapsedInto: row.collapsedInto || null,
-      inspection: inspectConclusion(row)
-    })),
-    ...(collective.suppressed || []).map((row) => ({
-      ...row.discovery,
-      p6Disposition: 'exact_duplicate_suppressed',
-      collapsedInto: row.collapsedInto || null,
-      inspection: inspectConclusion(row)
-    }))
+    ...consolidated.fused.map((row) =>
+      publishDiscovery(row, {
+        p6Disposition: 'source_retained',
+        collapsedInto: row.collapsedInto
+      })
+    ),
+    ...reviewed.fused.map((row) =>
+      publishDiscovery(row, {
+        p6Disposition: 'exact_duplicate_suppressed',
+        collapsedInto: row.collapsedInto || null
+      })
+    ),
+    ...(collective.suppressed || []).map((row) =>
+      publishDiscovery(row, {
+        p6Disposition: 'exact_duplicate_suppressed',
+        collapsedInto: row.collapsedInto || null
+      })
+    )
   ];
 
   const hierarchy = buildConclusionHierarchyView({
@@ -214,6 +348,9 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
       aRetenir: collective.priority.length,
       toutes: collective.priority.length + reserveDiscoveries.length,
       autresAngles: sourceDiscoveries.length + reserveDiscoveries.length
-    }
+    },
+    // Mission 23 — instrumentation ciblée du chemin P6 (pas une journalisation totale)
+    pipelineSteps,
+    instrumented: true
   };
 }
