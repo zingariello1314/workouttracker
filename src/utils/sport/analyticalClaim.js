@@ -39,6 +39,37 @@ export const PROGRESSION_DIMENSION = Object.freeze({
   SESSION_ORGANIZATION: 'session_organization'
 });
 
+/**
+ * Identifiant de métrique non ambigu pour un exercice (Mission 35).
+ * Deux homonymes (même name, ids distincts) ne partagent plus la même clé.
+ */
+export function exerciseScopedMetricId(prefix, exercise) {
+  const id = exercise?.id ?? exercise?.exerciseId ?? null;
+  if (id != null && String(id).trim() !== '') {
+    return `${prefix}:ex:${String(id)}`;
+  }
+  const name = exercise?.name != null ? String(exercise.name).trim() : '';
+  if (name) return `${prefix}:${name}`;
+  return `${prefix}:unknown`;
+}
+
+/** Libellé utilisateur : distingue les homonymes sans les fusionner. */
+export function disambiguateExerciseLabel(exercise, peers = []) {
+  const name = String(exercise?.name || '').trim() || 'mouvement';
+  const id = exercise?.id ?? exercise?.exerciseId;
+  const sameName = (peers || []).filter((p) => String(p?.name || '').trim() === name);
+  if (sameName.length <= 1) return name;
+  const slot =
+    exercise?.slotLabel ||
+    exercise?.programDayName ||
+    exercise?.dayLabel ||
+    exercise?.familyLabel ||
+    null;
+  if (slot) return `${name} (${slot})`;
+  if (id != null && String(id).trim() !== '') return `${name} (créneau ${id})`;
+  return name;
+}
+
 function subjectOf(discovery) {
   const metrics = discovery?.metrics || {};
   if (metrics.exerciseId) return { type: 'exercise', key: String(metrics.exerciseId) };
@@ -144,13 +175,48 @@ function observedValuesOf(metrics) {
       if (row?.id) push(row.id, row.value, row.unit);
     });
   }
+  // Mission 36 — preuves déjà structurées dans composition (charges, compteurs).
+  const composition = metrics.composition;
+  if (composition && typeof composition === 'object') {
+    const cm = composition.metrics || {};
+    push('loadRaiseCount', cm.eventCount ?? metrics.eventCount, 'count');
+    push('loadRaiseExerciseCount', cm.exerciseCount ?? metrics.exerciseCount, 'count');
+    const moves = Array.isArray(composition.namedMoves)
+      ? composition.namedMoves
+      : Array.isArray(metrics.events)
+        ? metrics.events
+        : [];
+    moves.forEach((m, index) => {
+      if (!m) return;
+      const key = m.exerciseId || m.name || index;
+      if (m.loadBefore != null) push(`loadBefore:${key}`, m.loadBefore, 'kg');
+      if (m.loadAfter != null) push(`loadAfter:${key}`, m.loadAfter, 'kg');
+    });
+  }
+  push('pushShare', metrics.pushShare, 'percent');
+  push('pullShare', metrics.pullShare, 'percent');
+  push('lowerShare', metrics.lowerShare, 'percent');
+  push('quarterReps', metrics.quarterReps, 'reps');
+  push('identifiedMuscleReps', metrics.identifiedMuscleReps, 'reps');
+  push('volPerTrainingDay', metrics.volPerDay ?? metrics.volPerTrainingDay, 'reps');
+  if (Array.isArray(metrics.muscles)) {
+    metrics.muscles.forEach((m) => {
+      if (!m) return;
+      const key = m.group || m.label || m.name;
+      if (m.quarterReps != null || m.quarter != null) {
+        push(`quarterMuscle:${key}`, m.quarterReps ?? m.quarter, 'reps');
+      }
+      if (m.windowReps != null || m.reps != null) {
+        push(`windowMuscle:${key}`, m.windowReps ?? m.reps, 'reps');
+      }
+    });
+  }
   if (Array.isArray(metrics.exercises)) {
-    metrics.exercises.forEach((ex, index) => {
+    metrics.exercises.forEach((ex) => {
       if (typeof ex === 'string') return;
-      const name = ex?.name || ex?.id || index;
-      if (ex?.reps != null) push(`exerciseReps:${name}`, ex.reps, 'reps');
-      if (ex?.monthReps != null) push(`monthReps:${name}`, ex.monthReps, 'reps');
-      if (ex?.ofMonthPct != null) push(`sharePct:${name}`, ex.ofMonthPct, 'percent');
+      if (ex?.reps != null) push(exerciseScopedMetricId('exerciseReps', ex), ex.reps, 'reps');
+      if (ex?.monthReps != null) push(exerciseScopedMetricId('monthReps', ex), ex.monthReps, 'reps');
+      if (ex?.ofMonthPct != null) push(exerciseScopedMetricId('sharePct', ex), ex.ofMonthPct, 'percent');
     });
   }
   // Séances proches : volumes par date depuis metrics.days / exploration

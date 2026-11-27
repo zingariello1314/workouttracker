@@ -520,9 +520,12 @@ export function composeProgramAdherenceDiscoveries(adherencePack, freqPack, { tr
         title: 'Suivi de plan : preuve historique indisponible',
         body:
           snap === 0
-            ? `Aucun jour de cette fenêtre n’a de plan figé (snapshot) : un taux d’adhérence au programme prévu ne peut pas être calculé. ${recon} jour${recon > 1 ? 's' : ''} documentent seulement le réalisé (reconstruction). Les expositions et trajectoires restent lisibles à part.`
+            ? `Aucun jour de cette fenêtre n’a de plan figé : un taux d’adhérence au programme prévu ne peut pas être calculé. ${recon} jour${recon > 1 ? 's' : ''} documentent seulement le réalisé. Les expositions et trajectoires restent lisibles à part.`
             : `Seulement ${snap} jour${snap > 1 ? 's' : ''} avec plan figé (seuil ${m.minRequired}) : aucun pourcentage d’adhérence historique n’est publié pour cette fenêtre.`,
-        evidence: `snapshots=${snap} · reconstruct=${recon}`,
+        evidence:
+          snap === 0
+            ? `aucun jour de plan figé · ${recon} jour${recon > 1 ? 's' : ''} de réalisé seul`
+            : `${snap} jour${snap > 1 ? 's' : ''} de plan figé · ${recon} jour${recon > 1 ? 's' : ''} de réalisé seul`,
         // Fiabilité haute, mais importance/novelty basses : ce n’est pas une découverte sportive.
         weights: { importance: 0.35, reliability: 0.95, novelty: 0.25, fit: 0.55 },
         metrics: { ...m, findingKind: f.kind, contentClass: 'methodology_limit' }

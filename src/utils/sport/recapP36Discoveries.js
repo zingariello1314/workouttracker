@@ -345,7 +345,7 @@ export function buildP36Discoveries({
         body:
           `Parmi les ${pr.top.provenPlannedWorkout} ${pr.top.label}s avec séance historiquement prévue et démontrée, ` +
           `${pr.top.provenPartialOrFull} ont une réalisation au moins partielle (${fmtPct(pr.top.ratePct)}). ` +
-          `Seules les journées à plan comparable (snapshots proven) entrent dans ce taux.`,
+          `Seules les journées où le plan figé est comparable au réalisé entrent dans ce taux.`,
         evidence: { top: pr.top },
         metrics: {
           proofLevel: 'demonstrated_plan_only',

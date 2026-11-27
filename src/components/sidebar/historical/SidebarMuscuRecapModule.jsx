@@ -1,11 +1,15 @@
 import { memo } from 'react';
 import { Dumbbell } from 'lucide-react';
 import RecapStrengthStatsCard from '../../sport/recap/RecapStrengthStatsCard';
+import { useHeavyAnalyticsGate } from '../../../hooks/useHeavyAnalyticsGate';
 
 /**
- * Musculation enregistrée (sidebar) : même carte que le récap, section pliable indépendante de Course Garmin.
+ * Musculation enregistrée (sidebar).
+ * P0.8 : gate visible/idle + carte stats en Worker async.
  */
 const SidebarMuscuRecapModule = memo(({ isExpanded, onToggle, setActiveTab }) => {
+  const contentReady = useHeavyAnalyticsGate(isExpanded, { idleTimeoutMs: 2500 });
+
   const openRecap = () => {
     setActiveTab?.('recap');
   };
@@ -40,7 +44,13 @@ const SidebarMuscuRecapModule = memo(({ isExpanded, onToggle, setActiveTab }) =>
           >
             Ouvrir l&apos;onglet Récap
           </button>
-          <RecapStrengthStatsCard variant="sidebar" />
+          {contentReady ? (
+            <RecapStrengthStatsCard variant="sidebar" />
+          ) : (
+            <div className="py-6 text-center text-[10px] text-slate-500" role="status">
+              Préparation des stats muscu…
+            </div>
+          )}
         </div>
       ) : null}
     </section>

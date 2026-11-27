@@ -419,6 +419,20 @@ export function discoveryInformativeValue(d, voiceKey = 'week', opts = {}) {
   if (COMPOSITION_STORY_KINDS.includes(d?.kind) && !m.trajectoryOk) v -= 8;
   if (d?.kind === 'disc_density' && !m.trajectoryOk) v -= 4;
   if (cls === CONTENT_CLASS.DESCRIPTIVE && !m.trajectoryOk) v -= 3;
+  // Mission 34 — favoriser mécanismes démontrés ; ne pas allonger le score par la seule prose
+  if (m.volumeAttribution?.kind || m.trajectoryImplicationRule || m.mechanism) v += 5;
+  if (
+    /parce que|s'explique|attribu|mécanisme|surtout parce que|redistribu/i.test(
+      `${d?.title || ''} ${d?.body || ''}`
+    ) &&
+    (m.trajectoryOk || m.observedValues?.length >= 2)
+  ) {
+    v += 4;
+  }
+  // Structure programme déjà vue : contexte, pas priorité sur horizons longs
+  if (d?.kind === 'disc_session_family_structure' && m.horizonRole === 'context_accessible') {
+    v -= 18;
+  }
   // P3.2b : évolution d’exposition solide > contraste statique modéré
   if (d?.kind === P32B_KINDS.EXPOSURE_SHIFT && m.comparabilityLevel === 'solid') v += 6;
   if (d?.kind === P32B_KINDS.EXPOSURE_CONTRAST && Number(m.relativeGap) > 0 && Number(m.relativeGap) < 0.45) {

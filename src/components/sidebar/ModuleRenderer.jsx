@@ -1,7 +1,14 @@
-import React, { memo, Suspense, lazy } from 'react';
+import React, { memo, Suspense, lazy, Profiler } from 'react';
 import { useModuleAlternation } from '../../hooks/useModuleAlternation';
 import { getSidebarModuleTheme } from '../../utils/sidebar/sidebarModuleTheme';
 import SidebarSectionErrorBoundary from './SidebarSectionErrorBoundary';
+import { beginWorkSpan, endWorkSpan, recordCompletedWorkSpan } from '../../dev/todayDiagnostics/workSpanTracker';
+
+function recordModuleProfiler(moduleId, phase, actualDuration) {
+  if (!(import.meta.env && import.meta.env.DEV)) return;
+  if (!Number.isFinite(actualDuration) || actualDuration < 0.5) return;
+  recordCompletedWorkSpan('Module.profiler', actualDuration, { moduleId, phase });
+}
 
 // Lazy loading des modules historiques (sidebar)
 const SidebarSportPlanningModule = lazy(() => import('./historical/SidebarSportPlanningModule'));
@@ -81,82 +88,96 @@ const ModuleItem = memo(({
   sidebarProps, 
   onModuleError 
 }) => {
-  const Component = COMPONENT_MAP[module.component];
+  const spanId = beginWorkSpan('ModuleItem.render', { moduleId: module.id });
+  try {
+    const Component = COMPONENT_MAP[module.component];
 
-  if (!Component) {
-    return (
-      <ModuleErrorFallback 
-        moduleId={module.id} 
-        error={new Error(`Composant ${module.component} non trouvé`)} 
-      />
-    );
-  }
-
-  // Props spécifiques selon le type de module
-  const getModuleProps = () => {
-    const baseProps = {
-      moduleId: module.id,
-      moduleType: module.type,
-      navigationTarget: module.navigationTarget,
-      ...sidebarProps
-    };
-
-    if (module.type === 'legacy') {
-      return baseProps;
+    if (!Component) {
+      return (
+        <ModuleErrorFallback 
+          moduleId={module.id} 
+          error={new Error(`Composant ${module.component} non trouvé`)} 
+        />
+      );
     }
 
-    // Props pour les modules historiques
-    const historicalData = sidebarProps.data || {};
-    
-    const finalData = {
-      books: historicalData.learning?.books || [],
-      subjects: historicalData.learning?.subjects || [],
-      learning: historicalData.learning || {},
-      activeReadingSession: historicalData.learning?.activeReadingSession || {},
-      metrics: historicalData.metrics || {},
-      quests: historicalData.quests || [],
-      sport: historicalData.sport || {},
-      finance: historicalData.finance || {},
-      nutrition: historicalData.nutrition || {},
-      shoppingLists: historicalData.shopping?.shoppingLists || [],
-      loading: historicalData.shopping?.loading || false,
-      error: historicalData.shopping?.error || null,
-      today: historicalData.today || {}
+    const getModuleProps = () => {
+      const baseProps = {
+        moduleId: module.id,
+        moduleType: module.type,
+        navigationTarget: module.navigationTarget,
+        ...sidebarProps
+      };
+
+      if (module.type === 'legacy') {
+        return baseProps;
+      }
+
+      const historicalData = sidebarProps.data || {};
+
+      const finalData = {
+        books: historicalData.learning?.books || [],
+        subjects: historicalData.learning?.subjects || [],
+        learning: historicalData.learning || {},
+        activeReadingSession: historicalData.learning?.activeReadingSession || {},
+        metrics: historicalData.metrics || {},
+        quests: historicalData.quests || [],
+        sport: historicalData.sport || {},
+        finance: historicalData.finance || {},
+        nutrition: historicalData.nutrition || {},
+        shoppingLists: historicalData.shopping?.shoppingLists || [],
+        loading: historicalData.shopping?.loading || false,
+        error: historicalData.shopping?.error || null,
+        today: historicalData.today || {}
+      };
+
+      return {
+        moduleId: module.id,
+        moduleType: module.type,
+        navigationTarget: module.navigationTarget,
+        navigation: sidebarProps.navigation,
+        setActiveTab: sidebarProps.setActiveTab,
+        data: finalData,
+        todayDate: sidebarProps.todayDate || new Date().toISOString().slice(0, 10),
+        isLoading: false,
+        isExpanded: sidebarProps.isSectionExpanded(module.id),
+        onToggle: () => sidebarProps.toggleSection(module.id)
+      };
     };
 
-    return {
-      moduleId: module.id,
-      moduleType: module.type,
-      navigationTarget: module.navigationTarget,
-      navigation: sidebarProps.navigation,
-      setActiveTab: sidebarProps.setActiveTab,
-      data: finalData,
-      todayDate: sidebarProps.todayDate || new Date().toISOString().slice(0, 10),
-      isLoading: false,
-      isExpanded: sidebarProps.isSectionExpanded(module.id),
-      onToggle: () => sidebarProps.toggleSection(module.id)
-    };
-  };
-
-  return (
-    <SidebarSectionErrorBoundary
-      sectionName={module.id}
-      onError={onModuleError}
-    >
-      <Suspense fallback={<ModuleLoadingFallback moduleId={module.id} />}>
-        <div 
-          className={`sidebar-module sidebar-module-${module.type}`}
-          data-module-id={module.id}
-          data-module-type={module.type}
-          data-module-position={module.position}
-          data-sidebar-theme={module.type === 'historical' ? getSidebarModuleTheme(module.id) : undefined}
-        >
-          <Component {...getModuleProps()} />
+    return (
+      <SidebarSectionErrorBoundary
+        sectionName={module.id}
+        onError={onModuleError}
+      >
+        <Suspense fallback={<ModuleLoadingFallback moduleId={module.id} />}>
+          <div 
+            className={`sidebar-module sidebar-module-${module.type}`}
+            data-module-id={module.id}
+            data-module-type={module.type}
+            data-module-position={module.position}
+            data-sidebar-theme={module.type === 'historical' ? getSidebarModuleTheme(module.id) : undefined}
+          >
+          <Profiler
+            id={`sidebar-module:${module.id}`}
+            onRender={(_id, phase, actualDuration) => {
+              recordModuleProfiler(module.id, phase, actualDuration);
+            }}
+          >
+            <Component {...getModuleProps()} />
+          </Profiler>
         </div>
       </Suspense>
     </SidebarSectionErrorBoundary>
-  );
-});
+    );
+  } finally {
+    endWorkSpan(spanId);
+  }
+}, (prev, next) => (
+  prev.module === next.module
+  && prev.sidebarProps === next.sidebarProps
+  && prev.onModuleError === next.onModuleError
+));
 
 ModuleItem.displayName = 'ModuleItem';
 

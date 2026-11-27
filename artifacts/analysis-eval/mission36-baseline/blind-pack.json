@@ -1,0 +1,174 @@
+{
+  "schema": "momentum.mission33.blindQualitative.v1",
+  "instruction": "Évaluer chaque carte sans connaître édition/kind. Noter 0-2 sur: exactitude, profondeur, pouvoir explicatif, contextualisation, niveaux, prudence causale, originalité, lisibilité, preuves, temporalité. Ne pas utiliser les scores moteur.",
+  "cards": [
+    {
+      "blindId": "B001",
+      "title": "La séance d'aujourd'hui n'est pas encore commencée",
+      "body": "Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse: c'est une séance en attente. Ta dernière séance (20 novembre 2026) a produit 263 répétitions — 60 relevés de genoux à la barre, 48 dips, 48 hyperextension. Tes lundis récents se situent autour de 343 reps (24 lundis comparables): ce n'est pas un jour « off » par défaut, c'est une séance encore devant toi. Autour de toi, les 7 derniers jours totalisent déjà 1 021 reps en 3 séances (≈340 reps/séance). Le bandeau à zéro décrit l'attente, pas une baisse de capacité. La lecture d'aujourd'hui se fera dès que tu auras réalisé l'entraînement.",
+      "evidence": "dernière séance 20 novembre 2026 · 263 reps",
+      "periodLabel": "today"
+    },
+    {
+      "blindId": "B002",
+      "title": "La dernière séance pèse encore sur les 7 jours",
+      "body": "Aujourd'hui n'a encore aucune répétition enregistrée. Ta dernière séance, le 20 novembre 2026, totalisait 263 répétitions. Ces 263 répétitions représentent 25,8 % des 1 021 répétitions des 7 derniers jours.",
+      "evidence": "concentration",
+      "periodLabel": "today"
+    },
+    {
+      "blindId": "B003",
+      "title": "Ton programme s'organise en 3 familles de séances apparentées",
+      "body": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux repères « Street Workout + Endurance fondamentale / Street Workout + Cardio »); famille 2 (dominante biceps, pectoraux, mollets, quadriceps · composante isométrique; créneaux repères « Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes »); famille 3 (dominante épaules, triceps, dos, pectoraux · composante isométrique; créneaux repères « Pectoraux / Triceps / Épaules / Triceps- Épaules »). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un créneau à l'autre. En pratique, une variation de répétitions sur un mouvement commun peut venir du passage entre deux variantes de la même famille, pas d'un changement de capacité. Les lectures d'adhérence, de reprise ou de progression doivent donc comparer des créneaux compatibles avant de conclure. Ressemblance ≠ identité: les volumes et les exercices exclusifs distinguent les variantes.",
+      "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche",
+      "periodLabel": "today"
+    },
+    {
+      "blindId": "B004",
+      "title": "Hyperextension: 4 séances sur ces 30 jours",
+      "body": "Hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 50,0 % de tes jambes, contre 96 reps (11,3 % de tes jambes) sur les 30 jours d'avant. Ce n'est plus une séance isolée; répéter ce volume sur les prochaines séances dira s'il structure vraiment les jambes. Contexte de séance probable: street Workout + Cardio (chevauchement 78 %).",
+      "evidence": "4 séances · plateau · 0 %",
+      "periodLabel": "today"
+    },
+    {
+      "blindId": "B005",
+      "title": "En attendant la séance, ta semaine récente a déjà une forme",
+      "body": "Les 7 derniers jours représentent 3 séances, 1 021 répétitions et 9 min chronométrées sur les défis (durée hors course partielle, distincte du volume global de répétitions), soit environ 340 reps par séance. Dominante haut du corps: 230 épaules, 226 triceps, 167 pectoraux, 136 biceps, 107 dos — épaules ≈23,8 % du volume identifié, tirage ≈10,5 %. La séance du 18 novembre 2026 concentre 426 reps, soit ≈41,7 % de la semaine récente (60 élévations latérales, 60 face pull, 60 bent-arm lateral dumbbell raise). Aucune course: la charge est entièrement du renforcement. 1 627 kcal actives sur 3 journées entraînées. Ce n'est pas un substitut d'aujourd'hui: c'est ce qui se construit pendant que la séance du jour n'est pas encore faite.",
+      "evidence": "3 séances · 1 021 reps",
+      "periodLabel": "today"
+    },
+    {
+      "blindId": "B006",
+      "title": "Autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil",
+      "body": "Sur 11 séances dépassant 300 reps, 11 ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, 3 des 8 séances sous 250 reps ont suivi une nuit plus courte. L'écart porte sur 19 séances: assez pour être suivi, pas assez pour en faire une règle. L'écart entre les deux proportions est d'environ 38 points. Le phénomène concerne surtout la quantité de travail réalisée: les performances sur le mouvement le plus chargé varient moins (24,0 %) que le volume total de séance (38,7 %). Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou la performance.",
+      "evidence": "11/11 ≥ 300 · 3/8 < 250",
+      "periodLabel": "today"
+    },
+    {
+      "blindId": "B007",
+      "title": "Ton programme s'organise en 3 familles de séances apparentées",
+      "body": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux repères « Street Workout + Endurance fondamentale / Street Workout + Cardio »); famille 2 (dominante biceps, pectoraux, mollets, quadriceps · composante isométrique; créneaux repères « Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes »); famille 3 (dominante épaules, triceps, dos, pectoraux · composante isométrique; créneaux repères « Pectoraux / Triceps / Épaules / Triceps- Épaules »). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un créneau à l'autre. En pratique, une variation de répétitions sur un mouvement commun peut venir du passage entre deux variantes de la même famille, pas d'un changement de capacité. Les lectures d'adhérence, de reprise ou de progression doivent donc comparer des créneaux compatibles avant de conclure. Ressemblance ≠ identité: les volumes et les exercices exclusifs distinguent les variantes.",
+      "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B008",
+      "title": "Deux séances apparentées redistribuent un socle commun",
+      "body": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tractions australiennes prise large pronation, pompes inclinees; « Street Workout + Cardio » ajoute tractions australiennes prise pronation. Le volume prescrit diffère: 384 répétitions prévues sur « Street Workout + Endurance fondamentale » contre 359 sur « Street Workout + Cardio » (32 vs 32 séries). Sur le socle commun, la prescription n'est pas identique: tractions australiennes — prise serrée supination (3×15 → 3×10); pompes déclinées (3×12 → 5×10). Les deux séances conservent une structure apparentée tout en redistribuant le travail prévu. Sur les mouvements communs seuls, le volume prescrit se répartit environ 50,1 % / 50 % entre les deux créneaux. Cette lecture décrit la structure programmée actuelle, pas encore sa réalisation sur la période.",
+      "evidence": "lundi/vendredi · socle commun avec variantes",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B009",
+      "title": "Le 18 novembre 2026 porte une grande part de ces 7 jours",
+      "body": "Le 18 novembre 2026 concentre 426 répétitions, soit 41,7 % des 1 021 répétitions de ces 7 jours. Les exercices de ce jour: 60 Élévations latérales, 60 Face pull, 60 Bent-Arm Lateral Dumbbell Raise, 48 Kickbacks triceps. Cela décrit la répartition de cette fenêtre.",
+      "evidence": "concentration",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B010",
+      "title": "Peu de journées portent le volume",
+      "body": "3 séances, 1 021 répétitions et 3 h 04 de séances hors course enregistrées, soit environ 340 répétitions et 1 h 01 par séance. Ton rythme hebdomadaire reste donc inférieur à ton niveau habituel de 3,7 séances/semaine. Les séances restent longues. Ce qui change, c'est le nombre de journées, pas la durée de chacune. Ces 7 jours portent 16,8 % des 6 071 reps des 30 derniers jours: la semaine ne résume pas le mois.",
+      "evidence": null,
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B011",
+      "title": "Une nuit correcte en durée, à lire surtout dans son architecture",
+      "body": "La nuit du 18 novembre 2026, tu as dormi 9 h 12, contre 9 h de moyenne sur tes 7 dernières nuits. L'écart de 12 minutes est faible et ne constitue donc pas une réduction significative de ton temps de sommeil. La différence se situe davantage dans l'architecture: 1 h 04 de sommeil profond, 50 min de REM, 7 h 18 de sommeil léger. Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou la performance.",
+      "evidence": "2026-11-18 · 9 h 12 vs 9 h · 7 nuits",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B012",
+      "title": "Ces 7 jours concentrent le travail sur moins de temps",
+      "body": "Ces 7 jours concentrent 1 021 répétitions, 3 h 04 de séances hors course enregistrées, soit environ 333 répétitions par heure d'activité enregistrée. Sur tes 30 derniers jours, tu réalises en moyenne environ 360 reps par heure: ces 7 jours sont donc 7,4 % moins denses que ton rythme mensuel. soit environ 340 répétitions et 1 h 01 par séance. La nuit du 18 novembre 2026 (9,2 h, habitude ~9 h) entre dans cette lecture sans en faire une preuve de causalité.",
+      "evidence": "333 reps/h · 30 j. 360/h",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B013",
+      "title": "Concentration relative au-delà du volume général",
+      "body": "Les 60 élévations latérales ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 60 face pull ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 60 bent-arm lateral dumbbell raise ces 7 jours représentent environ 50,0 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Élévations latérales, face pull, bent-Arm Lateral Dumbbell Raise totalisent 180 répétitions sur 7 jours. Cela représente environ 50 % du volume de ces mouvements sur 30 jours (180 / 360 reps de ces mouvements sur 30 jours), alors que 7 jours ne porte que environ 16,8 % du volume total de 30 jours (1 021 / 6 071 reps totales). Rapport des concentrations ≈2,97×: ces mouvements sont surreprésentés dans 7 jours par rapport au volume général. Ces 7 jours pèsent beaucoup plus lourd dans ton historique récent que ses 1 021 reps totales ne le laissent penser.",
+      "evidence": "Élévations latérales 50,0 % · Face pull 50,0 % · Bent-Arm Lateral Dumbbell Raise 50,0 %",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B014",
+      "title": "La reprise de relevés de genoux à la barre est devenue durable",
+      "body": "5 séances en 38 jours, alors que l'interruption avait duré 49 jours. Ce n'est plus l'événement du retour: c'est la continuité qui s'installe. Contexte de séance probable: street Workout + Cardio (chevauchement 78 %).",
+      "evidence": "5 séances · J+38",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B015",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "body": "Les 2 trajectoires de Hyperextension convergent vers environ 192 répétitions (total fenêtre) chacune sur la fenêtre d’observation (2026-10-26 → 2026-11-20). première trajectoire : 192 répétitions (total fenêtre) (réf. antérieure 96, Δ+96) sur 4 séances ; seconde trajectoire : 192 répétitions (total fenêtre) (réf. antérieure 144, Δ+48) sur 4 séances. Chaque trajectoire progresse par rapport à sa propre référence antérieure. Les enregistrements restent distincts ; la lecture utile est structurelle, pas deux priorités redondantes. Preuves individuelles conservées en approfondissement.",
+      "evidence": "ex:1979012181 · ex:703294235",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B016",
+      "title": "Élévations latérales: volume par séance en hausse",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Élévations latérales passe d’environ 50 à 60 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une hausse d’environ 20 %. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne.",
+      "evidence": "comparables 5 · 45→60→60→60→60",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B017",
+      "title": "Mollets debout s'efface de tes jambes",
+      "body": "Mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. Aucune séance de Mollets debout dans la période récente: ce n’est pas un volume réduit, c’est une absence. Leur disparition explique une part de la baisse d'exposition de cette famille. Contexte de séance apparié: pecs - Biceps - Jambes (chevauchement 100 %).",
+      "evidence": "Mollets debout 23,5 % → 0,0 % de tes jambes",
+      "periodLabel": "7d"
+    },
+    {
+      "blindId": "B018",
+      "title": "Le volume de ces 30 jours dépasse la période précédente",
+      "body": "Ces 30 jours totalisent 6 071 répétitions sur 17 jours avec répétitions de renforcement, soit environ 357 répétitions et 1 h par séance, contre 4 613 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (+31,6 %, fréquence +30,8 %, 357 vs 355 reps/séance). La comparaison utile est donc période contre période de même durée. Les répétitions suivies sur 28 jours sont +23,1 % que le mois comparable, tandis que les 7 derniers jours restent (−42,0 %).",
+      "evidence": "6 071 vs 4 613 · +31,6 %",
+      "periodLabel": "30d"
+    },
+    {
+      "blindId": "B019",
+      "title": "Ton programme s'organise en 3 familles de séances apparentées",
+      "body": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux repères « Street Workout + Endurance fondamentale / Street Workout + Cardio »); famille 2 (dominante biceps, pectoraux, mollets, quadriceps · composante isométrique; créneaux repères « Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes »); famille 3 (dominante épaules, triceps, dos, pectoraux · composante isométrique; créneaux repères « Pectoraux / Triceps / Épaules / Triceps- Épaules »). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un créneau à l'autre. En pratique, une variation de répétitions sur un mouvement commun peut venir du passage entre deux variantes de la même famille, pas d'un changement de capacité. Les lectures d'adhérence, de reprise ou de progression doivent donc comparer des créneaux compatibles avant de conclure. Ressemblance ≠ identité: les volumes et les exercices exclusifs distinguent les variantes.",
+      "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche",
+      "periodLabel": "30d"
+    },
+    {
+      "blindId": "B020",
+      "title": "Le volume suit surtout ta fréquence",
+      "body": "les 30 jours d'avant: 4 613 répétitions en 13 journées de renforcement (≈355 / journée). ces 30 jours: 6 071 répétitions en 17 journées de renforcement (≈357 / journée). Écart total +31,6 % — contribution fréquence +1 424, contenu +34. La variation s’explique surtout par la fréquence (+30,8 % de jours actifs), pas par le contenu des séances (+0,6 %). Population: journées avec répétitions de renforcement (pas toutes les journées actives du calendrier).",
+      "evidence": "4 613→6 071 · 13→17 j. renforcement",
+      "periodLabel": "30d"
+    },
+    {
+      "blindId": "B021",
+      "title": "Deux séances apparentées redistribuent un socle commun",
+      "body": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tractions australiennes prise large pronation, pompes inclinees; « Street Workout + Cardio » ajoute tractions australiennes prise pronation. Le volume prescrit diffère: 384 répétitions prévues sur « Street Workout + Endurance fondamentale » contre 359 sur « Street Workout + Cardio » (32 vs 32 séries). Sur le socle commun, la prescription n'est pas identique: tractions australiennes — prise serrée supination (3×15 → 3×10); pompes déclinées (3×12 → 5×10). Les deux séances conservent une structure apparentée tout en redistribuant le travail prévu. Sur les mouvements communs seuls, le volume prescrit se répartit environ 50,1 % / 50 % entre les deux créneaux. Sans versions historiques documentées, on ne peut pas affirmer que cette organisation était déjà celle des phases antérieures.",
+      "evidence": "lundi/vendredi · socle commun avec variantes",
+      "periodLabel": "30d"
+    },
+    {
+      "blindId": "B022",
+      "title": "La hausse de volume se lit dans la composition des familles de séances",
+      "body": "Le volume classique passe de 4113 à 5571 répétitions. Les journées de renforcement classique passent de 13 à 17. Principaux contributeurs: street Workout + Endurance fondamentale / Street Workout + Cardio est plus fréquente (5→8 j, Δ 1279 reps; effet fréquence +864, effet contenu +416); pectoraux / Triceps / Épaules / Triceps- Épaules est plus fréquente (2→4 j, Δ 844 reps; effet fréquence +850, effet contenu -4); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes est plus fréquente (4→5 j, Δ -380 reps; effet fréquence +385, effet contenu -765).",
+      "evidence": "Street Workout + Endurance fondamentale / Street Workout + Cardio:1279 · Pectoraux / Triceps / Épaules / Triceps- Épaules:844 · Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes:-380 · non attribué:-285",
+      "periodLabel": "30d"
+    },
+    {
+      "blindId": "B023",
+      "title": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+      "body": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 25 septembre 2026 à 23 novembre 2026.",
+      "evidence": "0 maintenant · 12 avant",
+      "periodLabel": "30d"
+    },
+    {
+      "blindId": "B024",
+      "title": "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+      "body": "Les 2 trajectoires de Pompes pseudo-planche convergent vers environ 69 répétitions (total fenêtre) chacune sur la fenêtre d’observation (2026-11-01 → 2026-11-18). première trajectoire : 66 répétitions (total fenêtre) sur 2 séances ; seconde trajectoire : 72 répétitions (total fenêtre) (réf. antérieure 72, Δ0) sur 2 séances. Les enregistrements restent distincts ; la lecture utile est structurelle, pas deux priorités redondantes. Preuves individuelles conservées en approfondissement.",
+      "evidence": "ex:348708679 · ex:302",
+      "periodLabel": "30d"
+    }
+  ]
+}

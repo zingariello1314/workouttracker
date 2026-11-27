@@ -1,5 +1,6 @@
 import { normalizeDateString, isMockEnduranceSession } from '../calendarUtils';
-import { aggregateCheckedRepsByDateAndExerciseId, enduranceRepsForSession } from '../trainingLoadUtils';
+import { enduranceRepsForSession } from '../trainingLoadUtils';
+import { getGroupedCheckedRepsCached } from '../../services/sport/groupedCheckedRepsCache';
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 import {
   getRecapDateWindow,
@@ -166,9 +167,7 @@ export function buildRecapStrengthCompareModel(
     : getRecapDateWindow(period, refDate);
   const endStr = window.end;
   let currStart = window.start;
-  const reps = allData?.reps || {};
-  const checked = allData?.checkedExercises || {};
-  const grouped = aggregateCheckedRepsByDateAndExerciseId(reps, checked);
+  const grouped = getGroupedCheckedRepsCached(allData);
 
   if (currStart == null) {
     currStart = minDateFromStrengthSources(grouped, allData) || endStr;

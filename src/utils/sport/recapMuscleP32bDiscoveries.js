@@ -349,7 +349,7 @@ function buildLedgerLimits(metrics) {
   const bits = [];
   if (noPlan) {
     bits.push(
-      `Aucun jour snapshot suffisant (${fmtInt(
+      `Aucun jour de plan figé suffisant (${fmtInt(
         metrics.plan?.snapshotDayCount || 0
       )}) : aucune affirmation sur les groupes musculaires « prévus » historiques.`
     );
@@ -371,7 +371,11 @@ function buildLedgerLimits(metrics) {
     contentClass: CONTENT_CLASS.METHODOLOGY_LIMIT,
     title: 'Limites du compte musculaire sur cette fenêtre',
     body: bits.join(' '),
-    evidence: `snapshots=${metrics.plan?.snapshotDayCount || 0} · multiShare=${multiShare}`,
+    evidence: `${fmtInt(metrics.plan?.snapshotDayCount || 0)} jour${
+      (metrics.plan?.snapshotDayCount || 0) > 1 ? 's' : ''
+    } de plan figé · part multi-principale ${
+      multiShare != null ? `${fmtInt(multiShare)} %` : 'n/d'
+    }`,
     weights: { importance: 0.32, reliability: 0.95, novelty: 0.2, fit: 0.5 },
     metrics: {
       windowStart: W.start,

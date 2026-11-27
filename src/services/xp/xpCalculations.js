@@ -394,12 +394,21 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
       .replace(/_semaineA$|_semaineB$/, '');
   };
 
-  const resolveVolumeKeyScoring = (key) => {
-    const exerciseId = extractExerciseIdFromStorageKey(key);
+  /** Cache local : getExerciseNameById peut être coûteux et est appelé plusieurs fois par clé. */
+  const exerciseNameCache = new Map();
+  const resolveExerciseName = (exerciseId) => {
+    if (exerciseNameCache.has(exerciseId)) return exerciseNameCache.get(exerciseId);
     const name =
       typeof sportOptions?.getExerciseNameById === 'function'
         ? sportOptions.getExerciseNameById(exerciseId) || ''
         : '';
+    exerciseNameCache.set(exerciseId, name);
+    return name;
+  };
+
+  const resolveVolumeKeyScoring = (key) => {
+    const exerciseId = extractExerciseIdFromStorageKey(key);
+    const name = resolveExerciseName(exerciseId);
     return resolveExerciseScoring({ name, id: exerciseId });
   };
 
@@ -420,10 +429,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
 
     const scoring = resolveVolumeKeyScoring(key);
     const exerciseId = extractExerciseIdFromStorageKey(key);
-    const name =
-      typeof sportOptions?.getExerciseNameById === 'function'
-        ? sportOptions.getExerciseNameById(exerciseId) || ''
-        : '';
+    const name = resolveExerciseName(exerciseId);
     const unitInfo = detectExerciseUnit({ name, series: '' });
 
     const coeff = resolveExerciseIntensityCoeff({ name, id: exerciseId }, coeffs);

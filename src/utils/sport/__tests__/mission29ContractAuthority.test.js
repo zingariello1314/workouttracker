@@ -123,7 +123,7 @@ function structuralChild(exerciseId, parentId, reps, prev) {
 
 describe('Mission 29 — édition', () => {
   it('bumpe sélection / hiérarchie / composition', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v(29|30)/);
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v(29|30|31)/);
     expect(ANALYSIS_EDITION_PARTS.selection).toBe('partial-redundancy-reserve-v1');
     expect(ANALYSIS_EDITION_PARTS.hierarchy).toBe('graph-before-publish-v1');
   });

@@ -126,7 +126,7 @@ export function describeCalendarShape({
       : null;
   const scope =
     quietLead && hotLead
-      ? `Les jours sans séance font partie de ce rythme : ce sont eux qui rendent le bloc possible`
+      ? `Les jours sans séance font partie du rythme calendaire observé — coexistence d’un creux et d’un pic, sans preuve que le repos « rende » le bloc possible`
       : quietLead
         ? `Le creux calendaire est localisé ${rangeLabel(quietLead.start, quietLead.end, withYear)}`
         : null;

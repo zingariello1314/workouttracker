@@ -2,6 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import { execSync } from 'child_process'
+
+function resolveBuildId() {
+  if (process.env.VITE_BUILD_ID) return process.env.VITE_BUILD_ID
+  try {
+    const sha = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+    return `${sha}-${Date.now().toString(36)}`
+  } catch {
+    return `local-${Date.now().toString(36)}`
+  }
+}
+
+const BUILD_ID = resolveBuildId()
 
 function bankMediaPlugin() {
   const root = path.resolve(__dirname, 'dossiergifs')
@@ -50,6 +63,9 @@ function bankMediaPlugin() {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), bankMediaPlugin()],
+  define: {
+    'import.meta.env.VITE_BUILD_ID': JSON.stringify(BUILD_ID)
+  },
   resolve: {
     alias: {
       // ✅ CORRECTION : Forcer une seule instance de Three.js pour éviter les warnings

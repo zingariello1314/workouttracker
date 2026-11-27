@@ -1,0 +1,55 @@
+{
+  "schema": "momentum.liveReplayInputPack.v1",
+  "ok": true,
+  "capturedAt": "2026-11-23T00:00:00.000Z",
+  "note": "Exemple synthétique Mission 32 — pas des données utilisateur.",
+  "separation": {
+    "inputs": "sources + program + garmin + identities + memoryInitial",
+    "parameters": "edition + selectionParams + anchor + timezone + worker",
+    "observedResults": "see sibling ANALYTICAL_AUDIT / eight-periods (not duplicated here)"
+  },
+  "parameters": {
+    "timezone": "Europe/Paris",
+    "anchorDate": "2026-11-21",
+    "editionKey": "editorial=p6-sovereign-v31;…",
+    "selectionParams": { "note": "implicites édition" },
+    "worker": null
+  },
+  "fingerprints": {
+    "digest": "synthetic0001",
+    "nameMapSize": 0
+  },
+  "sources": {
+    "reps": {
+      "2026-11-17_exA": 332,
+      "2026-11-18_exA": 426,
+      "2026-11-20_exA": 263
+    },
+    "checkedExercises": {
+      "2026-11-17_exA": true,
+      "2026-11-18_exA": true,
+      "2026-11-20_exA": true
+    },
+    "exerciseWeights": {},
+    "exerciseSetLogs": {},
+    "enduranceData": { "gtg": {}, "sessions": {} }
+  },
+  "program": {
+    "id": "synthetic-program",
+    "name": "Exemple",
+    "scheduleDayCount": 0,
+    "exerciseNameHints": { "exA": "Tractions" }
+  },
+  "identities": { "nameMapSize": 0, "nameMap": null },
+  "garmin": {
+    "dailyMetricsDays": 1,
+    "dailyMetrics": { "2026-11-18": { "sleep": 9.2 } },
+    "hasSleep": true
+  },
+  "memoryInitial": {
+    "phenomenonIds": ["synthetic-phen-1"],
+    "publicationCount": 0,
+    "exposureCount": 0
+  },
+  "limits": ["Aucun credential.", "Exemple hors production."]
+}

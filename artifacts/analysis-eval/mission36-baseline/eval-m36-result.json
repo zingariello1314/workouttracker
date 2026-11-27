@@ -1,0 +1,94 @@
+{
+  "gameA": {
+    "pass": false,
+    "factualConflicts": 13,
+    "priorityWithoutProof": 13,
+    "sample": [
+      "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+      "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de la période se lit dans les ratio|e:poussée/tirage 52,8 % / 28,8 % ·",
+      "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+      "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de la période se lit dans les ratio|e:poussée/tirage 55,8 % / 26,4 % ·",
+      "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default"
+    ]
+  },
+  "gameB": {
+    "pass": true,
+    "unsupportedPhysiology": 0,
+    "qualityDimensions": {
+      "exactitude": 49,
+      "profondeur": 4,
+      "pouvoirExplicatif": 4,
+      "contextualisation": 64,
+      "niveauxRelies": 32,
+      "refutationPrudence": 3,
+      "originaliteValeurMarginale": 0,
+      "lisibilite": 70,
+      "qualitePreuves": 64,
+      "respectTemporalite": 46,
+      "contexte": 64,
+      "valeurMarginale": 0,
+      "limites": 3,
+      "superficialCounter": 0
+    },
+    "referenceHits": 11
+  },
+  "gameC": {
+    "pass": true,
+    "textualDuplicatesAccessible": 0,
+    "unexplainedRegistryIds": 0
+  },
+  "horizonOverlap": {
+    "1y_vs_2y_titles": {
+      "shared": 9,
+      "of": 11,
+      "titles": [
+        "certains jours, le grease the groove ne tient que par un passage hors planning",
+        "relevés de genoux à la barre: volume par séance stable",
+        "les passages hors planning tiennent le fil des jours sans créneau coché",
+        "phase collective d’augmentation de charge",
+        "hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "les trois derniers mois ont une trajectoire interne",
+        "ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ]
+    },
+    "2y_vs_all_titles": {
+      "shared": 10,
+      "of": 11,
+      "titles": [
+        "certains jours, le grease the groove ne tient que par un passage hors planning",
+        "relevés de genoux à la barre: volume par séance stable",
+        "les passages hors planning tiennent le fil des jours sans créneau coché",
+        "phase collective d’augmentation de charge",
+        "première semaine à 6 entraînements",
+        "hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "les trois derniers mois ont une trajectoire interne",
+        "ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ]
+    },
+    "1y_vs_2y_bodies": {
+      "shared": 6,
+      "of": 11
+    },
+    "2y_vs_all_bodies": {
+      "shared": 7,
+      "of": 11
+    }
+  },
+  "live": {
+    "digest": "8ee0e181",
+    "reproducibility": {
+      "status": "reproductible_si_sources_completes",
+      "reason": "pack_matches_declared_contexts",
+      "gaps": [],
+      "note": "Rejeu exact possible uniquement si sources.reps / setLogs / etc. sont présents et inchangés",
+      "programStructure": "schedule_skeleton_exported"
+    },
+    "scheduleExercises": 57,
+    "withPrescriptions": 0,
+    "programStructureNote": "LIMITED — series/sets/reps empty in exported skeleton (engine uses series field)"
+  }
+}

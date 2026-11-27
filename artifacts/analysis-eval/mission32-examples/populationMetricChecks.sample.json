@@ -1,0 +1,30 @@
+{
+  "schema": "momentum.populationMetricChecks.v1",
+  "note": "Échantillon — les vrais contrôles sont dans ANALYTICAL_AUDIT.diagnostics.populationMetricChecks",
+  "counts": {
+    "pass": 2,
+    "fail": 1,
+    "noncomparable": 1,
+    "not_evaluated": 0,
+    "recorded": 4
+  },
+  "rows": [
+    {
+      "cardKey": "6m|disc_emergence|ex:demo|unbound",
+      "status": "noncomparable",
+      "reason": "populations_not_bound_skip_triple",
+      "measures": { "total": 718, "mean": 39.9, "arcDateCount": 8, "populationSource": "dates.fallback_possibly_arc" }
+    },
+    {
+      "cardKey": "6m|disc_traj|ex:fake|bound",
+      "status": "fail",
+      "reason": "same_population_required",
+      "measures": { "total": 480, "mean": 48, "sampleSize": 8, "comparable": true }
+    },
+    {
+      "cardKey": "3m|parallel|bound-ok",
+      "status": "pass",
+      "reason": "bound_or_no_conflict"
+    }
+  ]
+}

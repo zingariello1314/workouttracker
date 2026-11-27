@@ -29,7 +29,12 @@ function titleFromClaim(claim, discovery) {
   // Un titre n'est pas un paragraphe entier.
   if (statement.length > 110 || /[.!?].+[.!?]/.test(statement)) {
     const first = statement.split(/[.!?]/)[0] || statement;
-    return cleanSentence(first).slice(0, 110);
+    const cleaned = cleanSentence(first);
+    if (cleaned.length <= 110) return cleaned;
+    // Mission 35 — ne pas couper au milieu d’un mot ni laisser un espace final parasite.
+    const cut = cleaned.slice(0, 107);
+    const sp = cut.lastIndexOf(' ');
+    return `${(sp > 60 ? cut.slice(0, sp) : cut).trim()}…`;
   }
   return statement;
 }

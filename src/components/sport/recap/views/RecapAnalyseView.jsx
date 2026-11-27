@@ -26,6 +26,27 @@ const FAMILY_META = {
   al: { label: 'Alerte', color: 'var(--a3)' }
 };
 
+/**
+ * Mission 34 — dispositions réellement consultables dans l’UI.
+ * Avant : seuls valid_reserved / demoted_priority → deepenings exclus du DOM
+ * alors qu’ils figuraient dans accessibleReserve (faux « VIRTUALISE »).
+ */
+const CONSULTABLE_RESERVE_DISPOSITIONS = new Set([
+  'valid_reserved',
+  'demoted_priority',
+  'deepening_of_collective',
+  'deepening_accessible',
+  'reserve',
+  'demoted_partial_redundancy'
+]);
+
+function isConsultableReserve(item) {
+  const d = String(item?.disposition || item?.p6Disposition || '');
+  if (CONSULTABLE_RESERVE_DISPOSITIONS.has(d)) return true;
+  // Legacy : pas de disposition ⇒ traité comme réserve valide si titre présent
+  return !d && Boolean(String(item?.title || '').trim());
+}
+
 function asCard(item) {
   if (typeof item === 'object' && item) return item;
   return { body: String(item || '') };
@@ -253,24 +274,50 @@ export default function RecapAnalyseView({
   };
   const shownTitles = new Set(cards.map((card) => String(card.title || '').trim().toLowerCase()));
   const shownPhenomena = new Set(cards.map(phenomenonKey).filter(Boolean));
+  const shownIds = new Set(cards.map((c) => c.id).filter(Boolean));
   const reserveSeen = new Set();
   const reserveCards = (assessment?.insights?.accessibleReserve || []).flatMap((item) => {
-    if (item.disposition !== 'valid_reserved' && item.disposition !== 'demoted_priority') return [];
+    if (!isConsultableReserve(item)) return [];
     const title = String(item.title || '').trim();
-    if (!title || shownTitles.has(title.toLowerCase())) return [];
+    if (!title) return [];
+    if (item.id && shownIds.has(item.id)) return [];
     const key = phenomenonKey(item);
-    if (key && (shownPhenomena.has(key) || reserveSeen.has(key))) return [];
+    const reserveExId = String(item?.exerciseId || item?.metrics?.exerciseId || '');
+    // Mission 35 — ne pas supprimer un homonyme distinct (ex:505 vs ex:106) sur le seul titre.
+    if (shownTitles.has(title.toLowerCase())) {
+      const titleCollisionSameExercise = cards.some((card) => {
+        if (String(card.title || '').trim().toLowerCase() !== title.toLowerCase()) return false;
+        const cardEx = String(card?.exerciseId || card?.metrics?.exerciseId || '');
+        if (reserveExId && cardEx) return reserveExId === cardEx;
+        // Sans identité d’exercice : conserver la dédup titre historique.
+        return !reserveExId;
+      });
+      if (titleCollisionSameExercise) return [];
+    }
+    // Ne dédupliquer par phénomène que les non-approfondissements :
+    // un deepening distinct doit rester accessible même si le parent est déjà prioritaire.
+    const isDeepening =
+      item.disposition === 'deepening_of_collective' ||
+      item.disposition === 'deepening_accessible' ||
+      item.p6Disposition === 'deepening_of_collective';
+    if (!isDeepening && key && (shownPhenomena.has(key) || reserveSeen.has(key))) return [];
     if (key) reserveSeen.add(key);
     const cls = motifClass(item, 'k');
+    const badge = isDeepening
+      ? 'Approfondissement'
+      : FAMILY_META[cls]?.label || 'Autre découverte';
     return [
       {
         ...item,
         family: FAMILY_META[cls] ? cls : item.family || 'k',
         cls,
-        badge: FAMILY_META[cls]?.label || 'Autre découverte'
+        badge,
+        dataRole: isDeepening ? 'deepening' : 'reserve'
       }
     ];
   });
+  const consultableTotal = cards.length + reserveCards.length;
+  const packReserveTotal = (assessment?.insights?.accessibleReserve || []).length;
   const familyCounts = [...cards, ...reserveCards].reduce((acc, card) => {
     if (!card.family || !FAMILY_META[card.family]) return acc;
     acc[card.family] = (acc[card.family] || 0) + 1;
@@ -286,6 +333,11 @@ export default function RecapAnalyseView({
       data-analyse-period={period}
       data-analyse-window-start={resolvedWindow?.start || ''}
       data-analyse-window-end={resolvedWindow?.end || ''}
+      data-analyse-waiting={waitingInsights ? 'true' : 'false'}
+      data-analyse-publication-ready={showInsightCards ? 'true' : 'false'}
+      data-analyse-filter={family}
+      data-analyse-consultable-count={waitingInsights ? '' : String(consultableTotal)}
+      data-analyse-pack-reserve-count={waitingInsights ? '' : String(packReserveTotal)}
       data-analysis-edition={assessment?.analysisEdition || assessment?.insightsPublication?.analysisEdition || ''}
     >
       <RecapPeriodHighlightsPanel
@@ -311,8 +363,22 @@ export default function RecapAnalyseView({
       />
 
       <div className="dist" role="tablist">
-        <button type="button" className={family === 'all' ? 'on all' : 'all'} onClick={() => setFamily('all')}>
-          {t('recap.analyse.filterAll', 'Toutes')} <b>{waitingInsights ? '…' : cards.length + reserveCards.length}</b>
+        <button
+          type="button"
+          className={family === 'all' ? 'on all' : 'all'}
+          onClick={() => setFamily('all')}
+          data-analyse-counter="toutes"
+          data-analyse-counter-value={waitingInsights ? '' : String(consultableTotal)}
+          title={
+            waitingInsights
+              ? undefined
+              : t(
+                  'recap.analyse.filterAllHint',
+                  'Conclusions consultables sur cet écran (priorités + compléments montés)'
+                )
+          }
+        >
+          {t('recap.analyse.filterAll', 'Toutes')} <b>{waitingInsights ? '…' : consultableTotal}</b>
         </button>
         {Object.entries(FAMILY_META).map(([id, meta]) =>
           familyCounts[id] ? (
@@ -342,7 +408,9 @@ export default function RecapAnalyseView({
               key={card.key}
               className={`k ${motifClass(card, card.cls)}`}
               data-analyse-card="true"
+              data-role="priority"
               data-card-id={card.id || card.key}
+              data-title={card.title || ''}
               data-kind={card.kind || ''}
               data-phenomenon-id={card.phenomenonId || ''}
               data-publication-id={card.publicationId || ''}
@@ -377,7 +445,9 @@ export default function RecapAnalyseView({
               key={item.id || item.title}
               className={`k ${item.cls || ''}`}
               data-analyse-card="accessible"
+              data-role={item.dataRole || 'reserve'}
               data-card-id={item.id || ''}
+              data-title={item.title || ''}
               data-kind={item.kind || ''}
               data-phenomenon-id={item.phenomenonId || ''}
               data-publication-id={item.publicationId || ''}
@@ -409,7 +479,7 @@ export default function RecapAnalyseView({
       )}
 
       {!waitingInsights && family === 'all' && reserveCards.length ? (
-        <section>
+        <section data-analyse-section="reserve">
           <p className="emp">
             {visible.length + reserveCards.length} conclusions admissibles, dont {visible.length} mises en avant.
           </p>
@@ -419,7 +489,9 @@ export default function RecapAnalyseView({
                 key={item.id || item.title}
                 className={`k ${item.cls || ''}`}
                 data-analyse-card="accessible"
+                data-role={item.dataRole || 'reserve'}
                 data-card-id={item.id || ''}
+                data-title={item.title || ''}
                 data-kind={item.kind || ''}
                 data-phenomenon-id={item.phenomenonId || ''}
                 data-publication-id={item.publicationId || ''}

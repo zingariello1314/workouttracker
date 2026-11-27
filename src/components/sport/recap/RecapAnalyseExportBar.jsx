@@ -77,8 +77,9 @@ export default function RecapAnalyseExportBar({
       }
       if (result?.schema === 'momentum.domEightPeriodVerify.v1') {
         const s = result.summary || {};
+        const file = result?.download?.filename || result?.filename || '';
         setNotice(
-          `DOM · conforme ${s.conform || 0}/${s.total || 0} · divergent ${s.divergent || 0} · non prêt ${s.notReady || 0}. Mémoire inchangée.`
+          `DOM · conforme ${s.conform || 0}/${s.total || 0} · virtualisé OK ${s.virtualizedAccessible || 0} · divergent ${s.divergent || 0} · non prêt ${s.notReady || 0}.${file ? ` Fichier : ${file}.` : ''} Puis « dossier d’audit complet » pour l’inclure. Mémoire inchangée.`
         );
         return;
       }

@@ -10,6 +10,19 @@ import * as useNavigationModule from '../../../hooks/useNavigation';
 vi.mock('../../../hooks/useSidebar');
 vi.mock('../../../hooks/useSidebarData');
 vi.mock('../../../hooks/useNavigation');
+vi.mock('../SidebarClock', () => ({
+  default: () => (
+    <div className="time-date-block" data-testid="sidebar-clock-mock">
+      <div className="time-main">14:30</div>
+      <div className="date-main">Dimanche 8 décembre</div>
+      <div className="year-main">2025</div>
+      <span>Dimanche 8 décembre 2025</span>
+    </div>
+  )
+}));
+vi.mock('../../../dev/todayDiagnostics/diagIsolation', () => ({
+  isDiagFlag: () => false
+}));
 
 describe('SidebarPremium - Tests finaux et polish', () => {
   let mockUseSidebar;

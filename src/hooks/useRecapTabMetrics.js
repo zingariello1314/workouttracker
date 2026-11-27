@@ -21,6 +21,7 @@ import {
 import { snapshotRevisionOf } from '../utils/sport/recapComputeScope';
 import { analysisEditionKey, mayPresentBundleAsCurrent } from '../utils/sport/analysisEdition';
 import { tracePublication } from '../utils/sport/publicationLifecycleTrace';
+import { withWorkSpan } from '../dev/todayDiagnostics/workSpanTracker';
 import {
   loadInsightHistory,
   saveInsightHistory,
@@ -1639,7 +1640,13 @@ export function useRecapTabMetrics({
       setComputing(!stale);
     }
     const cancel = scheduleHeavyWork(() => {
-      runFor(deferredPeriod, periodWindow, inputKey.full, true);
+      withWorkSpan(
+        'useRecapTabMetrics.runFor',
+        () => {
+          runFor(deferredPeriod, periodWindow, inputKey.full, true);
+        },
+        { period: deferredPeriod }
+      );
     });
     return () => {
       tracePublication('generation_superseded', {

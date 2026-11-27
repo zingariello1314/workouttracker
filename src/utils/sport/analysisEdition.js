@@ -12,13 +12,13 @@ export const ANALYSIS_EDITION_PARTS = Object.freeze({
   program: 'structural-context-v4',
   identity: 'discovery-occurrence-v1',
   scope: 'short-window-anchor-v1',
-  editorial: 'p6-sovereign-v30',
+  editorial: 'p6-sovereign-v35',
   consolidation: 'narrative-coherence-v3',
   stimulus: 'challenge-unknown-v1',
   review: 'collective-pass4-v13',
-  claim: 'assertion-population-v2',
+  claim: 'assertion-population-v4',
   sleep: 'association-prose-v5',
-  audit: 'normalized-export-v12',
+  audit: 'normalized-export-v13',
   observability: 'reasoning-trace-v3',
   composition: 'metric-population-v2',
   coherence: 'inter-horizon-v4',
@@ -32,7 +32,7 @@ export const ANALYSIS_EDITION_PARTS = Object.freeze({
   fingerprint: 'multi-source-v5',
   facts: 'shared-facts-v2',
   memory: 'publication-registry-v1',
-  selection: 'partial-redundancy-reserve-v1'
+  selection: 'consultable-reserve-v2'
 });
 
 export function analysisEditionKey(parts = ANALYSIS_EDITION_PARTS) {

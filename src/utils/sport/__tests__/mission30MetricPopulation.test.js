@@ -74,7 +74,7 @@ function arcInflatedRow({
 
 describe('Mission 30 — contrat population effectifs', () => {
   it('édition population (Mission 30+)', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v(29|30)/);
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v(29|30|31|32|33)/);
     expect(ANALYSIS_EDITION_PARTS.composition).toMatch(/metric-population-v[12]/);
   });
 

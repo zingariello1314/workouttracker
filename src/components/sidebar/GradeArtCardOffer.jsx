@@ -16,6 +16,7 @@ import {
 } from '../../services/xp/sportGradeCatalog';
 import { sportGradeLabel } from '../sport/grades/SportGradeIdentity';
 import { useTranslation } from '../../utils/translations';
+import { isDiagFlag } from '../../dev/todayDiagnostics/diagIsolation';
 
 function offerStoreKey(username) {
   return `momentum.gradeArtOffer.v1.${username || 'guest'}`;
@@ -41,7 +42,8 @@ export default function GradeArtCardOffer() {
   const { currentUser } = useAuth();
   const username = currentUser?.username || 'guest';
   const t = useTranslation();
-  const { grades, isLoading } = useSportGrade();
+  const gradeXpEnabled = !isDiagFlag('suspendGradeArtOfferXp');
+  const { grades, isLoading } = useSportGrade({ enabled: gradeXpEnabled });
   const { selectGradeArt, ensureGradeArtDefault, gradeArtId, cardIconMode } = useProfileCard(username);
   const [offerGradeId, setOfferGradeId] = useState(null);
   const [busy, setBusy] = useState(false);

@@ -65,6 +65,8 @@ import { MomentumTabLoadOverlay, MomentumTabInlineLoader, MomentumModalLoadCard 
 import RecapTabSkeleton from './components/sport/recap/shell/RecapTabSkeleton';
 import { startStartupPipeline } from './utils/preloadTabs';
 import SportXpBarSlot from './components/tabs/TodayTab/components/SportXpBarSlot';
+import TodayDiagConsole from './dev/todayDiagnostics/TodayDiagConsole';
+import { noteTodayDiag, recordTodayReactCommit, recordReactTreeCommit } from './dev/todayDiagnostics/todayDiag';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
 import { isCodeSubTab } from './constants/codeSubTabs';
@@ -102,7 +104,18 @@ const TodayTabHost = memo(function TodayTabHost() {
   return (
     <ErrorBoundary context={{ activeTab: 'today' }} title="Erreur dans l'onglet today">
       <Suspense fallback={<TabSuspenseFallback tabId="today" />}>
-        <TodayTab />
+        {import.meta.env.DEV ? (
+          <React.Profiler
+            id="TodayTab"
+            onRender={(id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+              recordTodayReactCommit({ id, phase, actualDuration, baseDuration, startTime, commitTime });
+            }}
+          >
+            <TodayTab />
+          </React.Profiler>
+        ) : (
+          <TodayTab />
+        )}
       </Suspense>
     </ErrorBoundary>
   );
@@ -113,11 +126,36 @@ const RecapTabHost = memo(function RecapTabHost({ isActive = true }) {
   return (
     <ErrorBoundary context={{ activeTab: 'recap' }} title="Erreur dans l'onglet recap">
       <Suspense fallback={<TabSuspenseFallback tabId="recap" />}>
-        <RecapTab isActive={isActive} />
+        {import.meta.env.DEV ? (
+          <React.Profiler
+            id="RecapTab"
+            onRender={(id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+              recordReactTreeCommit('RecapTab', { id, phase, actualDuration, baseDuration, startTime, commitTime });
+            }}
+          >
+            <RecapTab isActive={isActive} />
+          </React.Profiler>
+        ) : (
+          <RecapTab isActive={isActive} />
+        )}
       </Suspense>
     </ErrorBoundary>
   );
 });
+
+function DiagProfiler({ id, children }) {
+  if (!import.meta.env.DEV) return children;
+  return (
+    <React.Profiler
+      id={id}
+      onRender={(treeId, phase, actualDuration, baseDuration, startTime, commitTime) => {
+        recordReactTreeCommit(id, { id: treeId, phase, actualDuration, baseDuration, startTime, commitTime });
+      }}
+    >
+      {children}
+    </React.Profiler>
+  );
+}
 
 const WorkoutTrackerApp = () => {
   return (
@@ -257,11 +295,21 @@ const WorkoutTrackerContent = () => {
     if (authLoading) return undefined;
     startStartupPipeline();
     setWarmToday(true);
+    noteTodayDiag('load', 'Aujourd’hui préchauffé');
     return undefined;
   }, [authLoading]);
 
   React.useEffect(() => {
+    if (activeTab === 'today') noteTodayDiag('load', 'Aujourd’hui visible');
+  }, [activeTab]);
+
+  React.useEffect(() => {
     if (activeTab === 'recap') {
+      try {
+        if (localStorage.getItem('momentum:diag:suspendWarmRecap') === '1') return;
+      } catch {
+        /* ignore */
+      }
       setWarmRecap(true);
     }
   }, [activeTab]);
@@ -523,7 +571,11 @@ const WorkoutTrackerContent = () => {
         {/* Layout avec sidebar */}
         <div className="flex-1 relative">
           {/* Sidebar Premium — pas sur dashboard (gérée par HomePageScrollTransition) */}
-          {shouldShowSidebar && <SidebarPremium />}
+          {shouldShowSidebar && (
+            <DiagProfiler id="SidebarPremium">
+              <SidebarPremium />
+            </DiagProfiler>
+          )}
           
           <main 
             className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
@@ -577,10 +629,12 @@ const WorkoutTrackerContent = () => {
                 aria-hidden={activeTab !== 'today'}
               >
                 {activeTab === 'today' && (
-                  <SportXpBarSlot
-                    tabId="today"
-                    className="today-sport-shell today-xp-wrap mb-5 mt-5 scroll-mt-40 pt-1"
-                  />
+                  <DiagProfiler id="SportXpBar">
+                    <SportXpBarSlot
+                      tabId="today"
+                      className="today-sport-shell today-xp-wrap mb-5 mt-5 scroll-mt-40 pt-1"
+                    />
+                  </DiagProfiler>
                 )}
                 <TodayTabHost />
               </div>
@@ -704,6 +758,7 @@ const WorkoutTrackerContent = () => {
           isOpen={showProfileQuiz}
           onClose={() => setShowProfileQuiz(false)}
         />
+        {import.meta.env.DEV ? <TodayDiagConsole /> : null}
       </div>
     </div>
   );

@@ -1,0 +1,32 @@
+{
+  "gameC": {
+    "pass": true,
+    "textualDuplicatesAccessible": 0,
+    "exactDuplicatesAccessible": 0,
+    "unexplainedRegistryIds": 0,
+    "perPeriod": []
+  },
+  "dipsOk": true,
+  "domNorm": true,
+  "collective": "La reprise commencée le 2026-10-13 après environ 2 semaines d’interruption avait déjà été confirmée (2026-10-20, 2026-11-17) ; elle se poursuit le 2026-11-24 : Curl, Pompes, Squat. Ces retours appartiennent à une même organisation de séance documentée. Les interruptions documenté",
+  "live": {
+    "digest": "f0f758c4",
+    "reproducibility": {
+      "status": "reproductible_si_sources_completes",
+      "reason": "pack_matches_declared_contexts",
+      "gaps": [],
+      "note": "Rejeu exact possible uniquement si sources.reps / setLogs / etc. sont présents et inchangés"
+    },
+    "hasSchedule": false,
+    "programKeys": [
+      "id",
+      "name",
+      "active",
+      "version",
+      "scheduleDayCount",
+      "exerciseNameHints"
+    ],
+    "programsIndex": null,
+    "worker": null
+  }
+}

@@ -2,6 +2,8 @@
 
 18 novembre 2026. E2.1 est dans le source : le garde-fou d’endurance refuse un GTG vide non explicite. E2.2 est dans le source : `calculateSportXP` appelle le bonus de complétion indexé. E3 ajoute un contrat opt-in SUCCESS / FAILURE / UNKNOWN sur les seuls parcours GTG et pompes. Sans l’option, `saveToDB` et `updateData` gardent leur comportement précédent.
 
+L’audit de fluidité du 27 novembre 2026 est dans [../audit-reactivite-aujourdhui-2026-11-27/RAPPORT.md](../audit-reactivite-aujourdhui-2026-11-27/RAPPORT.md).
+
 Point de départ : `docs/analyses-documentation/LATENCE-COCHE-ENREGISTREMENT-XP-2026-11-18.md`.
 Les hypothèses de ce premier relevé ne sont pas reprises ici comme des causes mesurées.
 

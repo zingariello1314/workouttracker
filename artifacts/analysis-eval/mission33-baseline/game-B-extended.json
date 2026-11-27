@@ -1,0 +1,138 @@
+{
+  "schema": "momentum.mission33.gameB.extended.v1",
+  "pass": true,
+  "passScope": "synthetic_refs_only",
+  "humanBlindPerformed": false,
+  "referenceHits": 11,
+  "incorrectAttractive": 0,
+  "qualityDimensions": {
+    "exactitude": 38,
+    "profondeur": 5,
+    "pouvoirExplicatif": 1,
+    "contextualisation": 49,
+    "niveauxRelies": 34,
+    "refutationPrudence": 9,
+    "originaliteValeurMarginale": 55,
+    "lisibilite": 56,
+    "qualitePreuves": 42,
+    "respectTemporalite": 61,
+    "contexte": 49,
+    "valeurMarginale": 55,
+    "limites": 9,
+    "superficialCounter": 0
+  },
+  "cases": [
+    {
+      "id": "volume_decline_frequency",
+      "result": "hit",
+      "retained": [
+        "fewer_sessions",
+        "fewer_reps_per_session"
+      ],
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "volume_rise_frequency",
+      "result": "hit",
+      "retained": [
+        "more_sessions"
+      ],
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "volume_content_explains",
+      "result": "hit",
+      "retained": [
+        "more_reps_per_session"
+      ],
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "same_format_no_volume_change",
+      "result": "hit",
+      "coverage": "no_phenomenon",
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "near_equal_sessions_composition",
+      "result": "hit",
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "collective_returns_same_episode",
+      "result": "hit",
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "collective_returns_simultaneous_unlinked",
+      "result": "hit_abstain",
+      "coverage": "under_explored",
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "challenge_format_time_requires_timed_data",
+      "result": "not_applicable",
+      "reason": "aucune séance chronométrée de défi dans ce paquet — le détecteur n’est ni validé ni contredit",
+      "referenceKind": "synthetic"
+    },
+    {
+      "id": "format_change_without_capacity_gain",
+      "result": "hit",
+      "coverage": "no_phenomenon",
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "volume_rise_with_repertoire_shift",
+      "result": "hit",
+      "retained": [
+        "more_reps_per_session",
+        "repertoire_change"
+      ],
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "volume_equal_despite_session_redistribution",
+      "result": "hit",
+      "coverage": "no_phenomenon",
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "no_phenomenon_stable_plateau",
+      "result": "hit",
+      "coverage": "no_phenomenon",
+      "referenceKind": "synthetic",
+      "humanBlindPerformed": false
+    },
+    {
+      "id": "mission33_quality_dimensions",
+      "result": "scored",
+      "dimensions": {
+        "exactitude": 38,
+        "profondeur": 5,
+        "pouvoirExplicatif": 1,
+        "contextualisation": 49,
+        "niveauxRelies": 34,
+        "refutationPrudence": 9,
+        "originaliteValeurMarginale": 55,
+        "lisibilite": 56,
+        "qualitePreuves": 42,
+        "respectTemporalite": 61,
+        "contexte": 49,
+        "valeurMarginale": 55,
+        "limites": 9,
+        "superficialCounter": 0
+      },
+      "note": "10 axes Mission 33. Longueur seule n’améliore pas le score ; descriptive ≠ explicative. PASS synthétique ≠ évaluation humaine."
+    }
+  ],
+  "closureNote": "PASS synthétique uniquement — comparaison humaine à l’aveugle non effectuée"
+}

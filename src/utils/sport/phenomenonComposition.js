@@ -52,7 +52,9 @@ export function composeCollectiveReturnReading({
   families = [],
   sessionFamilyLinked = false,
   readingMode = 'return',
-  baseConclusion = null
+  baseConclusion = null,
+  windowStart = null,
+  windowEnd = null
 } = {}) {
   const moves = (namedMoves || []).filter((m) => m?.name || m?.exerciseId);
   // Mission 14 : 2 mouvements suffisent si lien de séance/famille documenté ; sinon ≥ 3
@@ -92,6 +94,12 @@ export function composeCollectiveReturnReading({
 
   const returnDate = dates.length ? dates[0] : null;
   const confDates = (confirmationDates || []).filter(Boolean);
+  const confInWindow = confDates.filter(
+    (d) => (!windowStart || d >= windowStart) && (!windowEnd || d <= windowEnd)
+  );
+  const confPrior = confDates.filter((d) => windowStart && d < windowStart);
+  // Mission 35 — ancrer la prose sur la confirmation de la fenêtre, pas la première historique.
+  const confCited = confInWindow[0] || confDates[0] || null;
   const weeksLabel =
     moves[0]?.gapDays != null
       ? `après environ ${Math.round(Number(moves[0].gapDays) / 7)} semaines d’interruption`
@@ -168,10 +176,18 @@ export function composeCollectiveReturnReading({
     .join(', ')}${moves.length > 9 ? `… (${moves.length} au total)` : ''}`;
 
   let lead = null;
-  if (readingMode === 'confirmation' && returnDate && confDates.length) {
-    lead = `La reprise de cette composante de tes séances, commencée le ${returnDate}${
-      weeksLabel ? ` ${weeksLabel}` : ''
-    }, se confirme le ${confDates[0]} : ${moveList}.`;
+  if (readingMode === 'confirmation' && returnDate && confCited) {
+    if (confPrior.length && confInWindow.length) {
+      lead = `La reprise commencée le ${returnDate}${
+        weeksLabel ? ` ${weeksLabel}` : ''
+      } avait déjà été confirmée (${confPrior.slice(0, 2).join(', ')}${
+        confPrior.length > 2 ? '…' : ''
+      }) ; elle se poursuit le ${confCited} : ${moveList}.`;
+    } else {
+      lead = `La reprise de cette composante de tes séances, commencée le ${returnDate}${
+        weeksLabel ? ` ${weeksLabel}` : ''
+      }, se confirme le ${confCited} : ${moveList}.`;
+    }
   } else if (returnDate) {
     lead = `Une composante de ton entraînement se réinstalle autour du ${returnDate}${
       weeksLabel ? `, ${weeksLabel}` : ''
@@ -182,7 +198,9 @@ export function composeCollectiveReturnReading({
 
   const confirmationBit =
     readingMode === 'confirmation'
-      ? null
+      ? confPrior.length && confInWindow.length
+        ? `Ce n’est pas une première confirmation : l’épisode était déjà documenté avant cette fenêtre.`
+        : null
       : confDates.length
         ? `Les séances ultérieures (${confDates.join(', ')}) permettent de distinguer une reprise ponctuelle d’une réinstallation progressive.`
         : 'Une seule date de retour est documentée : la confirmation sur les séances suivantes reste à observer.';

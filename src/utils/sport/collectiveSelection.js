@@ -123,15 +123,36 @@ export function acknowledgeIdenticalCoverage({
  * overlap 1 = suppression autorisée seulement si équivalence forte.
  * partialOverlap = peut baisser la priorité / pousser en réserve, sans disparition.
  */
+function accessibleTextKey(row) {
+  const d = row?.discovery || row;
+  return `${String(d?.title || '')
+    .toLowerCase()
+    .trim()}|${String(d?.body || d?.text || '')
+    .toLowerCase()
+    .slice(0, 120)}`;
+}
+
 export function marginalValue(candidate, chosen) {
   const base = intrinsic(candidate);
   let destination = null;
   let overlapReason = null;
   let partialDestination = null;
   let partialReason = null;
+  const candidateText = accessibleTextKey(candidate);
   for (const other of chosen || []) {
     const left = candidate.discovery || candidate;
     const right = other.discovery || other;
+    // Mission 34 — même titre+corps (détecteurs distincts) = redondance éditoriale exacte
+    const otherText = accessibleTextKey(other);
+    if (
+      candidateText.length > 8 &&
+      otherText.length > 8 &&
+      candidateText === otherText
+    ) {
+      destination = stablePublicationId(right);
+      overlapReason = 'multi_detector_same_text';
+      break;
+    }
     const substantive = substantiveEquivalence(left, right);
     // Aspects / phénomènes explicitement distincts : jamais redondants
     if (

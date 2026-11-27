@@ -1,28 +1,26 @@
-# REGISTRE DE CLÔTURE P6 — Mission 31
+# REGISTRE DE CLÔTURE P6 — Mission 34
 
-Édition code : `p6-sovereign-v30`.  
-Baselines : v28 (M30), v29 (M31) gelées.
-
+Édition code : `p6-sovereign-v33`.  
 **P6 non clôturée. NO-GO P7. Aucun commit.**
 
-| Exigence | État | Détail |
+| Exigence | État | Preuve |
 |---|---|---|
-| Faits / métriques / populations | CODE+UT+reval | **75 faux fails → non-comparabilité M31** |
-| Intégrité publication | PUB v29 | À reconfirmer export v30 |
-| Rejeu 8 horizons | PIPE backup | fp≠live |
-| DOM | NC | **NON_OBSERVÉ** |
-| Jeux A/B/C | A partiel ; B/C non exécutés | — |
-| Abondance / reformulations | Partiel | V2 |
-| Éditorial V1 | Registre | Pas de refonte |
+| DOM 8 horizons | **Démontré** 26/11 | Rapport v2 observed, 82/82 priorités |
+| Accessibilité réserve | Correctif M34 | Deepenings exclus UI → montés |
+| Jeu C doublons texte | Correctif M34 | `multi_detector_same_text` |
+| Jeu B qualité | Limité | Synthétique OK ; live à re-évaluer |
+| V1/V2 éditorial | Progressé | Prose 7j ; sélection mécanismes |
+| P1 Rejeu LIVE | Ouvert | Digest Chrome |
+| Clôture P6 | **Non** | Strate 3 incomplète |
 
 ## Historique
 
 | Mission | Édition | Focus |
 |---|---|---|
-| 29 | v28 | Fusion ; totaux |
-| 30 | v29 | Effectifs composition ; Jeu A |
-| 31 | v30 | Comparabilité validateur ; rejeu ; plan |
+| 32 | v31 | Preuves export |
+| 33 | v32 | LIVE + DOM observateur |
+| 34 | v33 | Accessibilité + C + B/V2 |
 
-## Verdict M31
+## Verdict M34
 
-**PARTIEL** — défauts factuels d’intégrité des 75 résolus ; DOM et Jeux B/C manquent ; P6 ouverte.
+**PARTIEL** — corrections justifiées livrées ; validations indépendantes live + humaines restantes.

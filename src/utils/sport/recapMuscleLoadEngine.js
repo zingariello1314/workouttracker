@@ -4,13 +4,13 @@
  */
 import { normalizeDateString, isMockEnduranceSession, parseDurationToMinutes } from '../calendarUtils';
 import {
-  aggregateCheckedRepsByDateAndExerciseId,
   computeStrengthCalendarContribution,
   resolveExerciseIntensityCoeff,
   enduranceSessionCalendarLoad,
   enduranceRepsForSession,
   exerciseNameLooksIsometricForCalendar
 } from '../trainingLoadUtils';
+import { getGroupedCheckedRepsCached } from '../../services/sport/groupedCheckedRepsCache';
 import { inferMuscleGroupsForExercise, inferMuscleLoadRolesForExercise } from './recapMuscleInference';
 import { classifyExerciseStanding } from './historicalOrphanExercises';
 import { recapScoreToHexRelative, recapZoneBlendHueScore } from './recapIntensityColors';
@@ -418,7 +418,8 @@ export function computeRecapMuscleState(
   });
 
   const userCoeffs = allData?.exerciseIntensityCoeffs || {};
-  const grouped = aggregateCheckedRepsByDateAndExerciseId(allData?.reps, allData?.checkedExercises);
+  // Agrégation mutualisée (même révision → même Map pour muscle + muscu)
+  const grouped = getGroupedCheckedRepsCached(allData);
 
   /** @type {Record<string, number>} parts de reps (ou secondes iso) attribuées par groupe */
   const repShareByGroup = {};

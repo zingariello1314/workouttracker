@@ -220,6 +220,7 @@ export function buildAnalyticalAudit({
   const candidateRegistry = {};
   const claimCollisionsAvoided = [];
   const cardClaimDivergences = [];
+  const populationMetricChecks = [];
 
   const pushCard = (card, role, order, period) => {
     if (!card) return;
@@ -279,6 +280,45 @@ export function buildAnalyticalAudit({
           conflicts: check.conflicts
         });
       }
+      // Mission 32 — traçabilité pass / fail / noncomparable / not_evaluated
+      const hardSum = (check.conflicts || []).find((c) => c.metric === 'sum_mean_sample_consistency');
+      const noncomp = (check.notes || []).find((n) => n.metric === 'sum_mean_sample_noncomparable');
+      let status = 'not_evaluated';
+      let reason = 'insufficient_numeric_triple';
+      if (hardSum) {
+        status = 'fail';
+        reason = hardSum.note || 'same_population_required';
+      } else if (noncomp) {
+        status = 'noncomparable';
+        reason = noncomp.note || 'populations_not_bound_skip_triple';
+      } else if (
+        (slim?.metrics?.recentReps != null || slim?.metrics?.windowTotalReps != null) &&
+        slim?.metrics?.windowMeanPerSession != null &&
+        (slim?.metrics?.sessionCount != null || slim?.metrics?.windowSessionCount != null)
+      ) {
+        status = 'pass';
+        reason = 'bound_triple_consistent';
+      } else if (
+        slim?.metrics?.recentReps != null ||
+        slim?.metrics?.windowTotalReps != null ||
+        (slim?.metrics?.windowMeanPerSession != null && slim?.metrics?.sessionCount != null)
+      ) {
+        // Totaux présents mais population non liée de façon démontrable → déjà noncomp
+        // sinon pass soft historique (compat M32) uniquement si aucun conflit.
+        status = 'pass';
+        reason = 'bound_or_no_conflict';
+      }
+      // Mission 33 — enregistrer aussi not_evaluated (preuves indisponibles)
+      populationMetricChecks.push({
+        cardKey: key,
+        claimId: claimRef,
+        period: period || null,
+        status,
+        reason,
+        measures: hardSum?.card || noncomp?.card || null,
+        conflicts: hardSum ? [hardSum] : [],
+        notes: noncomp ? [noncomp] : []
+      });
     }
   };
 
@@ -693,6 +733,18 @@ export function buildAnalyticalAudit({
       claimCollisionsAvoided: claimCollisionsAvoided.slice(0, 80),
       cardClaimDivergences: cardClaimDivergences.slice(0, 80),
       cardClaimDivergenceCount: cardClaimDivergences.length,
+      populationMetricChecks: {
+        schema: 'momentum.populationMetricChecks.v1',
+        note: 'Absence de fail ≠ exactitude prouvée. noncomparable = populations non liées (M31).',
+        counts: {
+          pass: populationMetricChecks.filter((r) => r.status === 'pass').length,
+          fail: populationMetricChecks.filter((r) => r.status === 'fail').length,
+          noncomparable: populationMetricChecks.filter((r) => r.status === 'noncomparable').length,
+          not_evaluated: populationMetricChecks.filter((r) => r.status === 'not_evaluated').length,
+          recorded: populationMetricChecks.length
+        },
+        rows: populationMetricChecks.slice(0, 400)
+      },
       multiWindowLegacyIds: [
         ...new Set(
           claimCollisionsAvoided

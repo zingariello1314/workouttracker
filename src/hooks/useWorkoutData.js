@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
+import { spanTodayDiag } from '../dev/todayDiagnostics/todayDiag';
 import { cleanJustifications } from '../utils/dayJustificationUtils';
 import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
 import { deriveJourneyStartYmd } from '../utils/sport/recapUserAssessment';
@@ -41,7 +42,10 @@ import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 import { yieldToNextPaint, scheduleTodayCheckIdle } from '../utils/todayCheckMeasure';
 import { withIdbOperationTimeout } from '../utils/sessionSaveTimeout.js';
 import { classifySaveOutcome, createSaveOperationId } from '../services/workout/saveOutcome.js';
-import { commitSessionFeedback } from '../utils/sessionFeedbackSchema.js';
+import {
+  commitCatalogFeedback,
+  commitSessionFeedback
+} from '../utils/sessionFeedbackSchema.js';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -1281,9 +1285,13 @@ export const useWorkoutData = (options = {}) => {
   };
 
   const loadData = async () => {
+    const readSpan = spanTodayDiag('storage', 'Lecture IndexedDB');
     let savedData = await loadFromDB();
+    readSpan.end();
 
+    const enrichSpan = spanTodayDiag('calc', 'Enrichissement des séances');
     savedData = await enrichWorkoutStateWithSessions(savedData || { ...INITIAL_WORKOUT_DATA });
+    enrichSpan.end();
     savedData = restoreEnduranceIfWiped(savedData, storageKey);
 
     if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
@@ -1570,7 +1578,46 @@ export const useWorkoutData = (options = {}) => {
   const saveSessionFeedback = useCallback(async (date, feedbackData) => {
     const current = dataRef.current || data;
     const previous = current?.sessionFeedbacks?.[date];
-    const stored = commitSessionFeedback(previous, { ...feedbackData, date });
+    const payload = feedbackData && typeof feedbackData === 'object' ? feedbackData : {};
+
+    let stored;
+    if (payload.useCatalogCommit && payload.catalogDraft) {
+      const result = commitCatalogFeedback(previous, payload.catalogDraft, {
+        date,
+        sessionDate: date,
+        context: payload.catalogContext || {},
+        now: typeof payload.timestamp === 'string' ? payload.timestamp : undefined
+      });
+      if (!result.ok || !result.stored) {
+        const err = new Error(result.reason || 'feedback_catalog_commit_failed');
+        err.details = result;
+        throw err;
+      }
+      stored = { ...result.stored };
+    } else {
+      const {
+        catalogDraft: _cd,
+        catalogContext: _cc,
+        useCatalogCommit: _uc,
+        ...legacyFields
+      } = payload;
+      stored = commitSessionFeedback(previous, { ...legacyFields, date });
+    }
+
+    // Métadonnées de séance (hors catalogue) — ne remplace pas les réponses
+    const metaKeys = [
+      'sessionDuration',
+      'totalReps',
+      'totalExercises',
+      'exercisesSnapshot',
+      'workoutLoadSnapshot',
+      'sessionPayloadVersion',
+      'sessionId'
+    ];
+    for (const key of metaKeys) {
+      if (payload[key] !== undefined) stored[key] = payload[key];
+    }
+
     const newData = {
       ...current,
       sessionFeedbacks: {
@@ -1580,16 +1627,13 @@ export const useWorkoutData = (options = {}) => {
     };
 
     dataRef.current = newData;
-    // ✅ Sauvegarder immédiatement sans attendre le debounce
     setData(newData);
-    
-    // Sauvegarde immédiate pour garantir la persistance
+
     try {
       await saveToDB(newData);
       workoutDataLog.debug('✅ Feedback de session sauvegardé immédiatement:', date);
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde immédiate du feedback:', error);
-      // Fallback vers autoSave si la sauvegarde immédiate échoue
       autoSave(newData);
     }
   }, [data, autoSave, saveToDB]);

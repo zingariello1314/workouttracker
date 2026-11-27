@@ -35,6 +35,10 @@ import {
   volumeShapeImplication,
   peakDayImplication
 } from './recapAnalyticalReading';
+import {
+  disambiguateExerciseLabel,
+  exerciseScopedMetricId
+} from './analyticalClaim';
 import { baselineTraceMetrics } from './recapPersonalBaselines';
 import { familyFadeTitle, possessiveMuscleShare } from './recapPeriodVoice';
 import { sameNameActiveDuringGap } from './movementIdentity';
@@ -230,12 +234,33 @@ export function detectDiscoveries(cmp, extras = {}) {
         family: 'pending',
         title: isToday
           ? "La séance d'aujourd'hui n'est pas encore commencée"
-          : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} n'a pas encore de volume entraîné`,
+          : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, "n'a", "n'ont")} pas encore de volume entraîné`,
         body: isToday
           ? `Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse : c'est une séance en attente.${lastBit}${twinBit}${weekBit}${sleepBit} Le bandeau à zéro décrit l'attente, pas une baisse de capacité. La lecture d'aujourd'hui se fera dès que tu auras réalisé l'entraînement.`
-          : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} totalise 0 répétition cochée.${lastBit}${weekBit} Tant qu'aucune séance n'est saisie sur la fenêtre, on ne compare pas un zéro à ton habitude : on décrit l'attente, puis le rythme autour.`,
+          : // Mission 34 — fenêtre vide : ne pas recycler le volume de la même fenêtre comme s'il était « autour »
+            `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'totalise', 'totalisent')} 0 répétition cochée.${lastBit}${isWeek ? '' : weekBit} Tant qu'aucune séance n'est saisie sur la fenêtre, on ne compare pas un zéro à ton habitude : on décrit l'attente${last ? ', puis la dernière séance hors fenêtre' : ''}.`,
         evidence: last ? `dernière séance ${formatDayFr(last.date, true)} · ${fmtInt(last.totalReps)} reps` : '0 reps',
-        weights: { importance: 0.97, reliability: 0.95, novelty: 0.9, fit: 1 }
+        weights: { importance: 0.97, reliability: 0.95, novelty: 0.9, fit: 1 },
+        // Mission 33 — preuves chiffrées / documentaires pour Jeu A (pas une découverte « sans preuve »)
+        metrics: {
+          documentaryOnly: true,
+          nonNumericProof: false,
+          findingKind: 'pending_session',
+          periodReps: 0,
+          lastSessionDate: last?.date || null,
+          lastSessionReps: last?.totalReps ?? null,
+          recent7dReps: d7?.totalReps ?? null,
+          recent7dSessions: d7?.trainingDays ?? null,
+          observedValues: [
+            { id: 'periodReps', value: 0, unit: 'reps' },
+            ...(last?.totalReps != null
+              ? [{ id: 'lastSessionReps', value: last.totalReps, unit: 'reps' }]
+              : []),
+            ...(d7?.totalReps != null
+              ? [{ id: 'recent7dReps', value: d7.totalReps, unit: 'reps' }]
+              : [])
+          ]
+        }
       })
     );
     const ctxSrc = isToday ? d7 : d30;
@@ -260,7 +285,20 @@ export function detectDiscoveries(cmp, extras = {}) {
             ofPeriod: isToday ? 'de la semaine récente' : 'du mois récent'
           })} Ce n'est pas un substitut d'aujourd'hui : c'est ce qui se construit pendant que la séance du jour n'est pas encore faite.`,
           evidence: `${ctxSrc.trainingDays} séances · ${fmtInt(ctxSrc.totalReps)} reps`,
-          weights: { importance: 0.88, reliability: 0.9, novelty: 0.84, fit: 1 }
+          weights: { importance: 0.88, reliability: 0.9, novelty: 0.84, fit: 1 },
+          metrics: {
+            findingKind: 'pending_context',
+            windowSessionCount: ctxSrc.trainingDays,
+            recentReps: ctxSrc.totalReps,
+            windowMeanPerSession: ctxSrc.repsPerSession ?? null,
+            observedValues: [
+              { id: 'sessionCount', value: ctxSrc.trainingDays, unit: 'sessions' },
+              { id: 'totalReps', value: ctxSrc.totalReps, unit: 'reps' },
+              ...(ctxSrc.repsPerSession != null
+                ? [{ id: 'meanPerSession', value: ctxSrc.repsPerSession, unit: 'reps' }]
+                : [])
+            ]
+          }
         })
       );
     }
@@ -328,6 +366,7 @@ export function detectDiscoveries(cmp, extras = {}) {
     if (vs30 != null || vs7 != null) {
       const denser = (vs30 ?? vs7) > 3;
       const lighter = (vs30 ?? vs7) < -3;
+      // Mission 33 — titre aligné sur le signe : « moins dense » ≠ « concentre sur moins de temps »
       const title = isToday
         ? denser
           ? 'Une séance plus dense que ton rythme récent'
@@ -337,7 +376,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         : denser
           ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'est', 'sont')} plus dense${/jours/i.test(v.thisPeriod) ? 's' : ''} que ton rythme habituel`
           : lighter
-            ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'concentre', 'concentrent')} le travail sur moins de temps`
+            ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'est', 'sont')} moins dense${/jours/i.test(v.thisPeriod) ? 's' : ''} que ton rythme habituel`
             : `La densité ${v.ofPeriod} reste proche de ton rythme habituel`;
       const hourBit = `${fmtInt(p.totalReps)} répétitions, ${describeActivityDuration(p)}, soit environ ${fmtInt(p.repsPerHour)} répétitions par heure d'activité enregistrée`;
       const monthBit =
@@ -354,9 +393,14 @@ export function detectDiscoveries(cmp, extras = {}) {
           : '';
       const sessBit = sessionRhythmClause(p, { today: isToday, d7 });
       const vsMain = vs30 ?? vs7;
+      const densVerb = denser
+        ? periodVerb(v.thisPeriod, 'concentre', 'concentrent')
+        : lighter
+          ? periodVerb(v.thisPeriod, 'répartit', 'répartissent')
+          : periodVerb(v.thisPeriod, 'concentre', 'concentrent');
       const densReading = composeAnalyticalReading({
         titleThesis: title,
-        constat: `${isToday ? 'Tu as réalisé' : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${periodVerb(v.thisPeriod, 'concentre', 'concentrent')}`} ${hourBit}`,
+        constat: `${isToday ? 'Tu as réalisé' : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} ${densVerb}`} ${hourBit}`,
         mechanism: monthBit || null,
         scope: `${weekBit ? weekBit.replace(/^,\s*/, '') : ''}${sessBit || ''}`.trim() || null,
         implication: densityImplication({
@@ -647,7 +691,7 @@ export function detectDiscoveries(cmp, extras = {}) {
         scope: `Ce n'est pas le pic d'un seul exercice : plusieurs mouvements vont dans le même sens${tirageBit}.${ratioBit}${missingPull}${indirect}`.trim(),
         implication: pushPullImplication({ pushReps: pushNow, pullReps: backNow }),
         limit:
-          `Répartition indicative (parts conventionnelles primary/secondary), pas une mesure anatomique exacte. Composition de ${v.thisPeriod}, pas d'une séance isolée`
+          `Répartition indicative (parts musculaires principales et secondaires de la banque d’exercices), pas une mesure anatomique exacte. Composition de ${v.thisPeriod}, pas d'une séance isolée`
       });
       out.push(
         discovery({
@@ -1072,9 +1116,9 @@ export function detectDiscoveries(cmp, extras = {}) {
               ? 'composeRelativeConcentrationReading'
               : 'disc_exercise_share',
           observedValues: ofMonthEx.flatMap((e) => [
-            { id: `reps:${e.name}`, value: e.reps, unit: 'reps' },
-            { id: `monthReps:${e.name}`, value: e.monthReps, unit: 'reps' },
-            { id: `sharePct:${e.name}`, value: e.ofMonthPct, unit: 'percent' }
+            { id: exerciseScopedMetricId('reps', e), value: e.reps, unit: 'reps' },
+            { id: exerciseScopedMetricId('monthReps', e), value: e.monthReps, unit: 'reps' },
+            { id: exerciseScopedMetricId('sharePct', e), value: e.ofMonthPct, unit: 'percent' }
           ])
         }
       })
@@ -1305,18 +1349,19 @@ export function detectDiscoveries(cmp, extras = {}) {
         body: `${tracked
           .map((e) => {
             const month = e.monthReps || d30.byExercise[e.id]?.reps || 0;
-            return `${e.name} : ${fmtInt(e.reps)} ${v.now} sur ${fmtInt(month)} en 30 jours`;
+            const label = disambiguateExerciseLabel(e, tracked);
+            return `${label} : ${fmtInt(e.reps)} ${v.now} sur ${fmtInt(month)} en 30 jours`;
           })
           .join('. ')}. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble : Momentum peut suivre l'évolution de chaque mouvement, en distinguant ceux qui progressent, ceux qui se maintiennent et ceux dont l'exposition reste insuffisante.`,
-        evidence: tracked.map((e) => e.name).join(' · '),
+        evidence: tracked.map((e) => disambiguateExerciseLabel(e, tracked)).join(' · '),
         weights: { importance: 0.82, reliability: 0.9, novelty: 0.84, fit: 0.9 },
         metrics: {
           totalReps: d30.totalReps,
           observedValues: tracked.flatMap((e) => {
             const month = e.monthReps || d30.byExercise[e.id]?.reps || 0;
             return [
-              { id: `repsNow:${e.name}`, value: e.reps, unit: 'reps' },
-              { id: `monthReps:${e.name}`, value: month, unit: 'reps' }
+              { id: exerciseScopedMetricId('repsNow', e), value: e.reps, unit: 'reps' },
+              { id: exerciseScopedMetricId('monthReps', e), value: month, unit: 'reps' }
             ];
           })
         }
@@ -1390,7 +1435,26 @@ export function detectDiscoveries(cmp, extras = {}) {
               : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} sert de nouvelle observation dans cette trajectoire.`
           }`,
           evidence: `trimestre ${fmtInt(d90.totalReps)} reps`,
-          weights: { importance: 0.8, reliability: 0.84, novelty: 0.82, fit: 0.88 }
+          weights: { importance: 0.8, reliability: 0.84, novelty: 0.82, fit: 0.88 },
+          metrics: {
+            quarterReps: d90.totalReps,
+            totalReps: d90.totalReps,
+            windowReps: p.totalReps,
+            muscles: contrasts.map((m) => ({
+              group: m.group,
+              label: m.label,
+              windowReps: m.reps,
+              quarterReps: m.quarter
+            })),
+            observedValues: [
+              { id: 'quarterReps', value: d90.totalReps, unit: 'reps' },
+              { id: 'windowReps', value: p.totalReps, unit: 'reps' },
+              ...contrasts.flatMap((m) => [
+                { id: `quarterMuscle:${m.group || m.label}`, value: m.quarter, unit: 'reps' },
+                { id: `windowMuscle:${m.group || m.label}`, value: m.reps, unit: 'reps' }
+              ])
+            ]
+          }
         })
       );
     }
@@ -2354,7 +2418,31 @@ export function detectDiscoveries(cmp, extras = {}) {
                 : 'Ces rapports décrivent le stimulus reçu, pas seulement la quantité de travail.'
           }`,
           evidence: bits.join(' · '),
-          weights: { importance: 0.8, reliability: 0.9, novelty: 0.78, fit: 0.88 }
+          weights: { importance: 0.8, reliability: 0.9, novelty: 0.78, fit: 0.88 },
+          metrics: {
+            pushReps: p.pushReps,
+            pullReps: p.pullReps,
+            lowerReps: p.lowerReps,
+            identifiedMuscleReps: p.identifiedMuscleReps,
+            pushShare,
+            pullShare,
+            lowerShare,
+            volPerDay,
+            totalReps: p.totalReps,
+            trainingDays: p.trainingDays,
+            observedValues: [
+              ...(pushShare != null ? [{ id: 'pushShare', value: pushShare, unit: 'percent' }] : []),
+              ...(pullShare != null ? [{ id: 'pullShare', value: pullShare, unit: 'percent' }] : []),
+              ...(lowerShare != null ? [{ id: 'lowerShare', value: lowerShare, unit: 'percent' }] : []),
+              ...(p.pushReps != null ? [{ id: 'pushReps', value: p.pushReps, unit: 'reps' }] : []),
+              ...(p.pullReps != null ? [{ id: 'pullReps', value: p.pullReps, unit: 'reps' }] : []),
+              ...(p.lowerReps != null ? [{ id: 'lowerReps', value: p.lowerReps, unit: 'reps' }] : []),
+              ...(p.identifiedMuscleReps != null
+                ? [{ id: 'identifiedMuscleReps', value: p.identifiedMuscleReps, unit: 'reps' }]
+                : []),
+              ...(volPerDay != null ? [{ id: 'volPerTrainingDay', value: volPerDay, unit: 'reps' }] : [])
+            ]
+          }
         })
       );
     }
@@ -3217,6 +3305,9 @@ export function detectDiscoveries(cmp, extras = {}) {
             : confirmInWindow
               ? 'confirmation'
               : 'episode';
+      const priorConfirmations = (collective.confirmationDates || []).filter(
+        (d) => windowStart && d < windowStart
+      );
       const composed = composeCollectiveReturnReading({
         namedMoves: (collective.namedMoves || []).map((m) => {
           const hit =
@@ -3246,13 +3337,22 @@ export function detectDiscoveries(cmp, extras = {}) {
             h.id === 'shared_return_cooccurrence'
         ),
         readingMode,
-        baseConclusion: collective.conclusion
+        baseConclusion: collective.conclusion,
+        windowStart,
+        windowEnd
       });
-      const confirmationTitle = isWeek
-        ? 'La reprise collective se confirme cette semaine'
-        : isMonth
-          ? 'La reprise collective se confirme sur ces 30 jours'
-          : 'La reprise collective se confirme sur cette période';
+      // Mission 35 — une confirmation déjà documentée hors fenêtre n’est pas une « découverte » nouvelle.
+      const confirmationTitle = priorConfirmations.length
+        ? isWeek
+          ? 'La reprise collective se poursuit cette semaine'
+          : isMonth
+            ? 'La reprise collective se poursuit sur ces 30 jours'
+            : 'La reprise collective se poursuit sur cette période'
+        : isWeek
+          ? 'La reprise collective se confirme cette semaine'
+          : isMonth
+            ? 'La reprise collective se confirme sur ces 30 jours'
+            : 'La reprise collective se confirme sur cette période';
       const episodeParticipants = collective.namedMoves || returnEvents;
       const continuity = resolveContinuousEpisodeId(
         episodeParticipants,
@@ -3304,13 +3404,20 @@ export function detectDiscoveries(cmp, extras = {}) {
           confirmationDates: collective.confirmationDates || []
         }
       });
-      const memPriority = decideInformativePriority({
-        transition: memoryEvolve.transition,
-        supportCount: (collective.namedMoves || []).length,
-        newFacts: memoryEvolve.newFacts,
-        quietDays: 0,
-        horizonDays: isWeek ? 7 : isMonth ? 30 : 90
-      });
+      const memPriority =
+        priorConfirmations.length && readingMode === 'confirmation'
+          ? {
+              transition: 'confirmed',
+              newPriorityCard: false,
+              reason: 'confirmation_deja_documentee_hors_fenetre'
+            }
+          : decideInformativePriority({
+              transition: memoryEvolve.transition,
+              supportCount: (collective.namedMoves || []).length,
+              newFacts: memoryEvolve.newFacts,
+              quietDays: 0,
+              horizonDays: isWeek ? 7 : isMonth ? 30 : 90
+            });
       out.push(
         discovery({
           kind: 'disc_collective_return',
@@ -3496,7 +3603,28 @@ export function detectDiscoveries(cmp, extras = {}) {
             events: loadEvents,
             composition: loadPhase,
             producer: 'composeLoadProgressionPhase',
-            informativeValue: 90
+            informativeValue: 90,
+            eventCount: loadPhase.metrics?.eventCount ?? loadEvents.length,
+            exerciseCount: loadPhase.metrics?.exerciseCount ?? null,
+            observedValues: [
+              {
+                id: 'loadRaiseCount',
+                value: loadPhase.metrics?.eventCount ?? loadEvents.length,
+                unit: 'count'
+              },
+              {
+                id: 'loadRaiseExerciseCount',
+                value: loadPhase.metrics?.exerciseCount ?? null,
+                unit: 'count'
+              },
+              ...loadEvents.flatMap((e, index) => {
+                const key = e.exerciseId || e.name || index;
+                return [
+                  { id: `loadBefore:${key}`, value: e.loadBefore, unit: 'kg' },
+                  { id: `loadAfter:${key}`, value: e.loadAfter, unit: 'kg' }
+                ];
+              })
+            ]
           }
         })
       );
@@ -3541,7 +3669,19 @@ export function detectDiscoveries(cmp, extras = {}) {
               calendarTrainingDaysBefore: volumeBaseline.trainingDays ?? null,
               calendarTrainingDaysAfter: p.trainingDays ?? null,
               producer: 'composeVolumeFrequencyContentReading',
-              informativeValue: 88
+              informativeValue: 88,
+              observedValues: [
+                { id: 'repsBefore', value: Number(volumeBaseline.totalReps), unit: 'reps' },
+                { id: 'repsAfter', value: Number(p.totalReps), unit: 'reps' },
+                { id: 'strengthDaysBefore', value: daysBefore, unit: 'days' },
+                { id: 'strengthDaysAfter', value: daysAfter, unit: 'days' },
+                ...(half.decomposition?.volumePct != null
+                  ? [{ id: 'volumePct', value: half.decomposition.volumePct, unit: 'percent' }]
+                  : []),
+                ...(half.decomposition?.freqShareOfDrop != null
+                  ? [{ id: 'freqShareOfDrop', value: half.decomposition.freqShareOfDrop, unit: 'ratio' }]
+                  : [])
+              ]
             }
           })
         );

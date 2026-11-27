@@ -1,0 +1,223 @@
+{
+  "schema": "momentum.mission33.blindKey.v1",
+  "SEPARATE_FROM_PACK": true,
+  "note": "Ne pas montrer à l’évaluateur avant notation",
+  "key": [
+    {
+      "blindId": "B001",
+      "edition": "v31",
+      "period": "today",
+      "kind": "disc_pending_session",
+      "id": "disc_pending_session|period:global|ep:na|aspect:default|t:la séance d'aujourd'hui n'est pas encore commenc|e:dernière séance 20 novembre 2026",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B002",
+      "edition": "v31",
+      "period": "today",
+      "kind": "disc_th_concentration_now",
+      "id": "disc_th_concentration_now|dates:20 novembre 2026|fact:last-session|20 novembre 2026|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B003",
+      "edition": "v31",
+      "period": "today",
+      "kind": "disc_session_family_structure",
+      "id": "session_families_overview|3",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B004",
+      "edition": "v31",
+      "period": "today",
+      "kind": "disc_structural_memory",
+      "id": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B005",
+      "edition": "v31",
+      "period": "today",
+      "kind": "disc_pending_context",
+      "id": "disc_pending_context|period:global|ep:na|aspect:default|t:en attendant la séance, ta semaine récente a déj|e:3 séances · 1 021 reps",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B006",
+      "edition": "v31",
+      "period": "today",
+      "kind": "disc_sleep_assoc",
+      "id": "disc_sleep_assoc|period:global|ep:na|aspect:default|t:autour de 7 h 30, les journées fortes et les jou|e:11/11 ≥ 300 · 3/8 < 250",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B007",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_session_family_structure",
+      "id": "session_families_overview|3",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B008",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_session_family_variant",
+      "id": "session_family|sessionFamily:1|lundi|vendredi",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B009",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_th_concentration_now",
+      "id": "disc_th_concentration_now|dates:18 novembre 2026|fact:peak|18 novembre 2026|7d|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B010",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_volume_shape",
+      "id": "disc_volume_shape|dates:2026-11-17,2026-11-18,2026-11-20|dates:2026-11-17,2026-11-18,2026-11-20|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B011",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_sleep_night",
+      "id": "disc_sleep_night|period:global|ep:na|aspect:default|t:une nuit correcte en durée, à lire surtout dans |e:2026-11-18 · 9 h 12 vs 9 h · 7 n",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B012",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_density",
+      "id": "disc_density|period:global|ep:na|aspect:default|t:ces 7 jours concentrent le travail sur moins de |e:333 reps/h · 30 j. 360/h",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B013",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_composed_relative_concentration",
+      "id": "disc_composed_relative_concentration|pop:nested_window_same_exercises|ep:na|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B014",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_ms_return_durable",
+      "id": "disc_ms_return_durable|505|2026-11-20",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B015",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_composed_parallel_trajectories",
+      "id": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:1gjmgdz|2",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B016",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_comparable",
+      "id": "disc_comparable|ex:304|dates:2026-11-18|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B017",
+      "edition": "v31",
+      "period": "7d",
+      "kind": "disc_family_fade",
+      "id": "disc_family_fade|name:mollets debout|dates:2026-09-29,2026-10-13|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B018",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_volume_shape",
+      "id": "disc_volume_shape|dates:2026-10-26,2026-10-27,2026-10-30|dates:2026-10-26,2026-10-27,2026-10-30,2026-11-01,2026-11-02,2026-11-06,2026-11-07,2026-11-08,2026-11-09,2026-11-10,2026-11-11,2026-11-13,2026-11-14,2026-11-16,2026-11-17,2026-11-18,2026-11-20|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B019",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_session_family_structure",
+      "id": "session_families_overview|3",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B020",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_composed_volume_decomp",
+      "id": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B021",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_session_family_variant",
+      "id": "session_family|sessionFamily:1|lundi|vendredi",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B022",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_program_family_volume_decomposition",
+      "id": "disc_program_family_volume_decomposition|period:global|ep:na|aspect:default|t:la hausse de volume se lit dans la composition d|e:Street Workout + Endurance fonda",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B023",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_gtg_unplanned_role",
+      "id": "disc_gtg_unplanned_role|period:global|gapBucket:tiny|aspect:default",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    },
+    {
+      "blindId": "B024",
+      "edition": "v31",
+      "period": "30d",
+      "kind": "disc_composed_parallel_trajectories",
+      "id": "parallel_traj|ex:302+ex:348708679|span:recent30|sess:2|cal:yz1g7c|2",
+      "liveDigestHint": "3fab111c",
+      "engineDigestHint": "22b7a7ba"
+    }
+  ]
+}

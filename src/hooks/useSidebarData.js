@@ -23,6 +23,11 @@ import garminEnhancedDataService from '../services/garmin/garminEnhancedDataServ
 import { getDaySteps } from '../services/sport/WalkingMetricsService';
 import logger from '../utils/logger';
 import { canAccessPrivateData } from '../utils/accessControl';
+import { withWorkSpan } from '../dev/todayDiagnostics/workSpanTracker';
+import {
+  countWorkoutDaysSince,
+  hasWorkoutOnDate
+} from '../utils/sport/workoutDayIndex';
 
 const sidebarDataLog = logger.module('useSidebarData');
 
@@ -44,7 +49,7 @@ const sidebarDataLog = logger.module('useSidebarData');
 export const useSidebarData = () => {
   const { isAuthenticated, currentUser } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
-  const { getWorkoutHistory, getCurrentData } = useWorkout();
+  const { getCurrentData } = useWorkout();
   const { 
     userData, 
     dailyPerformances, 
@@ -332,8 +337,40 @@ export const useSidebarData = () => {
 
   // Sport & Santé - Optimisé avec gestion d'erreur
   const sport = useMemo(() => {
-    try {
-      if (!getWorkoutHistory) {
+    return withWorkSpan('useSidebarData.sport', () => {
+      try {
+        const workoutSnapshot = typeof getCurrentData === 'function' ? getCurrentData() : null;
+
+        const weeklyWorkouts = withWorkSpan('useSidebarData.sport.weeklyCount', () =>
+          countWorkoutDaysSince(workoutSnapshot, today, 7)
+        );
+
+        const todayMetrics = garminData?.dailyMetrics?.[today];
+        const manualEntry =
+          workoutSnapshot?.enduranceData?.manualDailyWalkByDate?.[today] ?? null;
+        const resolvedSteps = withWorkSpan('useSidebarData.sport.steps', () =>
+          getDaySteps(todayMetrics, manualEntry).total
+        );
+
+        return {
+          weeklyWorkouts,
+          todayCalories: todayMetrics?.totalCaloriesBurned || garminData?.sport?.todayMetrics?.calories?.total || 0,
+          todaySteps: resolvedSteps || todayMetrics?.steps || garminData?.sport?.todayMetrics?.steps || 0,
+          avgHeartRate: todayMetrics?.restingHeartRate || garminData?.sport?.todayMetrics?.heartRate?.resting || 72,
+          hasGarminData: garminData !== null,
+          stepsGoal: garminData?.stepsGoal ?? 8500,
+          caloriesGoal: garminData?.caloriesGoal ?? 1650,
+          todayMetrics: todayMetrics || garminData?.sport?.todayMetrics || null,
+          garminData: garminData || null,
+          heartRateZones: garminData?.heartRateZones || null,
+          sleepPhases: garminData?.sleepPhases || null,
+          stressLevels: garminData?.stressLevels || null,
+          maxHeartRate: garminData?.maxHeartRate || 190,
+          userAge: garminData?.userAge || 30,
+          sleepObjective: garminData?.sleepObjective || 480
+        };
+      } catch (error) {
+        console.error('[useSidebarData] Erreur calcul sport:', error);
         return {
           weeklyWorkouts: 0,
           todayCalories: 0,
@@ -342,50 +379,8 @@ export const useSidebarData = () => {
           hasGarminData: false
         };
       }
-      
-      const history = getWorkoutHistory();
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoStr = weekAgo.toISOString().slice(0, 10);
-      
-      const weeklyWorkouts = history ? history.filter(w => w && w.date >= weekAgoStr).length : 0;
-      const todayMetrics = garminData?.dailyMetrics?.[today];
-      const workoutSnapshot = typeof getCurrentData === 'function' ? getCurrentData() : null;
-      const manualEntry =
-        workoutSnapshot?.enduranceData?.manualDailyWalkByDate?.[today] ?? null;
-      const resolvedSteps = getDaySteps(todayMetrics, manualEntry).total;
-      
-      return {
-        weeklyWorkouts,
-        todayCalories: todayMetrics?.totalCaloriesBurned || garminData?.sport?.todayMetrics?.calories?.total || 0,
-        todaySteps: resolvedSteps || todayMetrics?.steps || garminData?.sport?.todayMetrics?.steps || 0,
-        avgHeartRate: todayMetrics?.restingHeartRate || garminData?.sport?.todayMetrics?.heartRate?.resting || 72,
-        hasGarminData: garminData !== null,
-        stepsGoal: garminData?.stepsGoal ?? 8500,
-        caloriesGoal: garminData?.caloriesGoal ?? 1650,
-        // Passer les métriques complètes pour les modules historiques
-        todayMetrics: todayMetrics || garminData?.sport?.todayMetrics || null,
-        // IMPORTANT: Passer toutes les données Garmin enrichies pour les graphiques
-        garminData: garminData || null,
-        // Données spécifiques pour les graphiques Garmin
-        heartRateZones: garminData?.heartRateZones || null,
-        sleepPhases: garminData?.sleepPhases || null,
-        stressLevels: garminData?.stressLevels || null,
-        maxHeartRate: garminData?.maxHeartRate || 190,
-        userAge: garminData?.userAge || 30,
-        sleepObjective: garminData?.sleepObjective || 480
-      };
-    } catch (error) {
-      console.error('[useSidebarData] Erreur calcul sport:', error);
-      return {
-        weeklyWorkouts: 0,
-        todayCalories: 0,
-        todaySteps: 0,
-        avgHeartRate: 72,
-        hasGarminData: false
-      };
-    }
-  }, [getWorkoutHistory, getCurrentData, garminData, today, refreshTriggers.workout]);
+    });
+  }, [getCurrentData, garminData, today, refreshTriggers.workout]);
 
   // Finances - Optimisé avec gestion d'erreur
   const finance = useMemo(() => {
@@ -648,11 +643,10 @@ export const useSidebarData = () => {
       }
     }
     
-    // Entraînement du jour
+    // Entraînement du jour — index léger (pas getWorkoutHistory complet)
     let workoutDone = false;
-    if (getWorkoutHistory) {
-      const history = getWorkoutHistory();
-      workoutDone = history ? history.some(w => w.date === today) : false;
+    if (typeof getCurrentData === 'function') {
+      workoutDone = hasWorkoutOnDate(getCurrentData(), today);
     }
     
     // Pages lues
@@ -672,7 +666,7 @@ export const useSidebarData = () => {
   }, [
     getQuestsForDate, 
     isQuestCompletedOnDate, 
-    getWorkoutHistory, 
+    getCurrentData, 
     learning.todayPages, 
     nutritionData, 
     today, 

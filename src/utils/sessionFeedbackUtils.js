@@ -3,6 +3,8 @@
  * bonus d’intensité (+2 points sur une échelle 0–100), note pondérée pour l’historique.
  */
 
+import { hasSignificantCatalogAnswers } from './sessionFeedbackValidate.js';
+
 const NUMERIC_FIELDS = [
   'ressenti',
   'difficulte',
@@ -16,11 +18,22 @@ const NUMERIC_FIELDS = [
 ];
 
 /**
+ * Présence d’un feedback enregistré (historique OU catalogue v2).
+ * Un seul effort 0, une absence de douleur explicite, ou une note seule comptent.
+ * Ne calcule pas de score : Récap / XP lisent toujours les champs numériques utiles.
+ *
  * @param {object|null|undefined} fb
  * @returns {boolean}
  */
 export function isSessionFeedbackFilled(fb) {
   if (!fb || typeof fb !== 'object') return false;
+
+  if (fb.completionState === 'recorded') return true;
+
+  if (fb.answers && typeof fb.answers === 'object' && hasSignificantCatalogAnswers(fb.answers)) {
+    return true;
+  }
+
   for (const k of NUMERIC_FIELDS) {
     const v = fb[k];
     if (typeof v === 'number' && v > 0) return true;

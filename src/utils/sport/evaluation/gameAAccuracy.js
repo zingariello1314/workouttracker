@@ -25,12 +25,29 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
     } else {
       const proof = card.claim.proof || {};
       const assertions = card.claim.assertions || [];
+      const metrics = card.metrics || {};
+      const composedMoves = metrics.composition?.namedMoves || metrics.events || [];
+      const composedMetrics = metrics.composition?.metrics || {};
+      // Mission 36 — preuves structurées (observedValues OU composition/métriques numériques).
+      const hasStructuredCompositionProof =
+        (Array.isArray(composedMoves) &&
+          composedMoves.some(
+            (m) =>
+              Number.isFinite(Number(m?.loadBefore)) &&
+              Number.isFinite(Number(m?.loadAfter)) &&
+              Number(m.loadAfter) > Number(m.loadBefore)
+          )) ||
+        composedMetrics.eventCount != null ||
+        metrics.pushShare != null ||
+        metrics.quarterReps != null ||
+        (Array.isArray(metrics.observedValues) && metrics.observedValues.length > 0);
       const hasProof =
         (proof.observedValues || []).length > 0 ||
         (proof.sourceEvents || []).length > 0 ||
         proof.documentary === true ||
         (card.claim.limitations || []).includes('non_numeric_documentary_proof') ||
-        assertions.some((a) => a?.value != null || a?.referenceValue != null || (a?.observedValues || []).length > 0);
+        assertions.some((a) => a?.value != null || a?.referenceValue != null || (a?.observedValues || []).length > 0) ||
+        hasStructuredCompositionProof;
       if (!hasProof && card.disposition === 'priority') {
         report.cases.push({ id: card.id, issue: 'priority_without_numeric_proof' });
         report.factualConflicts += 1;
@@ -270,25 +287,37 @@ export function runGameAAccuracy({ insights = null, measure = null, referenceFac
   }
 
   accessible.forEach((card) => {
-    const text = `${card.title || ''} ${card.body || ''} ${card.evidence || ''}`;
+    // Mission 35 — texte visible (titre+corps) vs métadonnées / preuve technique.
+    const visible = `${card.title || ''} ${card.body || ''}`;
+    const evidence = String(card.evidence || '');
+    const text = `${visible} ${evidence}`;
     if (/rendement\s+0\s*reps\/h|densité\s+0\s*reps\/h/i.test(text)) {
       report.factualConflicts += 1;
       report.cases.push({ id: card.id, issue: 'unknown_density_presented_as_zero' });
     }
-    if (/seuil de sommeil personnel|séparation reproductible/i.test(text)) {
+    if (/seuil de sommeil personnel|séparation reproductible/i.test(visible)) {
       report.factualConflicts += 1;
       report.cases.push({ id: card.id, issue: 'sleep_overclaim_language' });
     }
-    if (/s['']efface|dispara[iî]t/i.test(text) && /\d+\s*%|\d+\s*reps/i.test(text) && !/part|proportion|relative/i.test(text)) {
+    if (/s['']efface|dispara[iî]t/i.test(visible) && /\d+\s*%|\d+\s*reps/i.test(visible) && !/part|proportion|relative/i.test(visible)) {
       report.cases.push({
         id: card.id,
         issue: 'share_drop_labeled_as_disappearance',
         note: 'heuristique — vérifier populations'
       });
     }
-    if (/association_not_causation|snapshots=\d|primary\/secondary|socle_commun_avec_variantes/i.test(text)) {
+    // Codes techniques dans la prose destinée à l’athlète.
+    if (/association_not_causation|snapshots=\d|primary\/secondary|socle_commun_avec_variantes/i.test(visible)) {
       report.factualConflicts += 1;
       report.cases.push({ id: card.id, issue: 'technical_code_in_user_prose' });
+    } else if (/association_not_causation|snapshots=\d|primary\/secondary|socle_commun_avec_variantes/i.test(evidence)) {
+      // Evidence affichée : encore une fuite si le code est brut ; distinct du corps.
+      report.factualConflicts += 1;
+      report.cases.push({
+        id: card.id,
+        issue: 'technical_code_in_user_prose',
+        note: 'fuite dans evidence visible'
+      });
     }
   });
 

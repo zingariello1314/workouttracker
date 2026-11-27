@@ -63,3 +63,9 @@ garmin-server/.cache/
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
 .originkit/
+
+# Baselines d'analyse générés localement (souvent >100 Mo : bloqués par GitHub)
+artifacts/analysis-eval/**/zip/
+artifacts/analysis-eval/**/eight-periods/
+**/ANALYTICAL_REASONING_TRACE.json
+**/eight-periods.json

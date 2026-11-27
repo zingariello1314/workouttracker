@@ -116,6 +116,76 @@ const REFERENCE_CASES = [
     kind: 'synthetic',
     mode: 'challenge_presence',
     requireChallengeCards: true
+  },
+  // Mission 33 — cas indépendants élargis (mécanismes distincts)
+  {
+    id: 'format_change_without_capacity_gain',
+    kind: 'synthetic',
+    input: {
+      repsNow: 3600,
+      repsThen: 3600,
+      sessionsNow: 12,
+      sessionsThen: 12,
+      repsPerSessionNow: 300,
+      repsPerSessionThen: 300,
+      repertoireChanged: false,
+      formatChanged: true
+    },
+    prefer: 'no_volume_change',
+    rejectAttractive: 'force_maximale',
+    requireConcluded: false
+  },
+  {
+    id: 'volume_rise_with_repertoire_shift',
+    kind: 'synthetic',
+    input: {
+      repsNow: 5200,
+      repsThen: 4000,
+      sessionsNow: 14,
+      sessionsThen: 14,
+      repsPerSessionNow: 371,
+      repsPerSessionThen: 286,
+      repertoireChanged: true,
+      formatChanged: false
+    },
+    prefer: 'more_reps_per_session',
+    rejectAttractive: 'more_sessions',
+    requireConcluded: true
+  },
+  {
+    id: 'volume_equal_despite_session_redistribution',
+    kind: 'synthetic',
+    input: {
+      repsNow: 3000,
+      repsThen: 3000,
+      sessionsNow: 8,
+      sessionsThen: 12,
+      repsPerSessionNow: 375,
+      repsPerSessionThen: 250,
+      repertoireChanged: false,
+      formatChanged: false
+    },
+    // Même total → pas de phénomène de volume (la redistribution n'est pas une hausse)
+    prefer: 'no_volume_change',
+    rejectAttractive: 'hypertrophy',
+    requireConcluded: false
+  },
+  {
+    id: 'no_phenomenon_stable_plateau',
+    kind: 'synthetic',
+    input: {
+      repsNow: 2400,
+      repsThen: 2400,
+      sessionsNow: 10,
+      sessionsThen: 10,
+      repsPerSessionNow: 240,
+      repsPerSessionThen: 240,
+      repertoireChanged: false,
+      formatChanged: false
+    },
+    prefer: 'no_volume_change',
+    rejectAttractive: 'hypertrophy',
+    requireConcluded: false
   }
 ];
 
@@ -246,9 +316,16 @@ export function runGameBDiscoveryQuality({ insights = null, blindPackets = null 
   const qualityDims = {
     exactitude: 0,
     profondeur: 0,
-    contexte: 0,
     pouvoirExplicatif: 0,
+    contextualisation: 0,
     niveauxRelies: 0,
+    refutationPrudence: 0,
+    originaliteValeurMarginale: 0,
+    lisibilite: 0,
+    qualitePreuves: 0,
+    respectTemporalite: 0,
+    // compat anciennes clés
+    contexte: 0,
     valeurMarginale: 0,
     limites: 0,
     superficialCounter: 0
@@ -258,12 +335,16 @@ export function runGameBDiscoveryQuality({ insights = null, blindPackets = null 
     const proofCount = (card?.claim?.proof?.observedValues || card?.metrics?.observedValues || []).length;
     const relations = (card?.claim?.relations || card?.relations || []).length;
     // Affirmation physiologique non étayée — ignorer les négations / limites explicites.
-    const claimsPhysiology =
-      /force maximale|hypertrophie démontrée|adaptation physiologique prouvée/i.test(body) &&
-      !/pas (?:une )?preuve|pas sur une force|pas (?:de |d[e’'])hypertrophie|sans (?:prouver|démontrer)|n[e’']établit pas|ne (?:prouve|démontre) pas/i.test(
+    // Mission 36 : « pas une affirmation de force maximale ni d’hypertrophie » n’est pas une claim.
+    const physioCue =
+      /force maximale|hypertrophie démontrée|adaptation physiologique prouvée|(?:démontre|prouve)\s+(?:une\s+)?(?:hypertrophie|force maximale)/i.test(
         body
       );
-    if (claimsPhysiology) {
+    const physioDenied =
+      /pas (?:une )?preuve|pas sur une force|pas (?:une )?affirmation de force|pas (?:de |d[e’'])hypertrophie|ni d[e’']hypertrophie|n[e’']est pas une affirmation|sans (?:prouver|démontrer)|n[e’']établit pas|ne (?:prouve|démontre) pas|seulement (?:une )?phase documentée|charge externe/i.test(
+        body
+      );
+    if (physioCue && !physioDenied) {
       report.incorrectAttractive += 1;
       report.cases.push({ id: card?.id || card?.title, result: 'unsupported_physiology' });
     }
@@ -300,27 +381,61 @@ export function runGameBDiscoveryQuality({ insights = null, blindPackets = null 
         }
       });
     }
-    // Dimensions Mission 7 — un compteur reformulé ≠ une découverte
+    // Mission 33 — 10 dimensions ; longueur seule n'améliore pas le score
+    const explanatory =
+      /parce que|s'explique|attribu|mécanisme|concentré|récurrent|famille de séances|ne sont pas interchangeables|redistribu/i.test(
+        body
+      );
+    const descriptiveOnly =
+      !explanatory && (/^\s*(tu as|vous avez)\s+\d+/i.test(body) || (body.length < 100 && proofCount <= 1));
     if (proofCount >= 2) qualityDims.exactitude += 1;
-    if (/parce que|s'explique|concentré|récurrent|famille de séances|ne sont pas interchangeables/i.test(body)) {
-      qualityDims.profondeur += 1;
-      qualityDims.pouvoirExplicatif += 1;
-    } else if (/^\s*(tu as|vous avez)\s+\d+/i.test(body) || body.length < 80) {
-      qualityDims.superficialCounter += 1;
+    if (explanatory && body.length >= 120) qualityDims.profondeur += 1;
+    else if (descriptiveOnly) qualityDims.superficialCounter += 1;
+    if (explanatory && proofCount >= 1) qualityDims.pouvoirExplicatif += 1;
+    if (/depuis|fois|comparable|horizon|précédent|historique|fenêtre|7 jours|30 jours/i.test(body)) {
+      qualityDims.contexte += 1;
+      qualityDims.contextualisation += 1;
     }
-    if (/depuis|fois|comparable|horizon|précédent|historique/i.test(body)) qualityDims.contexte += 1;
     if (/séance|exercice|groupe|programme|cycle|famille/i.test(body) && relations + proofCount >= 1) {
       qualityDims.niveauxRelies += 1;
     }
-    if (/incert|limite|sans preuve|ne permet|inconnu/i.test(body)) qualityDims.limites += 1;
-    if (card?.marginal?.value != null && card.marginal.value > 0) qualityDims.valeurMarginale += 1;
+    if (/incert|limite|sans preuve|ne permet|inconnu|pas une cause|association|sans en faire/i.test(body)) {
+      qualityDims.limites += 1;
+      qualityDims.refutationPrudence += 1;
+    }
+    if (card?.marginal?.value != null && card.marginal.value > 0) {
+      qualityDims.valeurMarginale += 1;
+      qualityDims.originaliteValeurMarginale += 1;
+    } else if (
+      card?.metrics?.horizonRole === 'priority_candidate' ||
+      /originalité|première fois|nouveau/i.test(body)
+    ) {
+      qualityDims.originaliteValeurMarginale += 0.5;
+    }
+    // Lisibilité : phrases courtes, pas de jargon technique
+    if (
+      body.length >= 40 &&
+      body.length <= 900 &&
+      !/snapshots=|reconstruct=|association_not_causation|primary\/secondary/i.test(body)
+    ) {
+      qualityDims.lisibilite += 1;
+    }
+    if (proofCount >= 1 || card?.claim?.proof?.documentary === true) qualityDims.qualitePreuves += 1;
+    if (
+      /aujourd'?hui|cette semaine|ces \d+ jours|depuis le|fenêtre|horizon/i.test(body) ||
+      card?.metrics?.windowStart ||
+      card?.claim?.scope?.start
+    ) {
+      qualityDims.respectTemporalite += 1;
+    }
   });
   report.qualityDimensions = qualityDims;
   report.cases.push({
-    id: 'mission7_quality_dimensions',
+    id: 'mission33_quality_dimensions',
     result: 'scored',
     dimensions: qualityDims,
-    note: 'Longueur seule n’améliore pas le score ; relations/explications étayées comptent.'
+    note:
+      '10 axes Mission 33. Longueur seule n’améliore pas le score ; descriptive ≠ explicative. PASS synthétique ≠ évaluation humaine.'
   });
 
   const applicableRefs = REFERENCE_CASES.filter((ref) => {

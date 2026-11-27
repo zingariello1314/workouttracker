@@ -1,116 +1,176 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Star, 
-  MessageSquare, 
-  Save, 
-  X, 
-  Smile, 
-  Meh, 
-  Frown, 
-  Heart,
-  Zap,
-  Target,
-  Clock,
-  TrendingUp,
-  Award,
-  Calendar,
-  Activity
-} from 'lucide-react';
-import { useWorkout } from '../context/WorkoutContext';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { MessageSquare, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDateStr } from '../utils/dateUtils';
-import { formStateFromStored } from '../utils/sessionFeedbackSchema';
+import {
+  ANSWER_STATES,
+  RAPID_QUESTION_IDS,
+  getQuestion,
+  makeAnswer
+} from '../utils/sessionFeedbackCatalog';
+import {
+  catalogAnswersFromStored
+} from '../utils/sessionFeedbackSchema';
+import { hasSignificantCatalogAnswers } from '../utils/sessionFeedbackValidate';
+import { selectConditionalQuestions } from '../utils/sessionFeedbackConditional';
 import { useTranslation } from '../utils/translations';
-import { useFormatters } from '../utils/translations/formatters-hook';
+import FeedbackScaleControl from './sessionFeedback/FeedbackScaleControl';
+import FeedbackSegmentControl from './sessionFeedback/FeedbackSegmentControl';
+import FeedbackMultiSelect from './sessionFeedback/FeedbackMultiSelect';
+import FeedbackCollapsibleSection from './sessionFeedback/FeedbackCollapsibleSection';
+import SessionFeedbackSummaryBar from './sessionFeedback/SessionFeedbackSummaryBar';
 
+const EMPTY_CELL = makeAnswer(ANSWER_STATES.NOT_ANSWERED, null);
+
+function cellOrEmpty(answers, id) {
+  return answers?.[id] || EMPTY_CELL;
+}
+
+function countAnswered(answers, ids) {
+  return ids.filter((id) => {
+    const c = answers?.[id];
+    return (
+      c &&
+      (c.state === ANSWER_STATES.ANSWERED ||
+        c.state === ANSWER_STATES.ABSENT ||
+        c.state === ANSWER_STATES.DECLINED)
+    );
+  }).length;
+}
+
+/**
+ * Feedback de séance — rapide + détaillé.
+ * Logique métier hors React : catalogue + commitCatalogFeedback (via onSave).
+ */
 const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   const t = useTranslation();
-  const { formatDate } = useFormatters();
-  
-  const environmentOptions = [
-    { value: 'salle', label: t('sessionFeedback.step3.environment.gym'), icon: '🏋️' },
-    { value: 'maison', label: t('sessionFeedback.step3.environment.home'), icon: '🏠' },
-    { value: 'exterieur', label: t('sessionFeedback.step3.environment.outdoor'), icon: '🌳' },
-    { value: 'parc', label: t('sessionFeedback.step3.environment.park'), icon: '🌲' }
-  ];
-
-  const weatherOptions = [
-    { value: 'ensoleille', label: t('sessionFeedback.step3.weather.sunny'), icon: '☀️' },
-    { value: 'nuageux', label: t('sessionFeedback.step3.weather.cloudy'), icon: '☁️' },
-    { value: 'pluvieux', label: t('sessionFeedback.step3.weather.rainy'), icon: '🌧️' },
-    { value: 'venteux', label: t('sessionFeedback.step3.weather.windy'), icon: '💨' },
-    { value: 'froid', label: t('sessionFeedback.step3.weather.cold'), icon: '❄️' },
-    { value: 'chaud', label: t('sessionFeedback.step3.weather.hot'), icon: '🔥' }
-  ];
-  
-  const [feedback, setFeedback] = useState(() =>
-    formStateFromStored(sessionData?.existingFeedback)
+  const [answers, setAnswers] = useState(() =>
+    catalogAnswersFromStored(sessionData?.existingFeedback)
   );
-
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
-
-  const predefinedTags = [
-    // Ressenti physique
-    'Forme olympique', 'Bon jour', 'Fatigue', 'Courbatures', 'Douleur', 'Blessure',
-    // Ressenti mental
-    'Motivation haute', 'Stress élevé', 'Concentration parfaite', 'Distrait',
-    // Conditions
-    'Récupération ok', 'Insomnie', 'Maladie', 'Mauvais jour', 'Première fois',
-    // Performance
-    'Record personnel', 'Dépassement de soi', 'Technique améliorée', 'Endurance++',
-    // Environnement
-    'Musique motivante', 'Salle bondée', 'Équipement défaillant', 'Nouveau lieu'
-  ];
-
-  const equipmentOptions = [
-    'Haltères', 'Barres', 'Machines', 'Poids du corps', 'Élastiques', 
-    'Kettlebells', 'TRX', 'Médecine ball', 'Corde à sauter', 'Tapis de course'
-  ];
+  const [dirtyKeys, setDirtyKeys] = useState(() => new Set());
+  const [showDetailed, setShowDetailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [sections, setSections] = useState({
+    recovery: true,
+    intent: false,
+    pain: true,
+    context: false,
+    notes: false
+  });
 
   useEffect(() => {
     if (!isOpen) return;
-    setCurrentStep(1);
-    setFeedback(formStateFromStored(sessionData?.existingFeedback));
+    setAnswers(catalogAnswersFromStored(sessionData?.existingFeedback));
+    setDirtyKeys(new Set());
+    setShowDetailed(false);
+    setSaving(false);
+    setSections({
+      recovery: true,
+      intent: false,
+      pain: true,
+      context: false,
+      notes: false
+    });
   }, [isOpen, sessionData]);
 
-  const handleStarClick = (field, value) => {
-    setFeedback(prev => ({ ...prev, [field]: value }));
-  };
+  const sportContext = sessionData?.sportContext || null;
 
-  const handleTagToggle = (tag) => {
-    setFeedback(prev => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag]
-    }));
-  };
+  const conditionalSelection = useMemo(
+    () =>
+      selectConditionalQuestions({
+        sportContext,
+        answers,
+        maxPrimary: 1
+      }),
+    [sportContext, answers]
+  );
 
-  const handleEquipmentToggle = (equipment) => {
-    setFeedback(prev => ({
-      ...prev,
-      equipementUtilise: prev.equipementUtilise.includes(equipment)
-        ? prev.equipementUtilise.filter(e => e !== equipment)
-        : [...prev.equipementUtilise, equipment]
-    }));
-  };
+  const setCell = useCallback((id, cell) => {
+    setAnswers((prev) => ({ ...prev, [id]: cell }));
+    setDirtyKeys((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
 
-  const handleSave = () => {
-    // ✅ Utiliser la date de la session si disponible, sinon la date d'aujourd'hui
-    const sessionDate = sessionData?.date 
-      ? (typeof sessionData.date === 'string' ? sessionData.date : getDateStr(new Date(sessionData.date)))
+  const clearCell = useCallback(
+    (id) => {
+      setCell(id, makeAnswer(ANSWER_STATES.NOT_ANSWERED, null));
+    },
+    [setCell]
+  );
+
+  const painPresence = cellOrEmpty(answers, 'pain_presence');
+  const showPainDetails =
+    painPresence.state === ANSWER_STATES.ANSWERED && painPresence.value === 'yes';
+
+  const sessionIntent = cellOrEmpty(answers, 'session_intent');
+  const showIntentAttained =
+    sessionIntent.state === ANSWER_STATES.ANSWERED &&
+    sessionIntent.value !== 'none' &&
+    sessionIntent.value !== 'unknown';
+
+  const equipmentChanged = cellOrEmpty(answers, 'equipment_changed');
+  const showEquipmentNote =
+    equipmentChanged.state === ANSWER_STATES.ANSWERED && equipmentChanged.value === 'yes';
+
+  const exerciseOptions = useMemo(() => {
+    const list = Array.isArray(sessionData?.exercises) ? sessionData.exercises : [];
+    return list
+      .filter((ex) => ex?.id != null)
+      .map((ex) => ({
+        value: String(ex.id),
+        labelFr: ex.name || String(ex.id)
+      }));
+  }, [sessionData?.exercises]);
+
+  const allowedExerciseIds = useMemo(
+    () => exerciseOptions.map((o) => o.value),
+    [exerciseOptions]
+  );
+
+  const canSave = useMemo(() => {
+    if (dirtyKeys.size === 0) return false;
+    const patch = {};
+    for (const key of dirtyKeys) {
+      patch[key] = answers[key] || EMPTY_CELL;
+    }
+    if (hasSignificantCatalogAnswers(patch)) return true;
+    // Effacement seul sur un feedback déjà présent
+    return Boolean(sessionData?.existingFeedback) && dirtyKeys.size > 0;
+  }, [answers, dirtyKeys, sessionData?.existingFeedback]);
+
+  const rapidAnswered = countAnswered(answers, RAPID_QUESTION_IDS);
+
+  const handleSave = async () => {
+    if (!canSave || saving) return;
+    const sessionDate = sessionData?.date
+      ? typeof sessionData.date === 'string'
+        ? sessionData.date
+        : getDateStr(new Date(sessionData.date))
       : getDateStr(new Date());
-    
-    const hasLoadSnapshot = sessionData?.workoutLoadSnapshot && typeof sessionData.workoutLoadSnapshot === 'object';
 
-    const feedbackData = {
-      ...feedback,
+    const catalogDraft = {};
+    for (const key of dirtyKeys) {
+      catalogDraft[key] = answers[key] || EMPTY_CELL;
+    }
+
+    const hasLoadSnapshot =
+      sessionData?.workoutLoadSnapshot && typeof sessionData.workoutLoadSnapshot === 'object';
+
+    const payload = {
       date: sessionDate,
-      timestamp: new Date().toISOString(),
+      catalogDraft,
+      catalogContext: { allowedExerciseIds },
+      useCatalogCommit: true,
       sessionPayloadVersion: hasLoadSnapshot ? 3 : 2,
       sessionId: sessionData?.id || Date.now(),
-      sessionDuration: sessionData?.duration || 0,
-      totalReps: sessionData?.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0,
+      sessionDuration: sessionData?.duration ?? null,
+      totalReps:
+        typeof sessionData?.totalReps === 'number'
+          ? sessionData.totalReps
+          : sessionData?.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps, 10) || 0), 0) ||
+            0,
       totalExercises: sessionData?.exercises?.length || 0,
       exercisesSnapshot: Array.isArray(sessionData?.exercises)
         ? sessionData.exercises.map((ex) => ({
@@ -123,559 +183,444 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
               ? { weightEntered: ex.weightEntered }
               : {}),
             ...(ex.perArm === true ? { perArm: true } : {}),
-            ...(Array.isArray(ex.setWeights) && ex.setWeights.length ? { setWeights: [...ex.setWeights] } : {}),
+            ...(Array.isArray(ex.setWeights) && ex.setWeights.length
+              ? { setWeights: [...ex.setWeights] }
+              : {}),
             ...(Number.isFinite(Number(ex.volumeKg)) ? { volumeKg: Number(ex.volumeKg) } : {})
           }))
         : [],
       ...(hasLoadSnapshot ? { workoutLoadSnapshot: sessionData.workoutLoadSnapshot } : {})
     };
-    onSave(feedbackData);
-    onClose();
-  };
 
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    setSaving(true);
+    try {
+      await onSave(payload);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const renderStarRating = (field, label, value, color = 'yellow', description = '') => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-white font-medium">{label}</label>
-        {description && (
-          <span className="text-xs text-slate-400">{description}</span>
-        )}
-      </div>
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(star => (
-          <button
-            key={star}
-            onClick={() => handleStarClick(field, star)}
-            className={`transition-all duration-200 hover:scale-110 ${
-              star <= value
-                ? `text-${color}-400 hover:text-${color}-300`
-                : 'text-slate-600 hover:text-slate-500'
-            }`}
-          >
-            <Star size={18} fill={star <= value ? 'currentColor' : 'none'} />
-          </button>
-        ))}
-        <span className="ml-2 text-slate-300 text-sm font-medium">
-          {value > 0 ? `${value}/10` : t('sessionFeedback.step1.notEvaluated')}
-        </span>
-      </div>
-      {value > 0 && (
-        <div className="text-xs text-slate-400">
-          {getValueDescription(field, value)}
-        </div>
-      )}
-    </div>
-  );
-
-  const getValueDescription = (field, value) => {
-    const fieldMap = {
-      ressenti: 'feeling',
-      difficulte: 'difficulty',
-      energieDebut: 'energyBefore',
-      energieFin: 'energyAfter',
-      motivation: 'motivation',
-      douleur: 'pain',
-      sommeil: 'sleep',
-      hydratation: 'hydration',
-      nutrition: 'nutrition'
-    };
-    const mappedField = fieldMap[field] || field;
-    return t(`sessionFeedback.descriptions.${mappedField}.${value}`, '');
-  };
-
-  const getRessentiFace = (value) => {
-    if (value >= 8) return <Smile className="text-green-400" size={24} />;
-    if (value >= 5) return <Meh className="text-yellow-400" size={24} />;
-    if (value > 0) return <Frown className="text-red-400" size={24} />;
-    return null;
-  };
-
-  const getProgressColor = () => {
-    const progress = (currentStep / totalSteps) * 100;
-    if (progress >= 75) return 'bg-green-500';
-    if (progress >= 50) return 'bg-yellow-500';
-    if (progress >= 25) return 'bg-orange-500';
-    return 'bg-red-500';
+  const toggleSection = (key) => {
+    setSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-3 pb-6 pt-20 backdrop-blur-sm sm:items-center sm:p-4 sm:pb-6 sm:pt-4">
-      <div className="w-full max-h-[min(88vh,720px)] max-w-4xl overflow-y-auto rounded-xl border-2 border-[#0F4C5C]/75 bg-black shadow-2xl shadow-black/50">
-        {/* En-tête avec progression */}
-        <div className="flex items-center justify-between border-b border-[#0F4C5C]/40 p-4 sm:p-6">
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-white sm:text-2xl">
-              <MessageSquare className="text-teal-400" />
-              {t('sessionFeedback.title')}
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 px-3 pb-4 pt-16 backdrop-blur-sm sm:items-center sm:p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-feedback-title"
+        className="flex w-full max-h-[min(92vh,760px)] max-w-2xl flex-col overflow-hidden rounded-2xl border border-[#0F4C5C]/70 bg-[#05080a] shadow-2xl shadow-black/60"
+      >
+        <header className="flex items-center justify-between gap-3 border-b border-[#0F4C5C]/40 px-4 py-3.5 sm:px-5">
+          <div className="min-w-0">
+            <h2
+              id="session-feedback-title"
+              className="flex items-center gap-2 text-lg font-semibold text-white sm:text-xl"
+            >
+              <MessageSquare className="shrink-0 text-teal-400" size={20} />
+              <span className="truncate">{t('sessionFeedback.title', 'Feedback de séance')}</span>
             </h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-teal-600">{t('sessionFeedback.step', { current: currentStep, total: totalSteps })}</span>
-              <div className="h-2 w-32 overflow-hidden rounded-full bg-black ring-1 ring-[#0F4C5C]/50">
-                <div 
-                  className={`h-full transition-all duration-300 ${getProgressColor()}`}
-                  style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                />
-              </div>
-            </div>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {showDetailed ? 'Détaillé' : 'Rapide'}
+              {rapidAnswered > 0 ? ` · ${rapidAnswered}/4 rapides` : ''}
+            </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-lg border border-[#0F4C5C]/50 bg-black p-2 transition-all hover:border-teal-500/50 hover:bg-[#0F4C5C]/20"
+            className="rounded-lg border border-[#0F4C5C]/45 p-2 text-slate-300 transition hover:border-teal-500/40 hover:bg-[#0F4C5C]/20"
+            aria-label="Fermer"
           >
-            <X size={20} className="text-white" />
+            <X size={18} />
           </button>
-        </div>
+        </header>
 
-        <div className="p-4 sm:p-6">
-          {/* Résumé de la séance */}
-          {sessionData && (
-            <div className="mb-6 rounded-lg border border-[#0F4C5C]/40 bg-black p-4">
-              <h3 className="text-white font-medium mb-3 flex items-center gap-2">
-                <Activity className="text-green-400" size={16} />
-                {t('sessionFeedback.summary.title')}
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+          <SessionFeedbackSummaryBar sessionData={sessionData} />
+
+          <div className="space-y-5">
+            <section className="space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-400/90">
+                Feedback rapide
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {sessionData.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0}
-                  </div>
-                  <div className="text-teal-700">{t('sessionFeedback.summary.totalReps')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {sessionData.exercises?.length || 0}
-                  </div>
-                  <div className="text-teal-700">{t('sessionFeedback.summary.exercises')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {Math.round((sessionData.duration || 0) / 60) || 'N/A'}min
-                  </div>
-                  <div className="text-teal-700">{t('sessionFeedback.summary.estimatedDuration')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {formatDate(new Date(), { weekday: 'short' })}
-                  </div>
-                  <div className="text-teal-700">{t('sessionFeedback.summary.today')}</div>
-                </div>
-              </div>
-            </div>
-          )}
+              <FeedbackScaleControl
+                questionId="experience"
+                cell={cellOrEmpty(answers, 'experience')}
+                onChange={(c) => setCell('experience', c)}
+                onClear={() => clearCell('experience')}
+              />
+              <FeedbackScaleControl
+                questionId="effort"
+                cell={cellOrEmpty(answers, 'effort')}
+                onChange={(c) => setCell('effort', c)}
+                onClear={() => clearCell('effort')}
+              />
+              <FeedbackScaleControl
+                questionId="energy_before"
+                cell={cellOrEmpty(answers, 'energy_before')}
+                onChange={(c) => setCell('energy_before', c)}
+                onClear={() => clearCell('energy_before')}
+              />
+              <FeedbackSegmentControl
+                questionId="pain_presence"
+                cell={cellOrEmpty(answers, 'pain_presence')}
+                onChange={(c) => setCell('pain_presence', c)}
+                onClear={() => clearCell('pain_presence')}
+                compact
+              />
+            </section>
 
-          {/* Étape 1: Ressenti général */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Heart className="text-red-400" />
-                {t('sessionFeedback.step1.title')}
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    {renderStarRating('ressenti', t('sessionFeedback.step1.questions.feeling'), feedback.ressenti, 'green')}
-                    {getRessentiFace(feedback.ressenti)}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {renderStarRating('difficulte', t('sessionFeedback.step1.questions.difficulty'), feedback.difficulte, 'red')}
-                </div>
-
-                <div className="space-y-4">
-                  {renderStarRating('motivation', t('sessionFeedback.step1.questions.motivation'), feedback.motivation, 'purple')}
-                </div>
-
-                <div className="space-y-4">
-                  {renderStarRating('douleur', t('sessionFeedback.step1.questions.pain'), feedback.douleur, 'orange', t('sessionFeedback.step1.questions.painHint'))}
-                </div>
-              </div>
-
-              {/* Objectif atteint */}
-              <div className="space-y-3">
-                <label className="text-white font-medium flex items-center gap-2">
-                  <Target className="text-blue-400" size={16} />
-                  {t('sessionFeedback.step1.goal.title')}
-                </label>
-                <div className="flex gap-3">
-                  {[
-                    { value: true, label: t('sessionFeedback.step1.goal.yes'), color: 'bg-green-600' },
-                    { value: false, label: t('sessionFeedback.step1.goal.no'), color: 'bg-red-600' },
-                    { value: null, label: t('sessionFeedback.step1.goal.none'), color: 'bg-slate-600' }
-                  ].map(option => (
-                    <button
-                      key={String(option.value)}
-                      onClick={() => setFeedback(prev => ({ ...prev, objectifAtteint: option.value }))}
-                      className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                        feedback.objectifAtteint === option.value
-                          ? `${option.color} text-white`
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Étape 2: Énergie et condition physique */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Zap className="text-yellow-400" />
-                {t('sessionFeedback.step2.title')}
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {renderStarRating('energieDebut', t('sessionFeedback.step2.questions.energyBefore'), feedback.energieDebut, 'blue')}
-                </div>
-
-                <div className="space-y-4">
-                  {renderStarRating('energieFin', t('sessionFeedback.step2.questions.energyAfter'), feedback.energieFin, 'cyan')}
-                </div>
-
-                <div className="space-y-4">
-                  {renderStarRating('sommeil', t('sessionFeedback.step2.questions.sleep'), feedback.sommeil, 'indigo')}
-                </div>
-
-                <div className="space-y-4">
-                  {renderStarRating('hydratation', t('sessionFeedback.step2.questions.hydration'), feedback.hydratation, 'blue')}
-                </div>
-
-                <div className="space-y-4 md:col-span-2">
-                  {renderStarRating('nutrition', t('sessionFeedback.step2.questions.nutrition'), feedback.nutrition, 'green')}
-                </div>
-              </div>
-
-              {/* Analyse énergétique */}
-              {(feedback.energieDebut > 0 && feedback.energieFin > 0) && (
-                <div className="bg-slate-700/30 rounded-lg p-4">
-                  <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                    <TrendingUp size={16} className="text-green-400" />
-                    {t('sessionFeedback.step2.analysis.title')}
-                  </h4>
-                  <div className="text-sm text-slate-300">
-                    {feedback.energieFin > feedback.energieDebut && (
-                      <div className="text-green-400">{t('sessionFeedback.step2.analysis.gained')}</div>
-                    )}
-                    {feedback.energieFin === feedback.energieDebut && (
-                      <div className="text-blue-400">{t('sessionFeedback.step2.analysis.stable')}</div>
-                    )}
-                    {feedback.energieFin < feedback.energieDebut && feedback.energieFin >= 5 && (
-                      <div className="text-yellow-400">{t('sessionFeedback.step2.analysis.slightDrop')}</div>
-                    )}
-                    {feedback.energieFin < feedback.energieDebut && feedback.energieFin < 5 && (
-                      <div className="text-orange-400">{t('sessionFeedback.step2.analysis.bigDrop')}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Étape 3: Contexte et environnement */}
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Calendar className="text-purple-400" />
-                {t('sessionFeedback.step3.title')}
-              </h3>
-
-              {/* Environnement */}
-              <div className="space-y-3">
-                <label className="text-white font-medium">{t('sessionFeedback.step3.environment.title')}</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {environmentOptions.map(env => (
-                    <button
-                      key={env.value}
-                      onClick={() => setFeedback(prev => ({ ...prev, environnement: env.value }))}
-                      className={`p-3 rounded-lg text-sm transition-all flex flex-col items-center gap-2 ${
-                        feedback.environnement === env.value
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      }`}
-                    >
-                      <span className="text-2xl">{env.icon}</span>
-                      <span>{env.label.split(' ')[1]}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Météo si extérieur */}
-              {(feedback.environnement === 'exterieur' || feedback.environnement === 'parc') && (
-                <div className="space-y-3">
-                  <label className="text-white font-medium">{t('sessionFeedback.step3.weather.title')}</label>
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                    {weatherOptions.map(weather => (
-                      <button
-                        key={weather.value}
-                        onClick={() => setFeedback(prev => ({ ...prev, meteo: weather.value }))}
-                        className={`p-2 rounded-lg text-xs transition-all flex flex-col items-center gap-1 ${
-                          feedback.meteo === weather.value
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        }`}
-                      >
-                        <span className="text-lg">{weather.icon}</span>
-                        <span>{weather.label.split(' ')[1]}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Équipement utilisé */}
-              <div className="space-y-3">
-                <label className="text-white font-medium">{t('sessionFeedback.step3.equipment.title')}</label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {equipmentOptions.map(equipment => (
-                    <button
-                      key={equipment}
-                      onClick={() => handleEquipmentToggle(equipment)}
-                      className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                        feedback.equipementUtilise.includes(equipment)
-                          ? 'bg-green-600 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      }`}
-                    >
-                      {equipment}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Partenaire */}
-              <div className="space-y-3">
-                <label className="text-white font-medium">{t('sessionFeedback.step3.partner.title')}</label>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setFeedback(prev => ({ ...prev, partenaire: false }))}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                      !feedback.partenaire
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
-                  >
-                    {t('sessionFeedback.step3.partner.alone')}
-                  </button>
-                  <button
-                    onClick={() => setFeedback(prev => ({ ...prev, partenaire: true }))}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                      feedback.partenaire
-                        ? 'bg-green-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
-                  >
-                    {t('sessionFeedback.step3.partner.withSomeone')}
-                  </button>
-                </div>
-              </div>
-
-              {/* Temps de repos */}
-              <div className="space-y-3">
-                <label className="text-white font-medium">{t('sessionFeedback.step3.restTime.title')}</label>
-                <input
-                  type="text"
-                  value={feedback.tempsRepos}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, tempsRepos: e.target.value }))}
-                  placeholder={t('sessionFeedback.step3.restTime.placeholder')}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            {conditionalSelection.selected.map((q) => (
+              <section
+                key={q.id}
+                className="space-y-2 rounded-xl border border-teal-500/25 bg-teal-500/5 px-3 py-3"
+              >
+                {q.justificationFr && (
+                  <p className="text-[11px] text-teal-300/80">{q.justificationFr}</p>
+                )}
+                <FeedbackSegmentControl
+                  questionId={q.id}
+                  cell={cellOrEmpty(answers, q.id)}
+                  promptOverride={q.promptFr}
+                  onChange={(c) => setCell(q.id, c)}
+                  onClear={() => clearCell(q.id)}
                 />
-              </div>
-            </div>
-          )}
+                {Array.isArray(q.limits) && q.limits[0] && (
+                  <p className="text-[11px] text-slate-500">{q.limits[0]}</p>
+                )}
+              </section>
+            ))}
 
-          {/* Étape 4: Tags et notes */}
-          {currentStep === 4 && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Award className="text-yellow-400" />
-                {t('sessionFeedback.step4.title')}
-              </h3>
-
-              {/* Tags prédéfinis */}
-              <div className="space-y-4">
-                <label className="text-white font-medium">{t('sessionFeedback.step4.tags.title')}</label>
-                <div className="flex flex-wrap gap-2">
-                  {predefinedTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => handleTagToggle(tag)}
-                      className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                        feedback.tags.includes(tag)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Prochain objectif */}
-              <div className="space-y-3">
-                <label className="text-white font-medium flex items-center gap-2">
-                  <Target className="text-green-400" size={16} />
-                  {t('sessionFeedback.step4.nextGoal.title')}
-                </label>
-                <input
-                  type="text"
-                  value={feedback.prochainObjectif}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, prochainObjectif: e.target.value }))}
-                  placeholder={t('sessionFeedback.step4.nextGoal.placeholder')}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            {showPainDetails && !showDetailed && (
+              <section className="space-y-3 rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-3">
+                <p className="text-[11px] text-orange-200/80">
+                  Douleur déclarée — précisions facultatives
+                </p>
+                <FeedbackScaleControl
+                  questionId="pain_intensity"
+                  cell={cellOrEmpty(answers, 'pain_intensity')}
+                  onChange={(c) => setCell('pain_intensity', c)}
+                  onClear={() => clearCell('pain_intensity')}
                 />
-              </div>
-
-              {/* Musiques */}
-              <div className="space-y-3">
-                <label className="text-white font-medium">{t('sessionFeedback.step4.music.title')}</label>
-                <input
-                  type="text"
-                  value={feedback.musiquesEcoutees}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, musiquesEcoutees: e.target.value }))}
-                  placeholder={t('sessionFeedback.step4.music.placeholder')}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                <FeedbackSegmentControl
+                  questionId="pain_region"
+                  cell={cellOrEmpty(answers, 'pain_region')}
+                  onChange={(c) => setCell('pain_region', c)}
+                  onClear={() => clearCell('pain_region')}
+                  compact
                 />
-              </div>
-
-              {/* Notes libres */}
-              <div className="space-y-4">
-                <label className="text-white font-medium">{t('sessionFeedback.step4.notes.title')}</label>
-                <textarea
-                  value={feedback.notes}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder={t('sessionFeedback.step4.notes.placeholder')}
-                  className="w-full h-32 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                <FeedbackSegmentControl
+                  questionId="pain_effect"
+                  cell={cellOrEmpty(answers, 'pain_effect')}
+                  onChange={(c) => setCell('pain_effect', c)}
+                  onClear={() => clearCell('pain_effect')}
+                  compact
                 />
-              </div>
+              </section>
+            )}
 
-              {/* Analyse finale */}
-              {(feedback.ressenti > 0 || feedback.difficulte > 0) && (
-                <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-4 border border-purple-600/30">
-                  <h4 className="text-white font-medium mb-3 flex items-center gap-2">
-                    <TrendingUp size={16} className="text-green-400" />
-                    {t('sessionFeedback.step4.analysis.title')}
-                  </h4>
-                  <div className="text-sm text-slate-300 space-y-2">
-                    {feedback.ressenti >= 8 && feedback.difficulte <= 6 && (
-                      <div className="text-green-400 flex items-center gap-2">
-                        <span>✅</span>
-                        <span>{t('sessionFeedback.step4.analysis.excellent')}</span>
-                      </div>
-                    )}
-                    {feedback.ressenti <= 4 && feedback.difficulte >= 7 && (
-                      <div className="text-orange-400 flex items-center gap-2">
-                        <span>⚠️</span>
-                        <span>{t('sessionFeedback.step4.analysis.difficult')}</span>
-                      </div>
-                    )}
-                    {feedback.energieDebut <= 3 && feedback.ressenti >= 7 && (
-                      <div className="text-blue-400 flex items-center gap-2">
-                        <span>💪</span>
-                        <span>{t('sessionFeedback.step4.analysis.transformed')}</span>
-                      </div>
-                    )}
-                    {feedback.ressenti > 0 && feedback.difficulte > 0 && (
-                      <div className="text-slate-300 flex items-center gap-2">
-                        <span>📊</span>
-                        <span>
-                          {t('sessionFeedback.step4.analysis.ratio', {
-                            ratio: Math.round((feedback.ressenti / feedback.difficulte) * 100),
-                            comment: feedback.ressenti / feedback.difficulte > 1.2 
-                              ? t('sessionFeedback.step4.analysis.ratioComments.veryEffective')
-                              : feedback.ressenti / feedback.difficulte > 0.8 
-                              ? t('sessionFeedback.step4.analysis.ratioComments.wellBalanced')
-                              : t('sessionFeedback.step4.analysis.ratioComments.canOptimize')
-                          })}
-                        </span>
-                      </div>
-                    )}
-                    {feedback.objectifAtteint === true && (
-                      <div className="text-green-400 flex items-center gap-2">
-                        <span>🎉</span>
-                        <span>{t('sessionFeedback.step4.analysis.goalReached')}</span>
-                      </div>
-                    )}
-                    {feedback.douleur >= 6 && (
-                      <div className="text-red-400 flex items-center gap-2">
-                        <span>🚨</span>
-                        <span>{t('sessionFeedback.step4.analysis.highPain')}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Actions avec navigation */}
-        <div className="flex items-center justify-between p-6 border-t border-slate-700">
-          <div className="flex gap-3">
-            {currentStep > 1 && (
+            <div className="pt-1">
               <button
                 type="button"
-                onClick={prevStep}
-                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                onClick={() => setShowDetailed((v) => !v)}
+                className="flex w-full items-center justify-between rounded-xl border border-[#0F4C5C]/50 bg-[#0F4C5C]/10 px-4 py-3 text-sm font-medium text-teal-100 transition hover:bg-[#0F4C5C]/20"
               >
-                {t('sessionFeedback.actions.previous')}
+                <span>{showDetailed ? 'Masquer les détails' : 'Ajouter des détails'}</span>
+                {showDetailed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
+            </div>
+
+            {showDetailed && (
+              <div className="space-y-3">
+                <FeedbackCollapsibleSection
+                  id="fb-recovery"
+                  title="État initial et récupération"
+                  open={sections.recovery}
+                  onToggle={() => toggleSection('recovery')}
+                >
+                  <FeedbackScaleControl
+                    questionId="motivation_before"
+                    cell={cellOrEmpty(answers, 'motivation_before')}
+                    onChange={(c) => setCell('motivation_before', c)}
+                    onClear={() => clearCell('motivation_before')}
+                  />
+                  <FeedbackScaleControl
+                    questionId="energy_after"
+                    cell={cellOrEmpty(answers, 'energy_after')}
+                    onChange={(c) => setCell('energy_after', c)}
+                    onClear={() => clearCell('energy_after')}
+                  />
+                  <FeedbackScaleControl
+                    questionId="sleep_prev"
+                    cell={cellOrEmpty(answers, 'sleep_prev')}
+                    onChange={(c) => setCell('sleep_prev', c)}
+                    onClear={() => clearCell('sleep_prev')}
+                  />
+                  <FeedbackSegmentControl
+                    questionId="fed_enough"
+                    cell={cellOrEmpty(answers, 'fed_enough')}
+                    onChange={(c) => setCell('fed_enough', c)}
+                    onClear={() => clearCell('fed_enough')}
+                  />
+                  <FeedbackSegmentControl
+                    questionId="hydrated_enough"
+                    cell={cellOrEmpty(answers, 'hydrated_enough')}
+                    onChange={(c) => setCell('hydrated_enough', c)}
+                    onClear={() => clearCell('hydrated_enough')}
+                  />
+                </FeedbackCollapsibleSection>
+
+                <FeedbackCollapsibleSection
+                  id="fb-intent"
+                  title="Objectif et déroulement"
+                  open={sections.intent}
+                  onToggle={() => toggleSection('intent')}
+                >
+                  <FeedbackSegmentControl
+                    questionId="session_intent"
+                    cell={cellOrEmpty(answers, 'session_intent')}
+                    onChange={(c) => setCell('session_intent', c)}
+                    onClear={() => clearCell('session_intent')}
+                  />
+                  {showIntentAttained && (
+                    <FeedbackSegmentControl
+                      questionId="intent_attained"
+                      cell={cellOrEmpty(answers, 'intent_attained')}
+                      onChange={(c) => setCell('intent_attained', c)}
+                      onClear={() => clearCell('intent_attained')}
+                      compact
+                    />
+                  )}
+                </FeedbackCollapsibleSection>
+
+                {showPainDetails && (
+                  <FeedbackCollapsibleSection
+                    id="fb-pain"
+                    title="Douleur"
+                    open={sections.pain}
+                    onToggle={() => toggleSection('pain')}
+                    badge="déclarée"
+                  >
+                    <FeedbackScaleControl
+                      questionId="pain_intensity"
+                      cell={cellOrEmpty(answers, 'pain_intensity')}
+                      onChange={(c) => setCell('pain_intensity', c)}
+                      onClear={() => clearCell('pain_intensity')}
+                    />
+                    <FeedbackSegmentControl
+                      questionId="pain_region"
+                      cell={cellOrEmpty(answers, 'pain_region')}
+                      onChange={(c) => setCell('pain_region', c)}
+                      onClear={() => clearCell('pain_region')}
+                    />
+                    <FeedbackSegmentControl
+                      questionId="pain_side"
+                      cell={cellOrEmpty(answers, 'pain_side')}
+                      onChange={(c) => setCell('pain_side', c)}
+                      onClear={() => clearCell('pain_side')}
+                      compact
+                    />
+                    <FeedbackSegmentControl
+                      questionId="pain_onset"
+                      cell={cellOrEmpty(answers, 'pain_onset')}
+                      onChange={(c) => setCell('pain_onset', c)}
+                      onClear={() => clearCell('pain_onset')}
+                    />
+                    <FeedbackSegmentControl
+                      questionId="pain_effect"
+                      cell={cellOrEmpty(answers, 'pain_effect')}
+                      onChange={(c) => setCell('pain_effect', c)}
+                      onClear={() => clearCell('pain_effect')}
+                    />
+                    {exerciseOptions.length > 0 && (
+                      <FeedbackSegmentControl
+                        questionId="pain_exercise"
+                        cell={cellOrEmpty(answers, 'pain_exercise')}
+                        onChange={(c) => setCell('pain_exercise', c)}
+                        onClear={() => clearCell('pain_exercise')}
+                        optionsOverride={exerciseOptions}
+                      />
+                    )}
+                  </FeedbackCollapsibleSection>
+                )}
+
+                <FeedbackCollapsibleSection
+                  id="fb-context"
+                  title="Contexte"
+                  open={sections.context}
+                  onToggle={() => toggleSection('context')}
+                >
+                  <FeedbackSegmentControl
+                    questionId="place"
+                    cell={cellOrEmpty(answers, 'place')}
+                    onChange={(c) => setCell('place', c)}
+                    onClear={() => clearCell('place')}
+                    compact
+                  />
+                  <FeedbackSegmentControl
+                    questionId="equipment_changed"
+                    cell={cellOrEmpty(answers, 'equipment_changed')}
+                    onChange={(c) => setCell('equipment_changed', c)}
+                    onClear={() => clearCell('equipment_changed')}
+                    compact
+                  />
+                  {showEquipmentNote && (
+                    <FeedbackTextField
+                      questionId="equipment_changed_note"
+                      cell={cellOrEmpty(answers, 'equipment_changed_note')}
+                      onChange={(c) => setCell('equipment_changed_note', c)}
+                      onClear={() => clearCell('equipment_changed_note')}
+                    />
+                  )}
+                  <FeedbackSegmentControl
+                    questionId="rest_band"
+                    cell={cellOrEmpty(answers, 'rest_band')}
+                    onChange={(c) => setCell('rest_band', c)}
+                    onClear={() => clearCell('rest_band')}
+                    compact
+                  />
+                  <FeedbackSegmentControl
+                    questionId="partner"
+                    cell={cellOrEmpty(answers, 'partner')}
+                    onChange={(c) => setCell('partner', c)}
+                    onClear={() => clearCell('partner')}
+                    compact
+                  />
+                  <FeedbackMultiSelect
+                    questionId="context_tags"
+                    cell={cellOrEmpty(answers, 'context_tags')}
+                    onChange={(c) => setCell('context_tags', c)}
+                    onClear={() => clearCell('context_tags')}
+                  />
+                </FeedbackCollapsibleSection>
+
+                <FeedbackCollapsibleSection
+                  id="fb-notes"
+                  title="Notes et informations secondaires"
+                  open={sections.notes}
+                  onToggle={() => toggleSection('notes')}
+                >
+                  <FeedbackTextField
+                    questionId="notes"
+                    cell={cellOrEmpty(answers, 'notes')}
+                    onChange={(c) => setCell('notes', c)}
+                    onClear={() => clearCell('notes')}
+                    rows={3}
+                  />
+                  <FeedbackTextField
+                    questionId="music"
+                    cell={cellOrEmpty(answers, 'music')}
+                    onChange={(c) => setCell('music', c)}
+                    onClear={() => clearCell('music')}
+                  />
+                  <FeedbackSegmentControl
+                    questionId="weather"
+                    cell={cellOrEmpty(answers, 'weather')}
+                    onChange={(c) => setCell('weather', c)}
+                    onClear={() => clearCell('weather')}
+                    compact
+                  />
+                </FeedbackCollapsibleSection>
+
+              </div>
             )}
+
+          </div>
+        </div>
+
+        <footer className="flex items-center justify-between gap-3 border-t border-[#0F4C5C]/40 bg-black/50 px-4 py-3 sm:px-5">
+          <p className="text-[11px] text-slate-500">
+            {canSave
+              ? 'Enregistrement dès qu’une réponse est renseignée'
+              : 'Une réponse suffit pour enregistrer'}
+          </p>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+              className="rounded-lg border border-[#0F4C5C]/50 px-3 py-2 text-sm text-slate-300 hover:bg-white/5"
             >
-              {t('sessionFeedback.actions.skip')}
+              Fermer
+            </button>
+            <button
+              type="button"
+              disabled={!canSave || saving}
+              onClick={handleSave}
+              className={[
+                'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                canSave && !saving
+                  ? 'bg-teal-500 text-black hover:bg-teal-400'
+                  : 'cursor-not-allowed bg-slate-800 text-slate-500'
+              ].join(' ')}
+            >
+              <Save size={15} />
+              {saving ? '…' : 'Enregistrer'}
             </button>
           </div>
-          
-          <div className="flex gap-3">
-            {currentStep < totalSteps ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg"
-              >
-                {t('sessionFeedback.actions.next')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={feedback.ressenti === 0 && feedback.difficulte === 0}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <Save size={16} />
-                {t('sessionFeedback.actions.save')}
-              </button>
-            )}
-          </div>
-        </div>
+        </footer>
       </div>
     </div>
   );
 };
+
+function FeedbackTextField({ questionId, cell, onChange, onClear, rows = 1 }) {
+  const question = getQuestion(questionId);
+  if (!question) return null;
+  const value =
+    cell?.state === ANSWER_STATES.ANSWERED && typeof cell.value === 'string' ? cell.value : '';
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-white leading-snug">{question.promptFr}</p>
+        {value && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="shrink-0 rounded-md px-2 py-1 text-[11px] text-slate-400 hover:bg-white/5 hover:text-white"
+          >
+            Effacer
+          </button>
+        )}
+      </div>
+      {rows > 1 ? (
+        <textarea
+          value={value}
+          rows={rows}
+          maxLength={question.value?.maxLength || 2000}
+          onChange={(e) => {
+            const text = e.target.value;
+            if (!text.trim()) {
+              onChange(makeAnswer(ANSWER_STATES.NOT_ANSWERED, null));
+              return;
+            }
+            onChange(makeAnswer(ANSWER_STATES.ANSWERED, text));
+          }}
+          className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-teal-500/50 focus:outline-none"
+          placeholder="Facultatif"
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          maxLength={question.value?.maxLength || 200}
+          onChange={(e) => {
+            const text = e.target.value;
+            if (!text.trim()) {
+              onChange(makeAnswer(ANSWER_STATES.NOT_ANSWERED, null));
+              return;
+            }
+            onChange(makeAnswer(ANSWER_STATES.ANSWERED, text));
+          }}
+          className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-teal-500/50 focus:outline-none"
+          placeholder="Facultatif"
+        />
+      )}
+    </div>
+  );
+}
 
 export default SessionFeedback;

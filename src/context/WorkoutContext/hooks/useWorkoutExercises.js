@@ -22,6 +22,7 @@ import {
   setSessionCommitDirty
 } from '../sessionDraftStore';
 import { yieldToNextPaint, scheduleTodayCheckIdle } from '../../../utils/todayCheckMeasure';
+import { spanTodayDiag } from '../../../dev/todayDiagnostics/todayDiag';
 import { readServerTokens } from '../../../utils/serverAuthApi';
 import { flushWorkoutAggregateCloudPushNow } from '../../../services/workout/workoutAggregateCloudSync';
 
@@ -243,6 +244,7 @@ export const useWorkoutExercises = (
         try {
         cancelPendingAutoSave?.();
         await yieldToNextPaint();
+        const prepareSpan = spanTodayDiag('state', 'Préparation des données');
         const payload = overlayPersistedDayJustifications(
           force ? normalizeWorkoutDraft(td) : td,
           persistedData
@@ -250,6 +252,7 @@ export const useWorkoutExercises = (
         if (payload?.reps) payload.reps = { ...payload.reps };
         if (payload?.exerciseWeights) payload.exerciseWeights = { ...payload.exerciseWeights };
         sanitizeDraftForPersist(payload);
+        prepareSpan.end();
         const sessionDay =
           sessionDayOverride && /^\d{4}-\d{2}-\d{2}$/.test(sessionDayOverride)
             ? sessionDayOverride
@@ -257,6 +260,7 @@ export const useWorkoutExercises = (
               ? sessionCalendarDateStr
               : getDateStr(new Date());
         const revisionAtWrite = draftRevisionRef.current;
+        const writeSpan = spanTodayDiag('storage', 'Écriture locale');
         await updateData(payload, {
           strict: true,
           sessionDay,
@@ -264,6 +268,7 @@ export const useWorkoutExercises = (
           skipCloud: true,
           applyReactAfterPaint: force
         });
+        writeSpan.end();
 
         if (
           draftRevisionRef.current !== revisionAtWrite ||
@@ -389,7 +394,9 @@ export const useWorkoutExercises = (
     const persisted = persistMapsRef.current || {};
     const dirty = dirtyFlagsRef.current;
     if (!tempDataRef.current || !dirty.exercises) {
+      const copySpan = spanTodayDiag('state', 'Copie des cartes de séance');
       const draft = copySessionMaps(tempDataRef.current || persisted);
+      copySpan.end();
       tempDataRef.current = draft;
       return draft;
     }

@@ -183,6 +183,8 @@ const RecapTab = ({ isActive = true }) => {
   });
   const visitedRef = useRef(new Set());
   const panePropsRef = useRef({});
+  /** Mission 32 — état live pour exports/DOM (évite fermeture périmée pendant verify 8 périodes). */
+  const liveExportStateRef = useRef({});
   visitedRef.current.add(activeView);
 
   useEffect(() => {
@@ -754,14 +756,31 @@ const RecapTab = ({ isActive = true }) => {
           detail: { period: 'audit', phase: 'assemble_zip', index: 2, total: 2 }
         })
       );
-      const insights = liveBundle?.recapAssessment?.insights || recapAssessment?.insights || null;
+      const live = liveExportStateRef.current || {};
+      const insights = liveBundle?.recapAssessment?.insights || live.insights || recapAssessment?.insights || null;
       const p6 = liveBundle?.recapAssessment?.periodDiscoveries?.p6 || null;
+      const nameMapForLive = {};
+      Object.keys((live.snapshotForRecap || snapshotForRecap)?.reps || {}).forEach((key) => {
+        const id = key.slice(11);
+        if (!id || nameMapForLive[id]) return;
+        nameMapForLive[id] = getExerciseNameById?.(id) || '';
+      });
+      // Mission 33 — autorité des entrées = contextes hydratés (pas le snapshot seul)
       return assembleCompleteAuditDossier({
         eightPeriodExport,
         insights,
         measure: null,
         p6,
-        snapshot: snapshotForRecap,
+        snapshot: live.snapshotForRecap || snapshotForRecap,
+        activeProgram: live.activeProgram || activeProgram || null,
+        garminData: live.garminBundle || garminBundle || garminPartialForRecap || null,
+        nameMap: Object.keys(nameMapForLive).length ? nameMapForLive : live.nameMap || null,
+        analyticalMemory:
+          eightPeriodExport?.analyticalMemorySnapshot ||
+          window.__momentumEightPeriodMemoryFreeze ||
+          live.analyticalMemory ||
+          null,
+        analysisWindowEnd: live.analysisWindowEnd || periodWindow?.end || null,
         download: opts.download !== false,
         includeLiveGames: opts.includeLiveGames !== false,
         domVerify: opts.domVerify || window.__momentumLastDomVerify || null
@@ -1000,24 +1019,45 @@ const RecapTab = ({ isActive = true }) => {
       const { verifyEightPeriodsAgainstDom } = await import(
         '../../utils/sport/evaluation/domEightPeriodVerify'
       );
+      const { downloadAnalysisJson } = await import('../../utils/sport/analysisExportDownload');
       const initial = deferredPeriod;
       const report = await verifyEightPeriodsAgainstDom({
         initialPeriod: initial,
         setPeriod: (next) => setPeriod(next),
-        getState: () => ({
-          analysisStatus,
-          analysisPeriod: analysisPeriod || deferredPeriod,
-          selectedPeriod: deferredPeriod,
-          insights: recapAssessment?.insights || null,
-          edition: analysisEditionKey()
-        }),
+        // Lire le ref live — pas la fermeture React du moment du clic
+        getState: () => {
+          const live = liveExportStateRef.current || {};
+          return {
+            analysisStatus: live.analysisStatus,
+            analysisPeriod: live.analysisPeriod || live.deferredPeriod,
+            selectedPeriod: live.deferredPeriod,
+            insights: live.insights || null,
+            insightsPublication: live.insightsPublication || null,
+            periodWindowStart: live.periodWindowStart || null,
+            periodWindowEnd: live.periodWindowEnd || null,
+            edition: live.edition || analysisEditionKey(),
+            fingerprintDigest: live.fingerprintDigest || null
+          };
+        },
         onProgress: (detail) => {
           window.dispatchEvent(new CustomEvent('momentum:analysis-export-progress', { detail }));
         },
         ...opts
       });
       window.__momentumLastDomVerify = report;
-      return report;
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `momentum-DOM-EIGHT-PERIODS-${stamp}.json`;
+      if (opts.download === false) {
+        return { ...report, filename, download: { ok: true, skipped: true, filename } };
+      }
+      const dl = downloadAnalysisJson(report, { filename });
+      return {
+        ...report,
+        filename,
+        download: { ...dl, filename },
+        noticeHint:
+          'DOM enregistré. Relancer « Exporter le dossier d’audit complet » pour l’inclure dans le ZIP.'
+      };
     };
 
     window.momentumInjectEvalArchive = async (payload) => {
@@ -1060,6 +1100,28 @@ const RecapTab = ({ isActive = true }) => {
     analysisStatus,
     analysisPeriod
   ]);
+
+  // Mission 32/33 — tenir le ref à jour à chaque rendu (verify DOM / exports / LIVE_INPUTS)
+  liveExportStateRef.current = {
+    analysisStatus,
+    analysisPeriod,
+    deferredPeriod,
+    insights: recapAssessment?.insights || null,
+    insightsPublication: recapAssessment?.insightsPublication || null,
+    periodWindowStart: periodWindow?.start || null,
+    periodWindowEnd: periodWindow?.end || null,
+    edition: analysisEditionKey(),
+    fingerprintDigest:
+      recapAssessment?.insightsPublication?.dataFingerprint?.digest ||
+      recapAssessment?.dataFingerprint?.digest ||
+      null,
+    snapshotForRecap,
+    activeProgram: activeProgram || null,
+    garminBundle: garminBundle || garminPartialForRecap || null,
+    nameMap: null,
+    analyticalMemory: typeof window !== 'undefined' ? window.__momentumEightPeriodMemoryFreeze || null : null,
+    analysisWindowEnd: periodWindow?.end || null
+  };
 
   useEffect(() => {
     try {

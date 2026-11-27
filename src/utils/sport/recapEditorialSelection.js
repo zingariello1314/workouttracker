@@ -433,6 +433,20 @@ export function editorialValueAdjustments(d, voiceKey = 'week') {
     factors.push({ id: 'shallow_composition', delta: -5 });
   }
 
+  // Mission 34 — association sommeil : rester descriptif / associatif, pas causal
+  if (/disc_sleep/i.test(kind) && !m.associationOnly) {
+    delta -= 2;
+    factors.push({ id: 'sleep_prefer_association_framing', delta: -2 });
+  }
+  // Format consolidation / émergence générique sans mécanisme : valeur marginale faible en priorité
+  if (
+    (/disc_format_consolidation|disc_emergence/i.test(kind) && !attrib && !m.trajectoryImplicationRule) ||
+    phen === 'emergence_generic'
+  ) {
+    delta -= 4;
+    factors.push({ id: 'generic_emergence_or_format_without_mechanism', delta: -4 });
+  }
+
   return { delta, factors, phenomenon: phen, phenomenonId: phenomenonIdentity(d) };
 }
 

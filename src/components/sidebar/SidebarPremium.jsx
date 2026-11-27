@@ -1,80 +1,81 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useSidebarData } from '../../hooks/useSidebarData';
 import { useNavigation } from '../../hooks/useNavigation';
 import { useAuth } from '../../context/AuthContext';
 import { measureSync, SIDEBAR_OPERATIONS } from '../../utils/performanceMonitor';
+import { isDiagFlag } from '../../dev/todayDiagnostics/diagIsolation';
 import ProfileCard3D from './ProfileCard3D';
 import GradeArtCardOffer from './GradeArtCardOffer';
 import ModuleRenderer from './ModuleRenderer';
 import SpotifySidebarCard from './SpotifySidebarCard';
+import SidebarClock from './SidebarClock';
 import '../../styles/sidebar-premium.css';
 import '../../styles/module-alternation.css';
 
 /**
- * Composant principal de la Sidebar Premium QuietQuest
- * Affiche toutes les informations vitales et actions rapides de l'utilisateur
- * 
- * Optimisations de performance:
- * - React.memo pour éviter les re-renders inutiles
- * - useMemo pour les calculs coûteux
- * - useCallback pour les fonctions stables
- * - Lazy loading des sections
- * - Intersection Observer pour le rendu conditionnel
+ * Sidebar Premium QuietQuest.
+ *
+ * P0.4 : l’horloge est isolée dans SidebarClock pour que le tick 1s ne
+ * re-rende plus ModuleRenderer / ProfileCard3D / useSidebarData.
  */
 const SidebarPremium = memo(() => {
+  if (isDiagFlag('suspendSidebarPremium')) {
+    return (
+      <aside
+        className="sidebar-premium sidebar-premium--diag-suspended"
+        role="complementary"
+        aria-label="Sidebar Premium suspendue (diagnostic)"
+        data-diag-suspend="sidebar-premium"
+      >
+        <p style={{ padding: 12, opacity: 0.7, fontSize: 12 }}>
+          SidebarPremium suspendue (diag). Aucune donnée métier n’est écrite.
+        </p>
+      </aside>
+    );
+  }
+
+  return <SidebarPremiumBody />;
+});
+
+const SidebarPremiumBody = memo(() => {
   const {
-    currentTime,
-    expandedSections,
     systemStatus,
     isMobileOpen,
     toggleSection,
     isSectionExpanded,
-    getFormattedTime,
-    getFormattedDate,
-    getFormattedDayMonth,
-    getFormattedYear,
     toggleMobileSidebar,
     closeMobileSidebar,
   } = useSidebar();
 
-  // Charger les données réelles depuis tous les modules
   const {
-    metrics,    // XP, Niveau, Streak, Focus
-    quests,     // Quêtes du jour
-    sport,      // Entraînements, Garmin
-    finance,    // Patrimoine, Budget
-    nutrition,  // Calories, Macros
-    learning,   // Livres, Pages
-    shopping,   // Listes de courses Smart Shopping
-    today,      // Agrégation des activités du jour
-    todayDate,  // Date du jour (format ISO)
+    metrics,
+    quests,
+    sport,
+    finance,
+    nutrition,
+    learning,
+    shopping,
+    today,
+    todayDate,
     isLoading
   } = useSidebarData();
 
-  // Hook de navigation
   const navigation = useNavigation();
-  const { setActiveTab } = navigation; // Extraire setActiveTab pour les modules historiques
-
-  // Même source que Paramètres (IndexedDB / profil réel), pas le stub hooks/useAuth.js
+  const { setActiveTab } = navigation;
   const { currentUser } = useAuth();
 
   const sidebarRef = React.useRef(null);
-  const observerRef = React.useRef(null);
 
-  // Optimisation: Throttle pour limiter les calculs de position avec monitoring de performance
-  const throttledUpdatePosition = React.useCallback(() => {
+  const throttledUpdatePosition = useCallback(() => {
     if (!sidebarRef.current) return;
 
-    // Utiliser requestAnimationFrame pour optimiser les performances
     requestAnimationFrame(() => {
       measureSync(SIDEBAR_OPERATIONS.SIDEBAR_REFRESH, () => {
         if (!sidebarRef.current) return;
 
-        // Vérifier si on est sur le dashboard (via la classe dashboard-active sur le body)
         const isDashboard = document.body.classList.contains('dashboard-active');
-        
-        // Sur le dashboard, la sidebar doit commencer à 127px du haut
+
         if (isDashboard) {
           sidebarRef.current.style.top = '127px';
           sidebarRef.current.style.height = 'calc(100vh - 127px)';
@@ -82,19 +83,18 @@ const SidebarPremium = memo(() => {
         }
 
         const header = document.querySelector('header');
-        const navigation = document.querySelector('nav');
-        
+        const navigationEl = document.querySelector('nav');
+
         let totalHeaderHeight = 0;
-        
+
         if (header) {
           totalHeaderHeight += header.offsetHeight;
         }
-        
-        if (navigation) {
-          totalHeaderHeight += navigation.offsetHeight;
+
+        if (navigationEl) {
+          totalHeaderHeight += navigationEl.offsetHeight;
         }
 
-        // Appliquer la position calculée avec transform pour de meilleures performances
         if (totalHeaderHeight > 0) {
           sidebarRef.current.style.top = `${totalHeaderHeight}px`;
           sidebarRef.current.style.height = `calc(100vh - ${totalHeaderHeight}px)`;
@@ -106,13 +106,9 @@ const SidebarPremium = memo(() => {
     });
   }, []);
 
-  // ✅ PHASE 1 : Calculer dynamiquement la hauteur du header pour positionner la sidebar
-  // ✅ Cleanup complet : event listeners, timers, observers
   React.useEffect(() => {
-    // Mettre à jour au montage
     throttledUpdatePosition();
 
-    // Throttle pour le resize (max 1 fois toutes les 100ms)
     let resizeTimeout;
     const handleResize = () => {
       if (resizeTimeout) {
@@ -122,8 +118,7 @@ const SidebarPremium = memo(() => {
     };
 
     window.addEventListener('resize', handleResize, { passive: true });
-    
-    // Observer les changements dans le DOM avec throttling
+
     let mutationTimeout;
     const handleMutation = () => {
       if (mutationTimeout) {
@@ -133,14 +128,13 @@ const SidebarPremium = memo(() => {
     };
 
     const observer = new MutationObserver(handleMutation);
-    observer.observe(document.body, { 
-      childList: true, 
-      subtree: false, // Optimisation: ne pas observer tout le subtree
+    observer.observe(document.body, {
+      childList: true,
+      subtree: false,
       attributes: true,
       attributeFilter: ['class', 'style']
     });
 
-    // ✅ PHASE 1 : Cleanup complet
     return () => {
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
@@ -149,11 +143,47 @@ const SidebarPremium = memo(() => {
     };
   }, [throttledUpdatePosition]);
 
-  // Note: sectionProps removed - ghost sections have been deleted
+  const sidebarData = useMemo(
+    () => ({
+      metrics,
+      quests,
+      sport,
+      finance,
+      nutrition,
+      learning,
+      shopping,
+      today
+    }),
+    [metrics, quests, sport, finance, nutrition, learning, shopping, today]
+  );
+
+  const handleModuleError = useCallback((error, moduleId) => {
+    console.error(`Erreur dans le module ${moduleId}:`, error);
+  }, []);
+
+  const sidebarProps = useMemo(
+    () => ({
+      isSectionExpanded,
+      toggleSection,
+      navigation,
+      setActiveTab,
+      data: sidebarData,
+      todayDate,
+      isLoading
+    }),
+    [
+      isSectionExpanded,
+      toggleSection,
+      navigation,
+      setActiveTab,
+      sidebarData,
+      todayDate,
+      isLoading
+    ]
+  );
 
   return (
     <>
-      {/* Bouton toggle mobile - Requirement 13.3 */}
       <button
         className={`sidebar-mobile-toggle ${isMobileOpen ? 'open' : ''}`}
         onClick={toggleMobileSidebar}
@@ -166,158 +196,97 @@ const SidebarPremium = memo(() => {
         </span>
       </button>
 
-      {/* Overlay mobile - Requirement 13.4 */}
       <div
         className={`sidebar-mobile-overlay ${isMobileOpen ? 'visible' : ''}`}
         onClick={closeMobileSidebar}
         aria-hidden="true"
       />
 
-      <aside 
+      <aside
         ref={sidebarRef}
         className={`sidebar-premium ${isMobileOpen ? 'mobile-open' : ''}`}
         role="complementary"
         aria-label="Sidebar Premium QuietQuest"
+        data-sidebar-clock-isolated="1"
       >
-        {/* Skip link pour navigation rapide - Requirement 12.2 */}
         <a href="#sidebar-main-content" className="sidebar-skip-link">
           Aller au contenu principal
         </a>
-      
-      {/* Zone Fixe - Horloge et Profil */}
-      <div className="sidebar-clock-section" id="sidebar-clock-section">
-        {/* Bloc Encadré Heure/Date avec 3 couches d'effets */}
-        <div className="time-date-block">
-          {/* AFFICHAGE DE L'HEURE */}
-          <div className="time-display">
-            <div className="time-main">{getFormattedTime()}</div>
-            <div className="time-shadow" aria-hidden="true">{getFormattedTime()}</div>
-            <div className="time-glow" aria-hidden="true">{getFormattedTime()}</div>
-          </div>
-          
-          {/* AFFICHAGE DE LA DATE */}
-          <div className="date-display">
-            {/* Ligne 1: Jour + Mois */}
-            <div className="date-day-month">
-              <div className="date-main">{getFormattedDayMonth().toUpperCase()}</div>
-              <div className="date-shadow" aria-hidden="true">{getFormattedDayMonth().toUpperCase()}</div>
-              <div className="date-glow" aria-hidden="true">{getFormattedDayMonth().toUpperCase()}</div>
-            </div>
-            
-            {/* Ligne 2: Année */}
-            <div className="date-year">
-              <div className="year-main">{getFormattedYear()}</div>
-              <div className="year-shadow" aria-hidden="true">{getFormattedYear()}</div>
-              <div className="year-glow" aria-hidden="true">{getFormattedYear()}</div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Carte Développeur 3D Holographique */}
-        <ProfileCard3D
-          username={currentUser?.username || 'guest'}
-          showUserInfo={true}
-          enableTilt={true}
-          enableMobileTilt={false}
-        />
-        <GradeArtCardOffer />
-        
-        {/* Statuts Système (Grille 2x2) */}
-        <div className="sidebar-system-status" role="group" aria-label="Statuts système">
-          {/* Statut Actif */}
-          <div className="sidebar-status-item" role="status" aria-label="Système actif">
-            <div className="sidebar-status-pulse" aria-hidden="true"></div>
-            <div className="sidebar-status-label" aria-hidden="true">Système</div>
-            <div className="sidebar-status-value" aria-hidden="true">Actif</div>
-          </div>
-          
-          {/* Mode Nuit */}
-          <div 
-            className="sidebar-status-item" 
-            role="status" 
-            aria-label={`Mode ${systemStatus.nightMode ? 'Nuit' : 'Jour'} activé`}
-          >
-            <div className="sidebar-status-icon" aria-hidden="true">
-              {systemStatus.nightMode ? '🌙' : '☀️'}
-            </div>
-            <div className="sidebar-status-label" aria-hidden="true">Mode</div>
-            <div className="sidebar-status-value" aria-hidden="true">
-              {systemStatus.nightMode ? 'Nuit' : 'Jour'}
-            </div>
-          </div>
-          
-          {/* Connexion */}
-          <div 
-            className="sidebar-status-item" 
-            role="status" 
-            aria-label={`Connexion: ${systemStatus.connected ? 'En ligne' : 'Hors ligne'}`}
-          >
-            <div className="sidebar-status-icon" aria-hidden="true">📡</div>
-            <div className="sidebar-status-label" aria-hidden="true">Connexion</div>
-            <div className="sidebar-status-value" aria-hidden="true">
-              {systemStatus.connected ? 'En ligne' : 'Hors ligne'}
-            </div>
-          </div>
-          
-          {/* Focus */}
-          <div 
-            className="sidebar-status-item" 
-            role="status" 
-            aria-label={`Focus: ${systemStatus.focusPercentage} pourcent`}
-          >
-            <div className="sidebar-status-icon" aria-hidden="true">🔋</div>
-            <div className="sidebar-status-label" aria-hidden="true">Focus</div>
-            <div className="sidebar-status-value" aria-hidden="true">
-              {systemStatus.focusPercentage}%
-            </div>
-          </div>
-        </div>
-        <div style={{ marginTop: '2cm' }}>
-          <SpotifySidebarCard user={currentUser} />
-        </div>
-      </div>
 
-      {/* Zone Scrollable - Modules avec alternance */}
-      <div className="sidebar-content" id="sidebar-main-content">
-        <ModuleRenderer
-          sidebarProps={{
-            // Fonctions de gestion des sections
-            isSectionExpanded,
-            toggleSection,
-            
-            // Navigation
-            navigation,
-            setActiveTab, // Ajouter setActiveTab pour les modules historiques
-            
-            // Données
-            data: {
-              metrics,
-              quests,
-              sport,
-              finance,
-              nutrition,
-              learning,
-              shopping,
-              today
-            },
-            
-            // Date
-            todayDate,
-            
-            // État de chargement
-            isLoading
-          }}
-          onModuleError={(error, moduleId) => {
-            console.error(`Erreur dans le module ${moduleId}:`, error);
-          }}
-          className="sidebar-modules-alternated"
-        />
-      </div>
-    </aside>
+        <div className="sidebar-clock-section" id="sidebar-clock-section">
+          <SidebarClock />
+
+          <ProfileCard3D
+            username={currentUser?.username || 'guest'}
+            showUserInfo={true}
+            enableTilt={true}
+            enableMobileTilt={false}
+          />
+          <GradeArtCardOffer />
+
+          <div className="sidebar-system-status" role="group" aria-label="Statuts système">
+            <div className="sidebar-status-item" role="status" aria-label="Système actif">
+              <div className="sidebar-status-pulse" aria-hidden="true"></div>
+              <div className="sidebar-status-label" aria-hidden="true">Système</div>
+              <div className="sidebar-status-value" aria-hidden="true">Actif</div>
+            </div>
+
+            <div
+              className="sidebar-status-item"
+              role="status"
+              aria-label={`Mode ${systemStatus.nightMode ? 'Nuit' : 'Jour'} activé`}
+            >
+              <div className="sidebar-status-icon" aria-hidden="true">
+                {systemStatus.nightMode ? '🌙' : '☀️'}
+              </div>
+              <div className="sidebar-status-label" aria-hidden="true">Mode</div>
+              <div className="sidebar-status-value" aria-hidden="true">
+                {systemStatus.nightMode ? 'Nuit' : 'Jour'}
+              </div>
+            </div>
+
+            <div
+              className="sidebar-status-item"
+              role="status"
+              aria-label={`Connexion: ${systemStatus.connected ? 'En ligne' : 'Hors ligne'}`}
+            >
+              <div className="sidebar-status-icon" aria-hidden="true">📡</div>
+              <div className="sidebar-status-label" aria-hidden="true">Connexion</div>
+              <div className="sidebar-status-value" aria-hidden="true">
+                {systemStatus.connected ? 'En ligne' : 'Hors ligne'}
+              </div>
+            </div>
+
+            <div
+              className="sidebar-status-item"
+              role="status"
+              aria-label={`Focus: ${systemStatus.focusPercentage} pourcent`}
+            >
+              <div className="sidebar-status-icon" aria-hidden="true">🔋</div>
+              <div className="sidebar-status-label" aria-hidden="true">Focus</div>
+              <div className="sidebar-status-value" aria-hidden="true">
+                {systemStatus.focusPercentage}%
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: '2cm' }}>
+            <SpotifySidebarCard user={currentUser} />
+          </div>
+        </div>
+
+        <div className="sidebar-content" id="sidebar-main-content">
+          <ModuleRenderer
+            sidebarProps={sidebarProps}
+            onModuleError={handleModuleError}
+            className="sidebar-modules-alternated"
+          />
+        </div>
+      </aside>
     </>
   );
 });
 
+SidebarPremiumBody.displayName = 'SidebarPremiumBody';
 SidebarPremium.displayName = 'SidebarPremium';
 
 export default SidebarPremium;

@@ -83,6 +83,11 @@ export async function assembleCompleteAuditDossier({
   measure = null,
   p6 = null,
   snapshot = null,
+  activeProgram = null,
+  garminData = null,
+  nameMap = null,
+  analyticalMemory = null,
+  analysisWindowEnd = null,
   download = true,
   includeLiveGames = true,
   domVerify = null,
@@ -90,11 +95,17 @@ export async function assembleCompleteAuditDossier({
 } = {}) {
   const assembledAt = new Date().toISOString();
   const edition = analysisEditionKey();
+  // Mission 33 — autorité des entrées = contextes passés explicitement (ou présents
+  // sur le snapshot). Ne pas inventer program/garmin depuis un état React partiel.
+  const programCtx = activeProgram || snapshot?.activeProgram || null;
+  const garminCtx = garminData || snapshot?.garminData || null;
+  const nameMapCtx =
+    nameMap || snapshot?.nameMap || snapshot?.exerciseNameMap || null;
   const liveFingerprint = snapshot
     ? snapshotFingerprint(snapshot, {
-        activeProgram: snapshot?.activeProgram || null,
-        garminData: snapshot?.garminData || null,
-        nameMap: snapshot?.nameMap || null
+        activeProgram: programCtx,
+        garminData: garminCtx,
+        nameMap: nameMapCtx
       })
     : null;
   const archive = loadEvalArchiveFromStorage() || emptyEvalArchive();
@@ -159,7 +170,7 @@ export async function assembleCompleteAuditDossier({
     measure,
     p6,
     snapshot,
-    activeProgram: snapshot?.activeProgram || null,
+    activeProgram: programCtx,
     gamesByPeriod,
     domVerify,
     memorySummary: (() => {
@@ -429,20 +440,52 @@ export async function assembleCompleteAuditDossier({
     });
   }
 
+  // Mission 32/33 — entrées live reproductibles (≠ conclusions)
+  try {
+    const { buildLiveReplayInputPack } = await import('./buildLiveReplayInputPack.js');
+    const memFromPack =
+      analyticalMemory ||
+      eightPeriodExport?.analyticalMemorySnapshot ||
+      eightPeriodExport?.periods?.['7d']?.memorySnapshot ||
+      null;
+    const engineFp = eightPeriodExport?.fingerprint || null;
+    const liveInputs = buildLiveReplayInputPack({
+      snapshot,
+      garminData: garminCtx,
+      activeProgram: programCtx,
+      nameMap: nameMapCtx,
+      analyticalMemory: memFromPack,
+      analysisWindowEnd: analysisWindowEnd || null,
+      observedResultsRef: 'ANALYTICAL_AUDIT.json + eight-periods/ (siblings in this ZIP)',
+      engineFingerprint: engineFp
+    });
+    push('replay/LIVE_INPUTS.json', liveInputs, {
+      source: 'live_snapshot_read_only',
+      executedAt: assembledAt,
+      fingerprint: fpKey(liveFingerprint),
+      note: liveInputs.ok
+        ? `digest=${liveInputs.fingerprints?.digest || '—'} · reproductibilité=${liveInputs.reproducibility?.status || '—'} · séparés des résultats observés`
+        : liveInputs.reason || 'pack incomplete'
+    });
+  } catch (err) {
+    warnings.push(`replay/LIVE_INPUTS: ${String(err?.message || err)}`);
+    push('replay/LIVE_INPUTS.json', null, { note: String(err?.message || err) });
+  }
+
   // DOM
-  if (domVerify && !domVerify.refused) {
+  if (domVerify && !domVerify.refused && domVerify.status !== 'not_observed') {
     push('evaluation/dom-eight-periods.json', domVerify, {
       source: 'live_dom_verify',
       executedAt: domVerify.finishedAt || assembledAt,
       note: domVerify.editorialMemoryModified
         ? 'ATTENTION mémoire modifiée'
-        : 'mémoire éditoriale non modifiée'
+        : 'mémoire éditoriale non modifiée · virtualisation prise en compte (M32)'
     });
   } else {
     push('evaluation/dom-eight-periods.json', null, {
       note:
         domVerify?.reason ||
-        'DOM non vérifié dans cet export — utiliser « Vérifier les 8 périodes (DOM) » avant l’export'
+        'DOM NON_OBSERVÉ — lancer « Vérifier les 8 périodes (DOM) » puis ré-exporter le dossier complet (réutilise __momentumLastDomVerify)'
     });
   }
 

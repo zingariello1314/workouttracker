@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useGarminData } from './useGarminData';
 import { calculateSportXP, computeNutritionRegisteredFoodSportXp, countNutritionRegisteredFoodItems, SPORT_XP_FORMULA_REVISION } from '../services/xp/xpCalculations';
+import { computeSportXpOffMainThread } from '../services/xp/sportXpWorkerClient';
 import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
 import { useAuth } from '../context/AuthContext';
 import { canAccessPrivateData, isAdminUser } from '../utils/accessControl';
@@ -17,6 +18,9 @@ import { gtgChecksum } from '../services/endurance/gtgService';
 import { stretchRatingChecksum } from '../utils/stretchPerceivedRatings';
 import { sportXpProgressInLevel } from '../services/xp/sportLevelCurve';
 import { computeSportXpDailyInsights } from '../services/xp/sportXpDailyAnalytics';
+import { isDiagFlag } from '../dev/todayDiagnostics/diagIsolation';
+import { recordXpCalcEvent, anonHash } from '../dev/todayDiagnostics/xpCalcRegistry';
+import { withWorkSpan } from '../dev/todayDiagnostics/workSpanTracker';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -77,6 +81,17 @@ let sportXpCache = {
   storageKey: null
 };
 
+/**
+ * Vol unique partagé : plusieurs montages de useSportXP (barre XP, offre de grade,
+ * useGlobalXP, récap chaud…) ne doivent pas recalculer calculateSportXP en parallèle
+ * pour la même signature. L’XP reste exacte et n’est jamais générée deux fois.
+ */
+let sportXpInFlight = null;
+
+function isSportXpRecalcSuspended() {
+  return isDiagFlag('suspendSportXpRecalc');
+}
+
 /** Invalide le cache module après modification reps / coches / formule XP.
  *  On garde le dernier résultat affiché (pas de flash à 0 XP / skeleton). */
 export const invalidateSportXpCache = () => {
@@ -84,6 +99,10 @@ export const invalidateSportXpCache = () => {
     ...sportXpCache,
     signature: null
   };
+  if (sportXpInFlight) {
+    sportXpInFlight.cancelled = true;
+    sportXpInFlight = null;
+  }
 };
 
 function scheduleSportXpAfterPaint(fn) {
@@ -98,6 +117,184 @@ function scheduleSportXpAfterPaint(fn) {
   return () => {
     cancelAnimationFrame(outerId);
     if (innerId) cancelAnimationFrame(innerId);
+  };
+}
+
+/**
+ * Acquiert un calcul XP partagé pour (signature, storageKey).
+ * @returns {{ release: () => void, cached: boolean }}
+ */
+function acquireSharedSportXp({ signature, storageKey, compute, computeAsync, onResult, caller = 'useSportXP' }) {
+  const sigAnon = anonHash(signature);
+  const keyAnon = anonHash(storageKey);
+
+  if (sportXpCache.signature === signature && sportXpCacheMatchesScope(storageKey)) {
+    recordXpCalcEvent({
+      kind: 'acquire',
+      outcome: 'cache-hit',
+      caller,
+      signatureAnon: sigAnon,
+      storageKeyAnon: keyAnon,
+      subscribers: 0,
+      reason: 'module-cache'
+    });
+    onResult(sportXpCache.result);
+    return { release: () => {}, cached: true };
+  }
+
+  if (
+    sportXpInFlight &&
+    !sportXpInFlight.cancelled &&
+    sportXpInFlight.signature === signature &&
+    sportXpInFlight.storageKey === storageKey
+  ) {
+    sportXpInFlight.subscribers.add(onResult);
+    recordXpCalcEvent({
+      kind: 'acquire',
+      outcome: 'join',
+      caller,
+      signatureAnon: sigAnon,
+      storageKeyAnon: keyAnon,
+      subscribers: sportXpInFlight.subscribers.size,
+      reason: 'in-flight-shared'
+    });
+    if (sportXpInFlight.result) onResult(sportXpInFlight.result);
+    return {
+      release: () => {
+        sportXpInFlight?.subscribers.delete(onResult);
+      },
+      cached: false
+    };
+  }
+
+  const subscribers = new Set([onResult]);
+  const flight = {
+    signature,
+    storageKey,
+    subscribers,
+    result: null,
+    cancelled: false,
+    cancelPaint: null
+  };
+  sportXpInFlight = flight;
+
+  recordXpCalcEvent({
+    kind: 'acquire',
+    outcome: 'miss-start',
+    caller,
+    signatureAnon: sigAnon,
+    storageKeyAnon: keyAnon,
+    subscribers: 1,
+    reason: 'new-flight'
+  });
+
+  flight.cancelPaint = scheduleSportXpAfterPaint(() => {
+    if (flight.cancelled || sportXpInFlight !== flight) return;
+    if (isSportXpRecalcSuspended()) {
+      const boot = resolveBootstrapSportXpResult(storageKey);
+      flight.result = boot;
+      recordXpCalcEvent({
+        kind: 'compute',
+        outcome: 'suspended',
+        caller,
+        signatureAnon: sigAnon,
+        storageKeyAnon: keyAnon,
+        subscribers: subscribers.size,
+        durMs: 0,
+        reason: 'diag-suspendSportXpRecalc'
+      });
+      subscribers.forEach((fn) => {
+        try {
+          fn(boot);
+        } catch {
+          /* ignore */
+        }
+      });
+      if (sportXpInFlight === flight) sportXpInFlight = null;
+      return;
+    }
+    const publish = (result, durMs, reason = 'calculateSportXP') => {
+      if (flight.cancelled || sportXpInFlight !== flight) {
+        recordXpCalcEvent({
+          kind: 'compute',
+          outcome: 'cancelled-after-compute',
+          caller,
+          signatureAnon: sigAnon,
+          storageKeyAnon: keyAnon,
+          subscribers: subscribers.size,
+          durMs,
+          reason: 'flight-superseded'
+        });
+        return;
+      }
+      flight.result = result;
+      sportXpCache = { ...sportXpCache, signature, result, storageKey };
+      writeSportXpSessionSnapshot(storageKey, result);
+      recordXpCalcEvent({
+        kind: 'compute',
+        outcome: 'published',
+        caller,
+        signatureAnon: sigAnon,
+        storageKeyAnon: keyAnon,
+        subscribers: subscribers.size,
+        durMs,
+        reason,
+        totalXP: result?.totalXP ?? null
+      });
+      subscribers.forEach((fn) => {
+        try {
+          fn(result);
+        } catch {
+          /* ignore */
+        }
+      });
+      if (sportXpInFlight === flight) sportXpInFlight = null;
+    };
+
+    if (typeof computeAsync === 'function') {
+      void computeAsync()
+        .then((out) => {
+          publish(
+            out.result,
+            out.durMs ?? 0,
+            out.via === 'worker' ? 'calculateSportXP-worker' : 'calculateSportXP-main-fallback'
+          );
+        })
+        .catch(() => {
+          const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+          const result = withWorkSpan('calculateSportXP', compute, { signatureAnon: sigAnon });
+          const durMs =
+            Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0) * 10) / 10;
+          publish(result, durMs, 'calculateSportXP-error-fallback');
+        });
+      return;
+    }
+
+    const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const result = withWorkSpan('calculateSportXP', compute, { signatureAnon: sigAnon });
+    const durMs = Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0) * 10) / 10;
+    publish(result, durMs);
+  });
+
+  return {
+    release: () => {
+      subscribers.delete(onResult);
+      if (subscribers.size === 0 && sportXpInFlight === flight) {
+        flight.cancelled = true;
+        flight.cancelPaint?.();
+        sportXpInFlight = null;
+        recordXpCalcEvent({
+          kind: 'acquire',
+          outcome: 'cancelled-unsubscribed',
+          caller,
+          signatureAnon: sigAnon,
+          storageKeyAnon: keyAnon,
+          subscribers: 0,
+          reason: 'last-subscriber-released'
+        });
+      }
+    },
+    cached: false
   };
 }
 
@@ -165,7 +362,8 @@ function clearSportXpSessionSnapshot(storageKey) {
   }
 }
 
-export const useSportXP = () => {
+export const useSportXP = (options = {}) => {
+  const enabled = options.enabled !== false;
   const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const storageKey = useMemo(() => {
@@ -225,6 +423,10 @@ export const useSportXP = () => {
   }, [storageKey]);
 
   useEffect(() => {
+    if (!enabled) {
+      setNutritionLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     const loadNutrition = async () => {
       if (!canAccessData) {
@@ -264,9 +466,13 @@ export const useSportXP = () => {
       cancelled = true;
       unsubMeals();
     };
-  }, [canAccessData]);
+  }, [canAccessData, enabled]);
 
   useEffect(() => {
+    if (!enabled) {
+      setGarminLoading(false);
+      return undefined;
+    }
     let isMounted = true;
 
     const loadGarmin = async () => {
@@ -309,15 +515,17 @@ export const useSportXP = () => {
     return () => {
       isMounted = false;
     };
-  }, [dbReady, loadAllData, canAccessData, storageKey]);
+  }, [dbReady, loadAllData, canAccessData, storageKey, enabled]);
 
   const xpSignature = useMemo(() => {
+    if (!enabled) return `disabled:${storageKey}`;
     if (!canAccessData) return 'no-access';
     if (sportXpBootstrapPending) return `boot:${storageKey}`;
     if (!workoutData) {
       const nutOnly = countNutritionRegisteredFoodItems(nutritionMeals);
       return `nut:${Array.isArray(nutritionMeals) ? nutritionMeals.length : 0}:${nutOnly}`;
     }
+    return withWorkSpan('xpSignature', () => {
     let totalReps = 0;
     collectDedupedCheckedVolumeKeys(workoutData).forEach((key) => {
       totalReps += parseInt(workoutData.reps?.[key], 10) || 0;
@@ -484,9 +692,16 @@ export const useSportXP = () => {
       manualWalkSig,
       gtgSig
     ].join('|');
-  }, [workoutData, garminData, canAccessData, nutritionMeals, sportXpBootstrapPending, storageKey]);
+    });
+  }, [workoutData, garminData, canAccessData, nutritionMeals, sportXpBootstrapPending, storageKey, enabled]);
 
   useEffect(() => {
+    if (!enabled) {
+      const boot = resolveBootstrapSportXpResult(storageKey);
+      cacheRef.current = { signature: `disabled:${storageKey}`, result: boot };
+      setPublishedXp((prev) => (prev === boot ? prev : boot));
+      return undefined;
+    }
     if (!canAccessData) {
       const empty = { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
       cacheRef.current = { signature: 'no-access', result: empty };
@@ -500,47 +715,74 @@ export const useSportXP = () => {
       return undefined;
     }
     if (cacheRef.current.signature === xpSignature) {
-      setPublishedXp(cacheRef.current.result);
+      setPublishedXp((prev) => (prev === cacheRef.current.result ? prev : cacheRef.current.result));
       return undefined;
     }
     if (sportXpCache.signature === xpSignature && sportXpCacheMatchesScope(storageKey)) {
       cacheRef.current = { signature: xpSignature, result: sportXpCache.result };
-      setPublishedXp(sportXpCache.result);
+      setPublishedXp((prev) => (prev === sportXpCache.result ? prev : sportXpCache.result));
       return undefined;
     }
 
-    let cancelled = false;
-    const cancelPaint = scheduleSportXpAfterPaint(() => {
-      if (cancelled) return;
-      let result;
-      if (!workoutData) {
-        const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
-        result = {
-          totalXP: nutOnly.nutritionFoodXp,
-          breakdown: {
-            ...DEFAULT_BREAKDOWN,
-            nutritionFoodItems: nutOnly.nutritionFoodItems,
-            nutritionFoodXp: nutOnly.nutritionFoodXp
-          }
-        };
-      } else {
+    const exerciseNameFn = getExerciseNameById;
+    const { release } = acquireSharedSportXp({
+      signature: xpSignature,
+      storageKey,
+      compute: () => {
+        if (!workoutData) {
+          const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
+          return {
+            totalXP: nutOnly.nutritionFoodXp,
+            breakdown: {
+              ...DEFAULT_BREAKDOWN,
+              nutritionFoodItems: nutOnly.nutritionFoodItems,
+              nutritionFoodXp: nutOnly.nutritionFoodXp
+            }
+          };
+        }
         const enduranceData = workoutData?.enduranceData || {};
-        result = calculateSportXP(workoutData, garminData, enduranceData, {
+        return calculateSportXP(workoutData, garminData, enduranceData, {
           programs: programsForCompletionXp,
           activeProgram,
-          getExerciseNameById,
+          getExerciseNameById: exerciseNameFn,
           nutritionMeals
         });
+      },
+      computeAsync: async () => {
+        if (!workoutData) {
+          const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
+          return {
+            result: {
+              totalXP: nutOnly.nutritionFoodXp,
+              breakdown: {
+                ...DEFAULT_BREAKDOWN,
+                nutritionFoodItems: nutOnly.nutritionFoodItems,
+                nutritionFoodXp: nutOnly.nutritionFoodXp
+              }
+            },
+            durMs: 0,
+            via: 'main-fallback'
+          };
+        }
+        const enduranceData = workoutData?.enduranceData || {};
+        return computeSportXpOffMainThread({
+          signature: xpSignature,
+          workoutData,
+          garminData,
+          enduranceData,
+          getExerciseNameById: exerciseNameFn,
+          nutritionMeals,
+          programs: programsForCompletionXp,
+          activeProgram
+        });
+      },
+      onResult: (result) => {
+        cacheRef.current = { signature: xpSignature, result };
+        setPublishedXp(result);
       }
-      if (cancelled) return;
-      cacheRef.current = { signature: xpSignature, result };
-      sportXpCache = { ...sportXpCache, signature: xpSignature, result, storageKey };
-      writeSportXpSessionSnapshot(storageKey, result);
-      setPublishedXp(result);
     });
     return () => {
-      cancelled = true;
-      cancelPaint();
+      release();
     };
   }, [
     xpSignature,
@@ -552,7 +794,8 @@ export const useSportXP = () => {
     activeProgram,
     nutritionMeals,
     sportXpBootstrapPending,
-    storageKey
+    storageKey,
+    enabled
   ]);
 
   const calculated = publishedXp;
@@ -575,13 +818,15 @@ export const useSportXP = () => {
     if (!canAccessData) {
       return { daysWithXp: 0, averageDailyXp: 0, breakdownRows: [] };
     }
-    return computeSportXpDailyInsights({
-      totalXP: calculated.totalXP || 0,
-      breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
-      workoutData,
-      garminData,
-      nutritionMeals
-    });
+    return withWorkSpan('computeSportXpDailyInsights', () =>
+      computeSportXpDailyInsights({
+        totalXP: calculated.totalXP || 0,
+        breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
+        workoutData,
+        garminData,
+        nutritionMeals
+      })
+    );
   }, [
     calculated.totalXP,
     calculated.breakdown,
@@ -596,9 +841,9 @@ export const useSportXP = () => {
     level: levelInfo.level,
     breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
     progress: levelInfo.progress,
-    dailyInsights,
+    dailyInsights: enabled ? dailyInsights : { daysWithXp: 0, averageDailyXp: 0, breakdownRows: [] },
     workoutSnapshot: workoutData,
-    isLoading: sportXpBootstrapPending && !warmSportXpDisplay,
-    isSportXpReady: !sportXpBootstrapPending
+    isLoading: enabled ? sportXpBootstrapPending && !warmSportXpDisplay : false,
+    isSportXpReady: enabled ? !sportXpBootstrapPending : true
   };
 };

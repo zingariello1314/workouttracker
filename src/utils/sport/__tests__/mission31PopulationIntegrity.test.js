@@ -11,8 +11,8 @@ import { validateAnalyticalAudit } from '../evaluation/buildAnalyticalAudit';
 import { ANALYSIS_EDITION_PARTS } from '../analysisEdition';
 
 describe('Mission 31 — édition', () => {
-  it('bumpe population / claim / editorial v30', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toBe('p6-sovereign-v30');
+  it('conserve population / claim (éditions ≥ v30)', () => {
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/p6-sovereign-v3[0-3]/);
     expect(ANALYSIS_EDITION_PARTS.composition).toBe('metric-population-v2');
     expect(ANALYSIS_EDITION_PARTS.claim).toBe('assertion-population-v2');
   });

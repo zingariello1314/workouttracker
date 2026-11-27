@@ -340,7 +340,7 @@ export function buildP34RevisionDiscoveries({ snapshot, window } = {}) {
       family: 'program_revision',
       contentClass: CONTENT_CLASS.METHODOLOGY_LIMIT,
       title: 'Historique de révisions de programme indisponible',
-      body: 'Aucun journal P3.4 n’est encore enregistré pour cette copie : les versions applicables aux journées anciennes ne peuvent pas être démontrées. Les snapshots P3.3 déjà prouvés restent la seule preuve de plan figé.',
+      body: 'Aucun journal de révisions n’est encore enregistré pour cette copie : les versions applicables aux journées anciennes ne peuvent pas être démontrées. Les plans figés déjà prouvés jour par jour restent la seule preuve de programme prévu.',
       evidence: 'journal_absent',
       weights: { importance: 0.3, reliability: 0.95, novelty: 0.2, fit: 0.5 },
       metrics: { ...pack.coverage, contentClass: CONTENT_CLASS.METHODOLOGY_LIMIT }

@@ -43,6 +43,7 @@ describe('assembleCompleteAuditDossier', () => {
     expect(result.zipFilesPreview).toContain('evaluation/live/game-B.json');
     expect(result.zipFilesPreview).toContain('evaluation/publication-reconciliation.json');
     expect(result.zipFilesPreview).toContain('MANIFEST.json');
+    // Mission 32 — sans snapshot le pack live est absent/ko ; avec snapshot il doit apparaître
     expect(result.manifest.didNotRerunVitestSuite).toBe(true);
     expect(result.manifest.humanBlindComparison.performed).toBe(false);
     const text = analyticalJsonStringify(result.manifest);

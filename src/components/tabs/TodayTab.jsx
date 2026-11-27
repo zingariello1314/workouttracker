@@ -3,6 +3,16 @@ import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Sa
 import { useWorkout } from '../../context/WorkoutContext';
 import { useSessionDraftVersion, useExerciseUiVersion, useSessionCommitDirty, useSessionCommitEpoch, getSessionCommitDirty } from '../../context/WorkoutContext/sessionDraftStore';
 import { startTodayCheckMeasure, scheduleTodayCheckIdle, yieldToNextPaint } from '../../utils/todayCheckMeasure';
+import {
+  beginTodayInteraction,
+  endTodayInteraction,
+  isTodayDiagCapturing,
+  markTodayInteraction,
+  noteTodayDiag,
+  recordTodayRender,
+  registerTodayDimensions,
+  spanTodayDiag
+} from '../../dev/todayDiagnostics/todayDiag';
 import { markTodayViewPrepared } from '../../utils/preloadTabs';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
@@ -83,6 +93,10 @@ import {
   readSessionFeedbackInvitation,
   shouldOfferSessionFeedback
 } from '../../utils/sessionFeedbackOffer';
+import {
+  buildSessionFeedbackSportContext,
+  sportContextToSessionDataPayload
+} from '../../utils/sessionFeedbackSportContext';
 import {
   buildSetLogFromPrescription,
   syncExerciseSetLogWeightsFromLegacy
@@ -278,12 +292,13 @@ function TodayExerciseCheck({ exerciseId, checked, onToggle, className, name, id
   return (
     <Checkbox
       checked={shown}
-      onChange={() => {
+      onChange={(event) => {
         const key = String(exerciseId);
         const current = optimisticChecks.has(key) ? optimisticChecks.get(key) : !!checked;
         const next = !current;
+        const inputAt = Number(event?.timeStamp);
         setOptimisticCheck(exerciseId, next);
-        onToggle(next);
+        onToggle(next, Number.isFinite(inputAt) ? inputAt : undefined);
       }}
       className={className}
       name={name}
@@ -329,7 +344,10 @@ const IsolatedTodayExerciseCard = memo(function IsolatedTodayExerciseCard({ exer
   useExerciseUiVersion(exerciseId);
   useSessionCommitEpoch();
   const { getCurrentData } = useWorkout();
-  return children(getCurrentData() || {});
+  const renderT0 = isTodayDiagCapturing() ? performance.now() : 0;
+  const node = children(getCurrentData() || {});
+  if (renderT0) recordTodayRender('ExerciseCard', performance.now() - renderT0);
+  return node;
 });
 
 function LastWeightIndexKeeper() {
@@ -402,6 +420,7 @@ function TodaySessionCommitBar({
 }
 
 const TodayTab = () => {
+  if (isTodayDiagCapturing()) recordTodayRender('TodayTab', 0);
   const {
     currentDate,
     setCurrentDate,
@@ -770,10 +789,16 @@ const TodayTab = () => {
     });
   }, []);
 
-  const applyExerciseCheck = (exerciseId, date, shouldCheck) => {
+  const applyExerciseCheck = (exerciseId, date, shouldCheck, inputAt) => {
     pauseLastExerciseWeightIndex();
     const measure = startTodayCheckMeasure(shouldCheck ? 'check' : 'uncheck');
+    const interactionId = beginTodayInteraction(
+      shouldCheck ? 'check' : 'uncheck',
+      shouldCheck ? 'Coche d’un exercice' : 'Décoche d’un exercice',
+      { inputAt }
+    );
     measure.mark('handler');
+    const prep = spanTodayDiag('input', 'Traitement du clic');
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
@@ -796,8 +821,11 @@ const TodayTab = () => {
     if (!exercise) {
       const isCurrentlyChecked = !!currentData.checkedExercises?.[fallbackKey];
       if (isCurrentlyChecked === shouldCheck) {
+        prep.end();
+        endTodayInteraction(interactionId, 'unchanged');
         return;
       }
+      prep.end();
       measure.mark('apply:fallback');
       patchSessionExerciseDraft(
         (draft) => {
@@ -820,6 +848,7 @@ const TodayTab = () => {
       }
       measure.mark('patched');
       measure.flush();
+      endTodayInteraction(interactionId);
       return;
     }
 
@@ -834,17 +863,22 @@ const TodayTab = () => {
     });
     const isCurrentlyChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
     if (isCurrentlyChecked === shouldCheck) {
+      prep.end();
+      endTodayInteraction(interactionId, 'unchanged');
       return;
     }
 
     if (!shouldCheck) {
+      prep.end();
       measure.mark('apply:uncheck');
+      const draftSpan = spanTodayDiag('state', 'Mise à jour du brouillon');
       patchSessionExerciseDraft(
         (draft) => {
           stripKeysInPlace(draft, keys);
         },
         { exerciseId: exercise.id }
       );
+      draftSpan.end();
       startTransition(() => {
         setExpandedPerceivedIds((prev) => {
           const next = new Set(prev);
@@ -854,9 +888,12 @@ const TodayTab = () => {
       });
       measure.mark('patched');
       measure.flush();
+      endTodayInteraction(interactionId);
       return;
     }
 
+    prep.end();
+    const scan = spanTodayDiag('calc', 'Recherche des données');
     const prevKeyForWeight = resolveBestRepsStorageKey(currentData, keys);
     const todayWeight =
       prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
@@ -898,7 +935,9 @@ const TodayTab = () => {
         ? currentData.exerciseSetLogs[prevKeyForWeight]
         : weekdayMemory?.setLog;
 
+    scan.end();
     measure.mark('apply:check');
+    const draftSpan = spanTodayDiag('state', 'Mise à jour du brouillon');
     patchSessionExerciseDraft(
       (draft) => {
         stripKeysInPlace(draft, keys);
@@ -935,22 +974,24 @@ const TodayTab = () => {
       },
       { exerciseId: exercise.id }
     );
+    draftSpan.end();
     measure.mark('patched');
     measure.flush();
+    endTodayInteraction(interactionId);
   };
 
   const applyExerciseCheckRef = useRef(applyExerciseCheck);
   applyExerciseCheckRef.current = applyExerciseCheck;
 
   const pendingCheckFrameRef = useRef(new Map());
-  const queueExerciseCheck = (exerciseId, date, shouldCheck) => {
+  const queueExerciseCheck = (exerciseId, date, shouldCheck, inputAt) => {
     const key = String(exerciseId);
     const prev = pendingCheckFrameRef.current.get(key);
     if (prev) cancelAnimationFrame(prev);
     const frame = requestAnimationFrame(() => {
       pendingCheckFrameRef.current.delete(key);
       try {
-        applyExerciseCheckRef.current(exerciseId, date, shouldCheck);
+        applyExerciseCheckRef.current(exerciseId, date, shouldCheck, inputAt);
       } catch (error) {
         console.error('Erreur lors de la coche exercice:', error);
         clearOptimisticCheck(exerciseId);
@@ -967,11 +1008,17 @@ const TodayTab = () => {
   };
 
   const updateLocalReps = (storageKey, reps) => {
+    const interactionId = beginTodayInteraction('reps', 'Modification de répétitions');
+    const repsSpan = spanTodayDiag('state', 'Écriture répétition');
     patchDraftField('reps', storageKey, reps);
+    repsSpan.end();
+    endTodayInteraction(interactionId);
   };
 
   const updateLocalExerciseWeight = (storageKey, weightStr) => {
     if (!storageKey) return;
+    const interactionId = beginTodayInteraction('weight', 'Modification d’une charge');
+    const weightSpan = spanTodayDiag('state', 'Écriture charge et notification globale');
     pauseLastExerciseWeightIndex();
     patchSessionExerciseDraft((draft) => {
       if (!draft.exerciseWeights || typeof draft.exerciseWeights !== 'object') {
@@ -985,6 +1032,8 @@ const TodayTab = () => {
       return true;
     });
     noteLastExerciseWeightFromKey(storageKey, weightStr);
+    weightSpan.end();
+    endTodayInteraction(interactionId);
   };
 
   const updateLocalExerciseMarkedWeighted = (storageKey, checked, exerciseId) => {
@@ -1077,6 +1126,7 @@ const TodayTab = () => {
   // Sauvegarder les exercices avec vérification d'intégrité
   const handleSaveExercises = async () => {
     if (savingLockRef.current) return;
+    const interactionId = beginTodayInteraction('save', 'Enregistrement de la séance');
     const dirtyAtClick = getSessionCommitDirty();
     const hadExercisesDraft = dirtyAtClick.exercises;
     const hadStretchesDraft = dirtyAtClick.stretches;
@@ -1085,12 +1135,16 @@ const TodayTab = () => {
     savingLockRef.current = true;
     try {
       await yieldToNextPaint();
+      markTodayInteraction(interactionId, 'Bouton peint');
       try {
         await maybeApplyRestDaySwapBeforeSave();
       } catch (error) {
         console.error('Erreur swap repos avant sauvegarde:', error);
       }
+      const persistSpan = spanTodayDiag('storage', 'Attente de persistance');
       await withSessionSaveTimeout(saveExerciseChanges());
+      persistSpan.end();
+      markTodayInteraction(interactionId, 'Persistance revenue');
       collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -1139,6 +1193,7 @@ const TodayTab = () => {
       });
     } finally {
       savingLockRef.current = false;
+      endTodayInteraction(interactionId);
     }
   };
 
@@ -1714,147 +1769,20 @@ const TodayTab = () => {
       seriesOverridesToday
     );
 
-    // Calculer la durée réelle basée sur les exercices accomplis
-    const calculateSessionDuration = () => {
-      const completedExercises = programExercisesMerged.filter((exercise) => {
-        const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
-          isGymMode,
-          workoutIsGymMode: workout.isGymMode
-        });
-        return keys.some((k) => snapshot.checkedExercises?.[k] === true);
-      });
-      
-      if (completedExercises.length === 0) return 0;
-      
-      let totalDurationMinutes = 0;
-      
-      completedExercises.forEach(exercise => {
-        if (exercise.series) {
-          let exerciseDuration = 0;
-          
-          // Extraire le nombre de séries et répétitions
-          const seriesMatch = exercise.series.match(/(\d+)×(\d+)(?:-(\d+))?/);
-          if (seriesMatch) {
-            const sets = parseInt(seriesMatch[1]);
-            const minReps = parseInt(seriesMatch[2]);
-            const maxReps = seriesMatch[3] ? parseInt(seriesMatch[3]) : minReps;
-            const avgReps = (minReps + maxReps) / 2;
-            
-            // Temps par répétition (en secondes) selon le type d'exercice
-            let timePerRep = 3; // défaut 3 secondes par rep
-            
-            if (exercise.name.toLowerCase().includes('planche') || 
-                exercise.name.toLowerCase().includes('gainage')) {
-              // Exercices isométriques : temps en secondes directement
-              if (exercise.series.includes('sec') || exercise.series.includes('min')) {
-                const timeMatch = exercise.series.match(/(\d+)\s*(sec|min)/);
-                if (timeMatch) {
-                  const timeValue = parseInt(timeMatch[1]);
-                  const timeUnit = timeMatch[2];
-                  exerciseDuration = timeUnit === 'min' ? timeValue * 60 : timeValue;
-                }
-              } else {
-                exerciseDuration = avgReps; // Pour les planches en secondes
-              }
-            } else {
-              // Exercices dynamiques
-              exerciseDuration = sets * avgReps * timePerRep; // en secondes
-              
-              // Ajouter le temps de repos entre séries
-              const restTime = exercise.rest || 90; // repos par défaut 90s
-              exerciseDuration += (sets - 1) * restTime;
-            }
-            
-            totalDurationMinutes += exerciseDuration / 60; // convertir en minutes
-          } else if (exercise.series.includes('sec')) {
-            // Exercices en secondes (circuits, etc.)
-            const timeMatch = exercise.series.match(/(\d+)\s*sec/);
-            if (timeMatch) {
-              totalDurationMinutes += parseInt(timeMatch[1]) / 60;
-            }
-          } else if (exercise.series.includes('min')) {
-            // Exercices en minutes
-            const timeMatch = exercise.series.match(/(\d+)\s*min/);
-            if (timeMatch) {
-              totalDurationMinutes += parseInt(timeMatch[1]);
-            }
-          }
-        }
-      });
-      
-      return Math.round(totalDurationMinutes);
-    };
+    const sportContext = buildSessionFeedbackSportContext({
+      snapshot,
+      dateStr,
+      workout,
+      programExercises: programExercisesMerged
+    });
 
-    const buildProgramExerciseRow = (exercise) => {
-      const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
-        isGymMode,
-        workoutIsGymMode: workout.isGymMode
-      });
-      const done = keys.some((k) => snapshot.checkedExercises?.[k] === true);
-      if (!done) return null;
-      const finalKey = resolveBestRepsStorageKey(snapshot, keys) || `${dateStr}_${exercise.id}`;
-      const reps = parseInt(String(snapshot.reps?.[finalKey] ?? ''), 10) || 0;
-      if (reps <= 0) return null;
-      const vol = computeVolumeKgForWorkoutKey(finalKey, snapshot);
-      return {
-        ...exercise,
-        completed: true,
-        reps,
-        storageKey: finalKey,
-        weightEntered: resolveExerciseWeightDisplay(snapshot, keys, finalKey) || undefined,
-        perArm: resolveExerciseWeightPerArm(snapshot, keys, finalKey),
-        setWeights: resolveExerciseSetWeightsDisplay(snapshot, keys, finalKey),
-        volumeKg: Math.round(vol * 10) / 10
-      };
-    };
-
-    const programRows = programExercisesMerged.map(buildProgramExerciseRow).filter(Boolean);
-    const complementaryChecked =
-      workout.complementaryActivity &&
-      snapshot?.checkedExercises?.[
-        `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`
-      ];
-    const complementaryRows = complementaryChecked
-      ? [
-          {
-            id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
-            name: workout.complementaryActivity.name,
-            completed: true,
-            reps: 0,
-            duration: workout.complementaryActivity.duration
-          }
-        ]
-      : [];
-
-    const dayAdditional =
-      snapshot?.dailyVariations?.[dateStr]?.additionalExercises || additionalExercises || [];
-    const exceptionalCompletedReps = (dayAdditional || []).reduce((sum, ex) => {
-      if (!ex?.completed) return sum;
-      if (ex?.type !== 'reps') return sum;
-      const n = Math.max(
-        0,
-        Math.floor(
-          Number(
-            ex?.totalReps ??
-              (Array.isArray(ex?.actualReps) ? ex.actualReps.reduce((a, b) => a + (Number(b) || 0), 0) : 0)
-          ) || 0
-        )
-      );
-      return sum + n;
-    }, 0);
-
-    const todayData = {
-      date: dateStr,
-      exercises: [...programRows, ...complementaryRows],
-      totalReps:
-        programRows.reduce((total, ex) => total + (parseInt(ex.reps, 10) || 0), 0) + exceptionalCompletedReps,
-      estimatedDuration: Math.max(30, programExercisesMerged.length * 3),
-      duration: calculateSessionDuration(),
+    const todayData = sportContextToSessionDataPayload(sportContext, {
       workoutLoadSnapshot: collectWorkoutLoadSubsetForDate(snapshot, dateStr),
       existingFeedback: snapshot?.sessionFeedbacks?.[dateStr] || null,
-      openSource: options.source === 'auto' ? 'auto' : 'manual'
-    };
-    
+      openSource: options.source === 'auto' ? 'auto' : 'manual',
+      id: Date.now()
+    });
+
     setSessionData(todayData);
     setShowSessionFeedback(true);
   };
@@ -1926,8 +1854,21 @@ const TodayTab = () => {
     Array.isArray(workout?.drillsCourse?.items) && workout.drillsCourse.items.length > 0;
 
   useEffect(() => {
+    noteTodayDiag('load', 'Aujourd’hui monté');
     markTodayViewPrepared();
   }, []);
+
+  useEffect(() => {
+    registerTodayDimensions(() => {
+      const current = getCurrentData() || {};
+      return {
+        repsKeys: current.reps ? Object.keys(current.reps).length : 0,
+        checkedKeys: current.checkedExercises ? Object.keys(current.checkedExercises).length : 0,
+        exercisesOnScreen: exercisesForTodayList.length
+      };
+    });
+    return () => registerTodayDimensions(null);
+  }, [getCurrentData, exercisesForTodayList.length]);
 
   useEffect(() => {
     // Verrou local (savingLockRef) : plus d’état isSavingSessionDraft.
@@ -2541,7 +2482,7 @@ const TodayTab = () => {
                     <TodayExerciseCheck
                       exerciseId={exercise.id}
                       checked={checkboxChecked}
-                      onToggle={(shouldCheck) => queueExerciseCheck(exercise.id, currentDate, shouldCheck)}
+                      onToggle={(shouldCheck, inputAt) => queueExerciseCheck(exercise.id, currentDate, shouldCheck, inputAt)}
                       className="today-ex-check text-green-400"
                       name={`exercise_${exercise.id}`}
                       id={`today-ex-check-${exercise.id}`}
@@ -2938,7 +2879,7 @@ const TodayTab = () => {
                 <TodayExerciseCheck
                   exerciseId={complementaryId}
                   checked={complementaryChecked}
-                  onToggle={(shouldCheck) => queueExerciseCheck(complementaryId, currentDate, shouldCheck)}
+                  onToggle={(shouldCheck, inputAt) => queueExerciseCheck(complementaryId, currentDate, shouldCheck, inputAt)}
                   className="text-teal-400"
                   name={complementaryId}
                 />

@@ -1,23 +1,34 @@
 /**
  * Calendrier d’intensité (mois courant) — module sidebar séparé, mêmes données que le dashboard sport.
+ * P0.8 : gate visible/idle + historique différé + CalendarHeatmap mois chunké / indexé.
  */
 
 import { memo, useEffect, useMemo, useState } from 'react';
-import { useWorkout } from '../../../context/WorkoutContext';
+import { useDeferredWorkoutData } from '../../../hooks/useDeferredWorkoutData';
 import { useGarminData } from '../../../hooks/useGarminData';
+import { useHeavyAnalyticsGate } from '../../../hooks/useHeavyAnalyticsGate';
+import { getSharedWorkoutHistory } from '../../../services/sport/sidebarWorkoutHistoryCache';
+import { withWorkSpan } from '../../../dev/todayDiagnostics/workSpanTracker';
 import CalendarHeatmap from '../../CalendarHeatmap';
 
 const SidebarSportCalendarModule = memo(({ isExpanded, onToggle, setActiveTab }) => {
-  const { getWorkoutHistory, data } = useWorkout();
-  const workoutHistory = useMemo(() => getWorkoutHistory(), [getWorkoutHistory, data]);
+  const { getWorkoutHistory, data, isAnalyticsStale } = useDeferredWorkoutData();
+  const contentReady = useHeavyAnalyticsGate(isExpanded, { idleTimeoutMs: 2500 });
+  const workoutHistory = useMemo(() => {
+    if (!contentReady) return [];
+    return withWorkSpan('sidebar.calendar.history', () =>
+      getSharedWorkoutHistory(getWorkoutHistory, data)
+    );
+  }, [getWorkoutHistory, data, contentReady]);
+
   const { dbReady, loadAllData } = useGarminData();
   const [garminData, setGarminData] = useState(null);
   const [garminDataLoaded, setGarminDataLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    if (!dbReady || !isExpanded) {
-      setGarminDataLoaded(false);
+    if (!dbReady || !isExpanded || !contentReady) {
+      if (!isExpanded) setGarminDataLoaded(false);
       return undefined;
     }
     setGarminDataLoaded(false);
@@ -37,7 +48,7 @@ const SidebarSportCalendarModule = memo(({ isExpanded, onToggle, setActiveTab })
     return () => {
       alive = false;
     };
-  }, [dbReady, loadAllData, isExpanded]);
+  }, [dbReady, loadAllData, isExpanded, contentReady]);
 
   const openCalendarTab = () => {
     try {
@@ -63,6 +74,9 @@ const SidebarSportCalendarModule = memo(({ isExpanded, onToggle, setActiveTab })
             📅
           </span>
           Sport · calendrier
+          {isAnalyticsStale ? (
+            <span className="ml-1 text-[9px] font-normal text-slate-500">(maj…)</span>
+          ) : null}
         </h2>
         <span className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
           ▼
@@ -83,14 +97,20 @@ const SidebarSportCalendarModule = memo(({ isExpanded, onToggle, setActiveTab })
               </button>
             </div>
             <div className="max-h-[min(52vh,380px)] overflow-y-auto overflow-x-hidden min-w-0 overscroll-contain">
-              <CalendarHeatmap
-                workoutHistory={workoutHistory}
-                garminData={garminData}
-                garminDataLoaded={garminDataLoaded}
-                initialViewMode="month"
-                compact
-                embedInSidebar
-              />
+              {contentReady ? (
+                <CalendarHeatmap
+                  workoutHistory={workoutHistory}
+                  garminData={garminData}
+                  garminDataLoaded={garminDataLoaded}
+                  initialViewMode="month"
+                  compact
+                  embedInSidebar
+                />
+              ) : (
+                <div className="py-6 text-center text-[10px] text-slate-500" role="status">
+                  Préparation du calendrier…
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -584,41 +584,49 @@ export function calculateTimeIntensityLevel(duration, thresholds) {
  * @param {string} dateStr
  * @returns {{ rows: Array<{ activityType: string, session: object }>, runningDistanceKm: number, swimmingDistanceM: number }}
  */
-export function collectEnduranceSessionsForCalendarDay(allData, dateStr) {
-  const sessionsMap = allData?.enduranceData?.sessions || {};
+export function collectEnduranceSessionsForCalendarDay(allData, dateStr, preindexedByDate = null) {
   const rows = [];
   let runningDistanceKm = 0;
   let swimmingDistanceM = 0;
 
-  Object.entries(sessionsMap).forEach(([activityType, sessions]) => {
-    if (!Array.isArray(sessions)) return;
-    sessions.forEach((session) => {
-      if (isMockEnduranceSession(session)) return;
-      if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) return;
-      const overrides = readGarminActivityDateOverrides(allData);
-      const calendarDate = resolveSessionCalendarDate(session, overrides);
-      if (!calendarDate || calendarDate !== dateStr) return;
+  const pushRow = (activityType, session) => {
+    rows.push({ activityType, session });
 
-      rows.push({ activityType, session });
+    if (activityType === 'running') {
+      const km = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+      if (km > 0) runningDistanceKm += km;
+    }
 
-      if (activityType === 'running') {
-        const km = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
-        if (km > 0) runningDistanceKm += km;
-      }
-
-      if (activityType === 'swimming') {
-        if (Array.isArray(session.laps) && session.laps.length > 0) {
-          session.laps.forEach((lap) => {
-            const m = parseFloat(String(lap?.distance ?? '').replace(',', '.')) || 0;
-            if (m > 0) swimmingDistanceM += m;
-          });
-        } else {
-          const m = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+    if (activityType === 'swimming') {
+      if (Array.isArray(session.laps) && session.laps.length > 0) {
+        session.laps.forEach((lap) => {
+          const m = parseFloat(String(lap?.distance ?? '').replace(',', '.')) || 0;
           if (m > 0) swimmingDistanceM += m;
-        }
+        });
+      } else {
+        const m = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+        if (m > 0) swimmingDistanceM += m;
       }
+    }
+  };
+
+  if (preindexedByDate && typeof preindexedByDate.get === 'function') {
+    const indexed = preindexedByDate.get(dateStr) || [];
+    indexed.forEach(({ activityType, session }) => pushRow(activityType, session));
+  } else {
+    const sessionsMap = allData?.enduranceData?.sessions || {};
+    Object.entries(sessionsMap).forEach(([activityType, sessions]) => {
+      if (!Array.isArray(sessions)) return;
+      sessions.forEach((session) => {
+        if (isMockEnduranceSession(session)) return;
+        if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) return;
+        const overrides = readGarminActivityDateOverrides(allData);
+        const calendarDate = resolveSessionCalendarDate(session, overrides);
+        if (!calendarDate || calendarDate !== dateStr) return;
+        pushRow(activityType, session);
+      });
     });
-  });
+  }
 
   rows.sort((a, b) => {
     const ta = String(a.session?.time || '00:00:00');
@@ -642,8 +650,8 @@ export function collectEnduranceSessionsForCalendarDay(allData, dateStr) {
  */
 import { ENDURANCE_REP_ACTIVITIES } from '../services/endurance/enduranceRepsWorkoutSync';
 
-export function computeEnduranceDayMetricsForCalendar(allData, dateStr) {
-  const { rows } = collectEnduranceSessionsForCalendarDay(allData, dateStr);
+export function computeEnduranceDayMetricsForCalendar(allData, dateStr, preindexedByDate = null) {
+  const { rows } = collectEnduranceSessionsForCalendarDay(allData, dateStr, preindexedByDate);
   let enduranceReps = 0;
   let enduranceDuration = 0;
   let enduranceDistance = 0;

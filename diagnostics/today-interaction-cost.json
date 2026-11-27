@@ -1,0 +1,82 @@
+{
+  "runtime": "vitest-jsdom",
+  "note": "Ce n’est pas une durée de navigateur ni une session réelle.",
+  "node": "v24.11.1",
+  "rows": [
+    {
+      "size": 500,
+      "uniqueRepKeys": 501,
+      "search": {
+        "samples": 7,
+        "coldMs": 1,
+        "medianMs": 0,
+        "p95Ms": 1,
+        "maxMs": 1
+      },
+      "copy": {
+        "samples": 7,
+        "coldMs": 1,
+        "medianMs": 0,
+        "p95Ms": 1,
+        "maxMs": 1
+      },
+      "scoreFor8Exercises": {
+        "samples": 7,
+        "coldMs": 2,
+        "medianMs": 1,
+        "p95Ms": 2,
+        "maxMs": 2
+      }
+    },
+    {
+      "size": 4000,
+      "uniqueRepKeys": 4001,
+      "search": {
+        "samples": 7,
+        "coldMs": 4,
+        "medianMs": 3,
+        "p95Ms": 4,
+        "maxMs": 4
+      },
+      "copy": {
+        "samples": 7,
+        "coldMs": 3,
+        "medianMs": 3,
+        "p95Ms": 4,
+        "maxMs": 4
+      },
+      "scoreFor8Exercises": {
+        "samples": 7,
+        "coldMs": 8,
+        "medianMs": 8,
+        "p95Ms": 9,
+        "maxMs": 9
+      }
+    },
+    {
+      "size": 24000,
+      "uniqueRepKeys": 24001,
+      "search": {
+        "samples": 7,
+        "coldMs": 19,
+        "medianMs": 19,
+        "p95Ms": 19,
+        "maxMs": 19
+      },
+      "copy": {
+        "samples": 7,
+        "coldMs": 30,
+        "medianMs": 31,
+        "p95Ms": 35,
+        "maxMs": 35
+      },
+      "scoreFor8Exercises": {
+        "samples": 7,
+        "coldMs": 72,
+        "medianMs": 64,
+        "p95Ms": 72,
+        "maxMs": 72
+      }
+    }
+  ]
+}

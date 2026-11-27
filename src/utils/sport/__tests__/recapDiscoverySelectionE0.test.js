@@ -434,7 +434,7 @@ describe('E0 compose plan insufficient', () => {
     );
     expect(cards[0].kind).toBe('disc_plan_data_insufficient');
     expect(cards[0].title).toMatch(/preuve historique|indisponible|suivi de plan/i);
-    expect(cards[0].body).toMatch(/snapshot/i);
+    expect(cards[0].body).toMatch(/plan figé/i);
     expect(cards[0].body).not.toMatch(/Les expositions réelles et les trajectoires restent exploitables séparément/);
     expect(resolveContentClass(cards[0])).toBe(CONTENT_CLASS.METHODOLOGY_LIMIT);
   });

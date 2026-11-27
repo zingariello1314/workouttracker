@@ -1,0 +1,95 @@
+{
+  "schema": "momentum.mission33.v1v2.editorial.v1",
+  "cardCountsByPeriod": {
+    "today": 12,
+    "7d": 61,
+    "30d": 88,
+    "3m": 103,
+    "6m": 112,
+    "1y": 114,
+    "2y": 111,
+    "all": 111
+  },
+  "session_families_overview": {
+    "occurrences": 10,
+    "sameBody1104": 8,
+    "periods": [
+      {
+        "period": "today",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "7d",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "7d",
+        "disposition": "autonomous",
+        "role": "priority"
+      },
+      {
+        "period": "30d",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "30d",
+        "disposition": "autonomous",
+        "role": "priority"
+      },
+      {
+        "period": "3m",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "6m",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "1y",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "2y",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      },
+      {
+        "period": "all",
+        "disposition": "promoted_over_legacy",
+        "role": "priority"
+      }
+    ],
+    "verdict": "defaut_selection_temporelle — même corps prioritaire sur 8 horizons",
+    "status": "Echec_avant_correctif"
+  },
+  "density_title": [
+    {
+      "period": "7d",
+      "title": "Ces 7 jours concentrent le travail sur moins de temps"
+    }
+  ],
+  "densityVerdict": "Echec — titre embellit densité inférieure ; correctif M33 moins dense",
+  "liveInputsGap": {
+    "liveDigest": "3fab111c",
+    "engineDigest": "22b7a7ba",
+    "liveProgram": null,
+    "engineProgramId": "default-program",
+    "liveGarminSleep": 0,
+    "engineGarminSleep": 398,
+    "cause": "LIVE_INPUTS assemblé sans activeProgram/garminData/nameMap alors que eight-periods.fingerprint les consommait",
+    "status": "Echec_export_v31 ; cause démontrée ; correctif code v32"
+  },
+  "population": {
+    "pass": 0,
+    "fail": 0,
+    "noncomparable": 118,
+    "not_evaluated": 0,
+    "recorded": 118
+  }
+}

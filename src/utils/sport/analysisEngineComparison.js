@@ -398,7 +398,16 @@ function accessibleAfterCap(report, row) {
   const id = String(row?.id || '');
   const title = String(row?.title || '').trim().toLowerCase();
   return reserve.some((item) => {
-    if (item?.disposition !== 'valid_reserved' && item?.disposition !== 'demoted_priority') return false;
+    if (
+      item?.disposition !== 'valid_reserved' &&
+      item?.disposition !== 'demoted_priority' &&
+      item?.disposition !== 'deepening_of_collective' &&
+      item?.disposition !== 'deepening_accessible' &&
+      item?.disposition !== 'reserve' &&
+      item?.disposition !== 'demoted_partial_redundancy'
+    ) {
+      return false;
+    }
     if (id && item.id === id) return true;
     return title && String(item.title || '').trim().toLowerCase() === title;
   });

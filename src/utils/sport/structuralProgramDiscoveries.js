@@ -183,8 +183,13 @@ export function composeStructuralProgramDiscoveries({
     const overview = reasonAboutProgramFamilies(graph, templatesByDay);
     const multiFamilies = graph.families.filter((f) => f.size >= 2);
 
-    // Carte d’ensemble si plusieurs familles — une seule
+    // Carte d’ensemble si plusieurs familles — une seule.
+    // Mission 33 — priorité éditoriale seulement sur today/week/month :
+    // sur horizons longs, la structure programmée reste un contexte accessible
+    // (même corps), pas une priorité répétée 8×.
     if (overview && overview.familyCount >= 2) {
+      const shortHorizon =
+        voiceKey === 'week' || voiceKey === 'month' || voiceKey === 'today';
       out.push({
         kind: 'disc_session_family_structure',
         nature: voiceKey === 'today' ? 'trajectory' : nature,
@@ -193,10 +198,10 @@ export function composeStructuralProgramDiscoveries({
         body: overview.body,
         evidence: overview.families.map((f) => f.members.join('+')).join(' · '),
         weights: {
-          importance: 0.93,
+          importance: shortHorizon ? 0.93 : 0.42,
           reliability: 0.9,
-          novelty: 0.91,
-          fit: voiceKey === 'week' || voiceKey === 'month' || voiceKey === 'today' ? 1 : 0.86
+          novelty: shortHorizon ? 0.91 : 0.35,
+          fit: shortHorizon ? 1 : 0.55
         },
         metrics: {
           producer: 'sessionStructureGraph',
@@ -205,6 +210,7 @@ export function composeStructuralProgramDiscoveries({
           windowStart: window?.start || null,
           windowEnd: window?.end || null,
           population: 'programmed_structure',
+          horizonRole: shortHorizon ? 'priority_candidate' : 'context_accessible',
           observedValues: [
             { id: 'familyCount', value: overview.familyCount, unit: 'count' },
             {

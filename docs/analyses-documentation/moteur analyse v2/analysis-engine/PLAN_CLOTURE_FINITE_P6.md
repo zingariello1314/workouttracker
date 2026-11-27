@@ -1,62 +1,56 @@
 # PLAN DE CLÔTURE FINIE P6
 
-**NO-GO P7** tant qu’un critère obligatoire reste ouvert.  
-Mise à jour Mission 31 · édition code `p6-sovereign-v30` · baseline observée v29.
+**NO-GO P7.** Édition code : `p6-sovereign-v35`.  
+Référence observation : export Chrome 27/11/2026 `8ee0e181` · DOM 8/8 CONFORME.
 
-## Trois strates
+## Strates
 
-| Strate | Contenu | Clôture P6 ? |
-|---|---|---|
-| 1. Intégrité technique | B1–B8 | Non — nécessaire |
-| 2. Candidature ASPECT | B + G min + V1–V2 + P1–P2 | Non |
-| 3. Clôture effective | + Jeux B/C exécutés + DOM traité | **Oui seulement ici** |
+| Strate | Clôture P6 ? |
+|---|---|
+| 1–2 Intégrité / candidature | Quasi — DOM + integrity v34 **démontrés** |
+| 3 Clôture (B/C + intelligence + rejeu) | **Oui seulement si B/G/V/P satisfaits** |
 
----
+## B — Intégrité
 
-## B — Intégrité technique
-
-| ID | Critère | État M31 | Preuve |
-|---|---|---|---|
-| B1 | Autorité P6 8/8 | Satisfait (export v29 + rejeu) | AUDIT / replay |
-| B2 | Orphan / self_fusion | Satisfait export v29 (hors subset artificiel) | AUDIT |
-| B3 | Totaux ≠ moyennes ; effectifs liés ; **pas de faux triple** | **Satisfait code+UT+reval 75** | M30+M31 |
-| B4 | Claims ↔ cartes | Satisfait (hors non-comparables) | — |
-| B5 | Mémoire | Partiel | 1 phen |
-| B6 | Campagne AUDIT/TRACE | Satisfait v29 gelée | baseline M31 |
-| B7 | Fusion partial ≠ suppress | Partiel | V2 reformulations |
-| B8 | Sémantique ≠ champs seuls | Progressé | notes non-comparables |
+| ID | État M36 |
+|---|---|
+| Carte–claim / Dips | **Démontré** v34 |
+| DOM 8/8 | **Démontré** v34 — ne pas rouvrir |
+| Preuves priorités A | Load **OK** ; ratio/quarter **code v35** → re-preuve |
 
 ## G — Généralisation
 
-| ID | État | Note |
-|---|---|---|
-| G1–G6 | Ouverts | Inchangés ; E1–E6 au registre éditorial |
+Ouverte sur sélection longs horizons (redondance 1y/2y/all). Non rouverte hors lacune démontrée.
 
-## V — Validation indépendante
+## V — Validation
 
-| ID | État | Note |
-|---|---|---|
-| V1 Jeu A | Amorcé (M30) + non étendu live | Corpus ≠ oracle user |
-| V2 Abondance | Partiel | 31e OK ; reformulations ouvertes |
-| V3 Jeu C | **Non exécuté** | Ne pas déclarer PASS |
-| V4 Jeu B | **Non exécuté** | Ne pas déclarer PASS |
+| ID | État M36 |
+|---|---|
+| V1 Jeu A | Correctifs preuves + harvest composition ; **re-preuve live v35** |
+| V2 Éditorial | Calendrier non causal ; P3.4 sans « snapshots » |
+| V3 Jeu C | 0 doublon strict registre 8h ; homonymes OK |
+| V4 Jeu B | Faux positif physio **corrigé** ; profondeur globale **Limitée** |
 
-## P — Produit réel
+## P — Produit
 
-| ID | État | Note |
-|---|---|---|
-| P1 Rejeu 8 horizons | **Exécuté** sur backup (fp≠live) | `replay-eight-v30.json` |
-| P2 DOM | **NON_OBSERVÉ** | ≠ PASS |
-| P3 Fingerprint / parité | Partiel | live `c8aa227e` ≠ backup `6c66326b` |
+| ID | État |
+|---|---|
+| P1 Rejeu LIVE | Digest OK ; prescriptions `series` **à capturer** |
+| P2 DOM | **Démontré** — figé |
+| P3 Fingerprint | `8ee0e181` |
 
-## Différé spec (X1–X4)
+## Décision
 
-HypothesisPlanner / implications / VIE / incrémental → P7–P8. **Ne pas y reporter V/B/G/P.**
+| Garantie | Type |
+|---|---|
+| DOM / integrity / homonymes UI | **Démontrée** |
+| Jeu A/B correctifs | **Démontrée (code)** / **Limitée (live v35)** |
+| Rejeu exact | **Limitée** |
+| Aveugle humain | **Non testée** |
+| Clôture P6 | **Non atteinte** |
 
-## Ordre restant
+## Dépendances restantes (isolées — pas une liste de nouvelles missions)
 
-1. Export utilisateur **v30** (intégrité sans les 75 faux fails).  
-2. DOM réel ou procédure NON_OBSERVÉ formalisée côté produit.  
-3. V2 reformulations.  
-4. Exécuter Jeux B/C.  
-5. Clôture seulement strate 3.
+1. Chrome édition v35 : Jeu A/B live + LIVE avec `series`.  
+2. Notation aveugle humaine du blind-pack.  
+3. Clôturer strate 3 seulement si ces preuves produit sont réunies.

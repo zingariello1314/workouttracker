@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "schemaVersion": "2.1.0",
+    "synthetic": true
+  },
+  "interactionTimeline": [
+    {
+      "id": 1,
+      "kind": "check",
+      "label": "Coche d’un exercice",
+      "status": "open",
+      "inputAt": 98,
+      "handlerStart": 100,
+      "handlerEnd": 104,
+      "frameCallbackAt": 4966.6,
+      "frameMarkMeaning": "callback-fire-time",
+      "inputDelayMs": 2,
+      "processingMs": 4,
+      "untilNextFrameCallbackMs": 4862.6,
+      "nativeClickDurationMs": 4900,
+      "nativeClickMatch": {
+        "matched": true,
+        "ambiguous": false,
+        "t": 98,
+        "durationMs": 4900,
+        "processingStart": 100,
+        "processingEnd": 104,
+        "interactionId": 42,
+        "deltaMs": 0,
+        "quality": "timestamp-proximity"
+      },
+      "legacyTotalMs": 4866.6,
+      "windowMs": 4900,
+      "longTaskCoveredMs": 4700,
+      "explainedMs": 4703.6,
+      "unexplainedMs": 194.3,
+      "unexplained": [
+        {
+          "start": 103.7,
+          "end": 120,
+          "ms": 16.3,
+          "quality": "unexplained",
+          "meaning": "Aucun span, rendu, tâche longue ou frame instrumenté ne couvre cet intervalle."
+        },
+        {
+          "start": 4820,
+          "end": 4998,
+          "ms": 178,
+          "quality": "unexplained",
+          "meaning": "Aucun span, rendu, tâche longue ou frame instrumenté ne couvre cet intervalle."
+        }
+      ],
+      "longTaskIds": [
+        "lt-1"
+      ],
+      "hiddenDuring": false,
+      "band": {
+        "id": "blocked",
+        "max": null,
+        "label": "Blocage majeur"
+      },
+      "bandMetric": 4900,
+      "bandMetricName": "nativeClickDurationMs",
+      "coverageIsNotCausality": true,
+      "qualities": {
+        "inputDelay": "direct",
+        "processing": "direct",
+        "untilNextFrameCallback": "approximation-not-presentation",
+        "nativeClick": "timestamp-proximity",
+        "presentation": "event-timing-duration-includes-presentation-delay",
+        "unexplained": "correlation-after-overlap-merge",
+        "longTaskCoverage": "interval-intersection-not-causality"
+      }
+    },
+    {
+      "id": 2,
+      "kind": "check",
+      "label": "Coche rapide",
+      "status": "open",
+      "inputAt": 7999,
+      "handlerStart": 8000,
+      "handlerEnd": 8004,
+      "frameCallbackAt": 8021,
+      "frameMarkMeaning": "callback-fire-time",
+      "inputDelayMs": 1,
+      "processingMs": 4,
+      "untilNextFrameCallbackMs": 17,
+      "nativeClickDurationMs": 28,
+      "nativeClickMatch": {
+        "matched": true,
+        "ambiguous": false,
+        "t": 7999,
+        "durationMs": 28,
+        "processingStart": 8000,
+        "processingEnd": 8004,
+        "interactionId": 43,
+        "deltaMs": 0,
+        "quality": "timestamp-proximity"
+      },
+      "legacyTotalMs": 21,
+      "windowMs": 28,
+      "longTaskCoveredMs": 0,
+      "explainedMs": 0,
+      "unexplainedMs": 28,
+      "unexplained": [
+        {
+          "start": 7999,
+          "end": 8027,
+          "ms": 28,
+          "quality": "unexplained",
+          "meaning": "Aucun span, rendu, tâche longue ou frame instrumenté ne couvre cet intervalle."
+        }
+      ],
+      "longTaskIds": [],
+      "hiddenDuring": false,
+      "band": {
+        "id": "target",
+        "max": 50,
+        "label": "Cible souhaitée"
+      },
+      "bandMetric": 28,
+      "bandMetricName": "nativeClickDurationMs",
+      "coverageIsNotCausality": true,
+      "qualities": {
+        "inputDelay": "direct",
+        "processing": "direct",
+        "untilNextFrameCallback": "approximation-not-presentation",
+        "nativeClick": "timestamp-proximity",
+        "presentation": "event-timing-duration-includes-presentation-delay",
+        "unexplained": "correlation-after-overlap-merge",
+        "longTaskCoverage": "interval-intersection-not-causality"
+      }
+    }
+  ],
+  "unexplainedTimeIntervals": [
+    {
+      "interactionId": 1,
+      "start": 103.7,
+      "end": 120,
+      "ms": 16.3,
+      "quality": "unexplained",
+      "meaning": "Aucun span, rendu, tâche longue ou frame instrumenté ne couvre cet intervalle."
+    },
+    {
+      "interactionId": 1,
+      "start": 4820,
+      "end": 4998,
+      "ms": 178,
+      "quality": "unexplained",
+      "meaning": "Aucun span, rendu, tâche longue ou frame instrumenté ne couvre cet intervalle."
+    }
+  ],
+  "summaryStatistics": {
+    "samples": 2,
+    "min": 28,
+    "median": 4900,
+    "p95": 4900,
+    "max": 4900,
+    "reliable": false,
+    "p95Reliable": false,
+    "medianConvention": "sorted[floor(n/2)]",
+    "p95Convention": "nearest-rank ceil(n*0.95)-1",
+    "reliabilityNote": "P95 indicatif seulement (2/30 échantillons). reliable=true ne signifie pas un P95 stable."
+  },
+  "measurementLimitations": [
+    "Exemple synthétique. Le rappel de frame n’est pas une présentation."
+  ]
+}

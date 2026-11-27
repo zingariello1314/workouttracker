@@ -1,4 +1,11 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useDeferredValue } from 'react';
+import { fingerprintWorkoutAnalytics } from '../services/sport/workoutAnalyticsRevision';
+import {
+  indexWorkoutStorageKeysByDate,
+  indexEnduranceSessionsByDate
+} from '../utils/sport/workoutStorageKeysByDate';
+import { yieldToMain } from '../utils/sport/yieldToMain';
+import { resolveSessionCalendarDate } from '../utils/sessionCalendarDate';
 import { 
   Calendar, 
   ChevronLeft, 
@@ -558,6 +565,13 @@ const CalendarHeatmap = ({
     replaceDraftWorkoutData,
     setActiveTab
   } = useWorkout();
+  /** P0.7 sidebar : différer le snapshot analytique pour ne pas bloquer Aujourd’hui après Enregistrer. */
+  const deferredData = useDeferredValue(data);
+  const analyticsData = isSidebarEmbed ? deferredData : data;
+  const analyticsRevision = useMemo(
+    () => fingerprintWorkoutAnalytics(analyticsData),
+    [analyticsData]
+  );
   const { dbReady: nutritionDbReady, getMealsByDateRange } = useNutritionData();
   const [nutritionMealsByDate, setNutritionMealsByDate] = useState({});
   const holisticDetailRef = useRef(null);
@@ -764,9 +778,32 @@ const CalendarHeatmap = ({
       setMarkedWeightedData(initialMarkedWeighted);
     }
   }, [panelMode, workout, panelDate, selectedVariant, getCurrentData, getDateStr, dataUpdateTrigger]);
-  // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
-  // ✅ NOUVEAU : Recalculer allData quand dataUpdateTrigger change pour avoir les données les plus récentes
-  const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData, data]);
+  // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées).
+  // Sidebar embed : snapshot différé (réactivité Aujourd’hui prioritaire).
+  const allData = useMemo(() => {
+    if (isSidebarEmbed) return analyticsData || {};
+    return getCurrentData();
+  }, [dataUpdateTrigger, getCurrentData, data, isSidebarEmbed, analyticsData]);
+
+  /** P0.8 : index une fois — accès O(1) par date dans getIntensityForDate. */
+  const dayKeysIndex = useMemo(
+    () => indexWorkoutStorageKeysByDate(allData),
+    [allData, analyticsRevision]
+  );
+  const enduranceByDateIndex = useMemo(
+    () =>
+      indexEnduranceSessionsByDate(
+        allData,
+        resolveSessionCalendarDate,
+        isMockEnduranceSession,
+        shouldExcludeStoredGarminRunningSession
+      ),
+    [allData, analyticsRevision]
+  );
+  const dayKeysIndexRef = useRef(dayKeysIndex);
+  const enduranceByDateIndexRef = useRef(enduranceByDateIndex);
+  dayKeysIndexRef.current = dayKeysIndex;
+  enduranceByDateIndexRef.current = enduranceByDateIndex;
 
   // Persistance lazy d’un snapshot reconstruit quand on ouvre un jour passé avec perfs.
   useEffect(() => {
@@ -1020,15 +1057,12 @@ const CalendarHeatmap = ({
     };
   }, [variant, booksIntensityMap]);
 
-  // ✅ PHASE 2.3 : Invalider le cache lorsque les données sources changent
+  // ✅ PHASE 2.3 / P0.7 : invalider l’intensité seulement si la révision analytique change
   useEffect(() => {
     intensityCache.current = {};
   }, [
     garminData,
-    allData?.reps,
-    allData?.checkedExercises,
-    allData?.checkedStretches,
-    allData?.enduranceData,
+    analyticsRevision,
     allData?.garminActivityDateOverrides,
     allData?.dayJustifications,
     allData?.restDaySwaps,
@@ -1322,8 +1356,10 @@ const CalendarHeatmap = ({
       return learningIntensityMap.get(dateStr) || createNeutralBooksIntensity();
     }
 
-    // Données fraîches ; `currentDataOverride` évite un tour de render après updateData (getCurrentData peut encore pointer sur l’ancien brouillon).
-    const currentData = currentDataOverride ?? getCurrentData();
+    // Données fraîches ; `currentDataOverride` évite un tour de render après updateData.
+    // Sidebar : allData différé pour ne pas recalculer sur le snapshot live urgent.
+    const currentData =
+      currentDataOverride ?? (isSidebarEmbed ? allData : getCurrentData());
     
     // ✅ PHASE 2.3 : Vérifier le cache avant de calculer (ignorer le cache si snapshot explicite)
     const cacheKey = dateStr;
@@ -1352,30 +1388,24 @@ const CalendarHeatmap = ({
       allExercisesForDate.map((ex) => String(ex.id ?? ex.storageId ?? ''))
     );
 
-    // Orphelins : clés date_* absentes du plan résolu (séance d’un autre jour, ajouts exceptionnels).
-    const prefix = `${dateStr}_`;
-    const reps = currentData?.reps || {};
-    const checked = currentData?.checkedExercises || {};
-    [...Object.keys(reps), ...Object.keys(checked)].forEach((key) => {
-      if (!key.startsWith(prefix)) return;
-      const rest = key.slice(prefix.length);
-      const match = rest.match(/^(\d+)(?:_semaineA|_semaineB)?$/);
-      if (match) {
-        const id = parseInt(match[1], 10);
-        if (!plannedIds.has(String(id))) {
-          plannedIds.add(String(id));
-          allExercisesForDate = [
-            ...allExercisesForDate,
-            {
-              id,
-              name: getExerciseNameById ? getExerciseNameById(id) : `Exercice ${id}`,
-              series: '',
-              programName: 'Séance enregistrée',
-              programId: 'recorded'
-            }
-          ];
+    // Orphelins : via index par date (évite Object.keys global × N cellules).
+    const keysIndex = dayKeysIndexRef.current;
+    const orphanIds =
+      keysIndex && typeof keysIndex.orphanExerciseIdsForDate === 'function'
+        ? keysIndex.orphanExerciseIdsForDate(dateStr, plannedIds)
+        : [];
+    orphanIds.forEach((id) => {
+      plannedIds.add(String(id));
+      allExercisesForDate = [
+        ...allExercisesForDate,
+        {
+          id,
+          name: getExerciseNameById ? getExerciseNameById(id) : `Exercice ${id}`,
+          series: '',
+          programName: 'Séance enregistrée',
+          programId: 'recorded'
         }
-      }
+      ];
     });
     
     const workout = allExercisesForDate.length > 0 ? {
@@ -1402,7 +1432,12 @@ const CalendarHeatmap = ({
     // Calculer les données d'endurance pour cette date
     // NOTE: Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
     // Elles servent uniquement à fournir des détails sur ce qui s'est passé
-    const getEnduranceDataForDate = () => computeEnduranceDayMetricsForCalendar(currentData, dateStr);
+    const getEnduranceDataForDate = () =>
+      computeEnduranceDayMetricsForCalendar(
+        currentData,
+        dateStr,
+        enduranceByDateIndexRef.current
+      );
     
     const enduranceData = getEnduranceDataForDate();
     
@@ -1411,9 +1446,12 @@ const CalendarHeatmap = ({
       currentData?.dailyVariations?.[dateStr],
       []
     );
-    const hasCheckedThisDay = Object.keys(currentData?.checkedExercises || {}).some(
-      (key) => key.startsWith(`${dateStr}_`) && currentData.checkedExercises[key]
-    );
+    const hasCheckedThisDay =
+      keysIndex && typeof keysIndex.hasCheckedOnDate === 'function'
+        ? keysIndex.hasCheckedOnDate(dateStr)
+        : Object.keys(currentData?.checkedExercises || {}).some(
+            (key) => key.startsWith(`${dateStr}_`) && currentData.checkedExercises[key]
+          );
     // Si pas d'exercices pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
     if (
       allExercisesForDate.length === 0 &&
@@ -2675,11 +2713,13 @@ const CalendarHeatmap = ({
     });
   }, [selectedDate?.date, selectedDate?.intensity, dataUpdateTrigger, garminData, allData]);
 
-  const monthDays = useMemo(() => {
+  const monthDaysSync = useMemo(() => {
+    if (isSidebarEmbed) return [];
     if (!compact && viewMode === 'year') return [];
     if (!compact && viewMode === 'streaks') return [];
     return generateMonthDays(currentDate);
   }, [
+    isSidebarEmbed,
     compact,
     viewMode,
     currentDate,
@@ -2697,7 +2737,99 @@ const CalendarHeatmap = ({
     questIntensityMap,
     booksIntensityMap,
     learningIntensityMap,
+    dayKeysIndex,
+    enduranceByDateIndex,
   ]);
+
+  /** P0.8 sidebar : intensités mois en chunks (cède le main entre lots de jours). */
+  const [sidebarMonthDays, setSidebarMonthDays] = useState([]);
+  useEffect(() => {
+    if (!isSidebarEmbed || !paintReady) return undefined;
+    let cancelled = false;
+
+    const build = async () => {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const startDate = new Date(firstDay);
+      const dayOfWeek = firstDay.getDay();
+      const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startDate.setDate(firstDay.getDate() - mondayOffset);
+      const days = [];
+      const currentDay = new Date(startDate);
+      let computed = 0;
+      for (let i = 0; i < 42; i += 1) {
+        if (cancelled) return;
+        const isCurrentMonthDay = currentDay.getMonth() === month;
+        let intensity;
+        if (isCurrentMonthDay) {
+          intensity = getIntensityForDate(currentDay);
+          computed += 1;
+          if (computed % 3 === 0) await yieldToMain();
+        } else {
+          intensity = {
+            level: 0,
+            reps: 0,
+            trainingLoad: 0,
+            strengthLoad: 0,
+            duration: 0,
+            exerciseCount: 0,
+            completedCount: 0,
+            intensityScore: 0,
+            completionRate: 0,
+            programCompletionRatio: 0,
+            programCheckedCount: 0,
+            programPlannedCount: 0,
+            activeKcal: 0,
+            kcalRefMedian: 0,
+            steps: 0,
+            stepsRefMedian: 0,
+            intensityMinutesTotal: 0,
+            visualContext: null,
+            enduranceData: { reps: 0, duration: 0, distance: 0, jumps: 0, sessions: 0 },
+            garminIcons: [],
+            exercises: 0,
+            session: null
+          };
+        }
+        days.push({
+          date: new Date(currentDay),
+          isCurrentMonth: isCurrentMonthDay,
+          isToday: currentDay.toDateString() === new Date().toDateString(),
+          intensity
+        });
+        currentDay.setDate(currentDay.getDate() + 1);
+      }
+      if (!cancelled) setSidebarMonthDays(days);
+    };
+
+    const idleId =
+      typeof requestIdleCallback === 'function'
+        ? requestIdleCallback(() => {
+            void build();
+          }, { timeout: 2000 })
+        : 0;
+    if (!idleId) void build();
+
+    return () => {
+      cancelled = true;
+      if (idleId && typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId);
+    };
+  }, [
+    isSidebarEmbed,
+    paintReady,
+    currentDate,
+    allData,
+    analyticsRevision,
+    garminData,
+    garminDataLoaded,
+    activeProgram,
+    workoutDayOverride,
+    dayKeysIndex,
+    enduranceByDateIndex
+  ]);
+
+  const monthDays = isSidebarEmbed ? sidebarMonthDays : monthDaysSync;
 
   const [yearPack, setYearPack] = useState(() => {
     if (isSidebarEmbed || viewMode !== 'year') return EMPTY_YEAR_PACK;

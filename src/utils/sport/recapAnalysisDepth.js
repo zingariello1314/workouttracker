@@ -76,6 +76,9 @@ function concentrationIdea(dossier) {
   }
   const peak = o.peak;
   if (!peak || !hasNum(peak.reps) || !hasNum(peak.share) || Number(peak.share) < PEAK_SHARE) return null;
+  // Mission 35 — 100 % = une seule journée porte tout le volume : tautologie avec disc_volume_shape.
+  const sharePct = Number(peak.share) <= 1.5 ? Number(peak.share) * 100 : Number(peak.share);
+  if (sharePct >= 99.5) return null;
   const names = Array.isArray(peak.exerciseNames) && peak.exerciseNames.length
     ? ` Les exercices de ce jour : ${peak.exerciseNames.join(', ')}.`
     : '';
