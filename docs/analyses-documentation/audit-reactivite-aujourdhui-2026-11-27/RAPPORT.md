@@ -278,3 +278,7 @@ Fluidité nominale atteinte (médiane 24 ms / P95 Phase C 32 ms). Problème rest
 ## 15. P0.8 — calendrier / worker / démarrage (post 04-55)
 
 Caches P0.7 OK ; calendrier ~70 % du coût modules ; lt démarrage 13,3 s + 12,8 s (WW4). Correctifs : index intensités, mois chunké, Worker agrégats, gate visible/idle. Voir **[P0.8-CALENDRIER-WORKER-DEMARRAGE.md](./P0.8-CALENDRIER-WORKER-DEMARRAGE.md)**. Révision `p0.8-calendar-worker-startup-2026-11-27`. Validation via tests Chromium isolés avant nouvel export utilisateur.
+
+## 16. P0.9 — calendrier 99 % + CPU démarrage (post 05-41)
+
+Calendrier = stripes×cellules + mémos historiques dans le monolithe Heatmap. Démarrage : profil CDP isolé → Dashboard charts / WW4 / 3D (pas calendrier seul). Tests Chromium **4/4 verts**. Voir **[P0.9-CALENDRIER-DEMARRAGE-CPU.md](./P0.9-CALENDRIER-DEMARRAGE-CPU.md)**. Révision `p0.9-calendar-startup-cpu-2026-11-27`. **NO-GO.**

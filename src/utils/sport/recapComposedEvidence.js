@@ -167,14 +167,27 @@ export function classifyContinuity(trajectory) {
       };
     }
   }
-  if (story === 'outlier_driven') {
+  if (
+    story === 'outlier_driven' ||
+    shape.path === 'terminal_outlier' ||
+    shape.kind === 'punctual_drop' ||
+    shape.terminalPunctualDrop === true
+  ) {
     return {
       kind: 'isolated_outlier',
       stance: 'watch',
-      detail: 'Écart tiré par une séance atypique'
+      detail:
+        shape.terminalPunctualDrop === true || shape.path === 'terminal_outlier'
+          ? 'Baisse portée par une seule séance terminale après un plateau — pas un recul installé'
+          : 'Écart tiré par une séance atypique'
     };
   }
-  if (story === 'net_decline' && (shape.path === 'progressive_decline' || shape.kind === 'steady_decline')) {
+  // Recul « confirmé » : suffixe ≥2 séances basses ou baisse progressive monotone.
+  const trailing = Number(shape.trailingDeclineCount ?? shape.declineSessionCount) || 0;
+  const repeatedDecline =
+    shape.path === 'progressive_decline' ||
+    (trailing >= 2 && (shape.kind === 'steady_decline' || shape.kind === 'decline_phases'));
+  if (story === 'net_decline' && repeatedDecline && shape.path !== 'terminal_outlier') {
     return {
       kind: 'confirmed_decline',
       stance: 'probable',
@@ -188,18 +201,19 @@ export function classifyContinuity(trajectory) {
       detail: 'Creux puis retour près du niveau de départ'
     };
   }
-  if (story === 'plateau') {
-    return {
-      kind: 'stable_plateau',
-      stance: 'probable',
-      detail: 'Volume par séance récemment stable'
-    };
-  }
+  // Retour après interruption : avant le plateau (un niveau stable peut coexister).
   if (inst.kind === 'returning') {
     return {
       kind: inst.sessionsInWindow >= 3 ? 'confirmed_return' : 'punctual_return',
       stance: inst.sessionsInWindow >= 3 ? 'probable' : 'established',
       detail: inst.detail || null
+    };
+  }
+  if (story === 'plateau') {
+    return {
+      kind: 'stable_plateau',
+      stance: 'probable',
+      detail: 'Volume par séance récemment stable'
     };
   }
   if (inst.kind === 'first_session') {

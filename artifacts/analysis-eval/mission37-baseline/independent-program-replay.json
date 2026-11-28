@@ -1,0 +1,182 @@
+{
+  "schema": "momentum.mission37.independentProgramReplay.v1",
+  "ok": true,
+  "seriesCoverage": {
+    "total": 57,
+    "withSeries": 57
+  },
+  "graphAvailable": true,
+  "templateCount": 6,
+  "familyCountMulti": 3,
+  "plannedByDay": {
+    "lundi": {
+      "name": "lundi",
+      "plannedReps": 384,
+      "plannedSets": 32,
+      "strengthExerciseCount": 10,
+      "exerciseCount": 11
+    },
+    "mardi": {
+      "name": "mardi",
+      "plannedReps": 436,
+      "plannedSets": 34,
+      "strengthExerciseCount": 9,
+      "exerciseCount": 9
+    },
+    "mercredi": {
+      "name": "mercredi",
+      "plannedReps": 424,
+      "plannedSets": 35,
+      "strengthExerciseCount": 9,
+      "exerciseCount": 9
+    },
+    "vendredi": {
+      "name": "vendredi",
+      "plannedReps": 359,
+      "plannedSets": 32,
+      "strengthExerciseCount": 9,
+      "exerciseCount": 10
+    },
+    "samedi": {
+      "name": "samedi",
+      "plannedReps": 436,
+      "plannedSets": 34,
+      "strengthExerciseCount": 9,
+      "exerciseCount": 9
+    },
+    "dimanche": {
+      "name": "dimanche",
+      "plannedReps": 418,
+      "plannedSets": 35,
+      "strengthExerciseCount": 9,
+      "exerciseCount": 9
+    }
+  },
+  "familyMembers": [
+    {
+      "id": "sessionFamily:1",
+      "members": [
+        "lundi",
+        "vendredi"
+      ],
+      "size": 2
+    },
+    {
+      "id": "sessionFamily:2",
+      "members": [
+        "mardi",
+        "samedi"
+      ],
+      "size": 2
+    },
+    {
+      "id": "sessionFamily:3",
+      "members": [
+        "mercredi",
+        "dimanche"
+      ],
+      "size": 2
+    }
+  ],
+  "comparisons": [
+    {
+      "dayKey": "lundi",
+      "exportedPlannedReps": 384,
+      "replayPlannedReps": 384,
+      "match": true
+    },
+    {
+      "dayKey": "mardi",
+      "exportedPlannedReps": 436,
+      "replayPlannedReps": 436,
+      "match": true
+    },
+    {
+      "dayKey": "mercredi",
+      "exportedPlannedReps": 424,
+      "replayPlannedReps": 424,
+      "match": true
+    },
+    {
+      "dayKey": "vendredi",
+      "exportedPlannedReps": 359,
+      "replayPlannedReps": 359,
+      "match": true
+    },
+    {
+      "dayKey": "samedi",
+      "exportedPlannedReps": 436,
+      "replayPlannedReps": 436,
+      "match": true
+    },
+    {
+      "dayKey": "dimanche",
+      "exportedPlannedReps": 418,
+      "replayPlannedReps": 418,
+      "match": true
+    }
+  ],
+  "exportShape": {
+    "topKeys": [
+      "schema",
+      "available",
+      "source",
+      "note",
+      "templateCount",
+      "templates",
+      "relations",
+      "families"
+    ],
+    "sample": "{\"schema\":\"momentum.programSessionGraph.v1\",\"available\":true,\"source\":\"active_program_schedule\",\"note\":\"Structure programmée — distincte de la pratique reconstruite. Muscles = banque, pas intitulés libres.\",\"templateCount\":6,\"templates\":[{\"dayKey\":\"lundi\",\"name\":\"Street Workout + Endurance fondamentale\",\"focus\":\"dos / core / contrôle/ cardio\",\"exerciseCount\":11,\"strengthExerciseCount\":10,\"plannedReps\":384,\"plannedSets\":32,\"exerciseKeys\":[\"name:tractions pronation\",\"name:tractions supination\",\"name:hyperextension\",\"name:tractions australiennes prise large pronation\",\"name:tractions australiennes prise serree supination\",\"name:dips\",\"name:pompes declinees\",\"name:pompes inclinees\",\"name:releves de genoux a la barre\",\"name:releves de genoux aux paralleles\"],\"cardioKeys\":[\"cardio:course enduran"
+  },
+  "reproducibility": {
+    "status": "reproductible_si_sources_completes",
+    "reason": "pack_matches_declared_contexts",
+    "gaps": [],
+    "note": "Rejeu exact possible uniquement si sources.reps / setLogs / etc. sont présents et inchangés",
+    "programStructure": "schedule_with_prescriptions"
+  },
+  "fingerprints": {
+    "snapshot": {
+      "version": 5,
+      "repKeys": 809,
+      "checkedKeys": 808,
+      "weightKeys": 578,
+      "setLogKeys": 602,
+      "durationKeys": 0,
+      "gtgSyncDays": 6,
+      "challengeKeys": 1,
+      "programId": "default-program",
+      "garminSleepDays": 404,
+      "nameMapSize": 119,
+      "nameMapDigest": "a51a5bdf",
+      "totalReps": 34495,
+      "digest": "8ee0e181",
+      "firstRepKey": "2026-01-05_101",
+      "lastRepKey": "2026-11-24_complementary_endurance_pushups",
+      "sources": {
+        "weightsField": "exerciseWeights",
+        "setLogsField": "exerciseSetLogs",
+        "gtgField": "enduranceData.gtg",
+        "programField": "context.activeProgram",
+        "garminField": "garmin.dailyMetrics",
+        "nameMapField": "context.nameMap"
+      }
+    },
+    "digest": "8ee0e181",
+    "sources": {
+      "weightsField": "exerciseWeights",
+      "setLogsField": "exerciseSetLogs",
+      "gtgField": "enduranceData.gtg",
+      "programField": "context.activeProgram",
+      "garminField": "garmin.dailyMetrics",
+      "nameMapField": "context.nameMap"
+    },
+    "nameMapSize": 119,
+    "engineRunDigest": "8ee0e181"
+  },
+  "limits": [
+    "Rejeu 8 horizons complets (claims/mémoire) non exécuté ici — isolé au programme déterministe",
+    "Mémoire éditoriale évolutive exclue volontairement"
+  ]
+}

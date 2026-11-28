@@ -1,0 +1,387 @@
+{
+  "m37": {
+    "volumeContrast": {
+      "found": true,
+      "role": "priority",
+      "title": "Plus de volume total, mais moins de reps par journée active",
+      "rejectsCapacityProgress": true,
+      "hasFreqAndContent": true,
+      "bodyPreview": "les 30 jours d'avant: 4 891 répétitions en 13 journées de renforcement (≈376 / journée). ces 30 jours: 5 730 répétitions en 17 journées de renforcement (≈337 / journée). Écart total +17,2 % — contribution fréquence +1 427, contenu −588. Le volume total augmente alors que le contenu moyen par journée diminue: la hausse "
+    },
+    "relativeConcentration": {
+      "found": true,
+      "role": "priority",
+      "title": "Concentration relative au-delà du volume général",
+      "scopedToMoves": true,
+      "overclaimsWeek": false,
+      "bodyPreview": "Les 48 développé couché incliné aux haltères ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (144 reps). Les 40 pompes déclinées ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 36 curl assis dos calé ces 7 jours représentent environ 33,3 % de tout ton volume de 30"
+    },
+    "sleepFamily": {
+      "found": true,
+      "role": "reserve",
+      "title": "Après une nuit courte, poussée et tirage ne conservent pas le même volume relatif",
+      "hasSensible": true,
+      "associationOnly": true,
+      "bodyPreview": "Après une nuit de moins de 7 h, tes séances de poussée conservent 62,6 % de leur volume habituel, tandis que tes séances de tirage sont à 97,3 % de leur volume habituel. L’écart de rétention (poussée 62,6 % vs tirage 97,3 %, 9 et 33 séances) est une association descriptive entre nuit courte et volume de famille — pas une preuve qu’une qualité soit « plus sen"
+    },
+    "familiesEditorial": {
+      "today": {
+        "priority": true,
+        "title": "Ton programme s'organise en 3 familles de séances apparentées"
+      },
+      "7d": {
+        "priority": true,
+        "title": "Ton programme s'organise en 3 familles de séances apparentées"
+      },
+      "30d": {
+        "priority": false,
+        "inReserve": true
+      },
+      "3m": {
+        "priority": false,
+        "inReserve": true
+      },
+      "6m": {
+        "priority": false,
+        "inReserve": true
+      },
+      "1y": {
+        "priority": false,
+        "inReserve": true
+      },
+      "2y": {
+        "priority": false,
+        "inReserve": true
+      },
+      "all": {
+        "priority": false,
+        "inReserve": true
+      }
+    },
+    "parallelConvergence": [
+      {
+        "period": "7d",
+        "role": "priority",
+        "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "convergentWording": false,
+        "fourchette": true
+      },
+      {
+        "period": "7d",
+        "role": "accessible",
+        "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "convergentWording": false,
+        "fourchette": true
+      },
+      {
+        "period": "30d",
+        "role": "priority",
+        "title": "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+        "convergentWording": false,
+        "fourchette": true
+      },
+      {
+        "period": "30d",
+        "role": "priority",
+        "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "convergentWording": false,
+        "fourchette": true
+      },
+      {
+        "period": "30d",
+        "role": "accessible",
+        "title": "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+        "convergentWording": false,
+        "fourchette": true
+      },
+      {
+        "period": "30d",
+        "role": "accessible",
+        "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "convergentWording": false,
+        "fourchette": true
+      }
+    ]
+  },
+  "editorial": {
+    "today": {
+      "count": 6,
+      "titles": [
+        "La séance d'aujourd'hui n'est pas encore commencée",
+        "La dernière séance pèse encore sur les 7 jours",
+        "La nuit précédente te place dans une zone de volume déjà visible dans ton historique",
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Hyperextension: 4 séances sur ces 30 jours",
+        "En attendant la séance, ta semaine récente a déjà une forme"
+      ],
+      "kinds": [
+        "disc_pending_session",
+        "disc_th_concentration_now",
+        "disc_sleep_volume",
+        "disc_session_family_structure",
+        "disc_structural_memory",
+        "disc_pending_context"
+      ],
+      "familyOverviewPriority": true
+    },
+    "7d": {
+      "count": 11,
+      "titles": [
+        "Ton programme s'organise en 3 familles de séances apparentées",
+        "Deux séances apparentées redistribuent un socle commun",
+        "Le 24 novembre 2026 porte une grande part de ces 7 jours",
+        "Peu de journées portent le volume",
+        "Une nuit plus courte que ton niveau récent",
+        "Ces 7 jours mêlent un bloc chargé et un creux",
+        "Concentration relative au-delà du volume général",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+        "Hyperextension: recul confirmé sur plusieurs séances",
+        "Mollets debout s'efface de tes jambes"
+      ],
+      "kinds": [
+        "disc_session_family_structure",
+        "disc_session_family_variant",
+        "disc_th_concentration_now",
+        "disc_volume_shape",
+        "disc_sleep_night",
+        "disc_calendar_rhythm",
+        "disc_composed_relative_concentration",
+        "disc_composed_parallel_trajectories",
+        "disc_th_rhythm_trajectory",
+        "disc_comparable",
+        "disc_family_fade"
+      ],
+      "familyOverviewPriority": true
+    },
+    "30d": {
+      "count": 11,
+      "titles": [
+        "Le volume de ces 30 jours dépasse la période précédente",
+        "Plus de volume total, mais moins de reps par journée active",
+        "Deux séances apparentées redistribuent un socle commun",
+        "La hausse de volume se lit dans la composition des familles de séances",
+        "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+        "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "Pectoraux: moins de jours d’exposition qu’en période précédente",
+        "Ces 30 jours sont en dessous du rythme de renforcement d'avant",
+        "Mollets debout a quitté cette fenêtre",
+        "Tes mouvements de référence commencent à disposer d’un historique assez fourni"
+      ],
+      "kinds": [
+        "disc_volume_shape",
+        "disc_composed_volume_decomp",
+        "disc_session_family_variant",
+        "disc_program_family_volume_decomposition",
+        "disc_gtg_unplanned_role",
+        "disc_composed_parallel_trajectories",
+        "disc_composed_parallel_trajectories",
+        "disc_muscle_exposure_shift",
+        "disc_th_rhythm_trajectory",
+        "disc_th_repertoire_journey",
+        "disc_repertoire"
+      ],
+      "familyOverviewPriority": false
+    },
+    "3m": {
+      "count": 11,
+      "titles": [
+        "Hyperextension: recul confirmé sur plusieurs séances",
+        "Ces trois mois sont en dessous du rythme de renforcement d'avant",
+        "Avant-bras: moins de jours d’exposition qu’en période précédente",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "La structure de la période se lit dans les ratios, pas seulement dans le total",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Volume en baisse, journées actives plus chargées",
+        "Le trimestre a une trajectoire interne, pas seulement un total",
+        "Le haut du corps travaille surtout en poussée",
+        "les 30 derniers jours pèsent une grande part de ces trois mois",
+        "100e séance enregistrée"
+      ],
+      "kinds": [
+        "disc_emergence",
+        "disc_th_rhythm_trajectory",
+        "disc_muscle_exposure_shift",
+        "disc_composed_parallel_trajectories",
+        "disc_ratio_structure",
+        "disc_gtg_unplanned_role",
+        "disc_composed_volume_decomp",
+        "disc_quarter_arc",
+        "disc_th_pushPull_journey",
+        "disc_th_continuity_journey",
+        "disc_ms_sessions"
+      ],
+      "familyOverviewPriority": false
+    },
+    "6m": {
+      "count": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
+        "La structure de la période se lit dans les ratios, pas seulement dans le total",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Le volume suit surtout ta fréquence",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les deux moitiés de ces six mois n'ont pas le même volume",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Le haut du corps travaille surtout en poussée",
+        "50e séance enregistrée"
+      ],
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_emergence",
+        "disc_ratio_structure",
+        "disc_gtg_unplanned_role",
+        "disc_composed_load_phase",
+        "disc_composed_volume_decomp",
+        "disc_monthly_volume_arc",
+        "disc_th_rhythm_journey",
+        "disc_quarter_arc",
+        "disc_th_pushPull_journey",
+        "disc_ms_sessions"
+      ],
+      "familyOverviewPriority": false
+    },
+    "1y": {
+      "count": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable",
+        "La structure de l'année se lit dans les ratios, pas seulement dans le total",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Le haut du corps travaille surtout en poussée",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ],
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_emergence",
+        "disc_ratio_structure",
+        "disc_gtg_unplanned_role",
+        "disc_composed_load_phase",
+        "disc_composed_parallel_trajectories",
+        "disc_monthly_volume_arc",
+        "disc_quarter_arc",
+        "disc_th_pushPull_journey",
+        "disc_quarter_profile",
+        "disc_ms_sessions"
+      ],
+      "familyOverviewPriority": false
+    },
+    "2y": {
+      "count": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable",
+        "La structure de ces deux années se lit dans les ratios, pas seulement dans le total",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Première semaine à 6 entraînements",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ],
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_emergence",
+        "disc_ratio_structure",
+        "disc_gtg_unplanned_role",
+        "disc_composed_load_phase",
+        "disc_ms_week_freq",
+        "disc_composed_parallel_trajectories",
+        "disc_monthly_volume_arc",
+        "disc_quarter_arc",
+        "disc_quarter_profile",
+        "disc_ms_sessions"
+      ],
+      "familyOverviewPriority": false
+    },
+    "all": {
+      "count": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable",
+        "La structure du parcours se lit dans les ratios, pas seulement dans le total",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Première semaine à 6 entraînements",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ],
+      "kinds": [
+        "disc_gtg_unplanned_now",
+        "disc_emergence",
+        "disc_ratio_structure",
+        "disc_gtg_unplanned_role",
+        "disc_composed_load_phase",
+        "disc_ms_week_freq",
+        "disc_composed_parallel_trajectories",
+        "disc_monthly_volume_arc",
+        "disc_quarter_arc",
+        "disc_quarter_profile",
+        "disc_ms_sessions"
+      ],
+      "familyOverviewPriority": false
+    }
+  },
+  "longOverlap": {
+    "1y_vs_2y": {
+      "shared": 9,
+      "of": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ]
+    },
+    "2y_vs_all": {
+      "shared": 10,
+      "of": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Première semaine à 6 entraînements",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ]
+    },
+    "1y_vs_all": {
+      "shared": 9,
+      "of": 11,
+      "titles": [
+        "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+        "Relevés de genoux à la barre: volume par séance stable",
+        "Les passages hors planning tiennent le fil des jours sans créneau coché",
+        "Phase collective d’augmentation de charge",
+        "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+        "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+        "Les trois derniers mois ont une trajectoire interne",
+        "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+        "50e séance enregistrée"
+      ]
+    }
+  },
+  "sampleSize": 37
+}

@@ -3,6 +3,7 @@ import RecapPeriodHighlightsPanel from '../RecapPeriodHighlightsPanel';
 import RecapAnalyseDetails from './RecapAnalyseDetails';
 import RecapAnalyseExportBar from '../RecapAnalyseExportBar';
 import RecapCardInspectorModal from '../RecapCardInspectorModal';
+import AnalysisVisualInsight from '../AnalysisVisualInsight';
 import { useTranslation } from '../../../../utils/translations';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { buildRecapPeriodCalendarAnalytics } from '../../../../utils/sport/recapCalendarPeriodAnalytics';
@@ -10,6 +11,7 @@ import { segmentRecapProseValues } from '../../../../utils/sport/recapProseMarks
 import { analysisEditionKey } from '../../../../utils/sport/analysisEdition';
 import { captureAnalyseCardsFromDom } from '../../../../utils/sport/analysisEngineDomCapture';
 import { snapshotFingerprint } from '../../../../utils/sport/analysisEnvironmentDossier';
+import { buildVisualInsightSpec } from '../../../../utils/sport/analysisVisualInsight';
 
 const FAMILIES = {
   short: { id: 'a', cls: 'a' },
@@ -125,6 +127,102 @@ function leadFigure(card) {
   if (!match) return null;
   const figure = match[1].trim();
   return figure.length >= 2 && figure.length <= 22 ? figure : null;
+}
+
+const LONG_BODY_CHARS = 420;
+
+function splitBodyForReading(body) {
+  const text = String(body || '').trim();
+  if (text.length <= LONG_BODY_CHARS) {
+    return { summary: text, rest: '', long: false };
+  }
+  const cut = text.slice(0, LONG_BODY_CHARS);
+  const lastStop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('。'), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  const at = lastStop > 120 ? lastStop + 1 : LONG_BODY_CHARS;
+  return {
+    summary: text.slice(0, at).trim(),
+    rest: text.slice(at).trim(),
+    long: true
+  };
+}
+
+function whyThisAnalysis(card) {
+  const m = card?.metrics || {};
+  const bits = [];
+  if (m.composedEvidence?.continuity?.kind === 'isolated_outlier' || m.trajectoryPrimaryStory === 'outlier_driven') {
+    bits.push('Une séance sort du plateau observé, sans baisse répétée.');
+  }
+  if (m.visualKind === 'relative_concentration' || m.moveShareOfParentWindow != null) {
+    bits.push('Deux parts avec des dénominateurs différents mettent en évidence une surreprésentation.');
+  }
+  if (m.freqEffect != null && m.contentEffect != null) {
+    bits.push('Le volume total se décompose en effet fréquence et effet contenu.');
+  }
+  if (m.thinSample) {
+    bits.push('L’effectif de la fenêtre courte reste faible : lecture indicative.');
+  }
+  if (m.comparisonWindows === 'prev30_vs_recent30') {
+    bits.push('La comparaison porte sur deux blocs de 30 jours, pas seulement sur « aujourd’hui ».');
+  }
+  if (!bits.length && card?.evidence) {
+    bits.push(`Preuve affichée : ${card.evidence}`);
+  }
+  if (!bits.length) return null;
+  return bits.join(' ');
+}
+
+function AnalysisCardBody({ card }) {
+  const [open, setOpen] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(false);
+  const parts = splitBodyForReading(card.body || card.text);
+  const visual = card.metrics?.visualInsight || buildVisualInsightSpec(card);
+  const why = whyThisAnalysis(card);
+  return (
+    <>
+      {parts.summary ? (
+        <p className="whitespace-pre-line">{markValues(parts.summary)}</p>
+      ) : null}
+      {visual ? <AnalysisVisualInsight spec={visual} /> : null}
+      {parts.long && parts.rest ? (
+        <div className="mt-2">
+          {!open ? (
+            <button
+              type="button"
+              className="meta text-left underline-offset-2 hover:underline"
+              onClick={() => setOpen(true)}
+              data-analyse-expand="true"
+            >
+              Lire le raisonnement complet
+            </button>
+          ) : (
+            <>
+              <p className="whitespace-pre-line">{markValues(parts.rest)}</p>
+              <button
+                type="button"
+                className="meta mt-1 text-left underline-offset-2 hover:underline"
+                onClick={() => setOpen(false)}
+              >
+                Réduire
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
+      {why ? (
+        <div className="mt-2">
+          <button
+            type="button"
+            className="meta text-left underline-offset-2 hover:underline"
+            onClick={() => setWhyOpen((v) => !v)}
+            data-analyse-why="true"
+          >
+            {whyOpen ? 'Masquer' : 'Pourquoi cette analyse ?'}
+          </button>
+          {whyOpen ? <p className="mt-1 text-[12px] text-slate-400">{why}</p> : null}
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 export default function RecapAnalyseView({
@@ -435,7 +533,7 @@ export default function RecapAnalyseView({
               </header>
               {leadFigure(card) ? <div className="n">{leadFigure(card)}</div> : null}
               {card.title ? <h4>{markValues(card.title)}</h4> : null}
-              <p className="whitespace-pre-line">{markValues(card.body || card.text)}</p>
+              <AnalysisCardBody card={card} />
               {card.evidence ? <div className="meta">{markValues(card.evidence)}</div> : null}
               {card.confidence ? <div className="meta">{card.confidence}</div> : null}
             </article>
@@ -471,7 +569,7 @@ export default function RecapAnalyseView({
                 ) : null}
               </header>
               <h4>{item.title}</h4>
-              {item.body ? <p className="whitespace-pre-line">{item.body}</p> : null}
+              <AnalysisCardBody card={item} />
               {item.evidence ? <div className="meta">{item.evidence}</div> : null}
             </article>
           ))}
@@ -515,7 +613,7 @@ export default function RecapAnalyseView({
                   ) : null}
                 </header>
                 <h4>{item.title}</h4>
-                {item.body ? <p className="whitespace-pre-line">{item.body}</p> : null}
+                <AnalysisCardBody card={item} />
                 {item.evidence ? <div className="meta">{item.evidence}</div> : null}
               </article>
             ))}

@@ -259,6 +259,10 @@ export function composeVolumeFrequencyContentReading({
   if (contrast && volPct < 0 && split.contentPct > 0) {
     driver =
       'Le volume total baisse alors que le contenu moyen des journées actives augmente : la baisse vient surtout d’une fréquence plus faible, pas d’un allègement des séances.';
+  } else if (contrast && volPct > 0 && split.contentPct < -5) {
+    // Mission 37 — opposition volume↑ / contenu↓ : ne pas la noyer dans « surtout fréquentielle ».
+    driver =
+      'Le volume total augmente alors que le contenu moyen par journée diminue : la hausse de fréquence compense la baisse de volume par séance — ce n’est pas une progression de capacité par séance.';
   } else if (contrast && volPct > 0 && Math.abs(split.contentPct) < 3) {
     driver =
       'Le volume monte surtout parce que tu ajoutes des journées actives ; le contenu moyen par journée reste quasiment inchangé.';
@@ -277,13 +281,16 @@ export function composeVolumeFrequencyContentReading({
     driver
   ].join(' ');
 
+  const contrastUpLessContent = contrast && volPct > 0 && split.contentPct < -5;
   return {
     coverage: 'concluded',
     conclusion,
     title: contrast
       ? volPct < 0
         ? 'Volume en baisse, journées actives plus chargées'
-        : 'Hausse de volume surtout fréquentielle'
+        : contrastUpLessContent
+          ? 'Plus de volume total, mais moins de reps par journée active'
+          : 'Hausse de volume surtout fréquentielle'
       : freqLed
         ? 'Le volume suit surtout ta fréquence'
         : contentLed
@@ -347,12 +354,14 @@ export function composeRelativeConcentrationReading({
     Number.isFinite(Number(globalRepsParent))
       ? ` (${fmtInt(globalRepsShort)} / ${fmtInt(globalRepsParent)} reps totales)`
       : '';
+  const named = names.length ? names.join(', ') : 'ces mouvements';
+  const pluralPeriod = /^(ces|les)\b/i.test(String(periodLabel || '')) || /\bjours?\b/i.test(String(periodLabel || ''));
+  const periodVerb = pluralPeriod ? 'portent' : 'porte';
+  // Conclusion → contraste des deux périmètres → limite (sans répéter trois fois les noms).
   const conclusion = [
-    names.length
-      ? `${names.join(', ')} totalisent ${fmtInt(local)} répétitions sur ${periodLabel}.`
-      : `${fmtInt(local)} répétitions se concentrent sur un sous-ensemble de mouvements.`,
-    `Cela représente environ ${movePct} % du volume de ces mouvements sur ${parentPeriodLabel}${parentMoveClause}, alors que ${periodLabel} ne porte que environ ${globalPct} % du volume total de ${parentPeriodLabel}${globalClause}.`,
-    `Rapport des concentrations ≈${Math.round(ratio * 100) / 100}× : ces mouvements sont surreprésentés dans ${periodLabel} par rapport au volume général.`
+    `${named} totalisent ${fmtInt(local)} répétitions sur ${periodLabel} — environ ${movePct} % de leur propre volume sur ${parentPeriodLabel}${parentMoveClause}.`,
+    `Sur le même calendrier, ${periodLabel} ne ${periodVerb} qu’environ ${globalPct} % du volume total de ${parentPeriodLabel}${globalClause}.`,
+    `Rapport des parts ≈${Math.round(ratio * 100) / 100}× : ces mouvements sont surreprésentés ici par rapport à leur historique, sans que les deux pourcentages partagent le même dénominateur — pas une preuve que tout le volume de ${periodLabel} soit atypique.`
   ].join(' ');
 
   return {
@@ -369,6 +378,13 @@ export function composeRelativeConcentrationReading({
       localShare: moveShare,
       globalShare,
       ratio,
+      moveNames: names,
+      localRepsInParent,
+      globalRepsShort,
+      globalRepsParent,
+      periodLabel,
+      parentPeriodLabel,
+      visualKind: 'relative_concentration',
       meaning: {
         moveShare: `part du volume ${parentPeriodLabel} de ces mouvements réalisée pendant ${periodLabel}`,
         globalShare: `part du volume total ${parentPeriodLabel} réalisée pendant ${periodLabel}`,

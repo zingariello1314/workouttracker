@@ -138,6 +138,8 @@ function softenTitle(title, body) {
     .replace(/sépare encore/gi, 'reste associée à')
     .replace(/\bsépare\b/gi, 'est associé à')
     .replace(/la plus sensible/gi, 'observée')
+    .replace(/recule davantage que l’autre famille/gi, 'ne conserve pas le même volume relatif que l’autre famille')
+    .replace(/recule davantage que l'autre famille/gi, 'ne conserve pas le même volume relatif que l’autre famille')
     .replace(/\bdémontré\b/gi, 'observé')
     .replace(/\bcause\b/gi, 'accompagne');
 }

@@ -13,7 +13,7 @@ import { describeCalendarShape } from '../recapCalendarShape';
 
 describe('Mission 36 — édition', () => {
   it('bumpe editorial v35 + claim v4', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toBe('p6-sovereign-v35');
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/^p6-sovereign-v3[5-8]$/);
     expect(ANALYSIS_EDITION_PARTS.claim).toBe('assertion-population-v4');
   });
 });

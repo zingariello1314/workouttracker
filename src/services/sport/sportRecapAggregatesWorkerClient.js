@@ -58,33 +58,24 @@ function ensureWorker() {
   }
 }
 
-function idleFallback(computeFn, revision, kind) {
-  return new Promise((resolve, reject) => {
-    const run = () => {
-      try {
-        const latest = latestRevisionByKind.get(kind);
-        if (latest != null && latest !== revision) {
-          resolve({ stale: true, result: null, via: 'idle-stale', durMs: 0 });
-          return;
-        }
-        const t0 = performance.now();
-        const result = computeFn();
-        const durMs = Math.round((performance.now() - t0) * 10) / 10;
-        const latestAfter = latestRevisionByKind.get(kind);
-        if (latestAfter != null && latestAfter !== revision) {
-          resolve({ stale: true, result: null, via: 'idle-stale', durMs });
-          return;
-        }
-        resolve({ stale: false, result, via: 'idle-main', durMs });
-      } catch (err) {
-        reject(err);
-      }
-    };
-    if (typeof requestIdleCallback === 'function') {
-      requestIdleCallback(run, { timeout: 3000 });
-    } else {
-      setTimeout(run, 0);
+/**
+ * Sans Worker : mode dégradé explicite — ne lance PAS un sync multi-secondes dans idle.
+ * Le hook conserve le dernier résultat valide (result null ici).
+ */
+function idleFallback(_computeFn, revision, kind) {
+  return new Promise((resolve) => {
+    const latest = latestRevisionByKind.get(kind);
+    if (latest != null && latest !== revision) {
+      resolve({ stale: true, result: null, via: 'idle-stale', durMs: 0, degraded: true });
+      return;
     }
+    resolve({
+      stale: false,
+      result: null,
+      via: 'degraded-no-worker',
+      durMs: 0,
+      degraded: true
+    });
   });
 }
 

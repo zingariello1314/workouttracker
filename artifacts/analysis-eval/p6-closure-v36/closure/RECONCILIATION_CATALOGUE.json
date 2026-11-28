@@ -1,0 +1,2859 @@
+{
+  "schema": "momentum.p6Closure.independentReplay.v1",
+  "executedAt": "2026-11-27T20:45:05.475Z",
+  "edition": "audit=normalized-export-v13;claim=assertion-population-v4;classification=modality-authority-v1;coherence=inter-horizon-v4;collectiveReturn=session-episode-ledger-v7;composition=metric-population-v2;consolidation=narrative-coherence-v3;duration=paired-density-v3;editorial=p6-sovereign-v36;facts=shared-facts-v2;fingerprint=multi-source-v5;gtg=classic-exclusive-v1;hierarchy=graph-before-publish-v1;identity=discovery-occurrence-v1;matching=session-slot-v3;memory=publication-registry-v1;narrativeAuthority=thesis-composition-v2;observability=reasoning-trace-v3;populations=canonical-populations-v2;program=structural-context-v4;programReasoning=variant-mix-direction-v3;review=collective-pass4-v13;scope=short-window-anchor-v1;selection=consultable-reserve-v2;sleep=association-prose-v5;stimulus=challenge-unknown-v1;streak=window-range-v1;temporal=calendar-paris-v1",
+  "liveDigest": "c3e80330",
+  "rebuiltFingerprintDigest": "65047db4",
+  "fingerprintMatch": false,
+  "parameters": {
+    "end": "2026-11-27",
+    "firstDate": "2026-01-05",
+    "timezone": "Europe/Paris",
+    "anchorDate": "2026-11-24",
+    "analysisWindowEnd": "2026-11-27"
+  },
+  "inputsPresent": {
+    "reps": 809,
+    "checked": 815,
+    "weights": 578,
+    "setLogs": 602,
+    "nameMap": 119,
+    "garminDays": 404,
+    "programDays": 7,
+    "memoryPublications": 40,
+    "memoryPhenomena": 2
+  },
+  "programReplay": {
+    "ok": true,
+    "familyCountMulti": 3,
+    "comparisons": [
+      {
+        "dayKey": "lundi",
+        "exported": 384,
+        "replay": 384,
+        "match": true
+      },
+      {
+        "dayKey": "mardi",
+        "exported": 436,
+        "replay": 436,
+        "match": true
+      },
+      {
+        "dayKey": "mercredi",
+        "exported": 424,
+        "replay": 424,
+        "match": true
+      },
+      {
+        "dayKey": "vendredi",
+        "exported": 359,
+        "replay": 359,
+        "match": true
+      },
+      {
+        "dayKey": "samedi",
+        "exported": 436,
+        "replay": 436,
+        "match": true
+      },
+      {
+        "dayKey": "dimanche",
+        "exported": 418,
+        "replay": 418,
+        "match": true
+      }
+    ]
+  },
+  "periods": {
+    "today": {
+      "period": "today",
+      "ms": 15762,
+      "window": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 14,
+      "p6Counters": {
+        "produced": 14,
+        "admissible": 14,
+        "rejected": 0,
+        "fused": 0,
+        "priority": 6,
+        "reserve": 8,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 4,
+        "inputRows": 4,
+        "reviewDecisions": 12,
+        "reexplored": 0,
+        "composedParallel": 0
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_pending_session",
+          "title": "La séance d'aujourd'hui n'est pas encore commencée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_pending_session|period:global|ep:na|aspect:default|t:la séance d'aujourd'hui n'est pas encore commenc|e:dernière séance 24 novembre 2026",
+          "bodyPreview": "Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse: c'est une séance en attente. Ta dernière séance (24 novembre 2026) a produit 196 répétitions — 48 développé couché incliné aux h",
+          "evidence": "dernière séance 24 novembre 2026 · 196 reps"
+        },
+        {
+          "kind": "disc_th_concentration_now",
+          "title": "La dernière séance pèse encore sur les 7 jours",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_concentration_now|dates:24 novembre 2026|fact:last-session|24 novembre 2026|aspect:default",
+          "bodyPreview": "Aujourd'hui n'a encore aucune répétition enregistrée. Ta dernière séance, le 24 novembre 2026, totalisait 196 répétitions. Ces 196 répétitions représentent 56,5 % des 347 répétitions des 7 derniers jours.",
+          "evidence": "concentration"
+        },
+        {
+          "kind": "disc_sleep_volume",
+          "title": "La nuit précédente te place dans une zone de volume déjà visible dans ton historique",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_sleep_volume|period:global|ep:na|aspect:default|t:la nuit précédente te place dans une zone de vol|e:≥ 7 h 30 310 · < 7 h 30 262 · n=",
+          "bodyPreview": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 ",
+          "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47"
+        },
+        {
+          "kind": "disc_session_family_structure",
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "session_families_overview|3",
+          "bodyPreview": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux r",
+          "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Hyperextension: 4 séances sur ces 30 jours",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+          "bodyPreview": "Hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 53,3 % de tes jambes, contre 96 reps (11,3 % de tes jambes) sur les 30 jours d'avant. Ce n'est plus une séance isolée; répéter ce volume ",
+          "evidence": "4 séances · plateau · 0 %"
+        },
+        {
+          "kind": "disc_pending_context",
+          "title": "En attendant la séance, ta semaine récente a déjà une forme",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_pending_context|period:global|ep:na|aspect:default|t:en attendant la séance, ta semaine récente a déj|e:2 séances · 347 reps",
+          "bodyPreview": "Les 7 derniers jours représentent 2 séances, 347 répétitions et aucune durée de séance enregistrée, soit environ 174 reps par séance. Dominante haut du corps: 107 pectoraux, 85 biceps, 35 triceps, 32 dos, 29 épaules — pe",
+          "evidence": "2 séances · 347 reps"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_pending_session",
+          "title": "La séance d'aujourd'hui n'est pas encore commencée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_pending_session|period:global|ep:na|aspect:default|t:la séance d'aujourd'hui n'est pas encore commenc|e:dernière séance 24 novembre 2026",
+          "bodyPreview": "Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse: c'est une séance en attente. Ta dernière séance (24 novembre 2026) a produit 196 répétitions en 45 min — 48 développé couché inc",
+          "evidence": "dernière séance 24 novembre 2026 · 196 reps"
+        },
+        {
+          "kind": "disc_th_concentration_now",
+          "title": "La dernière séance pèse encore sur les 7 jours",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_concentration_now|dates:24 novembre 2026|fact:last-session|24 novembre 2026|aspect:default",
+          "bodyPreview": "Aujourd'hui n'a encore aucune répétition enregistrée. Ta dernière séance, le 24 novembre 2026, totalisait 196 répétitions en 45 min. Ces 196 répétitions représentent 56,5 % des 347 répétitions des 7 derniers jours.",
+          "evidence": "concentration"
+        },
+        {
+          "kind": "disc_sleep_volume",
+          "title": "La nuit précédente te place dans une zone de volume déjà visible dans ton historique",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_sleep_volume|period:global|ep:na|aspect:default|t:la nuit précédente te place dans une zone de vol|e:≥ 7 h 30 310 · < 7 h 30 262 · n=",
+          "bodyPreview": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 ",
+          "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47"
+        },
+        {
+          "kind": "disc_session_family_structure",
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "session_families_overview|3",
+          "bodyPreview": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux r",
+          "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche"
+        },
+        {
+          "kind": "disc_structural_memory",
+          "title": "Hyperextension: 4 séances sur ces 30 jours",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_structural_memory|ex:1979012181|dates:2026-10-30,2026-11-06,2026-11-13,2026-11-20|aspect:default",
+          "bodyPreview": "Hyperextension pèsent désormais 192 reps sur 4 séances des 30 derniers jours, soit 53,3 % de tes jambes, contre 96 reps (11,3 % de tes jambes) sur les 30 jours d'avant. Ce n'est plus une séance isolée; répéter ce volume ",
+          "evidence": "4 séances · plateau · 0 %"
+        },
+        {
+          "kind": "disc_pending_context",
+          "title": "En attendant la séance, ta semaine récente a déjà une forme",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_pending_context|period:global|ep:na|aspect:default|t:en attendant la séance, ta semaine récente a déj|e:2 séances · 347 reps",
+          "bodyPreview": "Les 7 derniers jours représentent 2 séances, 347 répétitions et 1 h 03 de séances hors course enregistrées, soit environ 174 reps et 32 min par séance. Dominante haut du corps: 107 pectoraux, 85 biceps, 35 triceps, 32 do",
+          "evidence": "2 séances · 347 reps"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 6,
+        "publishedCount": 6,
+        "intersection": 6,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 6,
+        "publishedCount": 6,
+        "intersection": 6,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 14,
+        "publishedCount": 15,
+        "intersection": 14,
+        "onlyReplay": [],
+        "onlyPublished": [
+          {
+            "kind": "disc_sleep_intensity",
+            "title": "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_intensity|period:global|ep:na|aspect:default|t:le sommeil se lit aussi sur la densité de séance|e:347 vs 322 reps/h",
+            "bodyPreview": "Après les nuits d'au moins 7 h 30, tu réalises en moyenne 347 reps par heure, contre 322 après une nuit sous 7 h (écart 25, 7,8 %). Moyennes sur 32 et 8 séances chronométrées: association descriptive, pas une preuve d’in",
+            "evidence": "347 vs 322 reps/h"
+          }
+        ],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "La séance d'aujourd'hui n'est pas encore commencée",
+          "La dernière séance pèse encore sur les 7 jours",
+          "La nuit précédente te place dans une zone de volume déjà visible dans ton historique",
+          "Ton programme s'organise en 3 familles de séances apparentées",
+          "Hyperextension: 4 séances sur ces 30 jours",
+          "En attendant la séance, ta semaine récente a déjà une forme"
+        ],
+        "titlesWithMemory": [
+          "La séance d'aujourd'hui n'est pas encore commencée",
+          "La dernière séance pèse encore sur les 7 jours",
+          "La nuit précédente te place dans une zone de volume déjà visible dans ton historique",
+          "Ton programme s'organise en 3 familles de séances apparentées",
+          "Hyperextension: 4 séances sur ces 30 jours",
+          "En attendant la séance, ta semaine récente a déjà une forme"
+        ],
+        "identical": true
+      },
+      "publicationAuthority": "p6"
+    },
+    "7d": {
+      "period": "7d",
+      "ms": 16907,
+      "window": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 46,
+      "p6Counters": {
+        "produced": 47,
+        "admissible": 47,
+        "rejected": 0,
+        "fused": 1,
+        "priority": 11,
+        "reserve": 35,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 17,
+        "inputRows": 17,
+        "reviewDecisions": 19,
+        "reexplored": 0,
+        "composedParallel": 1
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_session_family_structure",
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "session_families_overview|3",
+          "bodyPreview": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux r",
+          "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche"
+        },
+        {
+          "kind": "disc_session_family_variant",
+          "title": "Deux séances apparentées redistribuent un socle commun",
+          "disposition": "autonomous",
+          "conclusionKey": "session_family|sessionFamily:1|lundi|vendredi",
+          "bodyPreview": "Les créneaux « lundi » et « vendredi » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « lundi » ajoute tractions australiennes prise large pronation, pompes inclinees; « vendredi » ajoute ",
+          "evidence": "lundi/vendredi · socle commun avec variantes"
+        },
+        {
+          "kind": "disc_th_concentration_now",
+          "title": "Le 24 novembre 2026 porte une grande part de ces 7 jours",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_concentration_now|dates:24 novembre 2026|fact:peak|24 novembre 2026|7d|aspect:default",
+          "bodyPreview": "Le 24 novembre 2026 concentre 296 répétitions, soit 85,3 % des 347 répétitions de ces 7 jours. Les exercices de ce jour: 100 Pompes endurance (complémentaire), 48 Développé couché incliné aux haltères, 40 Pompes déclinée",
+          "evidence": "concentration"
+        },
+        {
+          "kind": "disc_volume_shape",
+          "title": "Peu de journées portent le volume",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_volume_shape|dates:2026-11-23,2026-11-24|dates:2026-11-23,2026-11-24|aspect:default",
+          "bodyPreview": "2 séances, 347 répétitions et aucune durée de séance enregistrée, soit environ 174 répétitions par séance. Tu es actuellement autour de 2 séances par semaine. Ces 7 jours portent 6,1 % des 5 730 reps des 30 derniers jour",
+          "evidence": null
+        },
+        {
+          "kind": "disc_sleep_night",
+          "title": "Une nuit plus courte que ton niveau récent",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_sleep_night|period:global|ep:na|aspect:default|t:une nuit plus courte que ton niveau récent|e:2026-11-23 · 4 h 37 vs 8 h · 7 n",
+          "bodyPreview": "La nuit du 23 novembre 2026, tu as dormi 4 h 37, contre 8 h de moyenne sur tes 7 dernières nuits. L'écart est de 203 minutes. L'architecture: 55 min de sommeil profond, 22 min de REM, 3 h 20 de sommeil léger. Association",
+          "evidence": "2026-11-23 · 4 h 37 vs 8 h · 7 nuits"
+        },
+        {
+          "kind": "disc_composed_relative_concentration",
+          "title": "Concentration relative au-delà du volume général",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_relative_concentration|pop:nested_window_same_exercises|ep:na|aspect:default",
+          "bodyPreview": "Les 48 développé couché incliné aux haltères ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (144 reps). Les 40 pompes déclinées ces 7 jours représentent environ 33,3 % de tout ton",
+          "evidence": "Développé couché incliné aux haltères 33,3 % · Pompes déclinées 33,3 % · Curl assis dos calé 33,3 %"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_sleep_volume",
+          "title": "Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_sleep_volume|period:global|ep:na|aspect:default|t:tes journées à fort volume s’alignent plus souve|e:≥ 7 h 30 310 · < 7 h 30 262 · n=",
+          "bodyPreview": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 ",
+          "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "title": "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_trajectory|period:activity|fact:rate|7d|Les 30 jours d'avant|aspect:default",
+          "bodyPreview": "Ces 7 jours sont à environ 174 répétitions par journée de renforcement (2 journées), contre environ 376 pour les 30 jours d'avant (13 journées).",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_comparable",
+          "title": "Hyperextension: recul confirmé sur plusieurs séances",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_comparable|ex:703294235|dates:2026-11-23|aspect:default",
+          "bodyPreview": "Sur 8 séances, le volume moyen de répétitions enregistré pour Hyperextension passe d’environ 48 à 40 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 16,7 %. Le r",
+          "evidence": "comparables 3 · 48→48→48"
+        },
+        {
+          "kind": "disc_family_fade",
+          "title": "Mollets debout s'efface de tes jambes",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_family_fade|name:mollets debout|dates:2026-09-29,2026-10-13|aspect:default",
+          "bodyPreview": "Mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. Aucune séance de Mollets debout dans la période récente: ce n’est pas un volume réduit, c’est une absence.",
+          "evidence": "Mollets debout 23,5 % → 0,0 % de tes jambes"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_session_family_structure",
+          "title": "Ton programme s'organise en 3 familles de séances apparentées",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "session_families_overview|3",
+          "bodyPreview": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux r",
+          "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche"
+        },
+        {
+          "kind": "disc_session_family_variant",
+          "title": "Deux séances apparentées redistribuent un socle commun",
+          "disposition": "autonomous",
+          "conclusionKey": "session_family|sessionFamily:1|lundi|vendredi",
+          "bodyPreview": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tr",
+          "evidence": "lundi/vendredi · socle commun avec variantes"
+        },
+        {
+          "kind": "disc_th_concentration_now",
+          "title": "Le 24 novembre 2026 porte une grande part de ces 7 jours",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_concentration_now|dates:24 novembre 2026|fact:peak|24 novembre 2026|7d|aspect:default",
+          "bodyPreview": "Le 24 novembre 2026 concentre 296 répétitions, soit 85,3 % des 347 répétitions de ces 7 jours. Les exercices de ce jour: 100 Pompes endurance (complémentaire), 48 Développé couché incliné aux haltères, 40 Pompes déclinée",
+          "evidence": "concentration"
+        },
+        {
+          "kind": "disc_volume_shape",
+          "title": "Peu de journées portent le volume",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_volume_shape|dates:2026-11-23,2026-11-24|dates:2026-11-23,2026-11-24|aspect:default",
+          "bodyPreview": "2 séances, 347 répétitions et aucune durée de séance enregistrée, soit environ 174 répétitions par séance. Ton rythme hebdomadaire reste donc inférieur à ton niveau habituel de 3,7 séances/semaine. Tu n'as pas seulement ",
+          "evidence": null
+        },
+        {
+          "kind": "disc_sleep_night",
+          "title": "Une nuit plus courte que ton niveau récent",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_sleep_night|period:global|ep:na|aspect:default|t:une nuit plus courte que ton niveau récent|e:2026-11-23 · 4 h 37 vs 8 h · 7 n",
+          "bodyPreview": "La nuit du 23 novembre 2026, tu as dormi 4 h 37, contre 8 h de moyenne sur tes 7 dernières nuits. L'écart est de 203 minutes. L'architecture: 55 min de sommeil profond, 22 min de REM, 3 h 20 de sommeil léger. Association",
+          "evidence": "2026-11-23 · 4 h 37 vs 8 h · 7 nuits"
+        },
+        {
+          "kind": "disc_calendar_rhythm",
+          "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_calendar_rhythm|dates:2026-11-23,2026-11-24|dates:2026-11-23,2026-11-24|aspect:default",
+          "bodyPreview": "Le 24 novembre 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 174 répétitions, pic 296). Du 21 novembre 2026 au 22 novembre 2026 reste sans séance. Sur 6 jours, 2 ont une séance et 4 n'en ont pas. Le",
+          "evidence": "2 jours avec répétitions · 4 jours sans séance enregistrée"
+        },
+        {
+          "kind": "disc_composed_relative_concentration",
+          "title": "Concentration relative au-delà du volume général",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_relative_concentration|pop:nested_window_same_exercises|ep:na|aspect:default",
+          "bodyPreview": "Les 48 développé couché incliné aux haltères ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (144 reps). Les 40 pompes déclinées ces 7 jours représentent environ 33,3 % de tout ton",
+          "evidence": "Développé couché incliné aux haltères 33,3 % · Pompes déclinées 33,3 % · Curl assis dos calé 33,3 %"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "title": "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_trajectory|period:activity|fact:rate|7d|Les 30 jours d'avant|aspect:default",
+          "bodyPreview": "Ces 7 jours sont à environ 174 répétitions par journée de renforcement (2 journées), contre environ 376 pour les 30 jours d'avant (13 journées).",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_comparable",
+          "title": "Hyperextension: recul confirmé sur plusieurs séances",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_comparable|ex:703294235|dates:2026-11-23|aspect:default",
+          "bodyPreview": "Sur 8 séances, le volume moyen de répétitions enregistré pour Hyperextension passe d’environ 48 à 40 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 16,7 %. Le r",
+          "evidence": "comparables 3 · 48→48→48"
+        },
+        {
+          "kind": "disc_family_fade",
+          "title": "Mollets debout s'efface de tes jambes",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_family_fade|name:mollets debout|dates:2026-09-29,2026-10-13|aspect:default",
+          "bodyPreview": "Mollets debout représentaient 23,5 % de tes jambes sur les 30 jours d'avant (200 reps), contre 0,0 % aujourd'hui. Aucune séance de Mollets debout dans la période récente: ce n’est pas un volume réduit, c’est une absence.",
+          "evidence": "Mollets debout 23,5 % → 0,0 % de tes jambes"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_sleep_volume",
+            "title": "Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_sleep_volume|period:global|ep:na|aspect:default|t:tes journées à fort volume s’alignent plus souve|e:≥ 7 h 30 310 · < 7 h 30 262 · n=",
+            "bodyPreview": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 ",
+            "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_calendar_rhythm",
+            "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_calendar_rhythm|dates:2026-11-23,2026-11-24|dates:2026-11-23,2026-11-24|aspect:default",
+            "bodyPreview": "Le 24 novembre 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 174 répétitions, pic 296). Du 21 novembre 2026 au 22 novembre 2026 reste sans séance. Sur 6 jours, 2 ont une séance et 4 n'en ont pas. Le",
+            "evidence": "2 jours avec répétitions · 4 jours sans séance enregistrée"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_sleep_volume",
+            "title": "Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_sleep_volume|period:global|ep:na|aspect:default|t:tes journées à fort volume s’alignent plus souve|e:≥ 7 h 30 310 · < 7 h 30 262 · n=",
+            "bodyPreview": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 ",
+            "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_calendar_rhythm",
+            "title": "Ces 7 jours mêlent un bloc chargé et un creux",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_calendar_rhythm|dates:2026-11-23,2026-11-24|dates:2026-11-23,2026-11-24|aspect:default",
+            "bodyPreview": "Le 24 novembre 2026, la charge dépasse ton niveau de séance de la fenêtre (médiane 174 répétitions, pic 296). Du 21 novembre 2026 au 22 novembre 2026 reste sans séance. Sur 6 jours, 2 ont une séance et 4 n'en ont pas. Le",
+            "evidence": "2 jours avec répétitions · 4 jours sans séance enregistrée"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 46,
+        "publishedCount": 46,
+        "intersection": 42,
+        "onlyReplay": [
+          {
+            "kind": "disc_sleep_volume",
+            "title": "Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_sleep_volume|period:global|ep:na|aspect:default|t:tes journées à fort volume s’alignent plus souve|e:≥ 7 h 30 310 · < 7 h 30 262 · n=",
+            "bodyPreview": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 ",
+            "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47"
+          },
+          {
+            "kind": "disc_sleep_family",
+            "title": "Après une nuit courte, poussée et tirage ne conservent pas le même volume relatif",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_family|period:global|ep:na|aspect:default|t:après une nuit courte, poussée et tirage ne cons|e:poussée 62,6 % · tirage 97,3 %",
+            "bodyPreview": "Après une nuit de moins de 7 h, tes séances de poussée conservent 62,6 % de leur volume habituel, tandis que tes séances de tirage sont à 97,3 % de leur volume habituel. L’écart de rétention (poussée 62,6 % vs tirage 97,",
+            "evidence": "poussée 62,6 % · tirage 97,3 %"
+          },
+          {
+            "kind": "disc_sleep_zones",
+            "title": "Cette semaine sépare trois zones de sommeil",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_zones|period:global|ep:na|aspect:default|t:cette semaine sépare trois zones de sommeil|e:≥ 8 h n=33 · 7 h 30–8 h n=2 · < ",
+            "bodyPreview": "Dans tes séances documentées, trois zones ont assez de nuits: au-dessus de 8 h, 33 nuits et environ 310 répétitions le lendemain; entre 7 h 30 et 8 h, 2 nuits et environ 309; sous 7 h 30, 12 nuits et environ 262. L'écart",
+            "evidence": "≥ 8 h n=33 · 7 h 30–8 h n=2 · < 7 h 30 n=12"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          },
+          {
+            "kind": "disc_sleep_volume_abstain",
+            "title": "Sommeil et volume: données historiques insuffisantes pour conclure sur 7 jours",
+            "disposition": "secondary_autonomous",
+            "conclusionKey": "disc_sleep_volume_abstain|period:global|ep:na|aspect:default|t:sommeil et volume : données historiques insuffis|e:nHigh=16 · nLow=4 · sample=all",
+            "bodyPreview": "L’association ≥ 7 h 30 repose sur un échantillon historique apparié (16 vs 4 séances), distinct de la fenêtre 7 jours affichée. Un bras trop mince ou asymétrique n’établit ni relation spécifique à cette semaine, ni seuil",
+            "evidence": "nHigh=16 · nLow=4 · sample=all"
+          },
+          {
+            "kind": "disc_sleep_zones",
+            "title": "Cette semaine sépare deux zones de sommeil",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_zones|period:global|ep:na|aspect:default|t:cette semaine sépare deux zones de sommeil|e:≥ 8 h n=15 · < 7 h 30 n=4",
+            "bodyPreview": "Dans tes séances documentées, deux zones ont assez de nuits: au-dessus de 8 h, 15 nuits et environ 322 répétitions le lendemain; sous 7 h 30, 4 nuits et environ 185. La zone intermédiaire n'a pas assez de nuits pour être",
+            "evidence": "≥ 8 h n=15 · < 7 h 30 n=4"
+          }
+        ],
+        "onlyReplayCount": 3,
+        "onlyPublishedCount": 3,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Ton programme s'organise en 3 familles de séances apparentées",
+          "Deux séances apparentées redistribuent un socle commun",
+          "Le 24 novembre 2026 porte une grande part de ces 7 jours",
+          "Peu de journées portent le volume",
+          "Une nuit plus courte que ton niveau récent",
+          "Concentration relative au-delà du volume général",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique",
+          "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+          "Hyperextension: recul confirmé sur plusieurs séances",
+          "Mollets debout s'efface de tes jambes"
+        ],
+        "titlesWithMemory": [
+          "Ton programme s'organise en 3 familles de séances apparentées",
+          "Deux séances apparentées redistribuent un socle commun",
+          "Le 24 novembre 2026 porte une grande part de ces 7 jours",
+          "Peu de journées portent le volume",
+          "Une nuit plus courte que ton niveau récent",
+          "Concentration relative au-delà du volume général",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique",
+          "Ces 7 jours sont en dessous du rythme de renforcement d'avant",
+          "Hyperextension: recul confirmé sur plusieurs séances",
+          "Mollets debout s'efface de tes jambes"
+        ],
+        "identical": true
+      },
+      "publicationAuthority": "p6"
+    },
+    "30d": {
+      "period": "30d",
+      "ms": 24478,
+      "window": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 100,
+      "p6Counters": {
+        "produced": 102,
+        "admissible": 102,
+        "rejected": 0,
+        "fused": 14,
+        "priority": 11,
+        "reserve": 77,
+        "blocked": 0,
+        "suppressed": 0,
+        "reconciled": true,
+        "inputPriority": 31,
+        "inputRows": 31,
+        "reviewDecisions": 42,
+        "reexplored": 0,
+        "composedParallel": 2
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_volume_shape",
+          "title": "Le volume de ces 30 jours dépasse la période précédente",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_volume_shape|dates:2026-10-30,2026-11-01,2026-11-02|dates:2026-10-30,2026-11-01,2026-11-02,2026-11-06,2026-11-07,2026-11-08,2026-11-09,2026-11-10,2026-11-11,2026-11-13,2026-11-14,2026-11-16,2026-11-17,2026-11-18,2026-11-20,2026-11-23,2026-11-24|aspect:default",
+          "bodyPreview": "Ces 30 jours totalisent 5 730 répétitions sur 17 jours avec répétitions de renforcement, soit environ 337 répétitions par séance, contre 4 891 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (",
+          "evidence": "5 730 vs 4 891 · +17,2 %"
+        },
+        {
+          "kind": "disc_composed_volume_decomp",
+          "title": "Plus de volume total, mais moins de reps par journée active",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+          "bodyPreview": "les 30 jours d'avant: 4 891 répétitions en 13 journées de renforcement (≈376 / journée). ces 30 jours: 5 730 répétitions en 17 journées de renforcement (≈337 / journée). Écart total +17,2 % — contribution fréquence +1 42",
+          "evidence": "4 891→5 730 · 13→17 j. renforcement"
+        },
+        {
+          "kind": "disc_session_family_variant",
+          "title": "Deux séances apparentées redistribuent un socle commun",
+          "disposition": "autonomous",
+          "conclusionKey": "session_family|sessionFamily:1|lundi|vendredi",
+          "bodyPreview": "Les créneaux « lundi » et « vendredi » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « lundi » ajoute tractions australiennes prise large pronation, pompes inclinees; « vendredi » ajoute ",
+          "evidence": "lundi/vendredi · socle commun avec variantes"
+        },
+        {
+          "kind": "disc_program_family_volume_decomposition",
+          "title": "La hausse de volume se lit dans la composition des familles de séances",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_program_family_volume_decomposition|period:global|ep:na|aspect:default|t:la hausse de volume se lit dans la composition d|e:mercredi / dimanche:844 · lundi ",
+          "bodyPreview": "Le volume classique passe de 4291 à 5230 répétitions. Les journées de renforcement classique passent de 13 à 17. Principaux contributeurs: mercredi / dimanche est plus fréquente (2→4 j, Δ 844 reps; effet fréquence +850, ",
+          "evidence": "mercredi / dimanche:844 · lundi / vendredi:780 · mardi / samedi:-648"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_role|period:global|gapBucket:tiny|aspect:default",
+          "bodyPreview": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux",
+          "evidence": "0 maintenant · 12 avant"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:302+ex:348708679|span:recent30|sess:2|cal:yz1g7c|2",
+          "bodyPreview": "Les 2 trajectoires de Pompes pseudo-planche se situent dans une fourchette proche (≈69 répétitions (total fenêtre) ; écart max ≈9 %) sur la fenêtre d’observation (2026-11-01 → 2026-11-18). première trajectoire : 66 répét",
+          "evidence": "ex:348708679 · ex:302"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "title": "Pectoraux: moins de jours d’exposition qu’en période précédente",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_muscle_exposure_shift|grp:chest|win:2026-10-29:2026-11-27|aspect:default",
+          "bodyPreview": "Sur deux fenêtres comparables de 17+ jours d’activité (29 septembre 2026→28 octobre 2026 puis 29 octobre 2026→27 novembre 2026), les jours d’exposition primaire aux pectoraux passent de 17 à 12 (Δ -5). Les reps mono asso",
+          "evidence": "chest 17→12 j · mono 742→814 · cmp=solid"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "title": "Ces 30 jours sont en dessous du rythme de renforcement d'avant",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_trajectory|period:activity|fact:rate|30d|Les 30 jours d'avant|aspect:default",
+          "bodyPreview": "Ces 30 jours sont à environ 337 répétitions par journée de renforcement (17 journées), contre environ 376 pour les 30 jours d'avant (13 journées).",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_th_repertoire_journey",
+          "title": "Mollets debout a quitté cette fenêtre",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_repertoire_journey|name:mollets debout|fact:exit|mollets debout|30d|aspect:default",
+          "bodyPreview": "Mollets debout comptait 200 répétitions sur la période précédente et tombe à zéro ici. Le mouvement disparaît du journal sur cette fenêtre. Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas ",
+          "evidence": "repertoire"
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_repertoire|period:global|ep:na|aspect:default|t:tes mouvements de référence commencent à dispose|e:Pompes endurance (complémentaire",
+          "bodyPreview": "Pompes endurance (complémentaire): 500 ce mois sur 500 en 30 jours. Relevés de genoux à la barre: 240 ce mois sur 240 en 30 jours. Hyperextension: 192 ce mois sur 192 en 30 jours. Ces volumes permettent de ne plus analys",
+          "evidence": "Pompes endurance (complémentaire) · Relevés de genoux à la barre · Hyperextension"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_volume_shape",
+          "title": "Le volume de ces 30 jours dépasse la période précédente",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_volume_shape|dates:2026-10-30,2026-11-01,2026-11-02|dates:2026-10-30,2026-11-01,2026-11-02,2026-11-06,2026-11-07,2026-11-08,2026-11-09,2026-11-10,2026-11-11,2026-11-13,2026-11-14,2026-11-16,2026-11-17,2026-11-18,2026-11-20,2026-11-23,2026-11-24|aspect:default",
+          "bodyPreview": "Ces 30 jours totalisent 5 730 répétitions sur 17 jours avec répétitions de renforcement, soit environ 337 répétitions et 55 min par séance, contre 4 891 reps sur 13 jours avec répétitions de renforcement sur les 30 jours",
+          "evidence": "5 730 vs 4 891 · +17,2 %"
+        },
+        {
+          "kind": "disc_composed_volume_decomp",
+          "title": "Plus de volume total, mais moins de reps par journée active",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+          "bodyPreview": "les 30 jours d'avant: 4 891 répétitions en 13 journées de renforcement (≈376 / journée). ces 30 jours: 5 730 répétitions en 17 journées de renforcement (≈337 / journée). Écart total +17,2 % — contribution fréquence +1 42",
+          "evidence": "4 891→5 730 · 13→17 j. renforcement"
+        },
+        {
+          "kind": "disc_session_family_variant",
+          "title": "Deux séances apparentées redistribuent un socle commun",
+          "disposition": "autonomous",
+          "conclusionKey": "session_family|sessionFamily:1|lundi|vendredi",
+          "bodyPreview": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tr",
+          "evidence": "lundi/vendredi · socle commun avec variantes"
+        },
+        {
+          "kind": "disc_program_family_volume_decomposition",
+          "title": "La hausse de volume se lit dans la composition des familles de séances",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_program_family_volume_decomposition|period:global|ep:na|aspect:default|t:la hausse de volume se lit dans la composition d|e:Pectoraux / Triceps / Épaules / ",
+          "bodyPreview": "Le volume classique passe de 4291 à 5230 répétitions. Les journées de renforcement classique passent de 13 à 17. Principaux contributeurs: pectoraux / Triceps / Épaules / Triceps- Épaules est plus fréquente (2→4 j, Δ 844",
+          "evidence": "Pectoraux / Triceps / Épaules / Triceps- Épaules:844 · Street Workout + Endurance fondamentale / Street Workout + Cardio:780 · Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes:-648"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_role|period:global|gapBucket:tiny|aspect:default",
+          "bodyPreview": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux",
+          "evidence": "0 maintenant · 12 avant"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:302+ex:348708679|span:recent30|sess:2|cal:yz1g7c|2",
+          "bodyPreview": "Les 2 trajectoires de Pompes pseudo-planche se situent dans une fourchette proche (≈69 répétitions (total fenêtre) ; écart max ≈9 %) sur la fenêtre d’observation (2026-11-01 → 2026-11-18). première trajectoire : 66 répét",
+          "evidence": "ex:348708679 · ex:302"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "title": "Pectoraux: moins de jours d’exposition qu’en période précédente",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_muscle_exposure_shift|grp:chest|win:2026-10-29:2026-11-27|aspect:default",
+          "bodyPreview": "Sur deux fenêtres comparables de 17+ jours d’activité (29 septembre 2026→28 octobre 2026 puis 29 octobre 2026→27 novembre 2026), les jours d’exposition primaire aux pectoraux passent de 17 à 12 (Δ -5). Les reps mono asso",
+          "evidence": "chest 17→12 j · mono 742→814 · cmp=solid"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "title": "Ces 30 jours sont en dessous du rythme de renforcement d'avant",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_trajectory|period:activity|fact:rate|30d|Les 30 jours d'avant|aspect:default",
+          "bodyPreview": "Ces 30 jours sont à environ 337 répétitions par journée de renforcement (17 journées), contre environ 376 pour les 30 jours d'avant (13 journées).",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_th_repertoire_journey",
+          "title": "Mollets debout a quitté cette fenêtre",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_repertoire_journey|name:mollets debout|fact:exit|mollets debout|30d|aspect:default",
+          "bodyPreview": "Mollets debout comptait 200 répétitions sur la période précédente et tombe à zéro ici. Le mouvement disparaît du journal sur cette fenêtre. Sur cette durée, l'absence pèse plus qu'une semaine sautée. S'il ne revient pas ",
+          "evidence": "repertoire"
+        },
+        {
+          "kind": "disc_repertoire",
+          "title": "Tes mouvements de référence commencent à disposer d’un historique assez fourni",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_repertoire|period:global|ep:na|aspect:default|t:tes mouvements de référence commencent à dispose|e:Pompes endurance (complémentaire",
+          "bodyPreview": "Pompes endurance (complémentaire): 500 ce mois sur 500 en 30 jours. Relevés de genoux à la barre: 240 ce mois sur 240 en 30 jours. Hyperextension: 192 ce mois sur 192 en 30 jours. Ces volumes permettent de ne plus analys",
+          "evidence": "Pompes endurance (complémentaire) · Relevés de genoux à la barre · Hyperextension"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 11,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_collective_return",
+            "title": "Une composante de ton entraînement se réinstalle",
+            "disposition": "autonomous",
+            "conclusionKey": "collective_return|return_episode|2026-11-11|p:9a959cbd|n:9|return",
+            "bodyPreview": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-pl",
+            "evidence": "Élévations latérales@2026-11-11 · Face pull@2026-11-11 · Extension triceps debout avec haltère@2026-11-11 · Kickbacks triceps@2026-11-11 · Pompes pseudo-planche@2026-11-11 · Side-Lying Single-Arm Dumbbell Triceps Extension@2026-11-11 · Développé Arnold@2026-11-11 · Bent-Arm Lateral Dumbbell Raise@2026-11-11"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_volume_shape",
+            "title": "Le volume de ces 30 jours dépasse la période précédente",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_volume_shape|dates:2026-10-30,2026-11-01,2026-11-02|dates:2026-10-30,2026-11-01,2026-11-02,2026-11-06,2026-11-07,2026-11-08,2026-11-09,2026-11-10,2026-11-11,2026-11-13,2026-11-14,2026-11-16,2026-11-17,2026-11-18,2026-11-20,2026-11-23,2026-11-24|aspect:default",
+            "bodyPreview": "Ces 30 jours totalisent 5 730 répétitions sur 17 jours avec répétitions de renforcement, soit environ 337 répétitions et 55 min par séance, contre 4 891 reps sur 13 jours avec répétitions de renforcement sur les 30 jours",
+            "evidence": "5 730 vs 4 891 · +17,2 %"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 88,
+        "publishedCount": 90,
+        "intersection": 87,
+        "onlyReplay": [],
+        "onlyPublished": [
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          },
+          {
+            "kind": "disc_sleep_intensity",
+            "title": "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_intensity|period:global|ep:na|aspect:default|t:le sommeil se lit aussi sur la densité de séance|e:347 vs 322 reps/h",
+            "bodyPreview": "Après les nuits d'au moins 7 h 30, tu réalises en moyenne 347 reps par heure, contre 322 après une nuit sous 7 h (écart 25, 7,8 %). Moyennes sur 32 et 8 séances chronométrées: association descriptive, pas une preuve d’in",
+            "evidence": "347 vs 322 reps/h"
+          }
+        ],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 2,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Une composante de ton entraînement se réinstalle",
+          "Plus de volume total, mais moins de reps par journée active",
+          "Deux séances apparentées redistribuent un socle commun",
+          "La hausse de volume se lit dans la composition des familles de séances",
+          "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+          "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "Pectoraux: moins de jours d’exposition qu’en période précédente",
+          "Ces 30 jours sont en dessous du rythme de renforcement d'avant",
+          "Mollets debout a quitté cette fenêtre",
+          "Tes mouvements de référence commencent à disposer d’un historique assez fourni"
+        ],
+        "titlesWithMemory": [
+          "Le volume de ces 30 jours dépasse la période précédente",
+          "Plus de volume total, mais moins de reps par journée active",
+          "Deux séances apparentées redistribuent un socle commun",
+          "La hausse de volume se lit dans la composition des familles de séances",
+          "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+          "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "Pectoraux: moins de jours d’exposition qu’en période précédente",
+          "Ces 30 jours sont en dessous du rythme de renforcement d'avant",
+          "Mollets debout a quitté cette fenêtre",
+          "Tes mouvements de référence commencent à disposer d’un historique assez fourni"
+        ],
+        "identical": false
+      },
+      "publicationAuthority": "p6"
+    },
+    "3m": {
+      "period": "3m",
+      "ms": 30196,
+      "window": {
+        "start": "2026-08-28",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2026-08-28",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 114,
+      "p6Counters": {
+        "produced": 115,
+        "admissible": 115,
+        "rejected": 0,
+        "fused": 15,
+        "priority": 11,
+        "reserve": 88,
+        "blocked": 0,
+        "suppressed": 1,
+        "reconciled": true,
+        "inputPriority": 32,
+        "inputRows": 32,
+        "reviewDecisions": 57,
+        "reexplored": 0,
+        "composedParallel": 1
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_emergence",
+          "title": "Hyperextension: recul confirmé sur plusieurs séances",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+          "bodyPreview": "Sur 8 séances, le volume moyen de répétitions enregistré pour Hyperextension passe d’environ 48 à 40 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 16,7 %. Le r",
+          "evidence": "8 séances · baisse nette · -16.7 %"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "title": "Ces trois mois sont en dessous du rythme de renforcement d'avant",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_trajectory|period:activity|fact:rate|3m|Le mois précédent dans la fenêtre|aspect:default",
+          "bodyPreview": "Ces trois mois sont à environ 332 répétitions par journée de renforcement (42 journées), contre environ 376 pour Le mois précédent dans la fenêtre (13 journées).",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "title": "Avant-bras: moins de jours d’exposition qu’en période précédente",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_muscle_exposure_shift|grp:forearms|win:2026-08-28:2026-11-27|aspect:default",
+          "bodyPreview": "Sur deux fenêtres comparables de 47+ jours d’activité (28 mai 2026→27 août 2026 puis 28 août 2026→27 novembre 2026), les jours d’exposition primaire aux avant-bras passent de 22 à 12 (Δ -10). Les reps mono associées vont",
+          "evidence": "forearms 22→12 j · mono 0→0 · cmp=solid"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de la période se lit dans les ratio|e:poussée/tirage 52,8 % / 28,8 % ·",
+          "bodyPreview": "Cette période: poussée/tirage 52,8 % / 28,8 %, bas du corps 10,1 % du volume identifié, densité non calculable (durée surtout chronométrée sur les défis), soit 332 reps par jour entraîné. Ces rapports décrivent le stimul",
+          "evidence": "poussée/tirage 52,8 % / 28,8 % · bas du corps 10,1 % du volume identifié · densité non calculable (durée surtout chronométrée sur les défis)"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_volume_decomp",
+          "title": "Volume en baisse, journées actives plus chargées",
+          "disposition": "promoted_over_cap",
+          "conclusionKey": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+          "bodyPreview": "la période précédente de même durée: 18 020 répétitions en 59 journées de renforcement (≈305 / journée). cette période: 13 963 répétitions en 42 journées de renforcement (≈332 / journée). Écart total -22,5 % — contributi",
+          "evidence": "18 020→13 963 · 59→42 j. renforcement"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Le trimestre a une trajectoire interne, pas seulement un total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:le trimestre a une trajectoire interne, pas seul|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "Les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début du trimestre (+83,1 %, fréquence +54,5 %). Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxièm",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_pushPull_journey|period:activity|fact:pushPull|3m|push|aspect:default",
+          "bodyPreview": "Ces trois mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 6 485 répétitions de poussée contre 3 535 de tirage, soit environ 1,8 répétitions de poussée pour 1 de ",
+          "evidence": "pushPull"
+        },
+        {
+          "kind": "disc_th_continuity_journey",
+          "title": "les 30 derniers jours pèsent une grande part de ces trois mois",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_continuity_journey|period:global|fact:share|les 30 derniers jours|ces trois mois|aspect:default",
+          "bodyPreview": "les 30 derniers jours comptent 5 730 répétitions, soit 41,0 % des 13 963 répétitions de ces trois mois.",
+          "evidence": "continuity"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "100e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:100e séance enregistrée|gap:2026-11-10|null|aspect:default",
+          "bodyPreview": "Le 10 novembre 2026, la 100e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 29 490 répétitions ont été accumulées pour y parvenir, soit environ 295 répétitions par séance. La date est celle du fra",
+          "evidence": "100 séances · 29 490 reps"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_emergence",
+          "title": "Hyperextension: recul confirmé sur plusieurs séances",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:703294235|fact:emergence|703294235|aspect:default",
+          "bodyPreview": "Sur 8 séances, le volume moyen de répétitions enregistré pour Hyperextension passe d’environ 48 à 40 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 16,7 %. Le r",
+          "evidence": "8 séances · baisse nette · -16.7 %"
+        },
+        {
+          "kind": "disc_th_rhythm_trajectory",
+          "title": "Ces trois mois sont en dessous du rythme de renforcement d'avant",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_trajectory|period:activity|fact:rate|3m|Le mois précédent dans la fenêtre|aspect:default",
+          "bodyPreview": "Ces trois mois sont à environ 332 répétitions par journée de renforcement (42 journées), contre environ 376 pour Le mois précédent dans la fenêtre (13 journées).",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_muscle_exposure_shift",
+          "title": "Avant-bras: moins de jours d’exposition qu’en période précédente",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_muscle_exposure_shift|grp:forearms|win:2026-08-28:2026-11-27|aspect:default",
+          "bodyPreview": "Sur deux fenêtres comparables de 47+ jours d’activité (28 mai 2026→27 août 2026 puis 28 août 2026→27 novembre 2026), les jours d’exposition primaire aux avant-bras passent de 22 à 12 (Δ -10). Les reps mono associées vont",
+          "evidence": "forearms 22→12 j · mono 0→0 · cmp=solid"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "consolidated",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de la période se lit dans les ratio|e:poussée/tirage 52,8 % / 28,8 % ·",
+          "bodyPreview": "Cette période: poussée/tirage 52,8 % / 28,8 %, bas du corps 10,1 % du volume identifié, densité appariée environ 331 reps/h, soit 310 reps par jour entraîné. Ces rapports décrivent le stimulus reçu, pas seulement la quan",
+          "evidence": "poussée/tirage 52,8 % / 28,8 % · bas du corps 10,1 % du volume identifié · densité appariée environ 331 reps/h"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_volume_decomp",
+          "title": "Volume en baisse, journées actives plus chargées",
+          "disposition": "promoted_over_cap",
+          "conclusionKey": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+          "bodyPreview": "la période précédente de même durée: 18 020 répétitions en 59 journées de renforcement (≈305 / journée). cette période: 13 963 répétitions en 42 journées de renforcement (≈332 / journée). Écart total -22,5 % — contributi",
+          "evidence": "18 020→13 963 · 59→42 j. renforcement"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Le trimestre a une trajectoire interne, pas seulement un total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:le trimestre a une trajectoire interne, pas seul|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "Les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début du trimestre (+83,1 %, fréquence +54,5 %). Le long terme ici répond à « quelle trajectoire se construit », pas à une deuxièm",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_pushPull_journey|period:activity|fact:pushPull|3m|push|aspect:default",
+          "bodyPreview": "Ces trois mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 6 485 répétitions de poussée contre 3 535 de tirage, soit environ 1,8 répétitions de poussée pour 1 de ",
+          "evidence": "pushPull"
+        },
+        {
+          "kind": "disc_th_continuity_journey",
+          "title": "les 30 derniers jours pèsent une grande part de ces trois mois",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_continuity_journey|period:global|fact:share|les 30 derniers jours|ces trois mois|aspect:default",
+          "bodyPreview": "les 30 derniers jours comptent 5 730 répétitions, soit 41,0 % des 13 963 répétitions de ces trois mois.",
+          "evidence": "continuity"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "100e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:100e séance enregistrée|gap:2026-11-10|null|aspect:default",
+          "bodyPreview": "Le 10 novembre 2026, la 100e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 29 490 répétitions ont été accumulées pour y parvenir, soit environ 295 répétitions par séance. La date est celle du fra",
+          "evidence": "100 séances · 29 490 reps"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 11,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_collective_return",
+            "title": "Une composante de ton entraînement se réinstalle",
+            "disposition": "autonomous",
+            "conclusionKey": "collective_return|return_episode|2026-11-11|p:9a959cbd|n:9|return",
+            "bodyPreview": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-pl",
+            "evidence": "Élévations latérales@2026-11-11 · Face pull@2026-11-11 · Extension triceps debout avec haltère@2026-11-11 · Kickbacks triceps@2026-11-11 · Pompes pseudo-planche@2026-11-11 · Side-Lying Single-Arm Dumbbell Triceps Extension@2026-11-11 · Développé Arnold@2026-11-11 · Bent-Arm Lateral Dumbbell Raise@2026-11-11"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_sessions",
+            "title": "100e séance enregistrée",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_sessions|name:100e séance enregistrée|gap:2026-11-10|null|aspect:default",
+            "bodyPreview": "Le 10 novembre 2026, la 100e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 29 490 répétitions ont été accumulées pour y parvenir, soit environ 295 répétitions par séance. La date est celle du fra",
+            "evidence": "100 séances · 29 490 reps"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 99,
+        "publishedCount": 102,
+        "intersection": 97,
+        "onlyReplay": [],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_km",
+            "title": "250 km cumulés en course",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_km|name:250 km cumulés en course|gap:2026-09-27|null|aspect:default",
+            "bodyPreview": "Le 27 septembre 2026, tu as franchi 250 km cumulés en course. Le jalon se lit avec tes 90 sorties enregistrées, pas seulement le dernier GPS.",
+            "evidence": "250 km"
+          },
+          {
+            "kind": "disc_near_equal_sessions",
+            "title": "Des journées à volume proche racontent des séances différentes",
+            "disposition": "autonomous",
+            "conclusionKey": "near_equal|2026-10-17,2026-10-13,2026-09-30",
+            "bodyPreview": "Des journées à volume proche (536, 536, 524 répétitions) diffèrent par 2026-10-17: 104 min; 2026-10-13: 165 min; 2026-09-30: 67 min.",
+            "evidence": "2026-10-17: 104 min ; 2026-10-13: 165 min ; 2026-09-30: 67 min"
+          },
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          }
+        ],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 3,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Hyperextension: recul confirmé sur plusieurs séances",
+          "Ces trois mois sont en dessous du rythme de renforcement d'avant",
+          "Une composante de ton entraînement se réinstalle",
+          "Avant-bras: moins de jours d’exposition qu’en période précédente",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Volume en baisse, journées actives plus chargées",
+          "Le trimestre a une trajectoire interne, pas seulement un total",
+          "Le haut du corps travaille surtout en poussée",
+          "les 30 derniers jours pèsent une grande part de ces trois mois"
+        ],
+        "titlesWithMemory": [
+          "Hyperextension: recul confirmé sur plusieurs séances",
+          "Ces trois mois sont en dessous du rythme de renforcement d'avant",
+          "Avant-bras: moins de jours d’exposition qu’en période précédente",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Volume en baisse, journées actives plus chargées",
+          "Le trimestre a une trajectoire interne, pas seulement un total",
+          "Le haut du corps travaille surtout en poussée",
+          "les 30 derniers jours pèsent une grande part de ces trois mois",
+          "100e séance enregistrée"
+        ],
+        "identical": false
+      },
+      "publicationAuthority": "p6"
+    },
+    "6m": {
+      "period": "6m",
+      "ms": 32396,
+      "window": {
+        "start": "2026-05-29",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2026-05-29",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 130,
+      "p6Counters": {
+        "produced": 131,
+        "admissible": 131,
+        "rejected": 0,
+        "fused": 16,
+        "priority": 11,
+        "reserve": 103,
+        "blocked": 0,
+        "suppressed": 1,
+        "reconciled": true,
+        "inputPriority": 32,
+        "inputRows": 32,
+        "reviewDecisions": 71,
+        "reexplored": 0,
+        "composedParallel": 1
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:204|fact:emergence|204|stable_format",
+          "bodyPreview": "Sur la période, tu es passé de 1 à 19 séances, pour un volume moyen par séance qui reste proche (≈36 → ≈36 sur les fenêtres comparées). La variation du total vient surtout du nombre de séances (1 → 19), alors que le volu",
+          "evidence": "19 séances · plateau · 0 % · 3×12→3×12"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de la période se lit dans les ratio|e:poussée/tirage 55,8 % / 26,4 % ·",
+          "bodyPreview": "Ces derniers mois: poussée/tirage 55,8 % / 26,4 %, bas du corps 7,4 % du volume identifié, densité non calculable (durée surtout chronométrée sur les défis), soit 318 reps par jour entraîné. Le bas du corps est presque a",
+          "evidence": "poussée/tirage 55,8 % / 26,4 % · bas du corps 7,4 % du volume identifié · densité non calculable (durée surtout chronométrée sur les défis)"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "promoted_over_cap",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "6 hausses de charge sur 5 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), élévations latéral",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Élévations latérales 3→4 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_composed_volume_decomp",
+          "title": "Le volume suit surtout ta fréquence",
+          "disposition": "promoted_over_cap",
+          "conclusionKey": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+          "bodyPreview": "la période précédente de même durée: 2 546 répétitions en 10 journées de renforcement (≈255 / journée). ces derniers mois: 31 840 répétitions en 100 journées de renforcement (≈318 / journée). Écart total +1150,6 % — cont",
+          "evidence": "2 546→31 840 · 10→100 j. renforcement"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_th_rhythm_journey",
+          "title": "Les deux moitiés de ces six mois n'ont pas le même volume",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_journey|period:activity|fact:blocks|6m|mai 2026 – août 2026|août 2026 – novembre 2026|aspect:default",
+          "bodyPreview": "Le bloc mai 2026 – août 2026 compte 17 877 répétitions en 58 jours, et le bloc août 2026 – novembre 2026 en compte 13 963 en 42 jours. mai 2026 – août 2026 est au-dessus de août 2026 – novembre 2026.",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas ces d",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_pushPull_journey|period:activity|fact:pushPull|6m|push|aspect:default",
+          "bodyPreview": "Ces six mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 14 008 répétitions de poussée contre 6 629 de tirage, soit environ 2,1 répétitions de poussée pour 1 de t",
+          "evidence": "pushPull"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:204|fact:emergence|204|stable_format",
+          "bodyPreview": "Sur la période, tu es passé de 1 à 19 séances, pour un volume moyen par séance qui reste proche (≈36 → ≈36 sur les fenêtres comparées). La variation du total vient surtout du nombre de séances (1 → 19), alors que le volu",
+          "evidence": "19 séances · plateau · 0 % · 3×12→3×12"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de la période se lit dans les ratio|e:poussée/tirage 55,8 % / 26,4 % ·",
+          "bodyPreview": "Ces derniers mois: poussée/tirage 55,8 % / 26,4 %, bas du corps 7,4 % du volume identifié, densité appariée environ 353 reps/h, soit 309 reps par jour entraîné. Le bas du corps est presque absent de cette structure.",
+          "evidence": "poussée/tirage 55,8 % / 26,4 % · bas du corps 7,4 % du volume identifié · densité appariée environ 353 reps/h"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "promoted_over_cap",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "5 hausses de charge sur 4 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), oiseaux (3 → 4 kg)",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_composed_volume_decomp",
+          "title": "Le volume suit surtout ta fréquence",
+          "disposition": "promoted_over_cap",
+          "conclusionKey": "disc_composed_volume_decomp|pop:strength_positive_reps_days|ep:na|aspect:default",
+          "bodyPreview": "la période précédente de même durée: 2 546 répétitions en 10 journées de renforcement (≈255 / journée). ces derniers mois: 31 840 répétitions en 100 journées de renforcement (≈318 / journée). Écart total +1150,6 % — cont",
+          "evidence": "2 546→31 840 · 10→100 j. renforcement"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 13 jours (≈285 / jour actif), soit -47 % de volume, -41 % de jours, -10 % de volume par jour actif. Entre les deux, juillet ",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_th_rhythm_journey",
+          "title": "Les deux moitiés de ces six mois n'ont pas le même volume",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_rhythm_journey|period:activity|fact:blocks|6m|mai 2026 – août 2026|août 2026 – novembre 2026|aspect:default",
+          "bodyPreview": "Le bloc mai 2026 – août 2026 compte 17 877 répétitions en 58 jours, et le bloc août 2026 – novembre 2026 en compte 13 963 en 42 jours. mai 2026 – août 2026 est au-dessus de août 2026 – novembre 2026.",
+          "evidence": "rhythm"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas ces d",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_pushPull_journey|period:activity|fact:pushPull|6m|push|aspect:default",
+          "bodyPreview": "Ces six mois exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 14 008 répétitions de poussée contre 6 629 de tirage, soit environ 2,1 répétitions de poussée pour 1 de t",
+          "evidence": "pushPull"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 11,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_collective_return",
+            "title": "Une composante de ton entraînement se réinstalle",
+            "disposition": "promoted_over_legacy",
+            "conclusionKey": "collective_return|return_episode|2026-11-11|p:9a959cbd|n:9|return",
+            "bodyPreview": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-pl",
+            "evidence": "Élévations latérales@2026-11-11 · Face pull@2026-11-11 · Extension triceps debout avec haltère@2026-11-11 · Kickbacks triceps@2026-11-11 · Pompes pseudo-planche@2026-11-11 · Side-Lying Single-Arm Dumbbell Triceps Extension@2026-11-11 · Développé Arnold@2026-11-11 · Bent-Arm Lateral Dumbbell Raise@2026-11-11"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_gtg_unplanned_now",
+            "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+            "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+            "evidence": "12 hors planning · 76 reps"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 114,
+        "publishedCount": 113,
+        "intersection": 109,
+        "onlyReplay": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "Reprise et niveau habituel le même jour",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:reprise et niveau habituel le même jour|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le retour n'est pas seulement calendaire: tu retrouves immédiatement 94 % de ton volume habituel. L'interruption n'a pas effacé le niveau, elle l'a seulement interrompu.",
+            "evidence": "retour × 94 %"
+          },
+          {
+            "kind": "disc_ms_km",
+            "title": "50 km cumulés en course",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_km|name:50 km cumulés en course|gap:2026-06-01|null|aspect:default",
+            "bodyPreview": "Le 1 juin 2026, tu as franchi 50 km cumulés en course. Le jalon se lit avec tes 15 sorties enregistrées, pas seulement le dernier GPS.",
+            "evidence": "57,3 km"
+          },
+          {
+            "kind": "disc_ms_return_run",
+            "title": "Tu reprends la course après 33 jours",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_return_run|name:tu reprends la course après 33 jours|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le 27 juillet 2026, tu as repris la course après 33 jours sans sortie enregistrée (longue absence). Cette absence représente plus de 11 fois ton intervalle habituel entre deux courses. Avec 4,7 km, tu reviens à 94 % de t",
+            "evidence": "33 j. · habitude ~3 j."
+          },
+          {
+            "kind": "resistance_progression",
+            "title": "Élévations latérales: la charge monte sans changer le format",
+            "disposition": "deepening_of_collective",
+            "conclusionKey": "resistance_progression|ex:304|d:2026-07-30|aspect:default",
+            "bodyPreview": "Élévations latérales passe de 3 à 4 kg en charge totale, sur 3 séries et 45 répétitions. Le volume de répétitions reste le même. Cette comparaison ne dit rien de l’effort relatif. Contexte de séance probable: mercredi (c",
+            "evidence": "16 juillet 2026 3 kg · 30 juillet 2026 4 kg"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_km",
+            "title": "250 km cumulés en course",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_km|name:250 km cumulés en course|gap:2026-09-27|null|aspect:default",
+            "bodyPreview": "Le 27 septembre 2026, tu as franchi 250 km cumulés en course. Le jalon se lit avec tes 90 sorties enregistrées, pas seulement le dernier GPS.",
+            "evidence": "250 km"
+          },
+          {
+            "kind": "disc_ms_hours",
+            "title": "10 heures d'entraînement cumulées",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_hours|name:10 heures d'entraînement cumulées|gap:2026-05-29|null|aspect:default",
+            "bodyPreview": "Le 29 mai 2026, tu as franchi 10 heures d'entraînement enregistrées. Ce n'est pas seulement plus de répétitions: c'est du temps réellement passé à t'entraîner, cumulé séance après séance.",
+            "evidence": "10,1 h · 11 séances"
+          },
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          }
+        ],
+        "onlyReplayCount": 4,
+        "onlyPublishedCount": 3,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
+          "Une composante de ton entraînement se réinstalle",
+          "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Le volume suit surtout ta fréquence",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les deux moitiés de ces six mois n'ont pas le même volume",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Le haut du corps travaille surtout en poussée",
+          "50e séance enregistrée"
+        ],
+        "titlesWithMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
+          "La structure de la période se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Le volume suit surtout ta fréquence",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les deux moitiés de ces six mois n'ont pas le même volume",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Le haut du corps travaille surtout en poussée",
+          "50e séance enregistrée"
+        ],
+        "identical": false
+      },
+      "publicationAuthority": "p6"
+    },
+    "1y": {
+      "period": "1y",
+      "ms": 34798,
+      "window": {
+        "start": "2025-11-28",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2025-11-28",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 119,
+      "p6Counters": {
+        "produced": 120,
+        "admissible": 120,
+        "rejected": 0,
+        "fused": 9,
+        "priority": 11,
+        "reserve": 99,
+        "blocked": 0,
+        "suppressed": 1,
+        "reconciled": true,
+        "inputPriority": 30,
+        "inputRows": 30,
+        "reviewDecisions": 67,
+        "reexplored": 0,
+        "composedParallel": 1
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+          "bodyPreview": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste r",
+          "evidence": "21 séances · plateau · 0 % · 3×20→3×20"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de l'année se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de l'année se lit dans les ratios, |e:poussée/tirage 56,2 % / 26,0 % ·",
+          "bodyPreview": "Cette année: poussée/tirage 56,2 % / 26,0 %, bas du corps 7,5 % du volume identifié, densité non calculable (durée surtout chronométrée sur les défis), soit 284 reps par jour entraîné. Le bas du corps est presque absent ",
+          "evidence": "poussée/tirage 56,2 % / 26,0 % · bas du corps 7,5 % du volume identifié · densité non calculable (durée surtout chronométrée sur les défis)"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "6 hausses de charge sur 5 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), élévations latéral",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Élévations latérales 3→4 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "promoted_fusion",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas cette",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_pushPull_journey|period:activity|fact:pushPull|1y|push|aspect:default",
+          "bodyPreview": "Depuis le début compté exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 15 409 répétitions de poussée contre 7 126 de tirage, soit environ 2,2 répétitions de poussée p",
+          "evidence": "pushPull"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_profile|period:global|ep:na|aspect:default|t:ton entraînement actuel n'est pas seulement plus|e:trimestre 13 963 reps",
+          "bodyPreview": "Sur le trimestre, tu as réalisé 13 963 répétitions, dont environ 2 551 pectoraux, environ 1 963 épaules, environ 1 971 triceps, environ 1 671 biceps. Cette période, la répartition observée peut s’écarter de cette structu",
+          "evidence": "trimestre 13 963 reps"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+          "bodyPreview": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste r",
+          "evidence": "21 séances · plateau · 0 % · 3×20→3×20"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de l'année se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de l'année se lit dans les ratios, |e:poussée/tirage 56,2 % / 26,0 % ·",
+          "bodyPreview": "Cette année: poussée/tirage 56,2 % / 26,0 %, bas du corps 7,5 % du volume identifié, densité appariée environ 289 reps/h, soit 222 reps par jour entraîné. Le bas du corps est presque absent de cette structure.",
+          "evidence": "poussée/tirage 56,2 % / 26,0 % · bas du corps 7,5 % du volume identifié · densité appariée environ 289 reps/h"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "5 hausses de charge sur 4 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), oiseaux (3 → 4 kg)",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "promoted_fusion",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 13 jours (≈285 / jour actif), soit -47 % de volume, -41 % de jours, -10 % de volume par jour actif. Entre les deux, juillet ",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas cette",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_th_pushPull_journey",
+          "title": "Le haut du corps travaille surtout en poussée",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_th_pushPull_journey|period:activity|fact:pushPull|1y|push|aspect:default",
+          "bodyPreview": "Depuis le début compté exposent surtout le haut du corps en poussée (pectoraux, épaules, triceps), pas en tirage. Tu cumules 15 409 répétitions de poussée contre 7 126 de tirage, soit environ 2,2 répétitions de poussée p",
+          "evidence": "pushPull"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_profile|period:global|ep:na|aspect:default|t:ton entraînement actuel n'est pas seulement plus|e:trimestre 13 963 reps",
+          "bodyPreview": "Sur le trimestre, tu as réalisé 13 963 répétitions, dont environ 2 551 pectoraux, environ 1 963 épaules, environ 1 971 triceps, environ 1 671 biceps. Cette période, la répartition observée peut s’écarter de cette structu",
+          "evidence": "trimestre 13 963 reps"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 11,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_collective_return",
+            "title": "Une composante de ton entraînement se réinstalle",
+            "disposition": "promoted_over_legacy",
+            "conclusionKey": "collective_return|return_episode|2026-11-11|p:9a959cbd|n:9|return",
+            "bodyPreview": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-pl",
+            "evidence": "Élévations latérales@2026-11-11 · Face pull@2026-11-11 · Extension triceps debout avec haltère@2026-11-11 · Kickbacks triceps@2026-11-11 · Pompes pseudo-planche@2026-11-11 · Side-Lying Single-Arm Dumbbell Triceps Extension@2026-11-11 · Développé Arnold@2026-11-11 · Bent-Arm Lateral Dumbbell Raise@2026-11-11"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_composed_parallel_trajectories",
+            "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+            "disposition": "promoted_fusion",
+            "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+            "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+            "evidence": "ex:1979012181 · ex:703294235"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 110,
+        "publishedCount": 112,
+        "intersection": 104,
+        "onlyReplay": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "Reprise et niveau habituel le même jour",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:reprise et niveau habituel le même jour|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le retour n'est pas seulement calendaire: tu retrouves immédiatement 94 % de ton volume habituel. L'interruption n'a pas effacé le niveau, elle l'a seulement interrompu.",
+            "evidence": "retour × 94 %"
+          },
+          {
+            "kind": "disc_ms_km",
+            "title": "10 km cumulés en course",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_km|name:10 km cumulés en course|gap:2026-03-17|null|aspect:default",
+            "bodyPreview": "Le 17 mars 2026, tu as franchi 10 km cumulés en course. Le jalon se lit avec tes 4 sorties enregistrées, pas seulement le dernier GPS.",
+            "evidence": "12,5 km"
+          },
+          {
+            "kind": "disc_ms_return_run",
+            "title": "Tu reprends la course après 33 jours",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_return_run|name:tu reprends la course après 33 jours|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le 27 juillet 2026, tu as repris la course après 33 jours sans sortie enregistrée (longue absence). Cette absence représente plus de 11 fois ton intervalle habituel entre deux courses. Avec 4,7 km, tu reviens à 94 % de t",
+            "evidence": "33 j. · habitude ~3 j."
+          },
+          {
+            "kind": "resistance_progression",
+            "title": "Élévations latérales: la charge monte sans changer le format",
+            "disposition": "deepening_of_collective",
+            "conclusionKey": "resistance_progression|ex:304|d:2026-07-30|aspect:default",
+            "bodyPreview": "Élévations latérales passe de 3 à 4 kg en charge totale, sur 3 séries et 45 répétitions. Le volume de répétitions reste le même. Cette comparaison ne dit rien de l’effort relatif. Contexte de séance probable: mercredi (c",
+            "evidence": "16 juillet 2026 3 kg · 30 juillet 2026 4 kg"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "L'objectif avance pendant que le régime s'installe",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:l'objectif avance pendant que le régime s'installe|gap:2026-01-05|null|aspect:default",
+            "bodyPreview": "Deux transformations courent ensemble: un objectif chiffré progresse, et un exercice est devenu régulier sur six semaines. Le palier n'est pas seulement un record isolé: l'exposition le porte.",
+            "evidence": "objectif × régime"
+          },
+          {
+            "kind": "disc_ms_km",
+            "title": "50 km cumulés en course",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_km|name:50 km cumulés en course|gap:2026-03-17|null|aspect:default",
+            "bodyPreview": "Le 17 mars 2026, tu as franchi 50 km cumulés en course. Le jalon se lit avec tes 26 sorties enregistrées, pas seulement le dernier GPS.",
+            "evidence": "59,2 km"
+          },
+          {
+            "kind": "disc_ms_hours",
+            "title": "10 heures d'entraînement cumulées",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_hours|name:10 heures d'entraînement cumulées|gap:2026-05-29|null|aspect:default",
+            "bodyPreview": "Le 29 mai 2026, tu as franchi 10 heures d'entraînement enregistrées. Ce n'est pas seulement plus de répétitions: c'est du temps réellement passé à t'entraîner, cumulé séance après séance.",
+            "evidence": "10,1 h · 11 séances"
+          },
+          {
+            "kind": "disc_ms_goal",
+            "title": "Objectif atteint: 10 tractions",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_goal|name:objectif atteint : 10 tractions|gap:2026-01-05|null|aspect:default",
+            "bodyPreview": "Le 5 janvier 2026, tu as atteint 20 tractions supination, l'objectif de 10 tractions que tu t'étais fixé. Ce n'est plus une projection: c'est un palier franchi, le 5 janvier 2026.",
+            "evidence": "20 reps · objectif 10"
+          },
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          },
+          {
+            "kind": "disc_sleep_cardio",
+            "title": "Tes sorties course changent avec le sommeil, pas seulement tes reps",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_cardio|period:global|ep:na|aspect:default|t:tes sorties course changent avec le sommeil, pas|e:3,3 km · 1,2 km",
+            "bodyPreview": "Après les nuits d'au moins 7 h 30, tes sorties atteignent en moyenne 3,3 km, contre 1,2 km lorsque le sommeil passe sous 7 h (écart 2,1 km, 176,5 %, 11 et 3 sorties). Le sommeil n'est pas un bloc Garmin à part: il se lit",
+            "evidence": "3,3 km · 1,2 km"
+          }
+        ],
+        "onlyReplayCount": 4,
+        "onlyPublishedCount": 6,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Relevés de genoux à la barre: volume par séance stable",
+          "Une composante de ton entraînement se réinstalle",
+          "La structure de l'année se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Le haut du corps travaille surtout en poussée",
+          "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "50e séance enregistrée"
+        ],
+        "titlesWithMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Relevés de genoux à la barre: volume par séance stable",
+          "La structure de l'année se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Le haut du corps travaille surtout en poussée",
+          "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "50e séance enregistrée"
+        ],
+        "identical": false
+      },
+      "publicationAuthority": "p6"
+    },
+    "2y": {
+      "period": "2y",
+      "ms": 39033,
+      "window": {
+        "start": "2024-11-28",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2024-11-28",
+        "end": "2026-11-27"
+      },
+      "windowMatch": true,
+      "produced": 114,
+      "p6Counters": {
+        "produced": 115,
+        "admissible": 115,
+        "rejected": 0,
+        "fused": 7,
+        "priority": 11,
+        "reserve": 96,
+        "blocked": 0,
+        "suppressed": 1,
+        "reconciled": true,
+        "inputPriority": 31,
+        "inputRows": 31,
+        "reviewDecisions": 64,
+        "reexplored": 0,
+        "composedParallel": 1
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+          "bodyPreview": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste r",
+          "evidence": "21 séances · plateau · 0 % · 3×20→3×20"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de ces deux années se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de ces deux années se lit dans les |e:poussée/tirage 56,2 % / 26,0 % ·",
+          "bodyPreview": "Ces deux années: poussée/tirage 56,2 % / 26,0 %, bas du corps 7,5 % du volume identifié, densité non calculable (durée surtout chronométrée sur les défis), soit 284 reps par jour entraîné. Le bas du corps est presque abs",
+          "evidence": "poussée/tirage 56,2 % / 26,0 % · bas du corps 7,5 % du volume identifié · densité non calculable (durée surtout chronométrée sur les défis)"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "6 hausses de charge sur 5 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), élévations latéral",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Élévations latérales 3→4 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 6 entraînements",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_week_freq|name:première semaine à 6 entraînements|gap:2026-06-01|null|aspect:default",
+          "bodyPreview": "cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+          "evidence": "6 séances · max avant 4"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "promoted_fusion",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas ces d",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_profile|period:global|ep:na|aspect:default|t:ton entraînement actuel n'est pas seulement plus|e:trimestre 13 963 reps",
+          "bodyPreview": "Sur le trimestre, tu as réalisé 13 963 répétitions, dont environ 2 551 pectoraux, environ 1 963 épaules, environ 1 971 triceps, environ 1 671 biceps. Sur deux ans, la répartition observée peut s’écarter de cette structur",
+          "evidence": "trimestre 13 963 reps"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+          "bodyPreview": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste r",
+          "evidence": "21 séances · plateau · 0 % · 3×20→3×20"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure de ces deux années se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure de ces deux années se lit dans les |e:poussée/tirage 56,2 % / 26,0 % ·",
+          "bodyPreview": "Ces deux années: poussée/tirage 56,2 % / 26,0 %, bas du corps 7,5 % du volume identifié, densité appariée environ 256 reps/h, soit 205 reps par jour entraîné. Le bas du corps est presque absent de cette structure.",
+          "evidence": "poussée/tirage 56,2 % / 26,0 % · bas du corps 7,5 % du volume identifié · densité appariée environ 256 reps/h"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "5 hausses de charge sur 4 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), oiseaux (3 → 4 kg)",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 6 entraînements",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_week_freq|name:première semaine à 6 entraînements|gap:2026-06-01|null|aspect:default",
+          "bodyPreview": "cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+          "evidence": "6 séances · max avant 4"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "promoted_fusion",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 13 jours (≈285 / jour actif), soit -47 % de volume, -41 % de jours, -10 % de volume par jour actif. Entre les deux, juillet ",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas ces d",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_profile|period:global|ep:na|aspect:default|t:ton entraînement actuel n'est pas seulement plus|e:trimestre 13 963 reps",
+          "bodyPreview": "Sur le trimestre, tu as réalisé 13 963 répétitions, dont environ 2 551 pectoraux, environ 1 963 épaules, environ 1 971 triceps, environ 1 671 biceps. Sur deux ans, la répartition observée peut s’écarter de cette structur",
+          "evidence": "trimestre 13 963 reps"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 11,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_collective_return",
+            "title": "Une composante de ton entraînement se réinstalle",
+            "disposition": "promoted_over_legacy",
+            "conclusionKey": "collective_return|return_episode|2026-11-11|p:9a959cbd|n:9|return",
+            "bodyPreview": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-pl",
+            "evidence": "Élévations latérales@2026-11-11 · Face pull@2026-11-11 · Extension triceps debout avec haltère@2026-11-11 · Kickbacks triceps@2026-11-11 · Pompes pseudo-planche@2026-11-11 · Side-Lying Single-Arm Dumbbell Triceps Extension@2026-11-11 · Développé Arnold@2026-11-11 · Bent-Arm Lateral Dumbbell Raise@2026-11-11"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_week_freq",
+            "title": "Première semaine à 6 entraînements",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_week_freq|name:première semaine à 6 entraînements|gap:2026-06-01|null|aspect:default",
+            "bodyPreview": "cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+            "evidence": "6 séances · max avant 4"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 107,
+        "publishedCount": 109,
+        "intersection": 102,
+        "onlyReplay": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "Reprise et niveau habituel le même jour",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:reprise et niveau habituel le même jour|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le retour n'est pas seulement calendaire: tu retrouves immédiatement 94 % de ton volume habituel. L'interruption n'a pas effacé le niveau, elle l'a seulement interrompu.",
+            "evidence": "retour × 94 %"
+          },
+          {
+            "kind": "disc_ms_return_run",
+            "title": "Tu reprends la course après 33 jours",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_return_run|name:tu reprends la course après 33 jours|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le 27 juillet 2026, tu as repris la course après 33 jours sans sortie enregistrée (longue absence). Cette absence représente plus de 11 fois ton intervalle habituel entre deux courses. Avec 4,7 km, tu reviens à 94 % de t",
+            "evidence": "33 j. · habitude ~3 j."
+          },
+          {
+            "kind": "resistance_progression",
+            "title": "Élévations latérales: la charge monte sans changer le format",
+            "disposition": "deepening_of_collective",
+            "conclusionKey": "resistance_progression|ex:304|d:2026-07-30|aspect:default",
+            "bodyPreview": "Élévations latérales passe de 3 à 4 kg en charge totale, sur 3 séries et 45 répétitions. Le volume de répétitions reste le même. Cette comparaison ne dit rien de l’effort relatif. Contexte de séance probable: mercredi (c",
+            "evidence": "16 juillet 2026 3 kg · 30 juillet 2026 4 kg"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "L'objectif avance pendant que le régime s'installe",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:l'objectif avance pendant que le régime s'installe|gap:2026-01-05|null|aspect:default",
+            "bodyPreview": "Deux transformations courent ensemble: un objectif chiffré progresse, et un exercice est devenu régulier sur six semaines. Le palier n'est pas seulement un record isolé: l'exposition le porte.",
+            "evidence": "objectif × régime"
+          },
+          {
+            "kind": "disc_ms_hours",
+            "title": "10 heures d'entraînement cumulées",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_hours|name:10 heures d'entraînement cumulées|gap:2026-05-29|null|aspect:default",
+            "bodyPreview": "Le 29 mai 2026, tu as franchi 10 heures d'entraînement enregistrées. Ce n'est pas seulement plus de répétitions: c'est du temps réellement passé à t'entraîner, cumulé séance après séance.",
+            "evidence": "10,1 h · 11 séances"
+          },
+          {
+            "kind": "disc_ms_goal",
+            "title": "Objectif atteint: 10 tractions",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_goal|name:objectif atteint : 10 tractions|gap:2026-01-05|null|aspect:default",
+            "bodyPreview": "Le 5 janvier 2026, tu as atteint 20 tractions supination, l'objectif de 10 tractions que tu t'étais fixé. Ce n'est plus une projection: c'est un palier franchi, le 5 janvier 2026.",
+            "evidence": "20 reps · objectif 10"
+          },
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          },
+          {
+            "kind": "disc_sleep_cardio",
+            "title": "Tes sorties course changent avec le sommeil, pas seulement tes reps",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_cardio|period:global|ep:na|aspect:default|t:tes sorties course changent avec le sommeil, pas|e:4,2 km · 1,2 km",
+            "bodyPreview": "Après les nuits d'au moins 7 h 30, tes sorties atteignent en moyenne 4,2 km, contre 1,2 km lorsque le sommeil passe sous 7 h (écart 3 km, 252,6 %, 13 et 3 sorties). Le sommeil n'est pas un bloc Garmin à part: il se lit a",
+            "evidence": "4,2 km · 1,2 km"
+          }
+        ],
+        "onlyReplayCount": 3,
+        "onlyPublishedCount": 5,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Relevés de genoux à la barre: volume par séance stable",
+          "Une composante de ton entraînement se réinstalle",
+          "La structure de ces deux années se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "50e séance enregistrée"
+        ],
+        "titlesWithMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Relevés de genoux à la barre: volume par séance stable",
+          "La structure de ces deux années se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Première semaine à 6 entraînements",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "50e séance enregistrée"
+        ],
+        "identical": false
+      },
+      "publicationAuthority": "p6"
+    },
+    "all": {
+      "period": "all",
+      "ms": 31000,
+      "window": {
+        "start": "2026-01-05",
+        "end": "2026-11-27"
+      },
+      "publishedWindow": {
+        "start": "2025-10-20",
+        "end": "2026-11-27"
+      },
+      "windowMatch": false,
+      "produced": 115,
+      "p6Counters": {
+        "produced": 116,
+        "admissible": 116,
+        "rejected": 0,
+        "fused": 7,
+        "priority": 11,
+        "reserve": 97,
+        "blocked": 0,
+        "suppressed": 1,
+        "reconciled": true,
+        "inputPriority": 30,
+        "inputRows": 30,
+        "reviewDecisions": 64,
+        "reexplored": 0,
+        "composedParallel": 1
+      },
+      "priorityReplay": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+          "bodyPreview": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste r",
+          "evidence": "21 séances · plateau · 0 % · 3×20→3×20"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure du parcours se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure du parcours se lit dans les ratios,|e:poussée/tirage 56,2 % / 26,0 % ·",
+          "bodyPreview": "L’ensemble du suivi: poussée/tirage 56,2 % / 26,0 %, bas du corps 7,5 % du volume identifié, densité non calculable (durée surtout chronométrée sur les défis), soit 284 reps par jour entraîné. Le bas du corps est presque",
+          "evidence": "poussée/tirage 56,2 % / 26,0 % · bas du corps 7,5 % du volume identifié · densité non calculable (durée surtout chronométrée sur les défis)"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "6 hausses de charge sur 5 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), élévations latéral",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Élévations latérales 3→4 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 6 entraînements",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_week_freq|name:première semaine à 6 entraînements|gap:2026-06-01|null|aspect:default",
+          "bodyPreview": "cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+          "evidence": "6 séances · max avant 4"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "promoted_fusion",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 12 jours (≈309 / jour actif), soit -47 % de volume, -45 % de jours, -2 % de volume par jour actif. Entre les deux, juillet 2",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas l’ens",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_profile|period:global|ep:na|aspect:default|t:ton entraînement actuel n'est pas seulement plus|e:trimestre 13 963 reps",
+          "bodyPreview": "Sur le trimestre, tu as réalisé 13 963 répétitions, dont environ 2 551 pectoraux, environ 1 963 épaules, environ 1 971 triceps, environ 1 671 biceps. Sur tout le suivi, la répartition observée peut s’écarter de cette str",
+          "evidence": "trimestre 13 963 reps"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "priorityPublished": [
+        {
+          "kind": "disc_gtg_unplanned_now",
+          "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_gtg_unplanned_now|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans",
+          "evidence": "12 hors planning · 76 reps"
+        },
+        {
+          "kind": "disc_emergence",
+          "title": "Relevés de genoux à la barre: volume par séance stable",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_emergence|ex:106|fact:emergence|106|stable_format",
+          "bodyPreview": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste r",
+          "evidence": "21 séances · plateau · 0 % · 3×20→3×20"
+        },
+        {
+          "kind": "disc_ratio_structure",
+          "title": "La structure du parcours se lit dans les ratios, pas seulement dans le total",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_ratio_structure|period:global|ep:na|aspect:default|t:la structure du parcours se lit dans les ratios,|e:poussée/tirage 56,2 % / 26,0 % ·",
+          "bodyPreview": "L’ensemble du suivi: poussée/tirage 56,2 % / 26,0 %, bas du corps 7,5 % du volume identifié, densité appariée environ 256 reps/h, soit 205 reps par jour entraîné. Le bas du corps est presque absent de cette structure.",
+          "evidence": "poussée/tirage 56,2 % / 26,0 % · bas du corps 7,5 % du volume identifié · densité appariée environ 256 reps/h"
+        },
+        {
+          "kind": "disc_gtg_unplanned_role",
+          "title": "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_gtg_unplanned_role|dates:2026-10-01,2026-10-01,2026-10-01|dates:2026-10-01,2026-10-01,2026-10-01,2026-10-03,2026-10-03,2026-10-03,2026-10-14,2026-10-14,2026-10-14,2026-10-15,2026-10-15,2026-10-15|aspect:default",
+          "bodyPreview": "Sans eux, 4 jours de cette fenêtre seraient restés sans Grease the Groove. La fenêtre d’avant en avait 0, et aucun passage de ce type. 4 jours avec un passage ajouté sur cette fenêtre, 0 sur la précédente. Un passage iso",
+          "evidence": "12 maintenant · 0 avant"
+        },
+        {
+          "kind": "disc_composed_load_phase",
+          "title": "Phase collective d’augmentation de charge",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_composed_load_phase|period:global|ep:na|aspect:default|t:phase collective d’augmentation de charge|e:Curl marteau 7→8 · Curl Zottman ",
+          "bodyPreview": "5 hausses de charge sur 4 exercices distincts (Changements observés 28 juillet 2026–1 août 2026): curl marteau (7 → 8 kg, 2 hausses), curl Zottman (5 → 6 kg), développé militaire unilatéral (7 → 8 kg), oiseaux (3 → 4 kg)",
+          "evidence": "Curl marteau 7→8 · Curl Zottman 5→6 · Développé militaire unilatéral 7→8 · Oiseaux 3→4 · Curl marteau 7→8"
+        },
+        {
+          "kind": "disc_ms_week_freq",
+          "title": "Première semaine à 6 entraînements",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_week_freq|name:première semaine à 6 entraînements|gap:2026-06-01|null|aspect:default",
+          "bodyPreview": "cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+          "evidence": "6 séances · max avant 4"
+        },
+        {
+          "kind": "disc_composed_parallel_trajectories",
+          "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "disposition": "promoted_fusion",
+          "conclusionKey": "parallel_traj|ex:1979012181+ex:703294235|span:recent30|sess:4|cal:a56da9|2",
+          "bodyPreview": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitio",
+          "evidence": "ex:1979012181 · ex:703294235"
+        },
+        {
+          "kind": "disc_monthly_volume_arc",
+          "title": "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_monthly_volume_arc|period:global|ep:na|aspect:default|t:octobre 2026 interrompt la baisse depuis juin 20|e:juin 2026 6 947 → septembre 2026",
+          "bodyPreview": "juin 2026: 6 947 reps en 22 jours entraînés (≈316 / jour actif) → septembre 2026: 3 704 reps en 13 jours (≈285 / jour actif), soit -47 % de volume, -41 % de jours, -10 % de volume par jour actif. Entre les deux, juillet ",
+          "evidence": "juin 2026 6 947 → septembre 2026 3 704 → novembre 2026 5 379"
+        },
+        {
+          "kind": "disc_quarter_arc",
+          "title": "Les trois derniers mois ont une trajectoire interne",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_arc|period:global|ep:na|aspect:default|t:les trois derniers mois ont une trajectoire inte|e:fin 5 730 vs début 3 129",
+          "bodyPreview": "À l’intérieur des trois derniers mois, les 30 derniers jours totalisent 5 730 reps en 17 jours, contre 3 129 reps en 11 jours au début de ces trois mois (+83,1 %, fréquence +54,5 %). Cette comparaison ne résume pas l’ens",
+          "evidence": "fin 5 730 vs début 3 129"
+        },
+        {
+          "kind": "disc_quarter_profile",
+          "title": "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "disposition": "promoted_over_legacy",
+          "conclusionKey": "disc_quarter_profile|period:global|ep:na|aspect:default|t:ton entraînement actuel n'est pas seulement plus|e:trimestre 13 963 reps",
+          "bodyPreview": "Sur le trimestre, tu as réalisé 13 963 répétitions, dont environ 2 551 pectoraux, environ 1 963 épaules, environ 1 971 triceps, environ 1 671 biceps. Sur tout le suivi, la répartition observée peut s’écarter de cette str",
+          "evidence": "trimestre 13 963 reps"
+        },
+        {
+          "kind": "disc_ms_sessions",
+          "title": "50e séance enregistrée",
+          "disposition": "autonomous",
+          "conclusionKey": "disc_ms_sessions|name:50e séance enregistrée|gap:2026-07-27|null|aspect:default",
+          "bodyPreview": "Le 27 juillet 2026, la 50e séance enregistrée est franchie. Le jalon n'est pas un compteur isolé: 14 259 répétitions ont été accumulées pour y parvenir, soit environ 285 répétitions par séance. La date est celle du franc",
+          "evidence": "50 séances · 14 259 reps"
+        }
+      ],
+      "comparePriorityWithMemory": {
+        "label": "priority_with_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 11,
+        "onlyReplay": [],
+        "onlyPublished": [],
+        "onlyReplayCount": 0,
+        "onlyPublishedCount": 0,
+        "orderMatch": true
+      },
+      "comparePriorityNoMemory": {
+        "label": "priority_no_memory",
+        "replayCount": 11,
+        "publishedCount": 11,
+        "intersection": 10,
+        "onlyReplay": [
+          {
+            "kind": "disc_collective_return",
+            "title": "Une composante de ton entraînement se réinstalle",
+            "disposition": "promoted_over_legacy",
+            "conclusionKey": "collective_return|return_episode|2026-11-11|p:9a959cbd|n:9|return",
+            "bodyPreview": "Une composante de ton entraînement se réinstalle autour du 2026-11-11, après environ 4 semaines d’interruption : Élévations latérales, Face pull, Extension triceps debout avec haltère, Kickbacks triceps, Pompes pseudo-pl",
+            "evidence": "Élévations latérales@2026-11-11 · Face pull@2026-11-11 · Extension triceps debout avec haltère@2026-11-11 · Kickbacks triceps@2026-11-11 · Pompes pseudo-planche@2026-11-11 · Side-Lying Single-Arm Dumbbell Triceps Extension@2026-11-11 · Développé Arnold@2026-11-11 · Bent-Arm Lateral Dumbbell Raise@2026-11-11"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_week_freq",
+            "title": "Première semaine à 6 entraînements",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_week_freq|name:première semaine à 6 entraînements|gap:2026-06-01|null|aspect:default",
+            "bodyPreview": "cette fréquence dépasse ton précédent maximum hebdomadaire de 4 séances.",
+            "evidence": "6 séances · max avant 4"
+          }
+        ],
+        "onlyReplayCount": 1,
+        "onlyPublishedCount": 1,
+        "orderMatch": false
+      },
+      "compareAccessibleWithMemory": {
+        "label": "accessible_with_memory",
+        "replayCount": 108,
+        "publishedCount": 109,
+        "intersection": 99,
+        "onlyReplay": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "Reprise et niveau habituel le même jour",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:reprise et niveau habituel le même jour|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le retour n'est pas seulement calendaire: tu retrouves immédiatement 94 % de ton volume habituel. L'interruption n'a pas effacé le niveau, elle l'a seulement interrompu.",
+            "evidence": "retour × 94 %"
+          },
+          {
+            "kind": "disc_ms_return_run",
+            "title": "Tu reprends la course après 33 jours",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_return_run|name:tu reprends la course après 33 jours|gap:2026-07-27|null|aspect:default",
+            "bodyPreview": "Le 27 juillet 2026, tu as repris la course après 33 jours sans sortie enregistrée (longue absence). Cette absence représente plus de 11 fois ton intervalle habituel entre deux courses. Avec 4,7 km, tu reviens à 94 % de t",
+            "evidence": "33 j. · habitude ~3 j."
+          },
+          {
+            "kind": "disc_steps_level",
+            "title": "Les pas de l’ensemble du suivi sont au-dessus de ton niveau des 30 jours d'avant",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_steps_level|period:global|ep:na|aspect:default|t:les pas de l’ensemble du suivi sont au-dessus de|e:6 064 vs 980 pas",
+            "bodyPreview": "Les jours avec un compte de pas se situent autour de 6 064 pas (médiane, 279 jours). Sur les 30 jours d'avant, la médiane est 980 pas (26 jours), soit environ 519 % de plus. Ce n'est pas une séance: c'est le déplacement ",
+            "evidence": "6 064 vs 980 pas"
+          },
+          {
+            "kind": "resistance_progression",
+            "title": "Élévations latérales: la charge monte sans changer le format",
+            "disposition": "deepening_of_collective",
+            "conclusionKey": "resistance_progression|ex:304|d:2026-07-30|aspect:default",
+            "bodyPreview": "Élévations latérales passe de 3 à 4 kg en charge totale, sur 3 séries et 45 répétitions. Le volume de répétitions reste le même. Cette comparaison ne dit rien de l’effort relatif. Contexte de séance probable: mercredi (c",
+            "evidence": "16 juillet 2026 3 kg · 30 juillet 2026 4 kg"
+          },
+          {
+            "kind": "disc_sleep_rhythm_habit",
+            "title": "Rythme habituel récent: coucher autour de 3 h 47, lever autour de 13 h 17, milieu de nuit vers 8 h 14,…",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_rhythm_habit|period:global|ep:na|aspect:default|t:rythme habituel récent : coucher autour de 3 h 4|e:138 nuits · 314 j",
+            "bodyPreview": "Rythme habituel récent: coucher autour de 3 h 47, lever autour de 13 h 17, milieu de nuit vers 8 h 14, pour une durée autour de 9 h 10. La durée et le placement sont deux lectures distinctes: une nuit longue peut rester ",
+            "evidence": "138 nuits · 314 j"
+          },
+          {
+            "kind": "disc_sleep_regularity",
+            "title": "Tes heures de coucher restent dispersées, avec un écart typique d'environ 201 min",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_regularity|period:global|ep:na|aspect:default|t:tes heures de coucher restent dispersées, avec u|e:IQR coucher 201 min",
+            "bodyPreview": "Le rythme ne se résume donc pas à une heure habituelle unique: l'heure à laquelle la nuit commence change fortement d'un jour à l'autre. Conséquence: une baisse de perf un jour donné peut venir autant d'un coucher décalé",
+            "evidence": "IQR coucher 201 min"
+          },
+          {
+            "kind": "disc_sleep_drift",
+            "title": "Coucher et lever se décalent (~158 min)",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_drift|period:global|ep:na|aspect:default|t:coucher et lever se décalent (~158 min)|e:158 min",
+            "bodyPreview": "Sur la période, le coucher et le lever se décalent d’environ 158 min dans le même sens. La durée change aussi, d’environ 34 min. Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou",
+            "evidence": "158 min"
+          }
+        ],
+        "onlyPublished": [
+          {
+            "kind": "disc_ms_event_combo",
+            "title": "L'objectif avance pendant que le régime s'installe",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_event_combo|name:l'objectif avance pendant que le régime s'installe|gap:2026-01-05|null|aspect:default",
+            "bodyPreview": "Deux transformations courent ensemble: un objectif chiffré progresse, et un exercice est devenu régulier sur six semaines. Le palier n'est pas seulement un record isolé: l'exposition le porte.",
+            "evidence": "objectif × régime"
+          },
+          {
+            "kind": "disc_ms_hours",
+            "title": "10 heures d'entraînement cumulées",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_hours|name:10 heures d'entraînement cumulées|gap:2026-05-29|null|aspect:default",
+            "bodyPreview": "Le 29 mai 2026, tu as franchi 10 heures d'entraînement enregistrées. Ce n'est pas seulement plus de répétitions: c'est du temps réellement passé à t'entraîner, cumulé séance après séance.",
+            "evidence": "10,1 h · 11 séances"
+          },
+          {
+            "kind": "disc_ms_goal",
+            "title": "Objectif atteint: 10 tractions",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_ms_goal|name:objectif atteint : 10 tractions|gap:2026-01-05|null|aspect:default",
+            "bodyPreview": "Le 5 janvier 2026, tu as atteint 20 tractions supination, l'objectif de 10 tractions que tu t'étais fixé. Ce n'est plus une projection: c'est un palier franchi, le 5 janvier 2026.",
+            "evidence": "20 reps · objectif 10"
+          },
+          {
+            "kind": "disc_program_practice",
+            "title": "Le programme prouvé et la séance réalisée ne se confondent pas",
+            "disposition": "autonomous",
+            "conclusionKey": "disc_program_practice|dates:2026-11-23,2026-11-24,2026-11-25|dates:2026-11-23,2026-11-24,2026-11-25|aspect:default",
+            "bodyPreview": "3 jours avec un plan historiquement prouvé.",
+            "evidence": "2026-11-23 0/0 · 2026-11-24 0/0 · 2026-11-25 0/0"
+          },
+          {
+            "kind": "disc_sleep_cardio",
+            "title": "Tes sorties course changent avec le sommeil, pas seulement tes reps",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_cardio|period:global|ep:na|aspect:default|t:tes sorties course changent avec le sommeil, pas|e:4,2 km · 1,2 km",
+            "bodyPreview": "Après les nuits d'au moins 7 h 30, tes sorties atteignent en moyenne 4,2 km, contre 1,2 km lorsque le sommeil passe sous 7 h (écart 3 km, 252,6 %, 13 et 3 sorties). Le sommeil n'est pas un bloc Garmin à part: il se lit a",
+            "evidence": "4,2 km · 1,2 km"
+          },
+          {
+            "kind": "disc_sleep_rhythm_habit",
+            "title": "Rythme habituel récent: coucher autour de 3 h 51, lever autour de 13 h 14, milieu de nuit vers 8 h 18,…",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_rhythm_habit|period:global|ep:na|aspect:default|t:rythme habituel récent : coucher autour de 3 h 5|e:187 nuits · 391 j",
+            "bodyPreview": "Rythme habituel récent: coucher autour de 3 h 51, lever autour de 13 h 14, milieu de nuit vers 8 h 18, pour une durée autour de 9 h 07. La durée et le placement sont deux lectures distinctes: une nuit longue peut rester ",
+            "evidence": "187 nuits · 391 j"
+          },
+          {
+            "kind": "disc_sleep_regularity",
+            "title": "Tes heures de coucher restent dispersées, avec un écart typique d'environ 203 min",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_regularity|period:global|ep:na|aspect:default|t:tes heures de coucher restent dispersées, avec u|e:IQR coucher 203 min",
+            "bodyPreview": "Le rythme ne se résume donc pas à une heure habituelle unique: l'heure à laquelle la nuit commence change fortement d'un jour à l'autre. Conséquence: une baisse de perf un jour donné peut venir autant d'un coucher décalé",
+            "evidence": "IQR coucher 203 min"
+          },
+          {
+            "kind": "disc_sleep_drift",
+            "title": "Le coucher se décale (~65 min)",
+            "disposition": "demoted_sleep_redundancy",
+            "conclusionKey": "disc_sleep_drift|period:global|ep:na|aspect:default|t:le coucher se décale (~65 min)|e:65 min",
+            "bodyPreview": "Sur la période, le coucher se décale d’environ 65 min dans le même sens. La durée change aussi, d’environ 56 min. Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou la performance",
+            "evidence": "65 min"
+          }
+        ],
+        "onlyReplayCount": 7,
+        "onlyPublishedCount": 8,
+        "orderMatch": false
+      },
+      "memoryEffectOnPriority": {
+        "titlesNoMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Relevés de genoux à la barre: volume par séance stable",
+          "Une composante de ton entraînement se réinstalle",
+          "La structure du parcours se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "50e séance enregistrée"
+        ],
+        "titlesWithMemory": [
+          "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+          "Relevés de genoux à la barre: volume par séance stable",
+          "La structure du parcours se lit dans les ratios, pas seulement dans le total",
+          "Les passages hors planning tiennent le fil des jours sans créneau coché",
+          "Phase collective d’augmentation de charge",
+          "Première semaine à 6 entraînements",
+          "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+          "octobre 2026 interrompt la baisse depuis juin 2026; novembre 2026 confirme",
+          "Les trois derniers mois ont une trajectoire interne",
+          "Ton entraînement actuel n'est pas seulement plus ou moins volumineux: il devient identifiable par son profil",
+          "50e séance enregistrée"
+        ],
+        "identical": false
+      },
+      "publicationAuthority": "p6"
+    }
+  },
+  "reconciliationSummary": [
+    {
+      "period": "today",
+      "windowMatch": true,
+      "priorityIntersection": 6,
+      "priorityReplay": 6,
+      "priorityPublished": 6,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 14,
+      "accessibleReplay": 14,
+      "accessiblePublished": 15,
+      "memoryChangesPriority": false
+    },
+    {
+      "period": "7d",
+      "windowMatch": true,
+      "priorityIntersection": 10,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 1,
+      "onlyPublished": 1,
+      "orderMatch": false,
+      "accessibleIntersection": 42,
+      "accessibleReplay": 46,
+      "accessiblePublished": 46,
+      "memoryChangesPriority": false
+    },
+    {
+      "period": "30d",
+      "windowMatch": true,
+      "priorityIntersection": 11,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 87,
+      "accessibleReplay": 88,
+      "accessiblePublished": 90,
+      "memoryChangesPriority": true
+    },
+    {
+      "period": "3m",
+      "windowMatch": true,
+      "priorityIntersection": 11,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 97,
+      "accessibleReplay": 99,
+      "accessiblePublished": 102,
+      "memoryChangesPriority": true
+    },
+    {
+      "period": "6m",
+      "windowMatch": true,
+      "priorityIntersection": 11,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 109,
+      "accessibleReplay": 114,
+      "accessiblePublished": 113,
+      "memoryChangesPriority": true
+    },
+    {
+      "period": "1y",
+      "windowMatch": true,
+      "priorityIntersection": 11,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 104,
+      "accessibleReplay": 110,
+      "accessiblePublished": 112,
+      "memoryChangesPriority": true
+    },
+    {
+      "period": "2y",
+      "windowMatch": true,
+      "priorityIntersection": 11,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 102,
+      "accessibleReplay": 107,
+      "accessiblePublished": 109,
+      "memoryChangesPriority": true
+    },
+    {
+      "period": "all",
+      "windowMatch": false,
+      "priorityIntersection": 11,
+      "priorityReplay": 11,
+      "priorityPublished": 11,
+      "onlyReplay": 0,
+      "onlyPublished": 0,
+      "orderMatch": true,
+      "accessibleIntersection": 99,
+      "accessibleReplay": 108,
+      "accessiblePublished": 109,
+      "memoryChangesPriority": true
+    }
+  ],
+  "verdict": "PARTIEL",
+  "verdictScope": "programme déterministe OK ; catalogue priorités non aligné intégralement",
+  "notes": [
+    "Les sorties publiées (eight-periods) ne sont pas des entrées du moteur.",
+    "A = sans mémoire ; B = memoryInitial du LIVE_INPUTS.",
+    "Correspondance carte = kind|title normalisé (pas occurrenceId mémoire).",
+    "Digest partiel da8a167b éventuel ≠ digest LIVE c3e80330 (ensembles de sources différents)."
+  ]
+}

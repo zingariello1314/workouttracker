@@ -184,24 +184,25 @@ export function composeStructuralProgramDiscoveries({
     const multiFamilies = graph.families.filter((f) => f.size >= 2);
 
     // Carte d’ensemble si plusieurs familles — une seule.
-    // Mission 33 — priorité éditoriale seulement sur today/week/month :
-    // sur horizons longs, la structure programmée reste un contexte accessible
-    // (même corps), pas une priorité répétée 8×.
+    // Mission 37 — priorité seulement today/week : le même corps structurel
+    // ne doit pas monopoliser aussi les 30 jours (rappel utile en réserve).
+    // Post-P6 v38b — sur 7 j, nature=trajectory (pas now) : sinon shortTerm
+    // place la structure avant toute découverte ancrée fenêtre, ce qui annulait
+    // week_structural_context_not_priority à la publication UI.
     if (overview && overview.familyCount >= 2) {
-      const shortHorizon =
-        voiceKey === 'week' || voiceKey === 'month' || voiceKey === 'today';
+      const priorityHorizon = voiceKey === 'week' || voiceKey === 'today';
       out.push({
         kind: 'disc_session_family_structure',
-        nature: voiceKey === 'today' ? 'trajectory' : nature,
+        nature: voiceKey === 'week' || voiceKey === 'today' ? 'trajectory' : nature,
         family: 'program_structure',
         title: overview.title,
         body: overview.body,
         evidence: overview.families.map((f) => f.members.join('+')).join(' · '),
         weights: {
-          importance: shortHorizon ? 0.93 : 0.42,
+          importance: priorityHorizon ? 0.93 : 0.42,
           reliability: 0.9,
-          novelty: shortHorizon ? 0.91 : 0.35,
-          fit: shortHorizon ? 1 : 0.55
+          novelty: priorityHorizon ? 0.91 : 0.35,
+          fit: priorityHorizon ? 1 : 0.55
         },
         metrics: {
           producer: 'sessionStructureGraph',
@@ -210,7 +211,8 @@ export function composeStructuralProgramDiscoveries({
           windowStart: window?.start || null,
           windowEnd: window?.end || null,
           population: 'programmed_structure',
-          horizonRole: shortHorizon ? 'priority_candidate' : 'context_accessible',
+          horizonRole: priorityHorizon ? 'priority_candidate' : 'context_accessible',
+          editorialRole: priorityHorizon ? 'structural_discovery' : 'structural_recall',
           observedValues: [
             { id: 'familyCount', value: overview.familyCount, unit: 'count' },
             {
@@ -264,7 +266,7 @@ export function composeStructuralProgramDiscoveries({
       if (!(overview?.familyCount >= 2 && voiceKey !== 'week' && voiceKey !== 'month' && voiceKey !== 'today')) {
         out.push({
           kind: overview?.familyCount >= 2 ? 'disc_session_family_variant' : 'disc_session_family_structure',
-          nature: voiceKey === 'today' ? 'trajectory' : nature,
+          nature: voiceKey === 'week' || voiceKey === 'today' ? 'trajectory' : nature,
           family: 'program_structure',
           title: reasoned.title,
           body: reasoned.body,

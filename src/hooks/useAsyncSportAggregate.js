@@ -24,6 +24,7 @@ export function useAsyncSportAggregate({
 }) {
   const [result, setResult] = useState(emptyValue);
   const [isStale, setIsStale] = useState(false);
+  const [publishMeta, setPublishMeta] = useState({ via: null, revision: null, degraded: false });
   const genRef = useRef(0);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export function useAsyncSportAggregate({
     if (warm) {
       setResult(warm);
       setIsStale(false);
+      setPublishMeta({ via: 'cache', revision, degraded: false });
       return undefined;
     }
 
@@ -55,7 +57,15 @@ export function useAsyncSportAggregate({
       numBars
     })
       .then((out) => {
-        if (cancelled || gen !== genRef.current || out.stale || !out.result) return;
+        if (cancelled || gen !== genRef.current || out.stale) return;
+        if (!out.result) {
+          setPublishMeta({
+            via: out.via || 'empty',
+            revision,
+            degraded: Boolean(out.degraded)
+          });
+          return;
+        }
         if (kind === 'muscle') {
           seedCachedRecapMuscleState(snapshot, period, referenceDate, out.result);
         } else {
@@ -69,6 +79,7 @@ export function useAsyncSportAggregate({
         }
         setResult(out.result);
         setIsStale(false);
+        setPublishMeta({ via: out.via || 'worker', revision, degraded: false });
       })
       .catch(() => {
         /* conserver dernier résultat */
@@ -88,5 +99,5 @@ export function useAsyncSportAggregate({
     numBars
   ]);
 
-  return { result, isStale };
+  return { result, isStale, publishMeta };
 }

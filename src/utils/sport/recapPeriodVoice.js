@@ -339,7 +339,9 @@ export function describeActivityDuration(measure) {
   const mostlyChallenge =
     measure?.durationContract?.minutesMostlyChallenge === true ||
     measure?.minutesMostlyChallenge === true;
-  if (total <= 0 && other <= 0) return 'aucune durée de séance enregistrée';
+  if (total <= 0 && other <= 0) {
+    return 'aucune durée de séance de renforcement enregistrée sur cette fenêtre (d’autres durées peuvent exister hors de cette population)';
+  }
   // Population partielle : ne pas laisser croire que ces minutes couvrent tout le volume de reps
   if (mostlyChallenge && other > 0) {
     return `${formatDurationFr(other)} chronométrées sur les défis (durée hors course partielle, distincte du volume global de répétitions)`;

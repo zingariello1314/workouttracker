@@ -112,33 +112,35 @@ export function describeCalendarShape({
   const quietCount = dates.length - trained.length;
   const pluralPeriod = /^(ces|les)\b/i.test(String(thisPeriod || ''));
   const periodCap = `${thisPeriod.charAt(0).toUpperCase()}${thisPeriod.slice(1)}`;
+  const fullCalendarDays = enumerateDatesInclusive(start, end).length;
+  const openDayExcluded =
+    openEnd && fullCalendarDays > dates.length
+      ? fullCalendarDays - dates.length
+      : 0;
   const titleThesis = quietLead && hotLead
     ? `${periodCap} ${pluralPeriod ? 'mêlent' : 'mêle'} un bloc chargé et un creux`
     : hotLead
       ? `Un bloc dépasse le niveau de séance de ${thisPeriod}`
       : `${periodCap} : le volume repose sur peu de journées`;
+  const openBit =
+    openDayExcluded > 0
+      ? ` (sur ${dates.length} journées clôturées de la fenêtre de ${fullCalendarDays} jours ; le jour en cours sans séance enregistrée n’est pas compté comme un creux)`
+      : '';
   const constat = `${bits
     .map((bit) => bit.charAt(0).toUpperCase() + bit.slice(1))
-    .join('. ')}. Sur ${dates.length} jours, ${trained.length} ont une séance et ${quietCount} n'en ont pas`;
+    .join('. ')}. Sur ${dates.length} jours${openBit}, ${trained.length} ont une séance enregistrée et ${quietCount} n'en ont pas`;
   const mechanism =
     hotLead && habit > 0
       ? `Le pic vaut environ ${(Math.max(...hotLead.reps) / habit).toFixed(1).replace('.', ',')} fois la médiane de séance de la fenêtre : la médiane décrit l’habitude, le pic un point haut`
       : null;
   const scope =
     quietLead && hotLead
-      ? `Les jours sans séance font partie du rythme calendaire observé — coexistence d’un creux et d’un pic, sans preuve que le repos « rende » le bloc possible`
+      ? `Les jours sans séance enregistrée font partie du rythme du journal — coexistence d’un creux documentaire et d’un pic, sans preuve que le repos ait permis la charge`
       : quietLead
-        ? `Le creux calendaire est localisé ${rangeLabel(quietLead.start, quietLead.end, withYear)}`
+        ? `Le creux calendaire enregistré est localisé ${rangeLabel(quietLead.start, quietLead.end, withYear)}`
         : null;
-  const implication =
-    calendarGapImplication({
-      trainedDays: trained.length,
-      quietDays: quietCount,
-      spanDays: dates.length
-    }) ||
-    (quietLead && hotLead
-      ? `Les remplir avec une séance de l’ordre du pic changerait le bloc, ce ne serait pas un simple rattrapage`
-      : null);
+  // Pas d’implication-conseil : le constat calendaire suffit.
+  const implication = null;
   const reading = composeAnalyticalReading({
     titleThesis,
     constat,

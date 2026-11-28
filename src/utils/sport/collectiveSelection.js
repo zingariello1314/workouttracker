@@ -46,6 +46,13 @@ function horizonBoost(row, voiceKey) {
     if (/composed_|collective_return|relative_concentration|load_phase|variant_mix/.test(kind)) return 28;
     if (fam === 'program_variant_mix' || /program_variant_mix_explains/.test(String(row?.discovery?.metrics?.composition || '')))
       return 26;
+    // Post-P6 v38b — ne pas rebooster session_family/adherence : cela annulait
+    // week_structural_context_not_priority (−14) au classement collectif.
+    const programmedStructure =
+      fam === 'program_structure' ||
+      row?.discovery?.metrics?.population === 'programmed_structure' ||
+      row?.discovery?.metrics?.editorialRole === 'structural_discovery';
+    if (programmedStructure && /session_family|adherence_/.test(kind)) return 0;
     if (/session_family|adherence_|near_equal|challenge|gtg|span_volume/.test(kind)) return 14;
     if (/volume_shape|session|return/.test(kind)) return 5;
     if (/monthly_arc|quarter|year/.test(kind)) return -6;

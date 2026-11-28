@@ -180,26 +180,57 @@ function classifyShape(sessionTotals, sessionMeta = []) {
     };
   }
   const med = median(vals);
+  const lastValPreview = vals[vals.length - 1];
+  const preceding = vals.slice(0, -1);
+  const precedingMed = preceding.length ? median(preceding) : med;
+  // Plateau préalable : séances avant la dernière restent proches de leur médiane.
+  const precedingStable =
+    preceding.length >= 3 &&
+    preceding.every((v) => Math.abs(v - precedingMed) <= Math.max(2, precedingMed * 0.12));
+  const sessionsBelowPlateau = preceding.filter((v) => v < precedingMed * 0.85).length;
+  // Une seule séance terminale bas/haut après plateau ≠ tendance multi-séances.
+  const terminalPunctualDrop =
+    precedingStable &&
+    sessionsBelowPlateau === 0 &&
+    lastValPreview < precedingMed * 0.75;
+  const terminalPunctualRise =
+    precedingStable &&
+    preceding.filter((v) => v > precedingMed * 1.2).length === 0 &&
+    lastValPreview > precedingMed * 1.35;
+
   let atypicalIndex = null;
   if (vals.length >= 3 && med > 0) {
     vals.forEach((v, i) => {
       if (v >= med * 1.8 || v <= med * 0.4) atypicalIndex = i;
     });
+    // Post-P6 — baisse/hausse terminale isolée : atypique même si > 0,4× médiane (ex. 24/48).
+    if (terminalPunctualDrop || terminalPunctualRise) {
+      atypicalIndex = vals.length - 1;
+    }
   }
   const without =
     atypicalIndex != null ? vals.filter((_, i) => i !== atypicalIndex) : vals;
 
+  // Baisse/hausse progressive : ≥2 pas dans le sens, sans remontées/descentes contraires.
   const monotoneDown = (arr) => {
     if (arr.length < 3) return false;
     let drops = 0;
-    for (let i = 1; i < arr.length; i += 1) if (arr[i] < arr[i - 1] - 1) drops += 1;
-    return drops >= arr.length - 2;
+    let rises = 0;
+    for (let i = 1; i < arr.length; i += 1) {
+      if (arr[i] < arr[i - 1] - 1) drops += 1;
+      if (arr[i] > arr[i - 1] + 1) rises += 1;
+    }
+    return drops >= 2 && rises === 0;
   };
   const monotoneUp = (arr) => {
     if (arr.length < 3) return false;
+    let drops = 0;
     let rises = 0;
-    for (let i = 1; i < arr.length; i += 1) if (arr[i] > arr[i - 1] + 1) rises += 1;
-    return rises >= arr.length - 2;
+    for (let i = 1; i < arr.length; i += 1) {
+      if (arr[i] > arr[i - 1] + 1) rises += 1;
+      if (arr[i] < arr[i - 1] - 1) drops += 1;
+    }
+    return rises >= 2 && drops === 0;
   };
 
   // Première moitié vs seconde (jamais early===late parce que firstN===lastN)
@@ -289,6 +320,25 @@ function classifyShape(sessionTotals, sessionMeta = []) {
     kind = kind === 'plateau' || kind === 'fluctuation' ? 'fluctuation' : kind;
   }
 
+  // Post-P6 — compter les baisses **en suffixe** (pas tout écart intermittent).
+  let trailingDeclineCount = 0;
+  const plateauRef = preceding.length >= 3 ? precedingMed : med;
+  if (plateauRef > 0) {
+    for (let i = vals.length - 1; i >= 0; i -= 1) {
+      if (vals[i] < plateauRef * 0.85) trailingDeclineCount += 1;
+      else break;
+    }
+  }
+  let declineSessionCount = trailingDeclineCount;
+  if (terminalPunctualDrop || terminalPunctualRise) {
+    kind = 'punctual_drop';
+    path = 'terminal_outlier';
+    primaryStory = 'outlier_driven';
+    withoutKind = 'outlier_driven';
+    declineSessionCount = 1;
+    trailingDeclineCount = 1;
+  }
+
   const earlyDates = sessionMeta.slice(0, halfK).map((s) => s?.date).filter(Boolean);
   const lateDates = sessionMeta.slice(-halfK).map((s) => s?.date).filter(Boolean);
 
@@ -320,6 +370,11 @@ function classifyShape(sessionTotals, sessionMeta = []) {
     deltaPct: delta,
     absDelta,
     sessionCount: vals.length,
+    declineSessionCount,
+    trailingDeclineCount,
+    terminalPunctualDrop: Boolean(terminalPunctualDrop),
+    terminalPunctualRise: Boolean(terminalPunctualRise),
+    precedingPlateauMedian: preceding.length ? round1(precedingMed) : null,
     trough: {
       value: round1(troughVal),
       index: troughIdx,
@@ -998,10 +1053,16 @@ function buildFindings({ identity, volume, setMechanism, shape, peers, installat
           : '';
 
     if (story === 'outlier_driven' || shape.withoutAtypical?.kind === 'outlier_driven') {
-      titleHint = `${identity.name} : une séance tire la moyenne`;
+      titleHint = `${identity.name} : une séance atypique, pas encore une tendance`;
+      const plateauBit =
+        shape.terminalPunctualDrop && shape.precedingPlateauMedian != null
+          ? `Après ${Math.max(0, (shape.sessionCount || 1) - 1)} séances autour de ${shape.precedingPlateauMedian} répétitions, la dernière descend à ${shape.lastPerformance}. Cette baisse ponctuelle réduit la moyenne récente (≈${shape.lateMean}), sans permettre de conclure à un recul installé.`
+          : shape.terminalPunctualRise && shape.precedingPlateauMedian != null
+            ? `Après un plateau autour de ${shape.precedingPlateauMedian} répétitions, une séance monte à ${shape.lastPerformance}. Écart ponctuel, pas une hausse installée.`
+            : `l’écart sur ${identity.name} (≈${shape.earlyMean} → ≈${shape.lateMean} répétitions par séance) est surtout tiré par une séance hors norme ; sans elle, la tendance nette disparaît.`;
       main = {
         stance: 'watch',
-        text: `${scopeLead}l’écart sur ${identity.name} (≈${shape.earlyMean} → ≈${shape.lateMean} répétitions par séance) est surtout tiré par une séance hors norme ; sans elle, la tendance nette disparaît.`
+        text: `${scopeLead}${plateauBit}`
       };
     } else if (story === 'net_decline' || story === 'partial_recovery') {
       titleHint = almostHalf
@@ -1489,21 +1550,36 @@ export function renderExerciseTrajectoryCopy(trajectory, { legacyBits = {} } = {
     rawStory && !/^(unclear|insufficient|indeterminate)$/i.test(String(rawStory))
       ? String(rawStory).replace(/_/g, ' ')
       : null;
-  const evidenceParts = [
-    trajectory.temporalScope?.interpretingWithHistory
-      ? `arc ${trajectory.temporalScope.arcSessionCount} (fenêtre ${trajectory.temporalScope.windowSessionCount})`
-      : trajectory.volume.windowSessionCount != null
-        ? `${trajectory.volume.windowSessionCount} séances`
-        : null,
-    storyChip,
-    trajectory.shape?.deltaPct != null ? `${trajectory.shape.deltaPct} %` : null,
-    trajectory.setMechanism?.available
-      ? `${trajectory.setMechanism.before?.setCount}×${trajectory.setMechanism.before?.perSet}→${trajectory.setMechanism.after?.setCount}×${trajectory.setMechanism.after?.perSet}`
-      : null,
-    trajectory.peers?.verdict && trajectory.peers.verdict !== 'insufficient'
-      ? formatPeerVerdictEvidenceFr(trajectory.peers.verdict)
-      : null
-  ].filter(Boolean);
+  const shape = trajectory.shape || {};
+  const outlierEvidence =
+    shape.terminalPunctualDrop || shape.terminalPunctualRise || shape.primaryStory === 'outlier_driven'
+      ? (() => {
+          const plateau = shape.precedingPlateauMedian;
+          const last = shape.lastPerformance;
+          const nPrev = Math.max(0, (shape.sessionCount || 1) - 1);
+          if (plateau != null && last != null && nPrev >= 1) {
+            return `${nPrev}×≈${Math.round(plateau)} → 1×${Math.round(last)}`;
+          }
+          return null;
+        })()
+      : null;
+  const evidenceParts = outlierEvidence
+    ? [outlierEvidence, 'baisse ponctuelle']
+    : [
+        trajectory.temporalScope?.interpretingWithHistory
+          ? `arc ${trajectory.temporalScope.arcSessionCount} (fenêtre ${trajectory.temporalScope.windowSessionCount})`
+          : trajectory.volume.windowSessionCount != null
+            ? `${trajectory.volume.windowSessionCount} séances`
+            : null,
+        storyChip,
+        shape.deltaPct != null ? `${shape.deltaPct} %` : null,
+        trajectory.setMechanism?.available
+          ? `${trajectory.setMechanism.before?.setCount}×${trajectory.setMechanism.before?.perSet}→${trajectory.setMechanism.after?.setCount}×${trajectory.setMechanism.after?.perSet}`
+          : null,
+        trajectory.peers?.verdict && trajectory.peers.verdict !== 'insufficient'
+          ? formatPeerVerdictEvidenceFr(trajectory.peers.verdict)
+          : null
+      ].filter(Boolean);
 
   return {
     title: reading.title,
@@ -1653,6 +1729,14 @@ export function trajectoryToMetrics(trajectory) {
       schemeLabel: s.schemeLabel,
       inSelectedWindow: trajectory.temporalScope?.windowDates?.includes(s.date) ?? null
     })),
+    sessionTotals: (trajectory.sessions?.trace || [])
+      .map((s) => s.totalReps)
+      .filter((n) => Number.isFinite(Number(n))),
+    sessionDates: (trajectory.sessions?.trace || []).map((s) => s.date),
+    visualKind:
+      trajectory.shape?.primaryStory === 'outlier_driven' || trajectory.shape?.terminalPunctualDrop
+        ? 'trajectory_sessions'
+        : null,
     volume: trajectory.volume,
     setMechanism: trajectory.setMechanism,
     shape: trajectory.shape,

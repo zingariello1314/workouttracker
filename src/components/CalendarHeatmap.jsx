@@ -830,19 +830,20 @@ const CalendarHeatmap = ({
     };
   }, []);
 
+  // P0.9 sidebar : ne pas reconstruire volume/année — coût historique hors grille mois.
   const liftVolumeByDateMap = useMemo(() => {
-    if (!paintReady || variant !== 'sport') return null;
+    if (isSidebarEmbed || !paintReady || variant !== 'sport') return null;
     return aggregateLiftVolumeKgByDate(allData);
-  }, [paintReady, variant, allData]);
+  }, [isSidebarEmbed, paintReady, variant, allData]);
 
   const strengthScoreRefs = useMemo(() => {
-    if (!paintReady || variant !== 'sport') return { p90Load: 420 };
+    if (isSidebarEmbed || !paintReady || variant !== 'sport') return { p90Load: 420 };
     return buildYearStrengthLoadReference(
       allData,
       getExerciseNameById,
       currentDate.getFullYear()
     );
-  }, [paintReady, variant, allData, getExerciseNameById, currentDate]);
+  }, [isSidebarEmbed, paintReady, variant, allData, getExerciseNameById, currentDate]);
   
   // ✅ NOUVEAU : Traductions
   const t = useTranslation();
@@ -1084,6 +1085,7 @@ const CalendarHeatmap = ({
   // ✅ PHASE 2.1 : Mémoriser les seuils dynamiques basés sur toutes les données existantes
   // Recalcul uniquement si allData.reps change (évite les recalculs inutiles)
   const dynamicThresholds = useMemo(() => {
+    if (isSidebarEmbed) return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
     if (!paintReady || !allData?.reps) return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
     
     // Récupérer toutes les répétitions par jour
@@ -1123,7 +1125,7 @@ const CalendarHeatmap = ({
 
   // Seuils dynamiques basés sur la charge pondérée (alignés sur buildDailyTrainingLoadByDate)
   const dynamicLoadThresholds = useMemo(() => {
-    if (!paintReady) {
+    if (isSidebarEmbed || !paintReady) {
       return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100], dailyLoad: {} };
     }
     const dailyLoad = buildDailyTrainingLoadByDate(allData, getExerciseNameById);
@@ -1144,7 +1146,9 @@ const CalendarHeatmap = ({
   // ✅ PHASE 2.2 : Mémoriser les seuils dynamiques pour la durée (temps)
   // Recalcul uniquement si allData.checkedExercises, allData.enduranceData.sessions, ou allData.reps change
   const dynamicTimeThresholds = useMemo(() => {
-    if (!paintReady || !allData) return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
+    if (isSidebarEmbed || !paintReady || !allData) {
+      return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
+    }
     
     const durations = [];
     
@@ -2741,13 +2745,37 @@ const CalendarHeatmap = ({
     enduranceByDateIndex,
   ]);
 
-  /** P0.8 sidebar : intensités mois en chunks (cède le main entre lots de jours). */
+  /** P0.9 sidebar : pack mois (intensité + stripes) hors rendu cellule ; annule si hidden. */
   const [sidebarMonthDays, setSidebarMonthDays] = useState([]);
+  const sidebarPackRevisionRef = useRef(null);
   useEffect(() => {
     if (!isSidebarEmbed || !paintReady) return undefined;
     let cancelled = false;
+    const packKey = `${analyticsRevision}|${currentDate.getFullYear()}-${currentDate.getMonth()}|${garminDataLoaded ? 1 : 0}`;
+    if (sidebarPackRevisionRef.current === packKey && sidebarMonthDays.length === 42) {
+      return undefined;
+    }
+
+    const waitVisible = () =>
+      new Promise((resolve) => {
+        if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+          resolve();
+          return;
+        }
+        const onVis = () => {
+          if (document.visibilityState === 'visible') {
+            document.removeEventListener('visibilitychange', onVis);
+            resolve();
+          }
+        };
+        document.addEventListener('visibilitychange', onVis);
+      });
 
     const build = async () => {
+      await waitVisible();
+      if (cancelled) return;
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const firstDay = new Date(year, month, 1);
@@ -2758,56 +2786,72 @@ const CalendarHeatmap = ({
       const days = [];
       const currentDay = new Date(startDate);
       let computed = 0;
+      const NEUTRAL = {
+        level: 0,
+        reps: 0,
+        trainingLoad: 0,
+        strengthLoad: 0,
+        duration: 0,
+        exerciseCount: 0,
+        completedCount: 0,
+        intensityScore: 0,
+        completionRate: 0,
+        programCompletionRatio: 0,
+        programCheckedCount: 0,
+        programPlannedCount: 0,
+        activeKcal: 0,
+        kcalRefMedian: 0,
+        steps: 0,
+        stepsRefMedian: 0,
+        intensityMinutesTotal: 0,
+        visualContext: null,
+        enduranceData: { reps: 0, duration: 0, distance: 0, jumps: 0, sessions: 0 },
+        garminIcons: [],
+        exercises: 0,
+        session: null
+      };
       for (let i = 0; i < 42; i += 1) {
         if (cancelled) return;
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+          cancelled = true;
+          return;
+        }
         const isCurrentMonthDay = currentDay.getMonth() === month;
         let intensity;
+        let stripes = [];
         if (isCurrentMonthDay) {
           intensity = getIntensityForDate(currentDay);
+          const dateStr = getDateStr(currentDay);
+          const hideStripes = isAutreDayJustificationFromIntensity(intensity);
+          if (variant === 'sport' && !hideStripes) {
+            stripes = dayStripesForDate(dateStr, intensity);
+          }
           computed += 1;
-          if (computed % 3 === 0) await yieldToMain();
+          // Cède après chaque jour courant — un chunk de 3 jours pouvait encore coûter >1 s.
+          await yieldToMain();
         } else {
-          intensity = {
-            level: 0,
-            reps: 0,
-            trainingLoad: 0,
-            strengthLoad: 0,
-            duration: 0,
-            exerciseCount: 0,
-            completedCount: 0,
-            intensityScore: 0,
-            completionRate: 0,
-            programCompletionRatio: 0,
-            programCheckedCount: 0,
-            programPlannedCount: 0,
-            activeKcal: 0,
-            kcalRefMedian: 0,
-            steps: 0,
-            stepsRefMedian: 0,
-            intensityMinutesTotal: 0,
-            visualContext: null,
-            enduranceData: { reps: 0, duration: 0, distance: 0, jumps: 0, sessions: 0 },
-            garminIcons: [],
-            exercises: 0,
-            session: null
-          };
+          intensity = NEUTRAL;
         }
         days.push({
           date: new Date(currentDay),
           isCurrentMonth: isCurrentMonthDay,
           isToday: currentDay.toDateString() === new Date().toDateString(),
-          intensity
+          intensity,
+          stripes
         });
         currentDay.setDate(currentDay.getDate() + 1);
       }
-      if (!cancelled) setSidebarMonthDays(days);
+      if (!cancelled) {
+        sidebarPackRevisionRef.current = packKey;
+        setSidebarMonthDays(days);
+      }
     };
 
     const idleId =
       typeof requestIdleCallback === 'function'
         ? requestIdleCallback(() => {
             void build();
-          }, { timeout: 2000 })
+          }, { timeout: 2500 })
         : 0;
     if (!idleId) void build();
 
@@ -2819,14 +2863,14 @@ const CalendarHeatmap = ({
     isSidebarEmbed,
     paintReady,
     currentDate,
-    allData,
     analyticsRevision,
     garminData,
     garminDataLoaded,
     activeProgram,
     workoutDayOverride,
     dayKeysIndex,
-    enduranceByDateIndex
+    enduranceByDateIndex,
+    variant
   ]);
 
   const monthDays = isSidebarEmbed ? sidebarMonthDays : monthDaysSync;
@@ -3624,9 +3668,12 @@ const CalendarHeatmap = ({
                   questTileCount > 0 &&
                   dayHasPaint);
               const hideStripesOnJustifiedDay = isAutreDayJustificationFromIntensity(intensityForCell);
+              // P0.9 sidebar : stripes précalculées dans le pack mois (évite 30× buildCalendarDayAllStripes / rendu)
               const dayGarminStripes =
                 variant === 'sport' && day.isCurrentMonth && !hideStripesOnJustifiedDay
-                  ? dayStripesForDate(dayDateStr, intensityForCell)
+                  ? isSidebarEmbed
+                    ? day.stripes || []
+                    : dayStripesForDate(dayDateStr, intensityForCell)
                   : [];
               const isRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(intensityForCell);
               const isAutreDay = day.isCurrentMonth && isAutreDayJustificationFromIntensity(intensityForCell);

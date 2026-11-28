@@ -419,9 +419,14 @@ export function applyParallelTrajectoryComposition(rows = [], { voiceKey = null,
     const temporalMismatch =
       hDays != null && hDays >= 90 && obsSpan != null && obsSpan > 0 && obsSpan < hDays * 0.45;
 
-    const converged =
-      compareSeries.length >= 2 &&
-      Math.max(...compareSeries) / Math.min(...compareSeries) <= 1.15;
+    const volumeSpreadRatio =
+      compareSeries.length >= 2
+        ? Math.max(...compareSeries) / Math.min(...compareSeries)
+        : null;
+    // Mission 37 — « convergent » réservé à une proximité réelle (≤5 %), pas au seuil large 15 %.
+    const tightlyConverged = volumeSpreadRatio != null && volumeSpreadRatio <= 1.05;
+    const nearRange = volumeSpreadRatio != null && volumeSpreadRatio <= 1.15;
+    const converged = nearRange;
     const deltas = trajectories.map((t) => t.delta).filter((n) => n != null);
     const allRising = deltas.length >= 2 && deltas.every((d) => d > 0);
 
@@ -459,12 +464,21 @@ export function applyParallelTrajectoryComposition(rows = [], { voiceKey = null,
     }`;
     const volumeUnitLabel =
       volumeBasis === 'per_session_mean' ? 'répétitions/séance' : 'répétitions (total fenêtre)';
+    const nTraj =
+      uniqueSubjects.length === 2 ? 'Deux' : uniqueSubjects.length === 3 ? 'Trois' : `${uniqueSubjects.length}`;
+    const ofName = /^[AEIOUÀÂÄÉÈÊËÎÏÔÖÙÛÜYaeiouàâäéèêëîïôöùûüy]/i.test(String(name || ''))
+      ? `d’${name}`
+      : `de ${name}`;
+    const proximityBit =
+      tightlyConverged && meanReps != null
+        ? `${nTraj} trajectoires distinctes ${ofName} convergent vers environ ${meanReps} ${volumeUnitLabel} chacune sur la fenêtre d’observation (${obsStart} → ${obsEnd}).`
+        : nearRange && meanReps != null
+          ? `${nTraj} trajectoires distinctes ${ofName} se situent dans une fourchette proche (≈${meanReps} ${volumeUnitLabel} ; écart max ≈${Math.round(
+              (volumeSpreadRatio - 1) * 100
+            )} %) sur la fenêtre d’observation (${obsStart} → ${obsEnd}).`
+          : `${nTraj} trajectoires distinctes ${ofName} présentent un rythme comparable.`;
     const body = [
-      converged && meanReps != null
-        ? `Les ${uniqueSubjects.length} trajectoires de ${name} convergent vers environ ${meanReps} ${volumeUnitLabel} chacune sur la fenêtre d’observation (${obsStart} → ${obsEnd}).`
-        : `${uniqueSubjects.length} trajectoires distinctes de ${name} présentent ${
-            converged ? 'des volumes récents convergents' : 'des trajectoires de rythme comparable'
-          }.`,
+      proximityBit,
       trajBits ? `${trajBits}.` : null,
       allRising
         ? 'Chaque trajectoire progresse par rapport à sa propre référence antérieure.'

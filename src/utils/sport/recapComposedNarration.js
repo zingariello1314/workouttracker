@@ -167,8 +167,13 @@ export function titleFromComposedEvidence(composed, { name } = {}) {
     return `${label} : recul puis retour près du niveau de départ`;
   }
 
-  // Recul / hausse : imposer cohérence avec dir
-  if (cont === 'confirmed_decline' || story === 'net_decline') {
+  // Outlier / baisse ponctuelle avant tout libellé « confirmé »
+  if (cont === 'isolated_outlier' || story === 'outlier_driven') {
+    return `${label} : une séance atypique, pas encore une tendance`;
+  }
+
+  // Recul / hausse : « confirmé » réservé à continuity.confirmed_decline
+  if (cont === 'confirmed_decline') {
     if (dir.direction === 'up') {
       return `${label} : volume par séance en hausse`;
     }
@@ -176,6 +181,15 @@ export function titleFromComposedEvidence(composed, { name } = {}) {
       return `${label} : volume par séance récemment stable`;
     }
     return `${label} : recul confirmé sur plusieurs séances`;
+  }
+  if (story === 'net_decline') {
+    if (dir.direction === 'up') {
+      return `${label} : volume par séance en hausse`;
+    }
+    if (dir.direction === 'flat') {
+      return `${label} : volume par séance récemment stable`;
+    }
+    return `${label} : moins de répétitions par séance`;
   }
   if (story === 'net_rise') {
     if (dir.direction === 'down') {
@@ -192,9 +206,6 @@ export function titleFromComposedEvidence(composed, { name } = {}) {
   }
   if (cont === 'punctual_return') {
     return `${label} ${returnVerb(label)} après une interruption`;
-  }
-  if (cont === 'isolated_outlier') {
-    return `${label} : une séance atypique, pas encore une tendance`;
   }
 
   // Directionnel générique aligné sur les chiffres
@@ -235,13 +246,17 @@ function buildObservation(composed, name, lexicon, discovery = {}) {
     attribMetrics.perSessionPct != null &&
     Math.abs(Number(attribMetrics.perSessionPct)) <= 12;
 
-  // Préservation F3 : chronologie creux/reprise déjà rédigée dans le fait principal
+  // Préservation F3 : chronologie creux/reprise / outlier déjà rédigée dans le fait principal
   if (
     main &&
     (cont === 'decline_then_recovery' ||
+      cont === 'isolated_outlier' ||
       story === 'recovered' ||
       story === 'partial_recovery' ||
-      /creux|revenu|dernière séance|arc/i.test(main))
+      story === 'outlier_driven' ||
+      /creux|revenu|dernière séance|arc|baisse ponctuelle|séance hors norme|séance atypique|sans permettre de conclure/i.test(
+        main
+      ))
   ) {
     return main;
   }
@@ -266,6 +281,16 @@ function buildObservation(composed, name, lexicon, discovery = {}) {
       return `Sur la période, tu es passé de ${prevN} à ${winN} séances${meanBit}`;
     }
     if (main && !/passe d’environ.*à.*répétitions par séance/i.test(main)) return main;
+  }
+
+  // Ne pas raconter early→late comme tendance quand le phénomène central est une séance atypique.
+  if (
+    cont === 'isolated_outlier' ||
+    story === 'outlier_driven' ||
+    composed?.shape?.terminalPunctualDrop ||
+    composed?.shape?.terminalPunctualRise
+  ) {
+    if (main) return main;
   }
 
   if (dir.early != null && dir.late != null && dir.direction !== 'flat' && !frequencyDrivenNear) {
@@ -402,7 +427,7 @@ function buildContinuityNote(composed) {
     case 'confirmed_return':
       return 'Le retour s’observe sur plusieurs séances de la période';
     case 'isolated_outlier':
-      return 'L’écart est surtout porté par une séance atypique';
+      return 'Une seule séance hors norme réduit la moyenne récente, sans permettre de conclure à un recul ou une hausse installés';
     case 'directional_change':
       return null;
     case 'single_introduction':
@@ -618,11 +643,29 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
 
   const constat = buildObservation(composed, name, lexicon, discovery);
   const mechanism = buildMechanism(composed, dir);
-  const continuity = buildContinuityNote(composed);
+  let continuity = buildContinuityNote(composed);
   const comparators = buildComparatorNote(composed);
   const historical = buildHistoricalNote(composed);
   const implication = buildImplication(composed);
-  const limit = buildLimit(composed);
+  let limit = buildLimit(composed);
+
+  // Outlier : ne pas répéter la prudence (constat + continuity + limit séries).
+  const outlierCase =
+    composed.continuity?.kind === 'isolated_outlier' ||
+    composed.primaryPhenomenon?.primaryStory === 'outlier_driven';
+  if (outlierCase) {
+    const constatAlreadyCautious =
+      constat &&
+      /ponctuelle|atypique|sans permettre de conclure|pas encore une tendance|hors norme/i.test(constat);
+    if (constatAlreadyCautious && continuity) continuity = null;
+    if (
+      limit &&
+      /Sans détail de séries|structure interne|lecture indicative/i.test(limit) &&
+      (constatAlreadyCautious || !mechanism)
+    ) {
+      limit = null;
+    }
+  }
 
   const scopeParts = [continuity, comparators, historical].filter(Boolean);
   const scope = scopeParts
@@ -671,9 +714,12 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
   if (mechanism && continuity && comparators && implication) depth = 'deep';
   if (!mechanism && !continuity && !comparators) depth = 'elementary';
 
+  const evidence = buildOutlierEvidence(composed) || null;
+
   return {
     title: reading.title,
     body: reading.body,
+    evidence,
     usedComposedNarration: Boolean(reading.body),
     depth,
     beats: reading.beats,
@@ -681,6 +727,29 @@ export function narrateFromComposedEvidence(composed, discovery = {}, { getExerc
     consistency,
     volumeDirection: dir
   };
+}
+
+/** Preuve footer : pour un outlier, montrer l’événement central, pas des témoins hors sujet. */
+export function buildOutlierEvidence(composed) {
+  const cont = composed?.continuity?.kind;
+  const story = composed?.primaryPhenomenon?.primaryStory;
+  const obs = composed?.observations || [];
+  if (!(cont === 'isolated_outlier' || story === 'outlier_driven') || !obs.length) return null;
+  const totals = obs
+    .map((o) => Number(o.totalReps ?? o.reps))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (totals.length < 2) return null;
+  const last = totals[totals.length - 1];
+  const preceding = totals.slice(0, -1);
+  const med =
+    preceding.length >= 1
+      ? [...preceding].sort((a, b) => a - b)[Math.floor((preceding.length - 1) / 2)]
+      : null;
+  if (med == null) return null;
+  if (last <= med * 0.85 || last >= med * 1.2) {
+    return `${preceding.length}×≈${Math.round(med)} → 1×${Math.round(last)}`;
+  }
+  return null;
 }
 
 /** Kinds dont le corps structurel (parts familiales, reprise, etc.) ne doit pas être écrasé par F4. */
@@ -751,6 +820,7 @@ export function applyComposedNarrationToDiscovery(discovery, { getExerciseNameBy
     ...discovery,
     title: narrated.title || discovery.title,
     body: narrated.body,
+    evidence: narrated.evidence || discovery.evidence,
     metrics: {
       ...(discovery.metrics || {}),
       f4Narration: {

@@ -4,7 +4,6 @@ import { ActivityStatsCard } from '../../ui/ActivityStatsCard';
 import { useDeferredWorkoutData } from '../../../hooks/useDeferredWorkoutData';
 import { useAsyncSportAggregate } from '../../../hooks/useAsyncSportAggregate';
 import { useTranslation } from '../../../utils/translations';
-import { getCachedRecapStrengthCompareModel } from '../../../services/sport/sportRecapAggregatesCache';
 import { RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID } from '../../../utils/sport/recapMuscleLoadEngine';
 import {
   readStoredRecapViewPeriod,
@@ -13,7 +12,6 @@ import {
 } from '../../../utils/sport/recapViewPeriods';
 import DashboardSportPeriodInsights from '../../dashboard/DashboardSportPeriodInsights.jsx';
 import RecapLiftVolumeBreakdown from './RecapLiftVolumeBreakdown.jsx';
-import { withWorkSpan } from '../../../dev/todayDiagnostics/workSpanTracker';
 
 const NUM_BARS_SIDEBAR = 5;
 const NUM_BARS_DEFAULT = 8;
@@ -77,8 +75,9 @@ export default function RecapStrengthStatsCard({
   const numBars = variant === 'sidebar' ? NUM_BARS_SIDEBAR : NUM_BARS_DEFAULT;
   const refDate = useMemo(() => new Date(), [snapshot, cardPeriod]);
 
+  // P0.9 : toujours async (Worker) — le chemin sync embedded contribuait ~915 ms au démarrage (lt-14).
   const { result: asyncBuilt, isStale: aggregateStale } = useAsyncSportAggregate({
-    enabled: variant === 'sidebar',
+    enabled: true,
     kind: 'strength',
     revision: `${analyticsRevision}|${cardPeriod}|strength|${numBars}`,
     snapshot,
@@ -89,21 +88,8 @@ export default function RecapStrengthStatsCard({
     emptyValue: EMPTY_STRENGTH
   });
 
-  const syncBuilt = useMemo(() => {
-    if (variant === 'sidebar') return null;
-    return withWorkSpan('RecapStrengthStatsCard.build', () =>
-      getCachedRecapStrengthCompareModel(
-        snapshot,
-        cardPeriod,
-        getExerciseNameById,
-        refDate,
-        numBars
-      )
-    );
-  }, [variant, snapshot, cardPeriod, getExerciseNameById, numBars, refDate]);
-
-  const built = (variant === 'sidebar' ? asyncBuilt : syncBuilt) || EMPTY_STRENGTH;
-  const showUpdating = variant === 'sidebar' && (isAnalyticsStale || aggregateStale);
+  const built = asyncBuilt || EMPTY_STRENGTH;
+  const showUpdating = isAnalyticsStale || aggregateStale;
 
   const mainValue = `${Math.round(built.totalRepsCurr).toLocaleString('fr-FR')} reps`;
 

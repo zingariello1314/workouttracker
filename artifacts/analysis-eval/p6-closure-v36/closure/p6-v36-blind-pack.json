@@ -1,0 +1,1648 @@
+{
+  "schema": "momentum.p6.v36.blindQualitative.v1",
+  "instruction": "Évaluer chaque carte sans scores moteur. Noter 0–2 : exactitude, profondeur, pouvoir explicatif, contextualisation, niveaux, prudence causale, originalité, lisibilité, preuves, temporalité. Répondre surtout : que permet-elle de comprendre que les données brutes ne montraient pas ?",
+  "editionObserved": "p6-sovereign-v36",
+  "liveFingerprint": "c3e80330",
+  "note": "Échantillon pour évaluation extérieure assistée. Ne constitue pas une notation humaine aveugle.",
+  "cards": [
+    {
+      "blindId": "V36-001",
+      "periodLabel": "today",
+      "roleHint": "priority",
+      "title": "La séance d'aujourd'hui n'est pas encore commencée",
+      "body": "Aujourd'hui, tu n'as encore rien coché (0 répétition). Ce n'est pas un jour vide d'analyse: c'est une séance en attente. Ta dernière séance (24 novembre 2026) a produit 196 répétitions en 45 min — 48 développé couché incliné aux haltères, 40 pompes déclinées, 36 curl assis dos calé. Tes vendredis récents se situent autour de 314 reps (21 vendredis comparables): ce n'est pas un jour « off » par défaut, c'est une séance encore devant toi. Autour de toi, les 7 derniers jours totalisent déjà 347 reps en 2 séances (≈174 reps/séance). Le bandeau à zéro décrit l'attente, pas une baisse de capacité. La lecture d'aujourd'hui se fera dès que tu auras réalisé l'entraînement.",
+      "evidence": "dernière séance 24 novembre 2026 · 196 reps",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "periodReps",
+          "value": 0,
+          "unit": "reps"
+        },
+        {
+          "id": "lastSessionReps",
+          "value": 196,
+          "unit": "reps"
+        },
+        {
+          "id": "recent7dReps",
+          "value": 347,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-002",
+      "periodLabel": "today",
+      "roleHint": "priority",
+      "title": "La dernière séance pèse encore sur les 7 jours",
+      "body": "Aujourd'hui n'a encore aucune répétition enregistrée. Ta dernière séance, le 24 novembre 2026, totalisait 196 répétitions en 45 min. Ces 196 répétitions représentent 56,5 % des 347 répétitions des 7 derniers jours.",
+      "evidence": "concentration",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "lastSessionReps",
+          "value": 196,
+          "unit": "reps"
+        },
+        {
+          "id": "sharePct",
+          "value": 56.5,
+          "unit": "percent"
+        },
+        {
+          "id": "windowReps",
+          "value": 347,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-003",
+      "periodLabel": "today",
+      "roleHint": "priority",
+      "title": "La nuit précédente te place dans une zone de volume déjà visible dans ton historique",
+      "body": "Sur les séances observées (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 310 reps, contre 262 lorsque le sommeil passe sous 7 h 30. L'écart est de 48 reps, soit environ 18,4 %. Tes séances réalisées après des nuits d'au moins 7 h 30 présentent également une durée moyenne de 57 min, contre 56 min après les nuits sous 7 h 30. Association observée sur 35 et 12 séances — un effectif asymétrique ne démontre pas un seuil individuel fiable, ni une causalité.",
+      "evidence": "≥ 7 h 30 310 · < 7 h 30 262 · n=47",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": "historique des séances appariées à une nuit (échantillon global)"
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "threshold",
+          "value": 7.5,
+          "unit": "hours"
+        },
+        {
+          "id": "highN",
+          "value": 35,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowN",
+          "value": 12,
+          "unit": "sessions"
+        },
+        {
+          "id": "highVol",
+          "value": 309.8,
+          "unit": "reps"
+        },
+        {
+          "id": "lowVol",
+          "value": 261.7,
+          "unit": "reps"
+        },
+        {
+          "id": "delta",
+          "value": 48.1,
+          "unit": "reps"
+        },
+        {
+          "id": "deltaPct",
+          "value": 18.4,
+          "unit": "percent"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-004",
+      "periodLabel": "7d",
+      "roleHint": "priority",
+      "title": "Ton programme s'organise en 3 familles de séances apparentées",
+      "body": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux repères « Street Workout + Endurance fondamentale / Street Workout + Cardio »); famille 2 (dominante biceps, pectoraux, mollets, quadriceps · composante isométrique; créneaux repères « Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes »); famille 3 (dominante épaules, triceps, dos, pectoraux · composante isométrique; créneaux repères « Pectoraux / Triceps / Épaules / Triceps- Épaules »). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un créneau à l'autre. En pratique, une variation de répétitions sur un mouvement commun peut venir du passage entre deux variantes de la même famille, pas d'un changement de capacité. Les lectures d'adhérence, de reprise ou de progression doivent donc comparer des créneaux compatibles avant de conclure. Ressemblance ≠ identité: les volumes et les exercices exclusifs distinguent les variantes.",
+      "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche",
+      "populationHint": "programmed_structure",
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "familyCount",
+          "value": 3,
+          "unit": "count"
+        },
+        {
+          "id": "relatedSlots",
+          "value": 6,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-005",
+      "periodLabel": "7d",
+      "roleHint": "priority",
+      "title": "Deux séances apparentées redistribuent un socle commun",
+      "body": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tractions australiennes prise large pronation, pompes inclinees; « Street Workout + Cardio » ajoute tractions australiennes prise pronation. Le volume prescrit diffère: 384 répétitions prévues sur « Street Workout + Endurance fondamentale » contre 359 sur « Street Workout + Cardio » (32 vs 32 séries). Sur le socle commun, la prescription n'est pas identique: tractions australiennes — prise serrée supination (3×15 → 3×10); pompes déclinées (3×12 → 5×10). Les deux séances conservent une structure apparentée tout en redistribuant le travail prévu. Sur les mouvements communs seuls, le volume prescrit se répartit environ 50,1 % / 50 % entre les deux créneaux. Cette lecture décrit la structure programmée actuelle, pas encore sa réalisation sur la période.",
+      "evidence": "lundi/vendredi · socle commun avec variantes",
+      "populationHint": "programmed_structure",
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "sharedMoves",
+          "value": 8,
+          "unit": "count"
+        },
+        {
+          "id": "plannedRepsLeft",
+          "value": 384,
+          "unit": "reps"
+        },
+        {
+          "id": "plannedRepsRight",
+          "value": 359,
+          "unit": "reps"
+        },
+        {
+          "id": "onlyLeft",
+          "value": 2,
+          "unit": "count"
+        },
+        {
+          "id": "onlyRight",
+          "value": 1,
+          "unit": "count"
+        },
+        {
+          "id": "redistributions",
+          "value": 2,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-006",
+      "periodLabel": "30d",
+      "roleHint": "priority",
+      "title": "Le volume de ces 30 jours dépasse la période précédente",
+      "body": "Ces 30 jours totalisent 5 730 répétitions sur 17 jours avec répétitions de renforcement, soit environ 337 répétitions et 55 min par séance, contre 4 891 reps sur 13 jours avec répétitions de renforcement sur les 30 jours d'avant (+17,2 %, fréquence +30,8 %, 337 vs 376 reps/séance). La comparaison utile est donc période contre période de même durée. Les répétitions suivies sur 28 jours sont +31,1 % que le mois comparable, tandis que les 7 derniers jours restent (−79,2 %).",
+      "evidence": "5 730 vs 4 891 · +17,2 %",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "totalReps",
+          "value": 5730,
+          "unit": "reps"
+        },
+        {
+          "id": "activeDaysNow",
+          "value": 17,
+          "unit": "days"
+        },
+        {
+          "id": "totalRepsSleep",
+          "value": 5730,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-30",
+          "value": 351,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-01",
+          "value": 418,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-02",
+          "value": 387,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-06",
+          "value": 359,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-07",
+          "value": 332,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-08",
+          "value": 424,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-09",
+          "value": 331,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-10",
+          "value": 332,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-11",
+          "value": 426,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-007",
+      "periodLabel": "30d",
+      "roleHint": "priority",
+      "title": "Plus de volume total, mais moins de reps par journée active",
+      "body": "les 30 jours d'avant: 4 891 répétitions en 13 journées de renforcement (≈376 / journée). ces 30 jours: 5 730 répétitions en 17 journées de renforcement (≈337 / journée). Écart total +17,2 % — contribution fréquence +1 427, contenu −588. Le volume total augmente alors que le contenu moyen par journée diminue: la hausse de fréquence compense la baisse de volume par séance — ce n’est pas une progression de capacité par séance. Population: journées avec répétitions de renforcement (pas toutes les journées actives du calendrier).",
+      "evidence": "4 891→5 730 · 13→17 j. renforcement",
+      "populationHint": "strength_positive_reps_days",
+      "windowHint": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "repsBefore",
+          "value": 4891,
+          "unit": "reps"
+        },
+        {
+          "id": "repsAfter",
+          "value": 5730,
+          "unit": "reps"
+        },
+        {
+          "id": "strengthDaysBefore",
+          "value": 13,
+          "unit": "days"
+        },
+        {
+          "id": "strengthDaysAfter",
+          "value": 17,
+          "unit": "days"
+        },
+        {
+          "id": "volumePct",
+          "value": 17.153956246166427,
+          "unit": "percent"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-008",
+      "periodLabel": "3m",
+      "roleHint": "priority",
+      "title": "Hyperextension: recul confirmé sur plusieurs séances",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Hyperextension passe d’environ 48 à 40 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 16,7 %. Le recul se confirme sur plusieurs séances, pas sur un seul point isolé. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne.",
+      "evidence": "8 séances · baisse nette · -16.7 %",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-08-28",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "recentReps",
+          "value": 360,
+          "unit": "reps"
+        },
+        {
+          "id": "windowTotalReps",
+          "value": 360,
+          "unit": "reps"
+        },
+        {
+          "id": "prevWindowTotalReps",
+          "value": 0,
+          "unit": "reps"
+        },
+        {
+          "id": "windowMeanPerSession",
+          "value": 45,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 40,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-09-28",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-12",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-19",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-26",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-02",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-09",
+          "value": 48,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-009",
+      "periodLabel": "3m",
+      "roleHint": "priority",
+      "title": "Ces trois mois sont en dessous du rythme de renforcement d'avant",
+      "body": "Ces trois mois sont à environ 332 répétitions par journée de renforcement (42 journées), contre environ 376 pour Le mois précédent dans la fenêtre (13 journées).",
+      "evidence": "rhythm",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-08-28",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "repsPerSessionNow",
+          "value": 332.45238095238096,
+          "unit": "reps"
+        },
+        {
+          "id": "repsPerSessionThen",
+          "value": 376.2307692307692,
+          "unit": "reps"
+        },
+        {
+          "id": "strengthDaysNow",
+          "value": 42,
+          "unit": "days"
+        },
+        {
+          "id": "strengthDaysThen",
+          "value": 13,
+          "unit": "days"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-010",
+      "periodLabel": "6m",
+      "roleHint": "priority",
+      "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+      "evidence": "12 hors planning · 76 reps",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-05-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "totalReps",
+          "value": 76,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-011",
+      "periodLabel": "6m",
+      "roleHint": "priority",
+      "title": "Curl marteau: le total monte surtout parce que tu t’entraînes plus souvent",
+      "body": "Sur la période, tu es passé de 1 à 19 séances, pour un volume moyen par séance qui reste proche (≈36 → ≈36 sur les fenêtres comparées). La variation du total vient surtout du nombre de séances (1 → 19), alors que le volume moyen par séance reste proche (≈36 → ≈36 reps/séance sur les fenêtres comparées). Le volume par séance reste récemment stable.",
+      "evidence": "19 séances · plateau · 0 % · 3×12→3×12",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-05-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "gapDays",
+          "value": 140,
+          "unit": "days"
+        },
+        {
+          "id": "recentReps",
+          "value": 684,
+          "unit": "reps"
+        },
+        {
+          "id": "windowTotalReps",
+          "value": 684,
+          "unit": "reps"
+        },
+        {
+          "id": "prevWindowTotalReps",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "windowMeanPerSession",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-02",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-09",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-18",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-23",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-07-07",
+          "value": 36,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-012",
+      "periodLabel": "1y",
+      "roleHint": "priority",
+      "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+      "evidence": "12 hors planning · 76 reps",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2025-11-28",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "totalReps",
+          "value": 76,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-013",
+      "periodLabel": "1y",
+      "roleHint": "priority",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "body": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
+      "evidence": "21 séances · plateau · 0 % · 3×20→3×20",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2025-11-28",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "recentReps",
+          "value": 1260,
+          "unit": "reps"
+        },
+        {
+          "id": "windowTotalReps",
+          "value": 1260,
+          "unit": "reps"
+        },
+        {
+          "id": "prevWindowTotalReps",
+          "value": 0,
+          "unit": "reps"
+        },
+        {
+          "id": "windowMeanPerSession",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-05",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-12",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-19",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-05-25",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-01",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-08",
+          "value": 60,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-014",
+      "periodLabel": "2y",
+      "roleHint": "priority",
+      "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+      "evidence": "12 hors planning · 76 reps",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2024-11-28",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "totalReps",
+          "value": 76,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-015",
+      "periodLabel": "2y",
+      "roleHint": "priority",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "body": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
+      "evidence": "21 séances · plateau · 0 % · 3×20→3×20",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2024-11-28",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "recentReps",
+          "value": 1260,
+          "unit": "reps"
+        },
+        {
+          "id": "windowTotalReps",
+          "value": 1260,
+          "unit": "reps"
+        },
+        {
+          "id": "prevWindowTotalReps",
+          "value": 0,
+          "unit": "reps"
+        },
+        {
+          "id": "windowMeanPerSession",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-05",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-12",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-19",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-05-25",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-01",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-08",
+          "value": 60,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-016",
+      "periodLabel": "all",
+      "roleHint": "priority",
+      "title": "Certains jours, le Grease the Groove ne tient que par un passage hors planning",
+      "body": "12 passages hors planning, 76 reps, sont entrés dans le journal de la fenêtre. Cela fait environ 6 reps par série. Les 12 séries restent dans la zone facile du protocole. Ça sert encore le Grease the Groove: répéter sans aller à l’échec. Sans eux, ces jours n’auraient aucune mini-série. C’est utile pour garder le fil, et ça ne remplace pas un emploi du temps si ça devient la seule façon de pratiquer.",
+      "evidence": "12 hors planning · 76 reps",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2025-10-20",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "totalReps",
+          "value": 76,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-017",
+      "periodLabel": "all",
+      "roleHint": "priority",
+      "title": "Relevés de genoux à la barre: volume par séance stable",
+      "body": "Relevés de genoux à la barre apparaît sur 21 séances réparties sur 315 jours — première présence connue dans l’historique disponible. Le format de séries observé est resté identique (3 × 20). Le volume par séance reste récemment stable.",
+      "evidence": "21 séances · plateau · 0 % · 3×20→3×20",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2025-10-20",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "recentReps",
+          "value": 1260,
+          "unit": "reps"
+        },
+        {
+          "id": "windowTotalReps",
+          "value": 1260,
+          "unit": "reps"
+        },
+        {
+          "id": "prevWindowTotalReps",
+          "value": 0,
+          "unit": "reps"
+        },
+        {
+          "id": "windowMeanPerSession",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-05",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-12",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-01-19",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-05-25",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-01",
+          "value": 60,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-06-08",
+          "value": 60,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-018",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "Autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil",
+      "body": "Sur 22 séances dépassant 300 reps, 19 ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, 8 des 15 séances sous 250 reps ont suivi une nuit plus courte. L'écart entre les deux proportions est d'environ 40 points. Le phénomène concerne surtout la quantité de travail réalisée: les performances sur le mouvement le plus chargé varient moins (9,8 %) que le volume total de séance (18,4 %). Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou la performance.",
+      "evidence": "19/22 ≥ 300 · 8/15 < 250",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "highN",
+          "value": 22,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowN",
+          "value": 15,
+          "unit": "sessions"
+        },
+        {
+          "id": "highOk",
+          "value": 19,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowShort",
+          "value": 8,
+          "unit": "sessions"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-019",
+      "periodLabel": "7d",
+      "roleHint": "priority",
+      "title": "Concentration relative au-delà du volume général",
+      "body": "Les 48 développé couché incliné aux haltères ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (144 reps). Les 40 pompes déclinées ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (120 reps). Les 36 curl assis dos calé ces 7 jours représentent environ 33,3 % de tout ton volume de 30 jours sur ce mouvement (108 reps). Développé couché incliné aux haltères, pompes déclinées, curl assis dos calé totalisent 124 répétitions sur 7 jours. Cela représente environ 33,3 % du volume de ces mouvements sur 30 jours (124 / 372 reps de ces mouvements sur 30 jours), alors que 7 jours ne porte que environ 6,1 % du volume total de 30 jours (347 / 5 730 reps totales). Rapport des concentrations ≈5,5×: développé couché incliné aux haltères, pompes déclinées, curl assis dos calé sont surreprésentés dans 7 jours par rapport à leur propre historique mensuel — pas une preuve que tout le volume de 7 jours soit atypique. Lecture limitée à Développé couché incliné aux haltères, pompes déclinées, curl assis dos calé — pas une généralisation à tout le volume de ces 7 jours.",
+      "evidence": "Développé couché incliné aux haltères 33,3 % · Pompes déclinées 33,3 % · Curl assis dos calé 33,3 %",
+      "populationHint": "nested_window_same_exercises",
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "reps:ex:466084426",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "monthReps:ex:466084426",
+          "value": 144,
+          "unit": "reps"
+        },
+        {
+          "id": "sharePct:ex:466084426",
+          "value": 33.33333333333333,
+          "unit": "percent"
+        },
+        {
+          "id": "reps:ex:202",
+          "value": 40,
+          "unit": "reps"
+        },
+        {
+          "id": "monthReps:ex:202",
+          "value": 120,
+          "unit": "reps"
+        },
+        {
+          "id": "sharePct:ex:202",
+          "value": 33.33333333333333,
+          "unit": "percent"
+        },
+        {
+          "id": "reps:ex:203",
+          "value": 36,
+          "unit": "reps"
+        },
+        {
+          "id": "monthReps:ex:203",
+          "value": 108,
+          "unit": "reps"
+        },
+        {
+          "id": "sharePct:ex:203",
+          "value": 33.33333333333333,
+          "unit": "percent"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-020",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "Après une nuit courte, poussée et tirage ne conservent pas le même volume relatif",
+      "body": "Après une nuit de moins de 7 h, tes séances de poussée conservent 62,6 % de leur volume habituel, tandis que tes séances de tirage sont à 97,3 % de leur volume habituel. L’écart de rétention (poussée 62,6 % vs tirage 97,3 %, 9 et 33 séances) est une association descriptive entre nuit courte et volume de famille — pas une preuve qu’une qualité soit « plus sensible » au sommeil.",
+      "evidence": "poussée 62,6 % · tirage 97,3 %",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "pushRetain",
+          "value": 62.6,
+          "unit": "percent"
+        },
+        {
+          "id": "pullRetain",
+          "value": 97.3,
+          "unit": "percent"
+        },
+        {
+          "id": "shortN",
+          "value": 9,
+          "unit": "sessions"
+        },
+        {
+          "id": "longN",
+          "value": 33,
+          "unit": "sessions"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-021",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "Le sommeil se lit aussi sur la densité de séance, pas seulement le volume",
+      "body": "Après les nuits d'au moins 7 h 30, tu réalises en moyenne 347 reps par heure, contre 322 après une nuit sous 7 h (écart 25, 7,8 %). Moyennes sur 32 et 8 séances chronométrées: association descriptive, pas une preuve d’intensité physiologique ni d’approche de l’échec.",
+      "evidence": "347 vs 322 reps/h",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "highN",
+          "value": 32,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowN",
+          "value": 8,
+          "unit": "sessions"
+        },
+        {
+          "id": "delta",
+          "value": 25,
+          "unit": "reps"
+        },
+        {
+          "id": "deltaPct",
+          "value": 7.8,
+          "unit": "percent"
+        },
+        {
+          "id": "highDens",
+          "value": 347,
+          "unit": "reps_per_hour"
+        },
+        {
+          "id": "lowDens",
+          "value": 322,
+          "unit": "reps_per_hour"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-022",
+      "periodLabel": "today",
+      "roleHint": "priority",
+      "title": "Ton programme s'organise en 3 familles de séances apparentées",
+      "body": "Le contenu réel des exercices — métadonnées musculaires de la banque, pas les intitulés libres des séances — fait apparaître 3 familles: famille 1 (dominante dos, biceps, pectoraux, tronc · composante aérobie; créneaux repères « Street Workout + Endurance fondamentale / Street Workout + Cardio »); famille 2 (dominante biceps, pectoraux, mollets, quadriceps · composante isométrique; créneaux repères « Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes »); famille 3 (dominante épaules, triceps, dos, pectoraux · composante isométrique; créneaux repères « Pectoraux / Triceps / Épaules / Triceps- Épaules »). Chaque famille partage un socle de mouvements, avec des variantes de volume ou de composition d'un créneau à l'autre. En pratique, une variation de répétitions sur un mouvement commun peut venir du passage entre deux variantes de la même famille, pas d'un changement de capacité. Les lectures d'adhérence, de reprise ou de progression doivent donc comparer des créneaux compatibles avant de conclure. Ressemblance ≠ identité: les volumes et les exercices exclusifs distinguent les variantes.",
+      "evidence": "lundi+vendredi · mardi+samedi · mercredi+dimanche",
+      "populationHint": "programmed_structure",
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "familyCount",
+          "value": 3,
+          "unit": "count"
+        },
+        {
+          "id": "relatedSlots",
+          "value": 6,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-023",
+      "periodLabel": "7d",
+      "roleHint": "complement",
+      "title": "La baisse de volume se lit dans la composition des familles de séances",
+      "body": "Le volume classique passe de 1472 à 247 répétitions. Les journées de renforcement classique passent de 5 à 2. Principaux contributeurs: street Workout + Endurance fondamentale / Street Workout + Cardio: Δ -582 reps (effet fréquence -582, effet contenu +0); pectoraux / Triceps / Épaules / Triceps- Épaules: Δ -426 reps (effet fréquence -426, effet contenu +0); biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes est moins fréquente (2→1 j, Δ -268 reps; effet fréquence -232, effet contenu -36). Autres familles (hors top): +51 reps (exact). Résidu non attribué (période récente): 51 reps (21 % du volume).",
+      "evidence": "Street Workout + Endurance fondamentale / Street Workout + Cardio:-582 · Pectoraux / Triceps / Épaules / Triceps- Épaules:-426 · Biceps / Pectoraux / Jambes / Pecs - Biceps - Jambes:-268",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": "Renforcement classique (hors complémentaire)"
+      },
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "volumeRecent",
+          "value": 247,
+          "unit": "reps",
+          "populationId": "classic_session_catalog"
+        },
+        {
+          "id": "volumePrevious",
+          "value": 1472,
+          "unit": "reps",
+          "populationId": "classic_session_catalog"
+        },
+        {
+          "id": "deltaVolume",
+          "value": -1225,
+          "unit": "reps"
+        },
+        {
+          "id": "daysRecent",
+          "value": 2,
+          "unit": "days"
+        },
+        {
+          "id": "daysPrevious",
+          "value": 5,
+          "unit": "days"
+        },
+        {
+          "id": "recognizedVolumeShareRecent",
+          "value": 79,
+          "unit": "pct"
+        },
+        {
+          "id": "recognizedSessionShareRecent",
+          "value": 50,
+          "unit": "pct"
+        },
+        {
+          "id": "unattributedVolumeShareRecent",
+          "value": 21,
+          "unit": "pct"
+        },
+        {
+          "id": "partitionCoverageShareRecent",
+          "value": 100,
+          "unit": "pct"
+        },
+        {
+          "id": "structurallyRecognizedSessionShareRecent",
+          "value": 0,
+          "unit": "pct"
+        },
+        {
+          "id": "probablyRelatedSessionShareRecent",
+          "value": 50,
+          "unit": "pct"
+        },
+        {
+          "id": "historicallyDocumentedShareRecent",
+          "value": 0,
+          "unit": "pct"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-024",
+      "periodLabel": "7d",
+      "roleHint": "priority",
+      "title": "Hyperextension : 2 trajectoires parallèles (~4 séances)",
+      "body": "Les 2 trajectoires de Hyperextension se situent dans une fourchette proche (≈180 répétitions (total fenêtre) ; écart max ≈14 %) sur la fenêtre d’observation (2026-10-30 → 2026-11-23). première trajectoire : 192 répétitions (total fenêtre) (réf. antérieure 96, Δ+96) sur 4 séances ; seconde trajectoire : 168 répétitions (total fenêtre) (réf. antérieure 144, Δ+24) sur 4 séances. Chaque trajectoire progresse par rapport à sa propre référence antérieure. Les enregistrements restent distincts ; la lecture utile est structurelle, pas deux priorités redondantes. Preuves individuelles conservées en approfondissement.",
+      "evidence": "ex:1979012181 · ex:703294235",
+      "populationHint": {
+        "id": "2_storage_trajectories",
+        "label": "2 trajectoires Hyperextension"
+      },
+      "windowHint": {
+        "start": "2026-10-30",
+        "end": "2026-11-23"
+      },
+      "observedValues": [
+        {
+          "id": "parallelCount",
+          "value": 2,
+          "unit": "trajectories"
+        },
+        {
+          "id": "meanSessions",
+          "value": 4,
+          "unit": "count"
+        },
+        {
+          "id": "meanReps",
+          "value": 180,
+          "unit": "reps"
+        },
+        {
+          "id": "recentReps:ex:1979012181",
+          "value": 192,
+          "unit": "reps"
+        },
+        {
+          "id": "recentReps:ex:703294235",
+          "value": 168,
+          "unit": "reps"
+        },
+        {
+          "id": "prevReps:ex:1979012181",
+          "value": 96,
+          "unit": "reps"
+        },
+        {
+          "id": "prevReps:ex:703294235",
+          "value": 144,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-025",
+      "periodLabel": "30d",
+      "roleHint": "priority",
+      "title": "Pompes pseudo-planche : 2 trajectoires parallèles (~2 séances)",
+      "body": "Les 2 trajectoires de Pompes pseudo-planche se situent dans une fourchette proche (≈69 répétitions (total fenêtre) ; écart max ≈9 %) sur la fenêtre d’observation (2026-11-01 → 2026-11-18). première trajectoire : 66 répétitions (total fenêtre) sur 2 séances ; seconde trajectoire : 72 répétitions (total fenêtre) (réf. antérieure 72, Δ0) sur 2 séances. Les enregistrements restent distincts ; la lecture utile est structurelle, pas deux priorités redondantes. Preuves individuelles conservées en approfondissement.",
+      "evidence": "ex:348708679 · ex:302",
+      "populationHint": {
+        "id": "2_storage_trajectories",
+        "label": "2 trajectoires Pompes pseudo-planche"
+      },
+      "windowHint": {
+        "start": "2026-11-01",
+        "end": "2026-11-18"
+      },
+      "observedValues": [
+        {
+          "id": "parallelCount",
+          "value": 2,
+          "unit": "trajectories"
+        },
+        {
+          "id": "meanSessions",
+          "value": 2,
+          "unit": "count"
+        },
+        {
+          "id": "meanReps",
+          "value": 69,
+          "unit": "reps"
+        },
+        {
+          "id": "recentReps:ex:348708679",
+          "value": 66,
+          "unit": "reps"
+        },
+        {
+          "id": "recentReps:ex:302",
+          "value": 72,
+          "unit": "reps"
+        },
+        {
+          "id": "prevReps:ex:302",
+          "value": 72,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-026",
+      "periodLabel": "7d",
+      "roleHint": "complement",
+      "title": "La charge de ces 7 jours provient entièrement des exercices de renforcement",
+      "body": "Aucune course n'a été enregistrée sur ces 7 jours. La charge d'entraînement de ces 7 jours provient donc entièrement des exercices de renforcement.",
+      "evidence": "0 km",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": []
+    },
+    {
+      "blindId": "V36-027",
+      "periodLabel": "7d",
+      "roleHint": "complement",
+      "title": "La reprise collective se poursuit cette semaine",
+      "body": "La reprise commencée le 2026-10-13 après environ 2 semaines d’interruption avait déjà été confirmée (2026-10-20, 2026-10-27…) ; elle se poursuit le 2026-11-24 : Curl assis dos calé, Curl marteau, Curl Zottman, Pompes déclinées, Wall sit, Curl concentration, Mollets debout, Développé couché incliné aux haltères, Squat haltères. Les groupes musculaires documentés pour ces mouvements : biceps, forearms, pectoraux, triceps, épaules, quads, fessiers, calves — la séance n’est pas réduite à un seul groupe. Les interruptions documentées vont de 14 à 14 jours. 9 mouvements retrouvent un volume proche de leur dernière séance avant interruption (Curl assis dos calé, Curl marteau, Curl Zottman…). Le phénomène porte sur la réorganisation d’une famille de travail, pas seulement sur la progression indépendante de chaque exercice. Ce n’est pas une première confirmation : l’épisode était déjà documenté avant cette fenêtre.",
+      "evidence": "Curl assis dos calé@2026-10-13 · Curl marteau@2026-10-13 · Curl Zottman@2026-10-13 · Pompes déclinées@2026-10-13 · Wall sit@2026-10-13 · Curl concentration@2026-10-13 · Mollets debout@2026-10-13 · Développé couché incliné aux haltères@2026-10-13",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|participant_count|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": 9,
+          "unit": "count",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|return_date|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": "2026-10-13",
+          "unit": "date",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|confirmation_date|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": "2026-10-20",
+          "unit": "date",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|confirmation_date|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": "2026-10-27",
+          "unit": "date",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|confirmation_date|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": "2026-11-10",
+          "unit": "date",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|confirmation_date|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": "2026-11-17",
+          "unit": "date",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|return_episode|2026-10-13|p:ad3e7603|n:9|confirmation_date|classic_session_catalog|2026-11-21_2026-11-27|session_episode_ledger|m21-v1",
+          "value": "2026-11-24",
+          "unit": "date",
+          "populationId": "classic_session_catalog",
+          "kind": "documentary"
+        },
+        {
+          "id": "fact|ex:203|return_reps|classic_session_catalog|2026-10-13_2026-10-13|session_episode_ledger|m21-v1",
+          "value": 36,
+          "unit": "reps",
+          "populationId": "classic_session_catalog",
+          "kind": "numeric"
+        },
+        {
+          "id": "fact|ex:203|pre_gap_reps|classic_session_catalog|2026-09-29_2026-09-29|session_episode_ledger|m21-v1",
+          "value": 36,
+          "unit": "reps",
+          "populationId": "classic_session_catalog",
+          "kind": "numeric"
+        },
+        {
+          "id": "fact|ex:204|return_reps|classic_session_catalog|2026-10-13_2026-10-13|session_episode_ledger|m21-v1",
+          "value": 36,
+          "unit": "reps",
+          "populationId": "classic_session_catalog",
+          "kind": "numeric"
+        },
+        {
+          "id": "fact|ex:204|pre_gap_reps|classic_session_catalog|2026-09-29_2026-09-29|session_episode_ledger|m21-v1",
+          "value": 36,
+          "unit": "reps",
+          "populationId": "classic_session_catalog",
+          "kind": "numeric"
+        },
+        {
+          "id": "fact|ex:205|return_reps|classic_session_catalog|2026-10-13_2026-10-13|session_episode_ledger|m21-v1",
+          "value": 36,
+          "unit": "reps",
+          "populationId": "classic_session_catalog",
+          "kind": "numeric"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-028",
+      "periodLabel": "30d",
+      "roleHint": "complement",
+      "title": "La reprise de dips est devenue durable",
+      "body": "21 séances en 186 jours, alors que l'interruption avait duré 126 jours. Ce n'est plus l'événement du retour: c'est la continuité qui s'installe. Contexte de séance probable: street Workout + Cardio (chevauchement 78 %).",
+      "evidence": "21 séances · J+186",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": []
+    },
+    {
+      "blindId": "V36-029",
+      "periodLabel": "30d",
+      "roleHint": "priority",
+      "title": "Deux séances apparentées redistribuent un socle commun",
+      "body": "Les créneaux « Street Workout + Endurance fondamentale » et « Street Workout + Cardio » sont apparentées: elles partagent 8 mouvements documentés sur un socle commun. « Street Workout + Endurance fondamentale » ajoute tractions australiennes prise large pronation, pompes inclinees; « Street Workout + Cardio » ajoute tractions australiennes prise pronation. Le volume prescrit diffère: 384 répétitions prévues sur « Street Workout + Endurance fondamentale » contre 359 sur « Street Workout + Cardio » (32 vs 32 séries). Sur le socle commun, la prescription n'est pas identique: tractions australiennes — prise serrée supination (3×15 → 3×10); pompes déclinées (3×12 → 5×10). Les deux séances conservent une structure apparentée tout en redistribuant le travail prévu. Sur les mouvements communs seuls, le volume prescrit se répartit environ 50,1 % / 50 % entre les deux créneaux. Sans versions historiques documentées, on ne peut pas affirmer que cette organisation était déjà celle des phases antérieures.",
+      "evidence": "lundi/vendredi · socle commun avec variantes",
+      "populationHint": "programmed_structure",
+      "windowHint": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "sharedMoves",
+          "value": 8,
+          "unit": "count"
+        },
+        {
+          "id": "plannedRepsLeft",
+          "value": 384,
+          "unit": "reps"
+        },
+        {
+          "id": "plannedRepsRight",
+          "value": 359,
+          "unit": "reps"
+        },
+        {
+          "id": "onlyLeft",
+          "value": 2,
+          "unit": "count"
+        },
+        {
+          "id": "onlyRight",
+          "value": 1,
+          "unit": "count"
+        },
+        {
+          "id": "redistributions",
+          "value": 2,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-030",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "Suivi de plan: preuve historique indisponible",
+      "body": "Aucun jour de cette fenêtre n’a de plan figé: un taux d’adhérence au programme prévu ne peut pas être calculé. 0 jour documentent seulement le réalisé. Les expositions et trajectoires restent lisibles à part.",
+      "evidence": "aucun jour de plan figé · 0 jour de réalisé seul",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": []
+    },
+    {
+      "blindId": "V36-031",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "Limites du compte musculaire sur cette fenêtre",
+      "body": "Aucun jour de plan figé suffisant (0): aucune affirmation sur les groupes musculaires « prévus » historiques.",
+      "evidence": "0 jour de plan figé · part multi-principale n/d",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": []
+    },
+    {
+      "blindId": "V36-032",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "Historique de révisions de programme indisponible",
+      "body": "Aucun journal de révisions n’est encore enregistré pour cette copie: les versions applicables aux journées anciennes ne peuvent pas être démontrées. Les plans figés déjà prouvés jour par jour restent la seule preuve de programme prévu.",
+      "evidence": "journal absent",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": []
+    },
+    {
+      "blindId": "V36-033",
+      "periodLabel": "today",
+      "roleHint": "complement",
+      "title": "La continuité du sommeil accompagne tes journées à fort volume",
+      "body": "Les séances dépassant 300 reps sont précédées de nuits à 9 h 18 vs 7 h 42 de sommeil, 1 h 14 de REM contre 55 min. L’écart observé ne porte pas seulement sur la durée totale: rEM, éveil et recharge nocturne covarient aussi avec le volume du lendemain, sans preuve que l’architecture soit la cause.",
+      "evidence": "9 h 18 vs 7 h 42 de sommeil · 1 h 14 de REM contre 55 min",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-27",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "highN",
+          "value": 22,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowN",
+          "value": 15,
+          "unit": "sessions"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-034",
+      "periodLabel": "30d",
+      "roleHint": "priority",
+      "title": "Les passages hors planning de la fenêtre d’avant ne se sont pas prolongés",
+      "body": "La fenêtre précédente en avait 12. Celle-ci n’en a aucun. Le fil ajouté s’est arrêté. 0 jour avec un passage ajouté sur cette fenêtre, 4 sur la précédente. Un passage isolé ne fait pas une continuité: ici on compare deux fenêtres de même longueur, de 29 septembre 2026 à 27 novembre 2026.",
+      "evidence": "0 maintenant · 12 avant",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-10-29",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "gapDays",
+          "value": 0,
+          "unit": "days"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-035",
+      "periodLabel": "7d",
+      "roleHint": "priority",
+      "title": "Une nuit plus courte que ton niveau récent",
+      "body": "La nuit du 23 novembre 2026, tu as dormi 4 h 37, contre 8 h de moyenne sur tes 7 dernières nuits. L'écart est de 203 minutes. L'architecture: 55 min de sommeil profond, 22 min de REM, 3 h 20 de sommeil léger. Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou la performance.",
+      "evidence": "2026-11-23 · 4 h 37 vs 8 h · 7 nuits",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "sleepHours",
+          "value": 4.62,
+          "unit": "hours"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-036",
+      "periodLabel": "7d",
+      "roleHint": "priority",
+      "title": "Hyperextension: recul confirmé sur plusieurs séances",
+      "body": "Sur 8 séances, le volume moyen de répétitions enregistré pour Hyperextension passe d’environ 48 à 40 répétitions par séance entre les premières et dernières séances de l’arc retenu, soit une baisse d’environ 16,7 %. Le recul se confirme sur plusieurs séances, pas sur un seul point isolé. Cette lecture s’appuie aussi sur 7 séances antérieures pour situer l’évolution. Sans détail de séries fiable, on lit le volume par séance, pas la structure interne.",
+      "evidence": "comparables 3 · 48→48→48",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "recentReps",
+          "value": 24,
+          "unit": "reps"
+        },
+        {
+          "id": "windowTotalReps",
+          "value": 24,
+          "unit": "reps"
+        },
+        {
+          "id": "prevWindowTotalReps",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "windowMeanPerSession",
+          "value": 24,
+          "unit": "reps"
+        },
+        {
+          "id": "arcEarlyMean",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "arcLateMean",
+          "value": 40,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-09-28",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-12",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-19",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-10-26",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-02",
+          "value": 48,
+          "unit": "reps"
+        },
+        {
+          "id": "sessionReps:2026-11-09",
+          "value": 48,
+          "unit": "reps"
+        }
+      ]
+    },
+    {
+      "blindId": "V36-037",
+      "periodLabel": "7d",
+      "roleHint": "complement",
+      "title": "Autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil",
+      "body": "Sur 11 séances dépassant 300 reps, 11 ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, 4 des 8 séances sous 250 reps ont suivi une nuit plus courte. L'écart porte sur 19 séances: assez pour être suivi, pas assez pour en faire une règle. L'écart entre les deux proportions est d'environ 50 points. Cette fenêtre a aussi des jours sans séance: une nuit plus longue peut venir de ces jours-là, pas seulement précéder le volume. Le phénomène concerne surtout la quantité de travail réalisée: les performances sur le mouvement le plus chargé varient moins (48,8 %) que le volume total de séance (75,0 %). Association descriptive observée: ce n’est pas une preuve que le sommeil cause le volume ou la performance.",
+      "evidence": "11/11 ≥ 300 · 4/8 < 250",
+      "populationHint": {
+        "id": "recorded_activity",
+        "label": null
+      },
+      "windowHint": {
+        "start": "2026-11-21",
+        "end": "2026-11-27"
+      },
+      "observedValues": [
+        {
+          "id": "highN",
+          "value": 11,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowN",
+          "value": 8,
+          "unit": "sessions"
+        },
+        {
+          "id": "highOk",
+          "value": 11,
+          "unit": "sessions"
+        },
+        {
+          "id": "lowShort",
+          "value": 4,
+          "unit": "sessions"
+        }
+      ]
+    }
+  ]
+}

@@ -177,14 +177,20 @@ function rhythmIdea(dossier) {
   if (Math.abs(pct) < CLOSE_PCT) return null;
   const up = pct > 0;
   const label = dossier.windowLabel || 'Cette fenêtre';
+  const refLabel = cmp.label || 'la référence interne';
+  // Post-P6 — titre naturel : périodes, métrique normalisée, effectifs, prudence.
+  const thinSample = Number(o.strengthDays) > 0 && Number(o.strengthDays) <= 2;
+  const caution = thinSample
+    ? ` Avec seulement ${fmtInt(o.strengthDays)} journée${Number(o.strengthDays) > 1 ? 's' : ''} de renforcement ici, l’écart de rythme reste indicatif.`
+    : '';
   return {
     role: 'reading',
     analysisType: 'anomaly',
     direction: up ? 'haut' : 'bas',
     title: up
-      ? `${label} sont au-dessus du rythme de renforcement d'avant`
-      : `${label} sont en dessous du rythme de renforcement d'avant`,
-    body: `${label} sont à environ ${fmtInt(o.repsPerSession)} répétitions par journée de renforcement (${fmtInt(o.strengthDays)} journées), contre environ ${fmtInt(cmp.repsPerSession)} pour ${cmp.label} (${fmtInt(cmp.strengthDays)} journées).`,
+      ? `${label} : plus de répétitions par journée entraînée que sur ${refLabel}`
+      : `${label} : moins de répétitions par journée entraînée que sur ${refLabel}`,
+    body: `Sur ${label.toLowerCase()}, chaque journée de renforcement totalise environ ${fmtInt(o.repsPerSession)} répétitions (${fmtInt(o.strengthDays)} journée${Number(o.strengthDays) > 1 ? 's' : ''}), contre environ ${fmtInt(cmp.repsPerSession)} sur ${refLabel} (${fmtInt(cmp.strengthDays)} journées). C’est une comparaison de volume moyen par journée active — pas un total brut de périodes de longueurs différentes, ni une preuve que tu t’entraînes moins souvent.${caution}`,
     factId: `rate|${dossier.voice || ''}|${cmp.label}`,
     metrics: {
       repsPerSessionNow: o.repsPerSession,
@@ -192,6 +198,9 @@ function rhythmIdea(dossier) {
       activeDaysNow: o.strengthDays,
       activeDaysThen: cmp.strengthDays,
       vsPriorPct: pct,
+      metric: 'reps_per_active_strength_day',
+      comparatorLabel: refLabel,
+      thinSample,
       observedValues: [
         { id: 'repsPerSessionNow', value: o.repsPerSession, unit: 'reps' },
         { id: 'repsPerSessionThen', value: cmp.repsPerSession, unit: 'reps' },

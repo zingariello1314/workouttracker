@@ -30,7 +30,7 @@ const DB_STORE = 'segments';
 const MAX_EVENTS = 15000;
 const SCHEMA_VERSION = '2.1.1';
 /** Empreinte logique distincte du VITE_BUILD_ID (figé tant que Vite n’est pas redémarré). */
-export const CODE_REVISION = 'p0.8-calendar-worker-startup-2026-11-27';
+export const CODE_REVISION = 'p0.9-calendar-startup-cpu-2026-11-27';
 const INSTRUMENTATION_BUILD =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BUILD_ID) || null;
 

@@ -427,6 +427,45 @@ export function editorialValueAdjustments(d, voiceKey = 'week') {
     factors.push({ id: 'week_mechanism_clarity', delta: 5 });
   }
 
+  // G2 — Post-P6 : sur 7 j, le programme structurel est du contexte, pas le bilan de la semaine.
+  if (
+    (voiceKey === 'week' || voiceKey === 'today') &&
+    (kind === 'disc_session_family_structure' ||
+      kind === 'disc_session_family_pair' ||
+      kind === 'disc_session_family_variant' ||
+      m.editorialRole === 'structural_discovery' ||
+      m.population === 'programmed_structure')
+  ) {
+    delta -= 14;
+    factors.push({ id: 'week_structural_context_not_priority', delta: -14 });
+  }
+  // Favoriser les phénomènes ancrés dans la fenêtre affichée (valeur informative réelle).
+  if (
+    (voiceKey === 'week' || voiceKey === 'today') &&
+    (kind === 'disc_composed_relative_concentration' || m.visualKind === 'relative_concentration')
+  ) {
+    delta += 10;
+    factors.push({ id: 'week_relative_concentration_anchored', delta: 10 });
+  } else if (
+    (voiceKey === 'week' || voiceKey === 'today') &&
+    (m.windowSessionCount > 0 ||
+      m.temporalScope?.windowSessionCount > 0 ||
+      /calendar|volume_shape|peak|outlier|isolated/i.test(
+        `${kind} ${m.visualKind || ''} ${ce?.continuity?.kind || ''}`
+      ))
+  ) {
+    delta += 4;
+    factors.push({ id: 'week_period_anchored', delta: 4 });
+  }
+  if ((voiceKey === 'week' || voiceKey === 'today') && kind === 'disc_repertoire' && m.maturityBasis == null) {
+    delta -= 10;
+    factors.push({ id: 'repertoire_circular_demote', delta: -10 });
+  }
+  if ((voiceKey === 'week' || voiceKey === 'today') && kind === 'disc_family_fade') {
+    delta -= 6;
+    factors.push({ id: 'fade_uses_30d_on_week', delta: -6 });
+  }
+
   // Composition triviale : composedOk mais factCount bas et pas de mécanisme
   if (m.composedOk && Number(m.composedFactCount || 0) <= 2 && !attrib && !m.trajectorySetAvailable) {
     delta -= 5;

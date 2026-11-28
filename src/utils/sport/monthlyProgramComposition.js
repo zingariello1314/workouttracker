@@ -386,13 +386,14 @@ export function decomposeMonthlyProgramChange({
       direction === 'up' ? 'passe de' : direction === 'down' ? 'passe de' : 'reste proche entre';
     conclusion = `Le volume classique ${verb} ${previous.volume} à ${recent.volume} répétitions. ${dayBit} Principaux contributeurs : ${bits.join(' ; ')}.`;
     if (proseRemainder !== 0) {
-      conclusion += ` Autres familles (hors top) : ${proseRemainder >= 0 ? '+' : ''}${proseRemainder} reps (exact).`;
+      conclusion += ` Contribution nette au Δ des familles hors top contributeurs : ${proseRemainder >= 0 ? '+' : ''}${proseRemainder} reps (complète la réconciliation du Δ volume, distincte d’un stock).`;
     }
     const unAttr = recent.unattributedVolume || 0;
     if (unAttr > 0) {
-      conclusion += ` Résidu non attribué (période récente) : ${unAttr} reps (${Math.round(
+      // Niveau (stock) de volume récent hors famille — ≠ contribution nette au Δ ci-dessus.
+      conclusion += ` Volume de la période récente non rattaché à une famille reconnue (stock, pas le Δ) : ${unAttr} reps (${Math.round(
         (recent.unattributedVolumeShare || 0) * 100
-      )} % du volume).`;
+      )} % du volume récent).`;
     }
     if (coverageComparability.caution) {
       conclusionScope = 'recognized_sessions_only';

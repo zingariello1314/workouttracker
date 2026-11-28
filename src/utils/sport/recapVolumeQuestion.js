@@ -166,6 +166,17 @@ export function evaluateVolumeChange(ctx) {
       comparison: `La fenêtre équivalente d’avant en comptait ${before.days} et ${Math.round(before.reps)} (${sign(volRel)} de reps, ${sign(freqRel)} de séances).`,
       interpretation: driver,
       limit: repertoire.caveat || ''
-    })
+    }),
+    metrics: {
+      finding,
+      visualKind: contribution.ok ? 'volume_freq_content' : null,
+      prevReps: before.reps,
+      curReps: now.reps,
+      freqEffect: contribution.ok ? contribution.frequency : null,
+      contentEffect: contribution.ok ? contribution.content : null,
+      netDelta: contribution.ok ? contribution.frequency + contribution.content : null,
+      prevSessions: before.days,
+      curSessions: now.days
+    }
   };
 }

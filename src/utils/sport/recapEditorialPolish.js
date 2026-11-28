@@ -5,6 +5,7 @@
 
 import { formatDayFr } from './recapTrainingTimeline';
 import { expandSlashDatesInProse } from './recapProseMarks';
+import { attachVisualInsight } from './analysisVisualInsight';
 
 const ISO_DATE_RE = /\b(20\d{2})-(\d{2})-(\d{2})\b/g;
 
@@ -18,6 +19,16 @@ export function expandIsoDatesInProse(text) {
 /** Accords / formulations connues (corrections locales, pas un correcteur général). */
 export function fixKnownGrammarInProse(text) {
   let s = String(text || '');
+  // « les 7 jours ne porte que » → portent
+  s = s.replace(/\b(les|ces)\s+(\d+)\s+jours?\s+ne\s+porte\b/gi, (_, det, n) => {
+    const N = Number(n);
+    return `${det} ${n} jour${N <= 1 ? '' : 's'} ne porte${N <= 1 ? '' : 'nt'}`;
+  });
+  // « Les 2 trajectoires de X » → « Deux trajectoires distinctes de/d'X »
+  s = s.replace(/\bLes\s+(\d+)\s+trajectoires\s+de\s+/g, (_, n) => {
+    const word = Number(n) === 2 ? 'Deux' : Number(n) === 3 ? 'Trois' : `${n}`;
+    return `${word} trajectoires distinctes de `;
+  });
   // « Ces 7 jours devient » → deviennent
   s = s.replace(/\b(Ces|ces)\s+(\d+)\s+jours?\s+devient\b/g, (_, ces, n) => {
     const N = Number(n);
@@ -141,16 +152,19 @@ export function polishDiscoveryProse(discovery) {
   const polish = (t) => fixKnownGrammarInProse(expandIsoDatesInProse(expandSlashDatesInProse(t)));
   const title = polish(d.title || '');
   const body = polish(d.body || '');
-  if (title === (d.title || '') && body === (d.body || '')) return d;
-  return {
-    ...d,
-    title,
-    body,
-    metrics: {
-      ...(d.metrics || {}),
-      f4Polish: true
-    }
-  };
+  const next =
+    title === (d.title || '') && body === (d.body || '')
+      ? d
+      : {
+          ...d,
+          title,
+          body,
+          metrics: {
+            ...(d.metrics || {}),
+            f4Polish: true
+          }
+        };
+  return attachVisualInsight(next);
 }
 
 export function polishDiscoveriesProse(discoveries = []) {

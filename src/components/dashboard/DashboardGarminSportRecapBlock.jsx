@@ -18,7 +18,7 @@ import CalendarHeatmap from '../CalendarHeatmap';
 import { useGarminImport } from '../tabs/GarminTab/hooks/useGarminImport';
 import { useGarminSync } from '../tabs/GarminTab/hooks/useGarminSync';
 import BodyMap from '../sport/recap/BodyMap';
-import { computeRecapMuscleState } from '../../utils/sport/recapMuscleLoadEngine';
+import { getCachedRecapMuscleState } from '../../services/sport/sportRecapAggregatesCache';
 import {
   formatDistance,
   formatDuration,
@@ -205,8 +205,9 @@ const DashboardGarminSportRecapBlock = () => {
   const { programExercises, additionalExercises, metadata } = useTodayExercises({ date: selectedDate, isGymMode });
   const liveWorkoutData = getCurrentData();
 
+  // P0.9 : cache révision — évite un 2ᵉ compute sync au warm (profil CPU démarrage).
   const recapState = useMemo(
-    () => computeRecapMuscleState(liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate),
+    () => getCachedRecapMuscleState(liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate),
     [liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate]
   );
 

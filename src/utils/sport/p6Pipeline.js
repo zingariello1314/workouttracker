@@ -74,14 +74,6 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
   };
 
   const tWrap = now();
-  const wrapped = all.map((row) => wrap(row, window, voiceKey)).filter((row) => row.claim);
-  const observations = wrapped.filter((row) => !isAutonomousConclusion(row.claim));
-  const conclusions = wrapped.filter((row) => isAutonomousConclusion(row.claim));
-  markStep('validation', tWrap, {
-    inCount: all.length,
-    outCount: conclusions.length,
-    functionalLabel: 'Wrap + filtre conclusions autonomes'
-  });
   const rowKey = (row) =>
     [
       row?.kind,
@@ -90,6 +82,35 @@ export function applyP6({ all = [], selected = [], window = null, voiceKey = 'we
       row?.title || '',
       row?.evidence || ''
     ].join('|');
+  // Propager informativeValue / facteurs éditoriaux E0 → pool P6.
+  // `all` n’a souvent que le score brut ; sans cela selectCollectively ignore
+  // week_structural_context_not_priority et trie sur le score non ajusté.
+  const selectedByKey = new Map(
+    (selected || []).map((row) => [
+      rowKey(row),
+      {
+        informativeValue: row?.informativeValue,
+        _editorialValue: row?._editorialValue || null
+      }
+    ])
+  );
+  const enrichedAll = (all || []).map((row) => {
+    const hit = selectedByKey.get(rowKey(row));
+    if (!hit || hit.informativeValue == null) return row;
+    return {
+      ...row,
+      informativeValue: hit.informativeValue,
+      ...(hit._editorialValue ? { _editorialValue: hit._editorialValue } : {})
+    };
+  });
+  const wrapped = enrichedAll.map((row) => wrap(row, window, voiceKey)).filter((row) => row.claim);
+  const observations = wrapped.filter((row) => !isAutonomousConclusion(row.claim));
+  const conclusions = wrapped.filter((row) => isAutonomousConclusion(row.claim));
+  markStep('validation', tWrap, {
+    inCount: all.length,
+    outCount: conclusions.length,
+    functionalLabel: 'Wrap + filtre conclusions autonomes'
+  });
   const priorityKeys = new Set(selected.map((row) => rowKey(row)));
   conclusions.forEach((row) => {
     row.wasPriority = priorityKeys.has(rowKey(row.discovery));

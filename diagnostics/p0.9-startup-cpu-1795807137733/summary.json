@@ -1,0 +1,361 @@
+{
+  "wallMs": 17806,
+  "sampleCount": 29387,
+  "timeDeltaCount": 29387,
+  "nodeCount": 7421,
+  "top20": [
+    {
+      "id": 2,
+      "count": 23001,
+      "fn": "(program)",
+      "url": "",
+      "line": -1
+    },
+    {
+      "id": 3,
+      "count": 1846,
+      "fn": "(idle)",
+      "url": "",
+      "line": -1
+    },
+    {
+      "id": 7335,
+      "count": 306,
+      "fn": "P5",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-5EFKKIA4.js?v=abd609d2",
+      "line": 9118
+    },
+    {
+      "id": 1526,
+      "count": 246,
+      "fn": "measure",
+      "url": "http://localhost:3001/src/components/dashboard/MomentumWeekCharts.jsx",
+      "line": 111
+    },
+    {
+      "id": 7,
+      "count": 151,
+      "fn": "(garbage collector)",
+      "url": "",
+      "line": -1
+    },
+    {
+      "id": 7361,
+      "count": 132,
+      "fn": "P5",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-5EFKKIA4.js?v=abd609d2",
+      "line": 9118
+    },
+    {
+      "id": 4948,
+      "count": 109,
+      "fn": "texSubImage2D",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-PC6PKCGN.js?v=abd609d2",
+      "line": 38635
+    },
+    {
+      "id": 4364,
+      "count": 63,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/node_modules/.vite/deps/@react-three_drei.js?v=abd609d2",
+      "line": 32749
+    },
+    {
+      "id": 697,
+      "count": 61,
+      "fn": "renderWithHooks",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-WW4AH6NN.js?v=abd609d2",
+      "line": 11547
+    },
+    {
+      "id": 4930,
+      "count": 48,
+      "fn": "onFirstUse",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-PC6PKCGN.js?v=abd609d2",
+      "line": 36608
+    },
+    {
+      "id": 727,
+      "count": 27,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-PC6PKCGN.js?v=abd609d2",
+      "line": 24334
+    },
+    {
+      "id": 902,
+      "count": 24,
+      "fn": "setValueForProperty",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-WW4AH6NN.js?v=abd609d2",
+      "line": 1214
+    },
+    {
+      "id": 634,
+      "count": 23,
+      "fn": "updateStyle",
+      "url": "http://localhost:3001/@vite/client",
+      "line": 538
+    },
+    {
+      "id": 4362,
+      "count": 21,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/node_modules/.vite/deps/@react-three_drei.js?v=abd609d2",
+      "line": 32590
+    },
+    {
+      "id": 3146,
+      "count": 20,
+      "fn": "diffProperties",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-WW4AH6NN.js?v=abd609d2",
+      "line": 7622
+    },
+    {
+      "id": 693,
+      "count": 15,
+      "fn": "beginWork",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-WW4AH6NN.js?v=abd609d2",
+      "line": 15896
+    },
+    {
+      "id": 536,
+      "count": 14,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/node_modules/.vite/deps/@react-three_drei.js?v=abd609d2",
+      "line": 0
+    },
+    {
+      "id": 1006,
+      "count": 14,
+      "fn": "prepareUpdate",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-WW4AH6NN.js?v=abd609d2",
+      "line": 8368
+    },
+    {
+      "id": 4259,
+      "count": 14,
+      "fn": "getExtension",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-PC6PKCGN.js?v=abd609d2",
+      "line": 35051
+    },
+    {
+      "id": 4256,
+      "count": 13,
+      "fn": "getContext",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-PC6PKCGN.js?v=abd609d2",
+      "line": 43546
+    }
+  ],
+  "topApp": [
+    {
+      "id": 1526,
+      "count": 246,
+      "fn": "measure",
+      "url": "http://localhost:3001/src/components/dashboard/MomentumWeekCharts.jsx",
+      "line": 111
+    },
+    {
+      "id": 5232,
+      "count": 12,
+      "fn": "buildSemaineModuleSessions",
+      "url": "http://localhost:3001/src/utils/sport/buildSemaineModuleSessions.js",
+      "line": 30
+    },
+    {
+      "id": 44,
+      "count": 11,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/data/nutritionFoodBank.js",
+      "line": 466
+    },
+    {
+      "id": 5229,
+      "count": 10,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/components/tabs/TodayTab.jsx?t=1795807104299",
+      "line": 1381
+    },
+    {
+      "id": 3188,
+      "count": 9,
+      "fn": "fmtShortDate",
+      "url": "http://localhost:3001/src/components/dashboard/DashboardCombinedActivityCalendar.jsx?t=1795807007152",
+      "line": 84
+    },
+    {
+      "id": 3211,
+      "count": 9,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/hooks/useDashboardMomentum.js?t=1795807007152",
+      "line": 312
+    },
+    {
+      "id": 404,
+      "count": 7,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/utils/planificateurUtils.js",
+      "line": 13
+    },
+    {
+      "id": 1145,
+      "count": 7,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/hooks/useDashboardMomentum.js?t=1795807007152",
+      "line": 312
+    },
+    {
+      "id": 3264,
+      "count": 6,
+      "fn": "ymdInTimeZone",
+      "url": "http://localhost:3001/src/utils/sport/recapMuscleLoadEngine.js",
+      "line": 117
+    },
+    {
+      "id": 3409,
+      "count": 6,
+      "fn": "formatDateFr",
+      "url": "http://localhost:3001/src/components/dashboard/DashboardGarminSportRecapBlock.jsx?t=1795807104299",
+      "line": 170
+    },
+    {
+      "id": 5245,
+      "count": 6,
+      "fn": "getWeekNumber",
+      "url": "http://localhost:3001/src/utils/dateUtils.js",
+      "line": 42
+    },
+    {
+      "id": 3130,
+      "count": 5,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/utils/translations/loader.js",
+      "line": 60
+    },
+    {
+      "id": 5234,
+      "count": 5,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/context/WorkoutContext.jsx?t=1795807007152",
+      "line": 597
+    },
+    {
+      "id": 5268,
+      "count": 5,
+      "fn": "weekProgress",
+      "url": "http://localhost:3001/src/components/tabs/TodayTab/components/SemaineModule.jsx",
+      "line": 36
+    },
+    {
+      "id": 5263,
+      "count": 5,
+      "fn": "SemaineModule",
+      "url": "http://localhost:3001/src/components/tabs/TodayTab/components/SemaineModule.jsx",
+      "line": 91
+    },
+    {
+      "id": 50,
+      "count": 4,
+      "fn": "makeDbExerciseId",
+      "url": "http://localhost:3001/src/utils/sport/recapStrengthPeriodStats.js",
+      "line": 18
+    },
+    {
+      "id": 1086,
+      "count": 4,
+      "fn": "computeCombinedYearDashboardStats",
+      "url": "http://localhost:3001/src/utils/dashboardCombinedCalendarMetrics.js",
+      "line": 338
+    },
+    {
+      "id": 1184,
+      "count": 4,
+      "fn": "(anonymous)",
+      "url": "http://localhost:3001/src/services/endurance/runningTrophiesService.js",
+      "line": 2766
+    },
+    {
+      "id": 1201,
+      "count": 4,
+      "fn": "ymdInTimeZone",
+      "url": "http://localhost:3001/src/utils/sport/recapMuscleLoadEngine.js",
+      "line": 117
+    },
+    {
+      "id": 3190,
+      "count": 4,
+      "fn": "applyRelativePerformanceTint",
+      "url": "http://localhost:3001/src/utils/calendarRelativeDayRanking.js",
+      "line": 27
+    },
+    {
+      "id": 3242,
+      "count": 4,
+      "fn": "ymdInTimeZone",
+      "url": "http://localhost:3001/src/utils/sport/recapMuscleLoadEngine.js",
+      "line": 117
+    },
+    {
+      "id": 5278,
+      "count": 4,
+      "fn": "addDays",
+      "url": "http://localhost:3001/src/utils/dateUtils.js",
+      "line": 66
+    },
+    {
+      "id": 6773,
+      "count": 4,
+      "fn": "computeBoundingSphere",
+      "url": "http://localhost:3001/node_modules/.vite/deps/chunk-5EFKKIA4.js?v=abd609d2",
+      "line": 3754
+    },
+    {
+      "id": 1031,
+      "count": 3,
+      "fn": "useGlobalXP",
+      "url": "http://localhost:3001/src/hooks/useGlobalXP.js?t=1795807007152",
+      "line": 23
+    },
+    {
+      "id": 1078,
+      "count": 3,
+      "fn": "buildCombinedMonthIntensityMap",
+      "url": "http://localhost:3001/src/utils/dashboardCombinedCalendarMetrics.js",
+      "line": 185
+    },
+    {
+      "id": 1061,
+      "count": 3,
+      "fn": "DashboardCombinedActivityCalendar",
+      "url": "http://localhost:3001/src/components/dashboard/DashboardCombinedActivityCalendar.jsx?t=1795807007152",
+      "line": 216
+    },
+    {
+      "id": 1103,
+      "count": 3,
+      "fn": "MiniCombinedMonthGrid",
+      "url": "http://localhost:3001/src/components/dashboard/DashboardCombinedActivityCalendar.jsx?t=1795807007152",
+      "line": 122
+    },
+    {
+      "id": 1165,
+      "count": 3,
+      "fn": "ymdInTimeZone",
+      "url": "http://localhost:3001/src/utils/sport/recapMuscleLoadEngine.js",
+      "line": 117
+    },
+    {
+      "id": 1171,
+      "count": 3,
+      "fn": "addCalendarDays",
+      "url": "http://localhost:3001/src/utils/sport/garminRunningPeriodStats.js",
+      "line": 22
+    },
+    {
+      "id": 1310,
+      "count": 3,
+      "fn": "generateCalendarHeatmapCurrentYear",
+      "url": "http://localhost:3001/src/components/quests/stats/utils/statsCalculations.js",
+      "line": 293
+    }
+  ],
+  "note": "Profil isolé Playwright — non représentatif du dataset utilisateur réel. Sert à identifier les fonctions sources du démarrage synthétique."
+}

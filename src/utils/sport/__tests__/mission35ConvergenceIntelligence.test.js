@@ -17,7 +17,7 @@ import { buildLiveReplayInputPack } from '../evaluation/buildLiveReplayInputPack
 
 describe('Mission 35 — édition', () => {
   it('bumpe editorial v34+ + claim population v3+', () => {
-    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/^p6-sovereign-v3[45]$/);
+    expect(ANALYSIS_EDITION_PARTS.editorial).toMatch(/^p6-sovereign-v3[4-6]$/);
     expect(ANALYSIS_EDITION_PARTS.claim).toMatch(/^assertion-population-v[34]$/); // v3 M35 / v4 M36
   });
 });

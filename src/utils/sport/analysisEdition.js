@@ -12,7 +12,7 @@ export const ANALYSIS_EDITION_PARTS = Object.freeze({
   program: 'structural-context-v4',
   identity: 'discovery-occurrence-v1',
   scope: 'short-window-anchor-v1',
-  editorial: 'p6-sovereign-v35',
+  editorial: 'p6-sovereign-v38b',
   consolidation: 'narrative-coherence-v3',
   stimulus: 'challenge-unknown-v1',
   review: 'collective-pass4-v13',

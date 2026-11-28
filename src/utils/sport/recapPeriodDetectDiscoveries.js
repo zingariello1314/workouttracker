@@ -854,18 +854,17 @@ export function detectDiscoveries(cmp, extras = {}) {
 
   if (p.runningKm <= 0.2 && p.runningMinutes <= 0 && p.totalReps >= 80) {
     const hadRun = (d30.runningKm || 0) > 1 || (d90.runningKm || 0) > 3;
+    // Post-P6 — absence de course enregistrée ≠ preuve d’absence de toute autre activité / « charge » totale.
     const noRunReading = composeAnalyticalReading({
       titleThesis: hadRun
-        ? `Aucune course enregistrée ${v.now}, la charge vient du renforcement`
-        : `La charge ${v.ofPeriod} provient entièrement des exercices de renforcement`,
-      constat: `Aucune course n'a été enregistrée ${isToday ? "aujourd'hui" : `sur ${v.thisPeriod}`}`,
-      mechanism: `La charge d'entraînement ${v.ofPeriod} provient donc entièrement des exercices de renforcement`,
+        ? `Aucune course n’est enregistrée ${v.now}, contrairement à tes périodes récentes`
+        : `Aucune course n’est enregistrée ${v.now}`,
+      constat: `Dans les canaux suivis ici, aucune course n'a été enregistrée ${isToday ? "aujourd'hui" : `sur ${v.thisPeriod}`} (0 km).`,
+      mechanism: `Le volume de répétitions de renforcement documenté ${v.ofPeriod} s’élève à ${fmtInt(p.totalReps)} — cela décrit le renforcement enregistré, pas une charge d’entraînement totale ni l’exclusion d’activités hors course non mesurées.`,
       scope: hadRun
-        ? `Par rapport à tes périodes précédentes où la course représentait une partie identifiable du volume d'activité, ${v.thisPeriod} marque un déplacement net vers le travail de force/endurance musculaire`
-        : null,
-      implication: hadRun
-        ? 'Ce n’est pas une absence à combler automatiquement : c’est le stimulus réellement reçu sur cette fenêtre'
-        : null
+        ? `Sur 30/90 jours, la course apparaissait encore dans tes métriques : ${v.thisPeriod} se distingue par l’absence de ce canal, sans inférer l’absence de tout autre stimulus.`
+        : `Inconnu ≠ zéro : l’absence d’enregistrement de course ne démontre pas l’absence de marche, sport libre ou autre modalité hors périmètre.`,
+      implication: null
     });
     out.push(
       discovery({
@@ -874,9 +873,13 @@ export function detectDiscoveries(cmp, extras = {}) {
         family: 'no_running',
         title: noRunReading.title,
         body: noRunReading.body,
-        evidence: hadRun ? '0 km · course présente sur 30/90 j.' : '0 km',
-        weights: { importance: hadRun ? 0.78 : 0.55, reliability: 0.95, novelty: hadRun ? 0.88 : 0.55, fit: 0.9 },
-        metrics: { readingBeats: noRunReading.beats }
+        evidence: hadRun ? '0 km course · renforcement documenté' : '0 km course enregistrée',
+        weights: { importance: hadRun ? 0.72 : 0.5, reliability: 0.95, novelty: hadRun ? 0.82 : 0.5, fit: 0.85 },
+        metrics: {
+          readingBeats: noRunReading.beats,
+          coveredChannels: ['running_km', 'strength_reps'],
+          unknownOutsideChannels: true
+        }
       })
     );
   }
@@ -1088,8 +1091,14 @@ export function detectDiscoveries(cmp, extras = {}) {
             : `${ofMonthEx.length} mouvements concentrent une part importante de ton travail récent`,
       constat: `${bits.join('. ')}.${relativeBit}`,
       mechanism: null,
-      scope: null,
-      implication: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} pèse beaucoup plus lourd dans ton historique récent que ses ${fmtInt(p.totalReps)} reps totales ne le laissent penser`
+      scope:
+        relative.coverage === 'concluded'
+          ? `Lecture limitée à ${ofMonthEx.map((e) => e.name).join(', ')} — pas une généralisation à tout le volume de ${v.thisPeriod}`
+          : null,
+      implication:
+        relative.coverage === 'concluded'
+          ? null
+          : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} pèse beaucoup plus lourd dans ton historique récent que ses ${fmtInt(p.totalReps)} reps totales ne le laissent penser`
     });
     out.push(
       discovery({
@@ -1108,6 +1117,8 @@ export function detectDiscoveries(cmp, extras = {}) {
           readingBeats: shareReading.beats,
           totalReps: p.totalReps,
           relativeConcentration: relative.coverage === 'concluded' ? relative.metrics : null,
+          // Aplatir pour le Visual Insight Engine (ne pas laisser les parts seulement imbriquées).
+          ...(relative.coverage === 'concluded' && relative.metrics ? relative.metrics : {}),
           moveShareOfMonth: moveShare,
           weekShareOfMonthGlobal: globalShare,
           population: 'nested_window_same_exercises',
@@ -1340,33 +1351,56 @@ export function detectDiscoveries(cmp, extras = {}) {
     .filter((e) => e?.name && !/^un mouvement$/i.test(String(e.name)) && !/^Exercice\s*#?\s*\d+$/i.test(String(e.name)))
     .slice(0, 3);
   if (tracked.length && d30.totalReps >= 400) {
-    out.push(
-      discovery({
-        kind: 'disc_repertoire',
-        nature: 'journey',
-        family: 'repertoire',
-        title: 'Tes mouvements de référence commencent à disposer d’un historique assez fourni',
-        body: `${tracked
-          .map((e) => {
-            const month = e.monthReps || d30.byExercise[e.id]?.reps || 0;
-            const label = disambiguateExerciseLabel(e, tracked);
-            return `${label} : ${fmtInt(e.reps)} ${v.now} sur ${fmtInt(month)} en 30 jours`;
-          })
-          .join('. ')}. Ces volumes permettent de ne plus analyser uniquement ton entraînement comme un ensemble : Momentum peut suivre l'évolution de chaque mouvement, en distinguant ceux qui progressent, ceux qui se maintiennent et ceux dont l'exposition reste insuffisante.`,
-        evidence: tracked.map((e) => disambiguateExerciseLabel(e, tracked)).join(' · '),
-        weights: { importance: 0.82, reliability: 0.9, novelty: 0.84, fit: 0.9 },
-        metrics: {
-          totalReps: d30.totalReps,
-          observedValues: tracked.flatMap((e) => {
-            const month = e.monthReps || d30.byExercise[e.id]?.reps || 0;
-            return [
-              { id: exerciseScopedMetricId('repsNow', e), value: e.reps, unit: 'reps' },
-              { id: exerciseScopedMetricId('monthReps', e), value: month, unit: 'reps' }
-            ];
-          })
-        }
-      })
+    const maturityRows = tracked.map((e) => {
+      const month = e.monthReps || d30.byExercise[e.id]?.reps || 0;
+      const periodReps = Number(e.reps) || 0;
+      const sameWindow =
+        month > 0 && periodReps > 0 && Math.min(periodReps, month) / Math.max(periodReps, month) >= 0.95;
+      const sessions =
+        Number(e.sessions || e.sessionCount || d30.byExercise[e.id]?.sessions || d30.byExercise[e.id]?.days) ||
+        null;
+      return { e, month, periodReps, sameWindow, sessions, label: disambiguateExerciseLabel(e, tracked) };
+    });
+    // Identité fenêtre courte ≈ 30 j : ce n’est pas une preuve de maturité.
+    const circularOnly = maturityRows.every((r) => r.sameWindow);
+    const richEnough = maturityRows.some(
+      (r) => (r.sessions != null && r.sessions >= 4) || (r.month >= 120 && !r.sameWindow)
     );
+    if (!circularOnly && richEnough) {
+      out.push(
+        discovery({
+          kind: 'disc_repertoire',
+          nature: 'journey',
+          family: 'repertoire',
+          title: 'Tes mouvements de référence commencent à disposer d’un historique assez fourni',
+          body: `${maturityRows
+            .map((r) => {
+              const sessBit =
+                r.sessions != null && r.sessions >= 2
+                  ? ` (${fmtInt(r.sessions)} expositions sur 30 jours)`
+                  : '';
+              if (r.sameWindow) {
+                return `${r.label} : ${fmtInt(r.month)} reps sur 30 jours${sessBit}`;
+              }
+              return `${r.label} : ${fmtInt(r.periodReps)} ${v.now} sur ${fmtInt(r.month)} en 30 jours${sessBit}`;
+            })
+            .join('. ')}. Ce n’est pas le volume total seul qui compte : le nombre d’expositions et la distinction entre fenêtre courte et historique de 30 jours permettent de suivre chaque mouvement séparément.`,
+          evidence: maturityRows.map((r) => r.label).join(' · '),
+          weights: { importance: 0.82, reliability: 0.9, novelty: 0.84, fit: 0.9 },
+          metrics: {
+            totalReps: d30.totalReps,
+            maturityBasis: 'exposures_and_nested_windows',
+            observedValues: maturityRows.flatMap((r) => [
+              { id: exerciseScopedMetricId('repsNow', r.e), value: r.periodReps, unit: 'reps' },
+              { id: exerciseScopedMetricId('monthReps', r.e), value: r.month, unit: 'reps' },
+              ...(r.sessions != null
+                ? [{ id: exerciseScopedMetricId('sessions30', r.e), value: r.sessions, unit: 'sessions' }]
+                : [])
+            ])
+          }
+        })
+      );
+    }
   }
 
   if (d30.trainingDays >= 6 && p.trainingDays >= 1 && p.spanDays >= 1) {
@@ -1852,9 +1886,9 @@ export function detectDiscoveries(cmp, extras = {}) {
         nature: 'trajectory',
         family: 'sleep_volume',
         title: isToday
-          ? 'La nuit précédente te place dans une zone de volume déjà visible dans ton historique'
+          ? 'Dans ton historique, les séances après ≥ 7 h 30 se séparent déjà des autres'
           : 'Tes journées à fort volume s’alignent plus souvent avec des nuits plus longues dans ton historique',
-        body: `Sur ${nLabel} (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} lorsque le sommeil passe sous 7 h 30. L'écart est de ${fmtInt(vol75.delta)} reps, soit environ ${fmtPct(vol75.deltaPct)}.${todayPlace}${minBit}${dose8} Association observée sur ${vol75.highN} et ${vol75.lowN} séances — un effectif asymétrique ne démontre pas un seuil individuel fiable, ni une causalité.`,
+        body: `Sur ${nLabel} (échantillon historique apparié, distinct de la seule fenêtre affichée), celles précédées d'au moins 7 h 30 de sommeil totalisent en moyenne ${fmtInt(vol75.highVol)} reps, contre ${fmtInt(vol75.lowVol)} lorsque le sommeil passe sous 7 h 30. L'écart est de ${fmtInt(vol75.delta)} reps, soit environ ${fmtPct(vol75.deltaPct)}.${todayPlace}${minBit}${dose8} Association observée sur ${vol75.highN} et ${vol75.lowN} séances — un effectif asymétrique ne démontre pas un seuil individuel fiable, ni une causalité. Ce n’est pas un diagnostic de la seule nuit d’hier.`,
         evidence: `≥ 7 h 30 ${fmtInt(vol75.highVol)} · < 7 h 30 ${fmtInt(vol75.lowVol)} · n=${vol75.highN + vol75.lowN}`,
         weights: {
           importance: 0.93,
@@ -1965,13 +1999,13 @@ export function detectDiscoveries(cmp, extras = {}) {
         nature: 'trajectory',
         family: 'sleep_assoc',
         title: 'Autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil',
-        body: `Sur ${sep.highN} séances dépassant 300 reps, ${sep.highOk} ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, ${sep.lowShort} des ${sep.lowN} séances sous 250 reps ont suivi une nuit plus courte. ${
+        body: `Sur ${sep.highN} séances dépassant 300 reps, ${sep.highOk} ont été précédées d'au moins 7 h 30 de sommeil (${fmtPct((sep.highOk / Math.max(1, sep.highN)) * 100)}). Parmi les ${sep.lowN} séances sous 250 reps, ${sep.lowN - sep.lowShort} ont aussi suivi une nuit ≥ 7 h 30 (${fmtPct(((sep.lowN - sep.lowShort) / Math.max(1, sep.lowN)) * 100)}), tandis que ${sep.lowShort} ont suivi une nuit plus courte. ${
           (sep.highN || 0) + (sep.lowN || 0) < 20
             ? `L'écart porte sur ${(sep.highN || 0) + (sep.lowN || 0)} séances : assez pour être suivi, pas assez pour en faire une règle. `
             : ''
         }${
           sep.highN > 0 && sep.lowN > 0
-            ? `L'écart entre les deux proportions est d'environ ${fmtInt(Math.abs(Math.round((sep.highOk / sep.highN - (sep.lowN - sep.lowShort) / sep.lowN) * 100)))} points. `
+            ? `L'écart comparé porte sur la part de nuits ≥ 7 h 30 : ${fmtPct((sep.highOk / Math.max(1, sep.highN)) * 100)} (journées fortes) contre ${fmtPct(((sep.lowN - sep.lowShort) / Math.max(1, sep.lowN)) * 100)} (journées courtes), soit environ ${fmtInt(Math.abs(Math.round((sep.highOk / sep.highN - (sep.lowN - sep.lowShort) / sep.lowN) * 100)))} points — pas la différence brute entre ${sep.highOk}/${sep.highN} et ${sep.lowShort}/${sep.lowN}. `
             : ''
         }${
           p.trainingDays > 0 && p.spanDays > p.trainingDays
@@ -2063,22 +2097,18 @@ export function detectDiscoveries(cmp, extras = {}) {
     const pullBit = pullHigh
       ? `atteignent ${fmtPct(famSleep.pullRetain)} de leur volume habituel`
       : `sont à ${fmtPct(famSleep.pullRetain)} de leur volume habituel`;
-    const smallSample = (famSleep.shortN || 0) <= 12 && (famSleep.longN || 0) <= 12;
-    const sensitiveBit = smallSample
-      ? ''
-      : ` ${famSleep.sensitive === 'tirage' ? 'Le tirage' : 'La poussée'} apparaît comme la qualité la plus sensible à une mauvaise récupération dans cet historique (${famSleep.shortN} et ${famSleep.longN} séances).`;
+    // Mission 37 — écart de rétention ≠ sensibilité physiologique démontrée.
+    const contrastBit = ` L’écart de rétention (poussée ${fmtPct(famSleep.pushRetain)} vs tirage ${fmtPct(famSleep.pullRetain)}, ${famSleep.shortN} et ${famSleep.longN} séances) est une association descriptive entre nuit courte et volume de famille — pas une preuve qu’une qualité soit « plus sensible » au sommeil.`;
     out.push(
       discovery({
         kind: 'disc_sleep_family',
         nature: 'trajectory',
         family: 'sleep_family',
-        title: pullHigh
-          ? 'Après une nuit courte, poussée et tirage ne bougent pas de la même façon'
-          : `Après une nuit courte, ${famSleep.sensitive === 'tirage' ? 'le tirage' : 'la poussée'} recule davantage que l’autre famille`,
-        body: `Après une nuit de moins de 7 h, tes séances de poussée conservent ${pushBit}, tandis que tes séances de tirage ${pullBit}. Le déficit ne touche pas toutes les qualités de la même manière.${sensitiveBit}`,
+        title: 'Après une nuit courte, poussée et tirage ne conservent pas le même volume relatif',
+        body: `Après une nuit de moins de 7 h, tes séances de poussée conservent ${pushBit}, tandis que tes séances de tirage ${pullBit}.${contrastBit}`,
         evidence: `poussée ${fmtPct(famSleep.pushRetain)} · tirage ${fmtPct(famSleep.pullRetain)}`,
         weights: { importance: 0.87, reliability: 0.8, novelty: 0.95, fit: 0.9 },
-        metrics: famSleep
+        metrics: { ...famSleep, associationOnly: true }
       })
     );
   }
@@ -2158,10 +2188,10 @@ export function detectDiscoveries(cmp, extras = {}) {
         nature: 'trajectory',
         family: 'sleep_intensity',
         title: 'Le sommeil se lit aussi sur la densité de séance, pas seulement le volume',
-        body: `Après les nuits d'au moins 7 h 30, tu réalises en moyenne ${fmtInt(densSleep.highDens)} reps par heure, contre ${fmtInt(densSleep.lowDens)} après une nuit sous 7 h (écart ${fmtInt(densSleep.delta)}, ${fmtPct(densSleep.deltaPct)}). Ce n'est pas une preuve que tu t'entraînes plus près de l'échec : c'est une densité de travail plus élevée, reproductible sur ${densSleep.highN} et ${densSleep.lowN} séances.`,
+        body: `Après les nuits d'au moins 7 h 30, tu réalises en moyenne ${fmtInt(densSleep.highDens)} reps par heure, contre ${fmtInt(densSleep.lowDens)} après une nuit sous 7 h (écart ${fmtInt(densSleep.delta)}, ${fmtPct(densSleep.deltaPct)}). Moyennes sur ${densSleep.highN} et ${densSleep.lowN} séances chronométrées : association descriptive, pas une preuve d’intensité physiologique ni d’approche de l’échec. Les nuits entre 7 h et 7 h 29 ne figurent dans aucun de ces deux groupes — partition non exhaustive, volontairement contrastée.`,
         evidence: `${fmtInt(densSleep.highDens)} vs ${fmtInt(densSleep.lowDens)} reps/h`,
         weights: { importance: 0.86, reliability: 0.82, novelty: 0.93, fit: 0.9 },
-        metrics: densSleep
+        metrics: { ...densSleep, associationOnly: true }
       })
     );
   }
@@ -2788,14 +2818,33 @@ export function detectDiscoveries(cmp, extras = {}) {
         nature: 'trajectory',
         family: 'family_fade',
         title: familyFadeTitle(fadeLead.name, fadeLead.family),
-        body: `${fadeLead.name} représentaient ${fmtPct(fadeLead.thenShare)} ${possessiveMuscleShare(fadeLead.family)} sur les 30 jours d'avant (${fmtInt(fadeLead.thenReps)} reps), contre ${fmtPct(fadeLead.nowShare)} aujourd'hui${
-          fadeLead.nowReps > 0 ? ` (${fmtInt(fadeLead.nowReps)} reps)` : ''
-        }.${fadeExtra} Leur disparition explique une part de la baisse d'exposition de cette famille.`,
-        evidence: `${fadeLead.name} ${fmtPct(fadeLead.thenShare)} → ${fmtPct(fadeLead.nowShare)} ${possessiveMuscleShare(fadeLead.family)}`,
-        weights: { importance: 0.9, reliability: 0.86, novelty: 0.93, fit: 0.94 },
+        body: (() => {
+          const recentLabel =
+            isToday || isWeek
+              ? 'les 30 jours récents'
+              : `les ${v.thisPeriod || 'jours'} observés`;
+          const weekBit =
+            isWeek && fadeLead.nowReps === 0
+              ? ` Sur ces 7 jours aussi, ${fadeLead.name} n’apparaît pas dans le journal.`
+              : '';
+          return `${fadeLead.name} représentaient ${fmtPct(fadeLead.thenShare)} ${possessiveMuscleShare(fadeLead.family)} sur les 30 jours d'avant (${fmtInt(fadeLead.thenReps)} reps), contre ${fmtPct(fadeLead.nowShare)} sur ${recentLabel}${
+            fadeLead.nowReps > 0 ? ` (${fmtInt(fadeLead.nowReps)} reps)` : ''
+          }.${fadeExtra}${weekBit} Cela concerne la part de ce mouvement dans une répartition musculaire conventionnelle — pas une baisse prouvée de tout le travail des jambes, ni une capacité disparue.`;
+        })(),
+        evidence: `${fadeLead.name} ${fmtPct(fadeLead.thenShare)} → ${fmtPct(fadeLead.nowShare)} ${possessiveMuscleShare(fadeLead.family)} · 30 j vs 30 j`,
+        weights: {
+          importance: isWeek ? 0.78 : 0.9,
+          reliability: 0.86,
+          novelty: isWeek ? 0.72 : 0.93,
+          fit: isWeek ? 0.7 : 0.94
+        },
         metrics: {
           ...fadeLead,
-          ...trajectoryToMetrics(fadeTraj)
+          ...trajectoryToMetrics(fadeTraj),
+          comparisonWindows: 'prev30_vs_recent30',
+          displayHorizon: v.key,
+          scopeNote: 'exercise_share_of_muscle_family_not_total_family_volume',
+          population: 'conventional_muscle_share'
         }
       })
     );
@@ -3663,11 +3712,24 @@ export function detectDiscoveries(cmp, extras = {}) {
             metrics: {
               ...half.decomposition,
               composition: half,
+              visualKind: 'volume_freq_content',
+              prevReps: Number(volumeBaseline.totalReps),
+              curReps: Number(p.totalReps),
+              freqEffect: half.decomposition?.frequency ?? null,
+              contentEffect: half.decomposition?.content ?? null,
+              netDelta: half.decomposition?.observed ?? null,
               population: 'strength_positive_reps_days',
               strengthDaysBefore: daysBefore,
               strengthDaysAfter: daysAfter,
               calendarTrainingDaysBefore: volumeBaseline.trainingDays ?? null,
               calendarTrainingDaysAfter: p.trainingDays ?? null,
+              // Bornes réelles du moteur (pas inventées côté UI).
+              labelBefore: volumeBaselineLabel,
+              labelAfter: v?.thisPeriod || 'cette période',
+              prevWindow: volumeBaseline?.window || null,
+              recentWindow: p?.window || null,
+              comparisonWindows:
+                volumeBaseline === prev30 ? 'prev30_vs_recent30' : 'prev_same_length_vs_period',
               producer: 'composeVolumeFrequencyContentReading',
               informativeValue: 88,
               observedValues: [
